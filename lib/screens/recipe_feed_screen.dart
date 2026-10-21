@@ -825,16 +825,20 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
     );
   }
 
+  void _showTrialLockDialog() {
+    TrialService.showLockedDialog(
+      context: context,
+      title: 'Resep Terkunci (Mode Trial)',
+      message: 'Resep ini berada di luar batas 10 resep mode trial.\n\nSilakan login atau daftar akun resmi yang disetujui Admin untuk membuka seluruh koleksi resep dan menikmati pengalaman seduh tanpa batas!',
+      onLoginTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingScreen()));
+      },
+    );
+  }
+
   void _openDetail(dynamic recipe, {int? index}) {
     if (_isTrial && index != null && index >= 10) {
-      TrialService.showLockedDialog(
-        context: context,
-        title: 'Resep Terkunci (Mode Trial)',
-        message: 'Resep ini berada di luar batas 10 resep mode trial.\n\nSilakan login dengan akun resmi yang disetujui Admin untuk membuka seluruh koleksi resep!',
-        onLoginTap: () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingScreen()));
-        },
-      );
+      _showTrialLockDialog();
       return;
     }
     Navigator.push(
@@ -1177,6 +1181,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
 
   Widget _buildGridCard(BuildContext context, dynamic rawRecipe, int index) {
     final recipe = rawRecipe is Map ? ApiService.sanitizeRecipe(rawRecipe) : <String, dynamic>{};
+    final bool isLocked = _isTrial && index >= 10;
     int id = recipe['id'] as int;
     String title = recipe['title'] as String;
     String rawAuthor = recipe['author'] as String;
@@ -1198,20 +1203,28 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
         .toList();
 
     return GestureDetector(
-      onLongPress: recipe['isCustom'] == true ? () => _confirmDelete(id, title) : null,
-      onTap: () => _openDetail(recipe, index: index),
+      behavior: HitTestBehavior.opaque,
+      onLongPress: isLocked
+          ? _showTrialLockDialog
+          : (recipe['isCustom'] == true ? () => _confirmDelete(id, title) : null),
+      onTap: isLocked ? _showTrialLockDialog : () => _openDetail(recipe, index: index),
       child: Container(
         decoration: BoxDecoration(
-          color: AppTheme.surfaceWhite,
+          color: isLocked ? const Color(0xFFE2E2E2) : AppTheme.surfaceWhite,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppTheme.primaryBrown.withValues(alpha: 0.1)),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primaryBrown.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
+          border: Border.all(
+            color: isLocked ? Colors.grey.shade400 : AppTheme.primaryBrown.withValues(alpha: 0.1),
+            width: isLocked ? 1.2 : 1.0,
+          ),
+          boxShadow: isLocked
+              ? null
+              : [
+                  BoxShadow(
+                    color: AppTheme.primaryBrown.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
         ),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
@@ -1223,7 +1236,8 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   GestureDetector(
-                    onTap: () => _openBarista(recipe),
+                    behavior: HitTestBehavior.opaque,
+                    onTap: isLocked ? _showTrialLockDialog : () => _openBarista(recipe),
                     child: BaristaAvatar(
                       imageUrl: (recipe['authorAvatarUrl'] ?? recipe['authorImageUrl'])?.toString(),
                       radius: 18,
@@ -1233,23 +1247,26 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        if (_isTrial && index >= 10) ...[
+                        if (isLocked) ...[
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                            margin: const EdgeInsets.only(right: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                            margin: const EdgeInsets.only(right: 6),
                             decoration: BoxDecoration(
-                              color: Colors.orange.shade100,
+                              color: Colors.grey.shade700,
                               borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: Colors.orange.shade300),
                             ),
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(CupertinoIcons.lock_fill, size: 9, color: Colors.deepOrange),
-                                SizedBox(width: 2),
+                                Icon(CupertinoIcons.lock_fill, size: 9, color: Colors.white),
+                                SizedBox(width: 3),
                                 Text(
-                                  'Trial Lock',
-                                  style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.deepOrange),
+                                  'Terkunci',
+                                  style: TextStyle(
+                                    fontSize: 8.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ],
                             ),
@@ -1257,18 +1274,26 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                         ],
                         Text(
                           '${coffeeWeight}g',
-                          style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: isLocked ? Colors.grey.shade600 : AppTheme.textMuted,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(width: 3),
                         Icon(
                           iceWeight > 0 ? CupertinoIcons.snow : CupertinoIcons.drop,
                           size: 10,
-                          color: Colors.blueAccent,
+                          color: isLocked ? Colors.grey.shade500 : Colors.blueAccent,
                         ),
                         Flexible(
                           child: Text(
                             iceWeight > 0 ? '${totalWater + iceWeight}g' : '${totalWater}ml',
-                            style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: isLocked ? Colors.grey.shade600 : AppTheme.textMuted,
+                              fontWeight: FontWeight.bold,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -1280,13 +1305,18 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
               ),
               const SizedBox(height: 10),
               GestureDetector(
-                onTap: () => _openBarista(recipe),
+                behavior: HitTestBehavior.opaque,
+                onTap: isLocked ? _showTrialLockDialog : () => _openBarista(recipe),
                 child: Row(
                   children: [
                     Expanded(
                       child: Text(
                         authorName,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: isLocked ? Colors.grey.shade700 : AppTheme.textDark,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1305,7 +1335,11 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                   children: [
                     Text(
                       title,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 13.5, height: 1.2),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontSize: 13.5,
+                            height: 1.2,
+                            color: isLocked ? Colors.grey.shade800 : null,
+                          ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1322,9 +1356,16 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                               return Container(
                                 padding: const EdgeInsets.all(4),
                                 decoration: BoxDecoration(
-                                  color: nv.color.withValues(alpha: 0.12),
+                                  color: isLocked
+                                      ? Colors.grey.shade300
+                                      : nv.color.withValues(alpha: 0.12),
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: nv.color.withValues(alpha: 0.25), width: 0.8),
+                                  border: Border.all(
+                                    color: isLocked
+                                        ? Colors.grey.shade400
+                                        : nv.color.withValues(alpha: 0.25),
+                                    width: 0.8,
+                                  ),
                                 ),
                                 child: Text(nv.emoji, style: const TextStyle(fontSize: 11)),
                               );
@@ -1333,12 +1374,18 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppTheme.primaryBrown.withValues(alpha: 0.08),
+                              color: isLocked
+                                  ? Colors.grey.shade300
+                                  : AppTheme.primaryBrown.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
                               '${pourCount}x Pour',
-                              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.primaryBrown),
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: isLocked ? Colors.grey.shade700 : AppTheme.primaryBrown,
+                              ),
                             ),
                           ),
                         ],
@@ -1348,7 +1395,11 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                       Expanded(
                         child: Text(
                           description,
-                          style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, height: 1.2),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: isLocked ? Colors.grey.shade600 : AppTheme.textMuted,
+                            height: 1.2,
+                          ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1367,7 +1418,10 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                       category
                           .replaceAll('V60 Pour Over', 'V60')
                           .replaceAll('Japanese Iced', 'Japanese'),
-                      style: const TextStyle(color: AppTheme.textMuted, fontSize: 10),
+                      style: TextStyle(
+                        color: isLocked ? Colors.grey.shade600 : AppTheme.textMuted,
+                        fontSize: 10,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1377,12 +1431,20 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(CupertinoIcons.circle_grid_hex, size: 10, color: AppTheme.primaryBrown),
+                        Icon(
+                          CupertinoIcons.circle_grid_hex,
+                          size: 10,
+                          color: isLocked ? Colors.grey.shade600 : AppTheme.primaryBrown,
+                        ),
                         const SizedBox(width: 3),
                         Flexible(
                           child: Text(
                             shortGrind,
-                            style: const TextStyle(color: AppTheme.primaryBrown, fontSize: 10, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              color: isLocked ? Colors.grey.shade700 : AppTheme.primaryBrown,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -1396,13 +1458,27 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => BrewTimerScreen(recipeData: recipe)));
-                  },
-                  icon: const Icon(CupertinoIcons.play_arrow_solid, size: 12, color: Colors.white),
-                  label: const Text('Brew', style: TextStyle(color: Colors.white, fontSize: 12)),
+                  onPressed: isLocked
+                      ? _showTrialLockDialog
+                      : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => BrewTimerScreen(recipeData: recipe),
+                            ),
+                          );
+                        },
+                  icon: Icon(
+                    isLocked ? CupertinoIcons.lock_fill : CupertinoIcons.play_arrow_solid,
+                    size: 12,
+                    color: Colors.white,
+                  ),
+                  label: Text(
+                    isLocked ? 'Terkunci' : 'Brew',
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                  ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryBrown,
+                    backgroundColor: isLocked ? Colors.grey.shade600 : AppTheme.primaryBrown,
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
