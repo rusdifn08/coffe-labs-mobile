@@ -32,6 +32,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   void initState() {
     super.initState();
+    AuthService.warmUpBackend();
     _loadDefaultAvatar();
   }
 
@@ -386,23 +387,64 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 // Error message banner if any
                 if (_errorMessage != null) ...[
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     margin: const EdgeInsets.only(bottom: 20),
                     decoration: BoxDecoration(
                       color: Colors.red.shade50,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.red.shade200),
                     ),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(CupertinoIcons.exclamationmark_triangle_fill, color: Colors.redAccent, size: 20),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            _errorMessage!,
-                            style: const TextStyle(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.w600),
-                          ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(CupertinoIcons.exclamationmark_triangle_fill, color: Colors.redAccent, size: 20),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                _errorMessage!,
+                                style: const TextStyle(
+                                  color: Colors.redAccent,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.3,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
+                        if (_isSignUpMode &&
+                            (_errorMessage!.contains('terdaftar') ||
+                                _errorMessage!.contains('Login') ||
+                                _errorMessage!.contains('timeout') ||
+                                _errorMessage!.contains('Timeout'))) ...[
+                          const SizedBox(height: 10),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryBrown,
+                                visualDensity: VisualDensity.compact,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isSignUpMode = false;
+                                  _loginUsernameCtrl.text = _regUsernameCtrl.text.trim();
+                                  _errorMessage = null;
+                                });
+                              },
+                              icon: const Icon(CupertinoIcons.arrow_right_circle_fill, size: 14, color: Colors.white),
+                              label: const Text(
+                                'Beralih ke Login',
+                                style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -537,6 +579,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
         ),
+        if (_isLoading) ...[
+          const SizedBox(height: 10),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryBrown),
+              ),
+              SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  'Menghubungkan ke Cloud Server (Render)...',
+                  style: TextStyle(fontSize: 11.5, color: AppTheme.textMuted, fontStyle: FontStyle.italic),
+                ),
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: 18),
 
         // Teks "Belum punya akun? Sign Up" dengan Sign Up berwarna biru
@@ -749,6 +811,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
         ),
+        if (_isLoading) ...[
+          const SizedBox(height: 10),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryBrown),
+              ),
+              SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  'Mendaftarkan ke Cloud Server (Render)...',
+                  style: TextStyle(fontSize: 11.5, color: AppTheme.textMuted, fontStyle: FontStyle.italic),
+                ),
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: 16),
 
         // Tombol kembali ke Login

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -199,7 +200,7 @@ class AuthService {
           'username': username.trim(),
           'password': password,
         }),
-      ).timeout(const Duration(seconds: 20));
+      ).timeout(const Duration(seconds: 45));
 
       final data = json.decode(response.body) as Map<String, dynamic>;
 
@@ -240,6 +241,10 @@ class AuthService {
       } else {
         return AuthResult.error(data['message'] ?? 'Terjadi kesalahan (${response.statusCode}).');
       }
+    } on TimeoutException {
+      return AuthResult.error(
+        'Koneksi timeout (server Cloud Render sedang bangun dari mode siaga, proses ini memakan waktu ~30 detik). Silakan coba tekan tombol Login sekali lagi.',
+      );
     } on SocketException {
       return AuthResult.error(
         'Tidak dapat terhubung ke server backend Cloud Render. Periksa koneksi internet Anda atau coba sesaat lagi.',
@@ -269,7 +274,7 @@ class AuthService {
           'full_name': fullName.trim(),
           'avatar_url': avatarUrl,
         }),
-      ).timeout(const Duration(seconds: 20));
+      ).timeout(const Duration(seconds: 45));
 
       final data = json.decode(response.body) as Map<String, dynamic>;
 
@@ -282,10 +287,16 @@ class AuthService {
           status: 'pending',
         );
       } else if (response.statusCode == 409) {
-        return AuthResult.error(data['message'] ?? 'Username sudah digunakan. Silakan pilih username lain.');
+        return AuthResult.error(
+          'Username "$username" sudah terdaftar di sistem. Jika ini akun Anda, silakan beralih ke menu Login untuk masuk atau memeriksa status akun.',
+        );
       } else {
         return AuthResult.error(data['message'] ?? 'Gagal mendaftar (${response.statusCode}).');
       }
+    } on TimeoutException {
+      return AuthResult.error(
+        'Koneksi timeout karena server Cloud Render sedang bangun dari mode siaga. Data pendaftaran Anda mungkin sudah tersimpan di server. Silakan coba beralih ke menu Login untuk mencoba masuk atau periksa status akun.',
+      );
     } on SocketException {
       return AuthResult.error(
         'Tidak dapat terhubung ke server backend Cloud Render. Periksa koneksi internet Anda atau coba sesaat lagi.',
@@ -321,7 +332,7 @@ class AuthService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
@@ -349,7 +360,7 @@ class AuthService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 30));
 
       return response.statusCode == 200;
     } catch (_) {
@@ -372,7 +383,7 @@ class AuthService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 30));
 
       return response.statusCode == 200;
     } catch (_) {
@@ -395,7 +406,7 @@ class AuthService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 30));
 
       return response.statusCode == 200;
     } catch (_) {

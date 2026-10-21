@@ -30,7 +30,7 @@ class SocialService {
         'limit': '50',
       });
 
-      final res = await http.get(uri).timeout(const Duration(seconds: 15));
+      final res = await http.get(uri).timeout(const Duration(seconds: 25));
 
       if (res.statusCode == 200) {
         final decoded = json.decode(res.body);
@@ -96,7 +96,7 @@ class SocialService {
         Uri.parse('$baseUrl/api/v1/social/posts'),
         headers: headers,
         body: json.encode(payload),
-      ).timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 25));
 
       if (res.statusCode == 201 || res.statusCode == 200) {
         final decoded = json.decode(res.body);
@@ -156,7 +156,7 @@ class SocialService {
         Uri.parse('$baseUrl/api/v1/social/posts/${post.id}/like'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'username': username}),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 25));
 
       if (res.statusCode == 200) {
         final decoded = json.decode(res.body);
@@ -187,7 +187,7 @@ class SocialService {
     try {
       final res = await http.get(
         Uri.parse('$baseUrl/api/v1/social/posts/$postId/comments'),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 25));
 
       if (res.statusCode == 200) {
         final decoded = json.decode(res.body);
@@ -225,7 +225,7 @@ class SocialService {
           if (token != null) 'Authorization': 'Bearer $token',
         },
         body: json.encode(payload),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 25));
 
       if (res.statusCode == 201 || res.statusCode == 200) {
         final decoded = json.decode(res.body);
@@ -262,7 +262,7 @@ class SocialService {
     try {
       final res = await http.post(
         Uri.parse('$baseUrl/api/v1/social/posts/${post.id}/copy-recipe'),
-      ).timeout(const Duration(seconds: 8));
+      ).timeout(const Duration(seconds: 20));
 
       if (res.statusCode == 200) {
         final decoded = json.decode(res.body);

@@ -64,7 +64,7 @@ class FeedbackService {
       });
 
       final response = await http.post(uri, headers: headers, body: body)
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 25));
 
       if (response.statusCode == 201) {
         changeNotifier.value++;
@@ -101,7 +101,7 @@ class FeedbackService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      ).timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 25));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
@@ -130,7 +130,7 @@ class FeedbackService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      ).timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 25));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
@@ -168,7 +168,7 @@ class FeedbackService {
           'status': status,
           'admin_notes': adminNotes,
         }),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 25));
 
       if (response.statusCode == 200) {
         changeNotifier.value++;
@@ -196,7 +196,7 @@ class FeedbackService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      ).timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 25));
 
       if (response.statusCode == 200) {
         changeNotifier.value++;
