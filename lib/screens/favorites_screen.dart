@@ -65,49 +65,54 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: AppTheme.primaryBrown.withValues(alpha: 0.08)),
                         ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                          leading: BaristaAvatar(
-                            imageUrl: (recipe['authorAvatarUrl'] ?? recipe['authorImageUrl'])?.toString(),
-                            radius: 24,
+                        child: Material(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(16),
+                          clipBehavior: Clip.antiAlias,
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            leading: BaristaAvatar(
+                              imageUrl: (recipe['authorAvatarUrl'] ?? recipe['authorImageUrl'])?.toString(),
+                              radius: 24,
+                            ),
+                            title: Text(
+                              recipe['title'] ?? 'Resep',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                            ),
+                            subtitle: Text(
+                              BaristaUtils.cleanName(author),
+                              style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(CupertinoIcons.heart_slash, color: Colors.redAccent, size: 20),
+                                  onPressed: () async {
+                                    await ApiService.toggleFavorite(recipe['id'] as int);
+                                    _load();
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(CupertinoIcons.play_fill, color: AppTheme.primaryBrown, size: 20),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => BrewTimerScreen(recipeData: recipe)),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => RecipeDetailScreen(recipeData: recipe)),
+                              ).then((_) => _load());
+                            },
                           ),
-                          title: Text(
-                            recipe['title'] ?? 'Resep',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                          ),
-                          subtitle: Text(
-                            BaristaUtils.cleanName(author),
-                            style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(CupertinoIcons.heart_slash, color: Colors.redAccent, size: 20),
-                                onPressed: () async {
-                                  await ApiService.toggleFavorite(recipe['id'] as int);
-                                  _load();
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(CupertinoIcons.play_fill, color: AppTheme.primaryBrown, size: 20),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => BrewTimerScreen(recipeData: recipe)),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => RecipeDetailScreen(recipeData: recipe)),
-                            ).then((_) => _load());
-                          },
                         ),
                       );
                     },

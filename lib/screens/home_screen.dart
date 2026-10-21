@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
@@ -6,11 +5,11 @@ import '../services/api_service.dart';
 import '../services/profile_service.dart';
 import '../utils/barista_utils.dart';
 import 'barista_profile_screen.dart';
-import 'brew_journal_screen.dart';
 import 'brew_timer_screen.dart';
 import 'favorites_screen.dart';
 import 'settings_screen.dart';
-import 'taste_match_screen.dart';
+import 'onboarding_screen.dart';
+import '../services/trial_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,8 +22,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   List<dynamic> _history = [];
   List<dynamic> _frequent = [];
   List<Map<String, dynamic>> _baristas = [];
-  int _favCount = 0;
-  int _journalCount = 0;
   bool _isLoading = true;
   String _userName = 'Barista';
   String? _userImagePath;
@@ -37,23 +34,29 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _fadeCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
     _loadData();
+    ApiService.changeNotifier.addListener(_onExternalChange);
+    ProfileService.changeNotifier.addListener(_onExternalChange);
   }
 
   @override
   void dispose() {
+    ApiService.changeNotifier.removeListener(_onExternalChange);
+    ProfileService.changeNotifier.removeListener(_onExternalChange);
     _fadeCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+  void _onExternalChange() {
+    _loadData(silent: true);
+  }
+
+  Future<void> _loadData({bool silent = false}) async {
+    if (!silent) setState(() => _isLoading = true);
     final history = await ApiService.getBrewHistory();
     final frequent = await ApiService.getFrequentBrews();
     final userName = await ProfileService.getUserName();
     final userImagePath = await ProfileService.getUserImagePath();
     final baristas = await ApiService.getUniqueBaristas();
-    final favs = await ApiService.getFavoriteIds();
-    final journal = await ApiService.getJournalEntries();
     if (!mounted) return;
     setState(() {
       _history = history;
@@ -61,19 +64,35 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       _userName = userName;
       _userImagePath = userImagePath;
       _baristas = baristas.take(12).toList();
-      _favCount = favs.length;
-      _journalCount = journal.length;
       _isLoading = false;
     });
-    _fadeCtrl.forward(from: 0);
+    if (!silent) {
+      _fadeCtrl.forward(from: 0);
+    }
   }
 
-  void _brewRecipe(dynamic recipe) {
-    ApiService.recordBrew(Map<String, dynamic>.from(recipe as Map));
+  Future<void> _brewRecipe(dynamic recipe) async {
+    final canBrew = await TrialService.canBrew();
+    if (!canBrew) {
+      final remaining = await TrialService.getRemainingLockDuration();
+      final days = remaining != null ? (remaining.inDays + 1) : 7;
+      if (mounted) {
+        TrialService.showLockedDialog(
+          context: context,
+          title: 'Batas Seduh Trial Tercapai',
+          message: 'Anda telah mencapai batas 10 kali seduh pada mode trial. Fitur seduh terkunci selama 1 minggu ($days hari tersisa).\n\nSilakan login atau daftar akun resmi yang disetujui Admin untuk seduh tanpa batas!',
+          onLoginTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingScreen()));
+          },
+        );
+      }
+      return;
+    }
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => BrewTimerScreen(recipeData: recipe)),
-    ).then((_) => _loadData());
+    );
   }
 
   void _openSettings() {
@@ -118,9 +137,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             CircleAvatar(
                               radius: 24,
                               backgroundColor: AppTheme.bgCream,
-                              backgroundImage: _userImagePath != null
-                                  ? FileImage(File(_userImagePath!)) as ImageProvider
-                                  : const AssetImage('lib/theme/rusdi.png'),
+                              backgroundImage: ProfileService.getImageProvider(_userImagePath),
                             ),
                             const SizedBox(width: 12),
                             Column(
@@ -158,43 +175,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Toolkit, juara dunia, dan riwayat seduh Anda.',
+                    'Eksplorasi resep presisi, inspirasi seduh, dan kreasi rasa terbaik.',
                     style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Quick toolkit row
-                  Row(
-                    children: [
-                      _quickAction(
-                        icon: CupertinoIcons.heart_fill,
-                        label: 'Favorit',
-                        badge: '$_favCount',
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const FavoritesScreen()),
-                        ).then((_) => _loadData()),
-                      ),
-                      const SizedBox(width: 10),
-                      _quickAction(
-                        icon: CupertinoIcons.doc_text_fill,
-                        label: 'Jurnal',
-                        badge: '$_journalCount',
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const BrewJournalScreen()),
-                        ).then((_) => _loadData()),
-                      ),
-                      const SizedBox(width: 10),
-                      _quickAction(
-                        icon: CupertinoIcons.heart_circle,
-                        label: 'Match',
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const TasteMatchScreen()),
-                        ),
-                      ),
-                    ],
                   ),
                   const SizedBox(height: 28),
 
@@ -209,6 +191,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         itemCount: _baristas.length,
                         itemBuilder: (context, index) {
                           final b = _baristas[index];
+                          final heroTag = 'home_barista_${BaristaUtils.slugFromAuthor(b['author'] as String)}';
                           return GestureDetector(
                             onTap: () {
                               Navigator.push(
@@ -218,6 +201,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                     rawAuthor: b['author'] as String,
                                     imageUrl: b['imageUrl'] as String?,
                                     coverImageUrl: b['coverImageUrl'] as String?,
+                                    heroTag: heroTag,
                                   ),
                                 ),
                               );
@@ -230,7 +214,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   BaristaAvatar(
                                     imageUrl: b['imageUrl'] as String?,
                                     radius: 30,
-                                    heroTag: 'home_barista_${BaristaUtils.slugFromAuthor(b['author'] as String)}',
+                                    heroTag: heroTag,
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
@@ -286,52 +270,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ],
                 ],
               ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _quickAction({
-    required IconData icon,
-    required String label,
-    String? badge,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: Material(
-        color: AppTheme.surfaceWhite,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-            child: Column(
-              children: [
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Icon(icon, color: AppTheme.primaryBrown, size: 22),
-                    if (badge != null && badge != '0')
-                      Positioned(
-                        right: -10,
-                        top: -8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: AppTheme.accentAmber,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(badge, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white)),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
-              ],
             ),
           ),
         ),
@@ -395,16 +333,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               child: SizedBox(
                 height: 100,
                 width: double.infinity,
-                child: coverImageUrl != null && coverImageUrl.startsWith('assets/')
-                    ? Image.asset(coverImageUrl, fit: BoxFit.cover, cacheWidth: 340)
-                    : Image.network(
-                        coverImageUrl ?? '',
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Image.asset(
-                          'assets/images/avatars/generic_fallback.jpg',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
+                child: BaristaUtils.buildOfflineImage(
+                  coverImageUrl,
+                  fit: BoxFit.cover,
+                  cacheWidth: 340,
+                ),
               ),
             ),
             const SizedBox(height: 12),

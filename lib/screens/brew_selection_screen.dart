@@ -2,8 +2,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
+import '../utils/barista_utils.dart';
 import 'brew_timer_screen.dart';
+import 'recipe_detail_screen.dart';
 import 'add_recipe_screen.dart';
+import 'onboarding_screen.dart';
+import '../services/trial_service.dart';
 
 class BrewSelectionScreen extends StatefulWidget {
   const BrewSelectionScreen({super.key});
@@ -19,9 +23,17 @@ class _BrewSelectionScreenState extends State<BrewSelectionScreen> {
   void initState() {
     super.initState();
     _loadRecipes();
+    ApiService.changeNotifier.addListener(_loadRecipes);
+  }
+
+  @override
+  void dispose() {
+    ApiService.changeNotifier.removeListener(_loadRecipes);
+    super.dispose();
   }
 
   void _loadRecipes() {
+    if (!mounted) return;
     setState(() {
       _recipesFuture = ApiService.getRecipes();
     });
@@ -80,6 +92,7 @@ class _BrewSelectionScreenState extends State<BrewSelectionScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'brew_selection_add_fab',
         backgroundColor: AppTheme.primaryBrown,
         onPressed: () async {
           bool? didAdd = await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddRecipeScreen()));
@@ -109,19 +122,27 @@ class _BrewSelectionScreenState extends State<BrewSelectionScreen> {
     );
   }
 
-  Widget _buildRecipeCard(dynamic recipe) {
-    int time = recipe['totalTimeSeconds'] ?? 0;
-    int coffee = recipe['coffeeWeightGrams'] ?? 15;
-    int water = recipe['totalWaterWeightGrams'] ?? 250;
-    String ratio = '1:${(water / coffee).toStringAsFixed(1)}';
+  Widget _buildRecipeCard(dynamic rawRecipe) {
+    final recipe = rawRecipe is Map ? ApiService.sanitizeRecipe(rawRecipe) : <String, dynamic>{};
+    int id = recipe['id'] as int;
+    String title = recipe['title'] as String;
+    int time = recipe['totalTimeSeconds'] as int;
+    int coffee = recipe['coffeeWeightGrams'] as int;
+    int water = recipe['totalWaterWeightGrams'] as int;
+    int ice = recipe['iceWeightGrams'] as int? ?? 0;
+    int totalLiquid = water + ice;
+    String ratio = '1:${(totalLiquid / (coffee > 0 ? coffee : 15)).toStringAsFixed(1)}';
+    String category = recipe['category'] as String;
+    String grindSize = BaristaUtils.shortGrindLabel(recipe['grindSize']?.toString());
 
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => BrewTimerScreen(recipeData: recipe)),
-        );
+          MaterialPageRoute(builder: (_) => RecipeDetailScreen(recipeData: recipe)),
+        ).then((_) => _loadRecipes());
       },
+      onLongPress: () => _confirmDelete(id, title),
       child: Container(
         decoration: BoxDecoration(
           color: AppTheme.surfaceWhite,
@@ -135,36 +156,61 @@ class _BrewSelectionScreenState extends State<BrewSelectionScreen> {
           children: [
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(14.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
                           child: Text(
-                            recipe['title'] ?? 'My Recipe',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            title,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const Icon(CupertinoIcons.play_circle_fill, color: AppTheme.primaryBrown, size: 36),
+                        GestureDetector(
+                          onTap: () async {
+                            final canBrew = await TrialService.canBrew();
+                            if (!mounted) return;
+                            if (!canBrew) {
+                              final remaining = await TrialService.getRemainingLockDuration();
+                              if (!mounted) return;
+                              final days = remaining != null ? (remaining.inDays + 1) : 7;
+                              TrialService.showLockedDialog(
+                                context: context,
+                                title: 'Batas Seduh Trial Tercapai',
+                                message: 'Anda telah mencapai batas 10 kali seduh pada mode trial. Fitur seduh terkunci selama 1 minggu ($days hari tersisa).\n\nSilakan login atau daftar akun resmi yang disetujui Admin untuk seduh tanpa batas!',
+                                onLoginTap: () {
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingScreen()));
+                                },
+                              );
+                              return;
+                            }
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => BrewTimerScreen(recipeData: recipe)),
+                            );
+                          },
+                          child: const Icon(CupertinoIcons.play_circle_fill, color: AppTheme.primaryBrown, size: 32),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Text(
-                      'By ${recipe['author'] ?? 'Me'}',
-                      style: const TextStyle(color: AppTheme.textMuted, fontSize: 12, fontWeight: FontWeight.w600),
+                      '$category · $grindSize',
+                      style: const TextStyle(color: AppTheme.primaryBrown, fontSize: 11, fontWeight: FontWeight.w600),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Expanded(
                       child: Text(
-                        recipe['description'] ?? '',
-                        style: TextStyle(color: AppTheme.textMuted.withValues(alpha: 0.8), fontSize: 12),
+                        recipe['description'] as String,
+                        style: TextStyle(color: AppTheme.textMuted.withValues(alpha: 0.85), fontSize: 11),
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -174,7 +220,7 @@ class _BrewSelectionScreenState extends State<BrewSelectionScreen> {
               ),
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
               decoration: BoxDecoration(
                 color: AppTheme.bgCream,
                 borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20)),
@@ -186,14 +232,17 @@ class _BrewSelectionScreenState extends State<BrewSelectionScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _buildMetricIcon(CupertinoIcons.timer, _formatTime(time)),
-                      _buildMetricIcon(CupertinoIcons.drop, '${water}g'),
+                      _buildMetricIcon(
+                        ice > 0 ? CupertinoIcons.snow : CupertinoIcons.drop,
+                        ice > 0 ? '${water}g+${ice}g' : '${water}g',
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildMetricIcon(CupertinoIcons.circle, '${coffee}g'), 
+                      _buildMetricIcon(CupertinoIcons.circle, '${coffee}g'),
                       _buildMetricIcon(CupertinoIcons.divide, ratio),
                     ],
                   ),
@@ -202,6 +251,30 @@ class _BrewSelectionScreenState extends State<BrewSelectionScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _confirmDelete(int id, String title) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hapus Resep?'),
+        content: Text('Yakin ingin menghapus resep "$title"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await ApiService.deleteRecipe(id);
+              _loadRecipes();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Resep berhasil dihapus')));
+              }
+            },
+            child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }

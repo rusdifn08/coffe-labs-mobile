@@ -1,9 +1,9 @@
-import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import '../theme/app_theme.dart';
 import '../services/profile_service.dart';
+import '../services/app_update_service.dart';
+import 'feedback_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -15,17 +15,25 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final TextEditingController _nameController = TextEditingController();
   String? _imagePath;
-  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    ProfileService.changeNotifier.addListener(_loadProfile);
+  }
+
+  @override
+  void dispose() {
+    ProfileService.changeNotifier.removeListener(_loadProfile);
+    _nameController.dispose();
+    super.dispose();
   }
 
   void _loadProfile() async {
     String name = await ProfileService.getUserName();
     String? img = await ProfileService.getUserImagePath();
+    if (!mounted) return;
     setState(() {
       _nameController.text = name;
       _imagePath = img;
@@ -33,13 +41,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      setState(() {
-        _imagePath = image.path;
-      });
-      await ProfileService.setUserImagePath(image.path);
-    }
+    await ProfileService.showAvatarPickerDialog(
+      context: context,
+      currentPath: _imagePath,
+      onSelected: (newPath) async {
+        setState(() {
+          _imagePath = newPath;
+        });
+        await ProfileService.setUserImagePath(newPath);
+      },
+    );
   }
 
   void _saveName() async {
@@ -50,8 +61,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile updated successfully!'), backgroundColor: AppTheme.primaryBrown),
         );
-        Navigator.pop(context, true); // return true to indicate change
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context, true); // return true only if pushed as a route
+        }
       }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Name cannot be empty'), backgroundColor: Colors.redAccent),
+      );
     }
   }
 
@@ -71,12 +88,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Center(
               child: Stack(
                 children: [
-                  CircleAvatar(
-                    radius: 60,
-                    backgroundColor: AppTheme.surfaceWhite,
-                    backgroundImage: _imagePath != null
-                        ? FileImage(File(_imagePath!)) as ImageProvider
-                        : const AssetImage('lib/theme/rusdi.png'),
+                  GestureDetector(
+                    onTap: _pickImage,
+                    child: CircleAvatar(
+                      radius: 60,
+                      backgroundColor: AppTheme.surfaceWhite,
+                      backgroundImage: ProfileService.getImageProvider(_imagePath),
+                    ),
                   ),
                   Positioned(
                     bottom: 0,
@@ -97,7 +115,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 12),
+            Center(
+              child: OutlinedButton.icon(
+                onPressed: _pickImage,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.primaryBrown,
+                  side: const BorderSide(color: AppTheme.primaryBrown),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                ),
+                icon: const Icon(CupertinoIcons.sparkles, size: 16),
+                label: const Text("Ganti Karakter Avatar", style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(height: 36),
             TextField(
               controller: _nameController,
               decoration: InputDecoration(
@@ -128,7 +159,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 child: const Text("Save Changes", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
               ),
-            )
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const FeedbackScreen()),
+                  );
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.teal,
+                  side: const BorderSide(color: Colors.teal),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                icon: const Icon(CupertinoIcons.chat_bubble_2_fill, size: 18),
+                label: const Text("Beri Masukan / Laporkan Bug", style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  AppUpdateService.checkForUpdate(context: context, isManual: true);
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.purple,
+                  side: BorderSide(color: Colors.purple.shade300),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                icon: const Icon(CupertinoIcons.arrow_clockwise_circle_fill, size: 18),
+                label: const Text("Periksa Pembaruan Sistem", style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Coffee Labs v1.0.0\nPowered by Rust Axum & Shorebird Engine',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 11, color: AppTheme.textMuted, height: 1.4),
+            ),
           ],
         ),
       ),

@@ -37,9 +37,17 @@ class _TasteMatchScreenState extends State<TasteMatchScreen> {
     });
   }
 
-  void _swipe(bool like) {
+  void _swipe(bool like) async {
     if (_index >= _deck.length) return;
-    if (like) _liked.add(_deck[_index]);
+    final current = _deck[_index];
+    if (like) {
+      _liked.add(current);
+      final id = current['id'] as int?;
+      if (id != null && !(await ApiService.isFavorite(id))) {
+        await ApiService.toggleFavorite(id);
+      }
+    }
+    if (!mounted) return;
     setState(() => _index++);
   }
 
@@ -138,9 +146,21 @@ class _TasteMatchScreenState extends State<TasteMatchScreen> {
     final imageUrl = (recipe['coverImageUrl'] ?? recipe['authorImageUrl'])?.toString();
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 280),
-      child: Container(
+      child: Dismissible(
         key: ValueKey(recipe['id']),
-        width: double.infinity,
+        direction: DismissDirection.horizontal,
+        onDismissed: (direction) {
+          _swipe(direction == DismissDirection.startToEnd);
+        },
+        child: GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => RecipeDetailScreen(recipeData: recipe)),
+            );
+          },
+          child: Container(
+            width: double.infinity,
         decoration: BoxDecoration(
           color: AppTheme.surfaceWhite,
           borderRadius: BorderRadius.circular(28),
@@ -157,17 +177,11 @@ class _TasteMatchScreenState extends State<TasteMatchScreen> {
           children: [
             Expanded(
               flex: 3,
-              child: imageUrl != null && imageUrl.startsWith('assets/')
-                  ? Image.asset(imageUrl, width: double.infinity, fit: BoxFit.cover)
-                  : Image.network(
-                      imageUrl ?? '',
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Image.asset(
-                        'assets/images/avatars/generic_fallback.jpg',
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+              child: BaristaUtils.buildOfflineImage(
+                imageUrl,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
             ),
             Expanded(
               flex: 2,
@@ -213,6 +227,8 @@ class _TasteMatchScreenState extends State<TasteMatchScreen> {
               ),
             ),
           ],
+        ),
+      ),
         ),
       ),
     );

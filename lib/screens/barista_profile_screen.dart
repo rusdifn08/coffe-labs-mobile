@@ -12,12 +12,14 @@ class BaristaProfileScreen extends StatefulWidget {
   final String rawAuthor;
   final String? imageUrl;
   final String? coverImageUrl;
+  final String? heroTag;
 
   const BaristaProfileScreen({
     super.key,
     required this.rawAuthor,
     this.imageUrl,
     this.coverImageUrl,
+    this.heroTag,
   });
 
   @override
@@ -63,18 +65,10 @@ class _BaristaProfileScreenState extends State<BaristaProfileScreen> {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  coverImageUrl != null && coverImageUrl.startsWith('assets/')
-                      ? Image.asset(coverImageUrl, fit: BoxFit.cover)
-                      : coverImageUrl != null
-                          ? Image.network(coverImageUrl, fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Image.asset(
-                                'assets/images/avatars/generic_fallback.jpg',
-                                fit: BoxFit.cover,
-                              ))
-                          : Image.asset(
-                              'assets/images/avatars/generic_fallback.jpg',
-                              fit: BoxFit.cover,
-                            ),
+                  BaristaUtils.buildOfflineImage(
+                    coverImageUrl,
+                    fit: BoxFit.cover,
+                  ),
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -94,9 +88,10 @@ class _BaristaProfileScreenState extends State<BaristaProfileScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Hero(
-                          tag: 'barista_${_profile.slug}',
-                          child: BaristaAvatar(imageUrl: imageUrl, radius: 36),
+                        BaristaAvatar(
+                          imageUrl: imageUrl,
+                          radius: 36,
+                          heroTag: widget.heroTag ?? 'barista_${_profile.slug}',
                         ),
                         const SizedBox(height: 12),
                         Text(
@@ -269,7 +264,6 @@ class _BaristaProfileScreenState extends State<BaristaProfileScreen> {
                 IconButton(
                   icon: const Icon(CupertinoIcons.play_circle_fill, color: AppTheme.primaryBrown),
                   onPressed: () {
-                    ApiService.recordBrew(Map<String, dynamic>.from(recipe as Map));
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => BrewTimerScreen(recipeData: recipe)),

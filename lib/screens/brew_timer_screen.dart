@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/audio_service.dart';
 import '../services/api_service.dart';
+import '../services/trial_service.dart';
 import 'brew_journal_screen.dart';
 
 class BrewTimerScreen extends StatefulWidget {
@@ -19,23 +20,56 @@ class BrewTimerScreen extends StatefulWidget {
 class _BrewTimerScreenState extends State<BrewTimerScreen> {
   Timer? _timer;
   Timer? _prepTimer;
-  
+
   int _elapsedSeconds = 0;
   int _prepSeconds = 5;
-  
+
   bool _isRunning = false;
   bool _isPreparing = false;
-  
+
+  late Map<String, dynamic> _recipe;
   late String title;
   late int totalSeconds;
-  late List<dynamic> steps;
+  late int iceWeightGrams;
+  late int totalWaterGrams;
+  late int waterTempCelsius;
+  late List<Map<String, dynamic>> steps;
+
+  static int _stepDuration(Map<String, dynamic> step) {
+    final val = step['durationSeconds'] ?? step['timeSeconds'] ?? 30;
+    return val is int ? val : (val as num).toInt();
+  }
+
+  static int _stepWater(Map<String, dynamic> step) {
+    final val = step['waterAddedGrams'] ?? step['waterGrams'] ?? 0;
+    return val is int ? val : (val as num).toInt();
+  }
 
   @override
   void initState() {
     super.initState();
-    title = widget.recipeData['title'] ?? 'Brew Timer';
-    totalSeconds = widget.recipeData['totalTimeSeconds'] ?? 0;
-    steps = widget.recipeData['steps'] ?? [];
+    _recipe = widget.recipeData is Map
+        ? ApiService.sanitizeRecipe(widget.recipeData as Map)
+        : ApiService.sanitizeRecipe({});
+    title = _recipe['title'] as String;
+    iceWeightGrams = _recipe['iceWeightGrams'] as int;
+    totalWaterGrams = _recipe['totalWaterWeightGrams'] as int;
+    waterTempCelsius = _recipe['waterTempCelsius'] as int;
+    steps = (_recipe['steps'] as List)
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
+
+    _recomputeTotalSeconds();
+    ApiService.recordBrew(_recipe);
+    TrialService.recordTrialBrew();
+  }
+
+  void _recomputeTotalSeconds() {
+    int computedTotal = 0;
+    for (final s in steps) {
+      computedTotal += _stepDuration(s);
+    }
+    totalSeconds = computedTotal > 0 ? computedTotal : (_recipe['totalTimeSeconds'] as int);
   }
 
   @override
@@ -47,23 +81,24 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
   }
 
   void _startMainTimer() {
+    _prepTimer?.cancel();
     setState(() {
       _isPreparing = false;
       _isRunning = true;
     });
-    
+
     AudioService.startBgm();
-    
+
+    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_elapsedSeconds < totalSeconds) {
         setState(() => _elapsedSeconds++);
-        
-        // Check if a step is ending soon or just finished
+
         int accumulated = 0;
-        for (var step in steps) {
-          accumulated += (step['durationSeconds'] as int? ?? 0);
+        for (final step in steps) {
+          accumulated += _stepDuration(step);
           if (accumulated > _elapsedSeconds) {
-            int left = accumulated - _elapsedSeconds;
+            final int left = accumulated - _elapsedSeconds;
             if (left <= 5 && left > 0) {
               AudioService.playTick();
             }
@@ -72,7 +107,6 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
             AudioService.playTransition();
           }
         }
-        
       } else {
         _timer?.cancel();
         setState(() => _isRunning = false);
@@ -86,10 +120,10 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
   bool _isEndingSoon() {
     if (_isPreparing) return false;
     int accumulated = 0;
-    for (var step in steps) {
-      accumulated += (step['durationSeconds'] as int? ?? 0);
+    for (final step in steps) {
+      accumulated += _stepDuration(step);
       if (accumulated > _elapsedSeconds) {
-        int left = accumulated - _elapsedSeconds;
+        final int left = accumulated - _elapsedSeconds;
         return left <= 5 && left > 0;
       }
     }
@@ -98,7 +132,6 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
 
   void _toggleTimer() {
     if (_isRunning || _isPreparing) {
-      // Pause
       _timer?.cancel();
       _prepTimer?.cancel();
       AudioService.stopBgm();
@@ -107,9 +140,10 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
         _isPreparing = false;
       });
     } else {
-      // Start or Resume
+      if (_elapsedSeconds >= totalSeconds) {
+        _resetTimer();
+      }
       if (_elapsedSeconds == 0 && _prepSeconds > 0) {
-        // Start Prep
         setState(() => _isPreparing = true);
         _prepTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
           if (_prepSeconds > 1) {
@@ -122,7 +156,6 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
           }
         });
       } else {
-        // Resume directly
         _startMainTimer();
       }
     }
@@ -131,6 +164,7 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
   void _resetTimer() {
     _timer?.cancel();
     _prepTimer?.cancel();
+    AudioService.stopBgm();
     setState(() {
       _elapsedSeconds = 0;
       _prepSeconds = 5;
@@ -139,63 +173,243 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
     });
   }
 
-  void _promptJournal() {
-    if (!mounted) return;
-    showDialog(
+  void _jumpToStep(int targetIndex) {
+    if (steps.isEmpty) return;
+    final clamped = targetIndex.clamp(0, steps.length - 1);
+    int startSec = 0;
+    for (int i = 0; i < clamped; i++) {
+      startSec += _stepDuration(steps[i]);
+    }
+    setState(() {
+      if (_isPreparing) {
+        _prepTimer?.cancel();
+        _isPreparing = false;
+      }
+      _elapsedSeconds = startSec;
+    });
+  }
+
+  void _add10SecondsToActiveStep() {
+    if (steps.isEmpty) return;
+    final idx = _getActiveStepIndex();
+    final curDur = _stepDuration(steps[idx]);
+    setState(() {
+      steps[idx]['durationSeconds'] = curDur + 10;
+      steps[idx]['timeSeconds'] = curDur + 10;
+      _recomputeTotalSeconds();
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Ditambahkan +10 detik pada Tahap ${idx + 1}'),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
+  void _showDialInDoctorSheet() {
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Brew selesai!'),
-        content: const Text('Mau catat hasil rasa di Jurnal Brew?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Nanti')),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final rating = 4.0;
-              await ApiService.addJournalEntry({
-                'recipeId': widget.recipeData['id'],
-                'recipeTitle': widget.recipeData['title'],
-                'author': widget.recipeData['author'],
-                'authorAvatarUrl': widget.recipeData['authorAvatarUrl'] ?? widget.recipeData['authorImageUrl'],
-                'authorImageUrl': widget.recipeData['coverImageUrl'] ?? widget.recipeData['authorImageUrl'],
-                'grindNote': widget.recipeData['grindSize']?.toString() ?? '',
-                'rating': rating,
-                'notes': 'Brew selesai via timer.',
-              });
-              if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Tersimpan di Jurnal. Edit detail kapan saja.'),
-                  action: SnackBarAction(
-                    label: 'Buka',
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const BrewJournalScreen()),
-                      );
-                    },
-                  ),
+      backgroundColor: AppTheme.bgCream,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Brew Doctor (Panduan Koreksi Rasa)',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.textDark),
                 ),
-              );
-            },
-            child: const Text('Catat'),
+                IconButton(
+                  icon: const Icon(CupertinoIcons.xmark_circle_fill, color: AppTheme.textMuted),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _doctorTipCard(
+              icon: CupertinoIcons.bolt_fill,
+              color: Colors.orange,
+              title: 'Terlalu Asam / Kecut / Tipis (Under-Extracted)',
+              fix: '• Haluskan gilingan 1–2 klik\n• Naikkan suhu air +2°C\n• Tuang sedikit lebih lambat atau tambah waktu bloom.',
+            ),
+            _doctorTipCard(
+              icon: CupertinoIcons.flame_fill,
+              color: Colors.redAccent,
+              title: 'Terlalu Pahit / Sepat / Kering (Over-Extracted)',
+              fix: '• Kasarkan gilingan 1–2 klik\n• Turunkan suhu air -2°C\n• Kurangi goyangan (swirl) dan tuang lebih lembut di tengah.',
+            ),
+            _doctorTipCard(
+              icon: CupertinoIcons.drop,
+              color: Colors.blueAccent,
+              title: 'Kurang Body / Terlalu Encer (Weak)',
+              fix: '• Gunakan rasio lebih pendek (misal 1:14 atau 1:15)\n• Tambahkan dosis kopi +1g hingga +2g.',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _doctorTipCard({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String fix,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceWhite,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 16),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(title, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppTheme.textDark)),
+              ),
+            ],
           ),
+          const SizedBox(height: 6),
+          Text(fix, style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted, height: 1.4)),
         ],
       ),
     );
   }
 
-  
+  void _promptJournal() {
+    if (!mounted) return;
+    double rating = 4.5;
+    String tasteDiagnosis = 'Manis & Seimbang (Sweet Spot)';
+    final notesCtrl = TextEditingController(text: _recipe['tastingNotes']?.toString() ?? 'Brew selesai via timer.');
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Brew Selesai! ☕'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Bagaimana karakter ekstraksi seduhan ini?'),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    'Asam / Tipis (Under)',
+                    'Manis & Seimbang (Sweet Spot)',
+                    'Pahit / Sepat (Over)',
+                  ].map((label) {
+                    final selected = tasteDiagnosis == label;
+                    return ChoiceChip(
+                      label: Text(label, style: TextStyle(fontSize: 11, color: selected ? Colors.white : AppTheme.textDark)),
+                      selected: selected,
+                      selectedColor: AppTheme.primaryBrown,
+                      visualDensity: VisualDensity.compact,
+                      onSelected: (_) => setDialogState(() => tasteDiagnosis = label),
+                    );
+                  }).toList(),
+                ),
+                if (tasteDiagnosis.contains('Under')) ...[
+                  const SizedBox(height: 8),
+                  const Text(
+                    '💡 Saran BrewBerikutnya: Haluskan gilingan 1-2 klik atau naikkan suhu +2°C.',
+                    style: TextStyle(fontSize: 11.5, color: Colors.orange, fontWeight: FontWeight.w600),
+                  ),
+                ] else if (tasteDiagnosis.contains('Over')) ...[
+                  const SizedBox(height: 8),
+                  const Text(
+                    '💡 Saran Brew Berikutnya: Kasarkan gilingan 1-2 klik atau turunkan suhu -2°C.',
+                    style: TextStyle(fontSize: 11.5, color: Colors.redAccent, fontWeight: FontWeight.w600),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                Text('Rating: ${rating.toStringAsFixed(1)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                Slider(
+                  value: rating,
+                  min: 1,
+                  max: 5,
+                  divisions: 8,
+                  activeColor: AppTheme.accentAmber,
+                  onChanged: (v) => setDialogState(() => rating = v),
+                ),
+                TextField(
+                  controller: notesCtrl,
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    labelText: 'Catatan rasa',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Nanti')),
+            TextButton(
+              onPressed: () async {
+                final notesText = notesCtrl.text.trim();
+                Navigator.pop(ctx);
+                await ApiService.addJournalEntry({
+                  'recipeId': _recipe['id'],
+                  'recipeTitle': _recipe['title'],
+                  'author': _recipe['author'],
+                  'authorAvatarUrl': _recipe['authorAvatarUrl'],
+                  'authorImageUrl': _recipe['coverImageUrl'],
+                  'grindNote': '${_recipe['grindSize'] ?? ''} • $tasteDiagnosis',
+                  'rating': rating,
+                  'notes': notesText.isEmpty ? 'Brew selesai ($tasteDiagnosis).' : '[$tasteDiagnosis] $notesText',
+                });
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Tersimpan di Jurnal Brew.'),
+                    action: SnackBarAction(
+                      label: 'Buka',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const BrewJournalScreen()),
+                        );
+                      },
+                    ),
+                  ),
+                );
+              },
+              child: const Text('Simpan'),
+            ),
+          ],
+        ),
+      ),
+    ).whenComplete(() => notesCtrl.dispose());
+  }
+
   String _formatTime(int seconds) {
-    int m = seconds ~/ 60;
-    int s = seconds % 60;
+    final m = seconds ~/ 60;
+    final s = seconds % 60;
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   int _getActiveStepIndex() {
     int accumulated = 0;
     for (int i = 0; i < steps.length; i++) {
-      accumulated += (steps[i]['durationSeconds'] as int? ?? 0);
+      accumulated += _stepDuration(steps[i]);
       if (_elapsedSeconds < accumulated || (_elapsedSeconds == accumulated && _elapsedSeconds == totalSeconds)) {
         return i;
       }
@@ -203,25 +417,99 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
     return steps.length - 1;
   }
 
+  int _getStepStartSeconds(int stepIdx) {
+    int sum = 0;
+    for (int i = 0; i < stepIdx && i < steps.length; i++) {
+      sum += _stepDuration(steps[i]);
+    }
+    return sum;
+  }
+
+  int _getStepRemainingSeconds(int activeIdx) {
+    if (activeIdx < 0 || activeIdx >= steps.length) return 0;
+    int accumulated = 0;
+    for (int i = 0; i <= activeIdx; i++) {
+      accumulated += _stepDuration(steps[i]);
+    }
+    return (accumulated - _elapsedSeconds).clamp(0, 3600);
+  }
+
+  int _getCumulativeWaterUpTo(int stepIdx) {
+    int sum = 0;
+    for (int i = 0; i <= stepIdx && i < steps.length; i++) {
+      sum += _stepWater(steps[i]);
+    }
+    return sum;
+  }
+
   @override
   Widget build(BuildContext context) {
-    int activeIndex = _elapsedSeconds > 0 ? _getActiveStepIndex() : -1;
-    if (_elapsedSeconds == totalSeconds) activeIndex = steps.length - 1;
+    int activeIndex = (_elapsedSeconds > 0 || _isRunning) ? _getActiveStepIndex() : 0;
+    if (_elapsedSeconds >= totalSeconds && steps.isNotEmpty) activeIndex = steps.length - 1;
+
+    final activeStep = steps.isNotEmpty ? steps[activeIndex] : null;
+    final activeStepWater = activeStep != null ? _stepWater(activeStep) : 0;
+    final activeStepDur = activeStep != null ? _stepDuration(activeStep).clamp(1, 3600) : 30;
+    final prevTargetWater = activeIndex > 0 ? _getCumulativeWaterUpTo(activeIndex - 1) : 0;
+    final activeTargetWater = activeStep != null ? _getCumulativeWaterUpTo(activeIndex) : 0;
+    final activeStepRemaining = _getStepRemainingSeconds(activeIndex);
+    final activeInstruction = activeStep?['instruction']?.toString() ?? '';
+
+    // Hitung target timbangan live detik demi detik saat menuang
+    final stepStartSec = _getStepStartSeconds(activeIndex);
+    final elapsedInStep = (_elapsedSeconds - stepStartSec).clamp(0, activeStepDur);
+    final stepProgress = (elapsedInStep / activeStepDur).clamp(0.0, 1.0);
+    final liveScaleTarget = (prevTargetWater + (activeStepWater * stepProgress)).round();
+    final flowRate = activeStepWater > 0 ? (activeStepWater / activeStepDur).toStringAsFixed(1) : '0.0';
+
+    int runningWater = 0;
+    int runningTime = 0;
 
     return Scaffold(
       backgroundColor: AppTheme.bgCream,
       appBar: AppBar(
-        title: Text(title, style: const TextStyle(fontSize: 16)),
+        title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
         centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: 'Brew Doctor (Saran Koreksi Rasa)',
+            icon: const Icon(CupertinoIcons.lightbulb, size: 20),
+            onPressed: _showDialInDoctorSheet,
+          ),
+        ],
       ),
       body: Column(
         children: [
-          const SizedBox(height: 20),
-          // TIMER DISPLAY (FIXED)
+          if (iceWeightGrams > 0)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.fromLTRB(20, 4, 20, 6),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.lightBlue.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(CupertinoIcons.snow, size: 16, color: Colors.blueAccent),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Japanese Iced: Siapkan ${iceWeightGrams}g Es di Server + ${totalWaterGrams}g Air Panas ($waterTempCelsius°C)',
+                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          const SizedBox(height: 6),
+          // CIRCULAR TIMER DISPLAY
           Center(
             child: SizedBox(
-              width: 280,
-              height: 280,
+              width: 215,
+              height: 215,
               child: CustomPaint(
                 painter: SegmentedTimerPainter(
                   steps: steps,
@@ -232,150 +520,332 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      if (_isPreparing)
+                      if (_isPreparing) ...[
                         const Text(
-                          "Prep",
-                          style: TextStyle(color: AppTheme.textMuted, fontSize: 16, fontWeight: FontWeight.bold),
+                          'SIAP SEDUH',
+                          style: TextStyle(color: AppTheme.textMuted, fontSize: 12, fontWeight: FontWeight.bold),
                         ),
-                      if (_elapsedSeconds > 0 && _elapsedSeconds >= totalSeconds) ...[
+                        Text(
+                          '$_prepSeconds',
+                          style: const TextStyle(
+                            fontSize: 64,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.accentAmber,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _startMainTimer,
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                          ),
+                          child: const Text(
+                            'Lewati Hitung Mundur →',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryBrown),
+                          ),
+                        ),
+                      ] else if (_elapsedSeconds > 0 && _elapsedSeconds >= totalSeconds) ...[
                         const Text(
-                          "Enjoy your",
-                          style: TextStyle(color: AppTheme.primaryBrown, fontSize: 24, fontWeight: FontWeight.bold),
+                          'Enjoy your',
+                          style: TextStyle(color: AppTheme.primaryBrown, fontSize: 20, fontWeight: FontWeight.bold),
                         ),
                         const Text(
-                          "coffee!",
-                          style: TextStyle(color: AppTheme.primaryBrown, fontSize: 32, fontWeight: FontWeight.bold),
+                          'coffee!',
+                          style: TextStyle(color: AppTheme.primaryBrown, fontSize: 28, fontWeight: FontWeight.bold),
                         ),
                       ] else ...[
                         Text(
-                          _isPreparing ? '$_prepSeconds' : _formatTime(_elapsedSeconds),
+                          _formatTime(_elapsedSeconds),
                           style: TextStyle(
-                            fontSize: _isPreparing ? 80 : 64, 
-                            fontWeight: FontWeight.bold, 
-                            color: _isPreparing ? AppTheme.accentAmber : (_isEndingSoon() ? Colors.red : AppTheme.primaryBrown)
+                            fontSize: 48,
+                            fontWeight: FontWeight.bold,
+                            color: _isEndingSoon() ? Colors.red : AppTheme.primaryBrown,
                           ),
                         ),
-                        if (!_isPreparing)
-                          Text(
-                            "of ${_formatTime(totalSeconds)}",
-                            style: const TextStyle(color: AppTheme.textMuted, fontSize: 16),
-                          )
-                      ]
+                        Text(
+                          'Target ${_formatTime(totalSeconds)} · ${activeTargetWater}g',
+                          style: const TextStyle(color: AppTheme.textMuted, fontSize: 12.5, fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryBrown.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            activeStepWater > 0
+                                ? 'Timbangan: ~${liveScaleTarget}g ($flowRate g/dtk)'
+                                : 'Timbangan: ${activeTargetWater}g (Tahan)',
+                            style: const TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryBrown,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
+
+          // LIVE ACTIVE STEP INSTRUCTION BANNER
+          if (activeStep != null)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryBrown,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryBrown.withValues(alpha: 0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          activeStep['title']?.toString() ?? 'Step ${activeIndex + 1}',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentAmber,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          activeStepWater > 0
+                              ? '+${activeStepWater}g → Target ${activeTargetWater}g (${activeStepRemaining}s)'
+                              : 'Tahan / Imersi (${activeStepRemaining}s)',
+                          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (activeInstruction.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      activeInstruction,
+                      style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.35),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+          const SizedBox(height: 10),
           // SCROLLABLE STEPS LIST
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
               itemCount: steps.length,
               itemBuilder: (context, index) {
-                var step = steps[index];
-                bool isActive = index == activeIndex && !_isPreparing;
-                bool isDone = _elapsedSeconds > 0 && index < activeIndex;
-                
-                Color stepColor = _getColorForStep(index);
-                
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: isActive ? stepColor.withValues(alpha: 0.1) : AppTheme.surfaceWhite,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isActive ? stepColor : AppTheme.primaryBrown.withValues(alpha: 0.1),
-                      width: isActive ? 2 : 1
-                    ),
-                    boxShadow: isActive ? [
-                      BoxShadow(color: stepColor.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, 4))
-                    ] : [],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: isDone ? stepColor : (isActive ? stepColor : stepColor.withValues(alpha: 0.2)),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: isDone 
-                            ? const Icon(CupertinoIcons.check_mark, color: Colors.white, size: 20)
-                            : Text("${index + 1}", style: TextStyle(color: isActive ? Colors.white : stepColor, fontWeight: FontWeight.bold)),
-                        ),
+                final step = steps[index];
+                final int stepWater = _stepWater(step);
+                final int stepDur = _stepDuration(step);
+                final int startSec = runningTime;
+                runningTime += stepDur;
+                final int endSec = runningTime;
+                runningWater += stepWater;
+                final int cumulativeTarget = runningWater;
+
+                final bool isActive = index == activeIndex && !_isPreparing && (_isRunning || _elapsedSeconds > 0);
+                final bool isDone = _elapsedSeconds > 0 && (index < activeIndex || _elapsedSeconds >= totalSeconds);
+                final Color stepColor = _getColorForStep(index);
+                final String instruction = step['instruction']?.toString() ?? '';
+
+                return GestureDetector(
+                  onTap: () => _jumpToStep(index),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: isActive ? stepColor.withValues(alpha: 0.1) : AppTheme.surfaceWhite,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isActive ? stepColor : AppTheme.primaryBrown.withValues(alpha: 0.1),
+                        width: isActive ? 2 : 1,
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Text(
-                              step['title'] ?? 'Step', 
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: isActive ? 16 : 14, color: isActive ? AppTheme.textDark : AppTheme.textMuted)
+                            Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: isDone ? stepColor : (isActive ? stepColor : stepColor.withValues(alpha: 0.2)),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: isDone
+                                    ? const Icon(CupertinoIcons.check_mark, color: Colors.white, size: 18)
+                                    : Text(
+                                        '${index + 1}',
+                                        style: TextStyle(
+                                          color: isActive ? Colors.white : stepColor,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                              ),
                             ),
-                            const SizedBox(height: 4),
-                            Row(
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    step['title']?.toString() ?? 'Step ${index + 1}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: isActive ? 15 : 13.5,
+                                      color: isActive ? AppTheme.textDark : AppTheme.textMuted,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        stepWater > 0 ? CupertinoIcons.drop_fill : CupertinoIcons.timer,
+                                        size: 12,
+                                        color: stepWater > 0 ? Colors.blueAccent : AppTheme.accentAmber,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Flexible(
+                                        child: Text(
+                                          stepWater > 0
+                                              ? '+${stepWater}g Air (Target: ${cumulativeTarget}g)'
+                                              : 'Imersi / Drawdown (Total: ${cumulativeTarget}g)',
+                                          style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                const Icon(CupertinoIcons.drop_fill, size: 12, color: Colors.blueAccent),
-                                const SizedBox(width: 4),
-                                Text("${step['waterAddedGrams']}g Water", style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                                Text(
+                                  _formatTime(stepDur),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: isActive ? AppTheme.textDark : AppTheme.textMuted,
+                                  ),
+                                ),
+                                Text(
+                                  '${_formatTime(startSec)}-${_formatTime(endSec)}',
+                                  style: const TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                                ),
                               ],
                             ),
                           ],
                         ),
-                      ),
-                      Text(
-                        _formatTime(step['durationSeconds'] ?? 0), 
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isActive ? AppTheme.textDark : AppTheme.textMuted)
-                      ),
-                    ],
+                        if (instruction.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            instruction,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isActive ? AppTheme.textDark : AppTheme.textMuted,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 );
               },
             ),
           ),
-          // BOTTOM CONTROL PANEL
+          // BOTTOM CONTROL PANEL WITH QUICK STEP CONTROLS
           Container(
-            padding: const EdgeInsets.only(top: 16, bottom: 32, left: 24, right: 24),
+            padding: const EdgeInsets.only(top: 10, bottom: 20, left: 20, right: 20),
             decoration: BoxDecoration(
               color: AppTheme.surfaceWhite,
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, -10))
+                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, -10)),
               ],
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(30))
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                FloatingActionButton(
+                IconButton(
+                  tooltip: 'Tahap Sebelumnya',
+                  onPressed: activeIndex > 0 ? () => _jumpToStep(activeIndex - 1) : null,
+                  icon: const Icon(CupertinoIcons.backward_end_fill, color: AppTheme.primaryBrown),
+                ),
+                FloatingActionButton.small(
                   heroTag: 'reset',
+                  tooltip: 'Reset Timer',
                   backgroundColor: AppTheme.bgCream,
                   elevation: 0,
                   onPressed: _resetTimer,
-                  child: const Icon(CupertinoIcons.refresh, color: AppTheme.primaryBrown),
+                  child: const Icon(CupertinoIcons.refresh, color: AppTheme.primaryBrown, size: 18),
                 ),
-                const SizedBox(width: 32),
                 SizedBox(
-                  width: 80,
-                  height: 80,
+                  width: 68,
+                  height: 68,
                   child: FloatingActionButton(
                     heroTag: 'playpause',
                     backgroundColor: AppTheme.primaryBrown,
-                    elevation: 5,
+                    elevation: 4,
                     onPressed: _toggleTimer,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                    child: Icon(_isRunning || _isPreparing ? CupertinoIcons.pause_solid : CupertinoIcons.play_arrow_solid, color: Colors.white, size: 40),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                    child: Icon(
+                      _isRunning || _isPreparing ? CupertinoIcons.pause_solid : CupertinoIcons.play_arrow_solid,
+                      color: Colors.white,
+                      size: 34,
+                    ),
                   ),
-                )
+                ),
+                TextButton(
+                  onPressed: _add10SecondsToActiveStep,
+                  style: TextButton.styleFrom(
+                    backgroundColor: AppTheme.bgCream,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text(
+                    '+10d',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.primaryBrown),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Tahap Berikutnya',
+                  onPressed: activeIndex < steps.length - 1 ? () => _jumpToStep(activeIndex + 1) : null,
+                  icon: const Icon(CupertinoIcons.forward_end_fill, color: AppTheme.primaryBrown),
+                ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
@@ -383,7 +853,7 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
 }
 
 Color _getColorForStep(int index) {
-  List<Color> colors = [
+  const List<Color> colors = [
     Colors.blueAccent,
     Colors.green,
     Colors.orangeAccent,
@@ -404,11 +874,13 @@ class SegmentedTimerPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    double strokeWidth = 20.0;
-    Rect rect = Rect.fromCircle(center: Offset(size.width / 2, size.height / 2), radius: size.width / 2 - strokeWidth / 2);
-    
-    // Draw background track
-    Paint trackPaint = Paint()
+    const double strokeWidth = 18.0;
+    final Rect rect = Rect.fromCircle(
+      center: Offset(size.width / 2, size.height / 2),
+      radius: size.width / 2 - strokeWidth / 2,
+    );
+
+    final Paint trackPaint = Paint()
       ..color = Colors.grey.withValues(alpha: 0.2)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
@@ -416,37 +888,33 @@ class SegmentedTimerPainter extends CustomPainter {
 
     if (totalSeconds <= 0) return;
 
-    // Draw static colored segments and active filled segments
-    double startAngle = -pi / 2; // start from top
+    double startAngle = -pi / 2;
     double currentElapsed = elapsedSeconds.toDouble();
 
     for (int i = 0; i < steps.length; i++) {
-      double stepSecs = (steps[i]['durationSeconds'] ?? 0).toDouble();
-      double sweepAngle = (stepSecs / totalSeconds) * 2 * pi;
-      
-      Color stepColor = _getColorForStep(i);
-      
-      // Draw background (faint) segment
-      Paint segmentPaint = Paint()
+      final double stepSecs = (steps[i]['durationSeconds'] ?? steps[i]['timeSeconds'] ?? 0).toDouble();
+      final double sweepAngle = (stepSecs / totalSeconds) * 2 * pi;
+
+      final Color stepColor = _getColorForStep(i);
+
+      final Paint segmentPaint = Paint()
         ..color = stepColor.withValues(alpha: 0.2)
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.butt
         ..strokeWidth = strokeWidth;
-      
-      // Leave a tiny gap between segments
-      canvas.drawArc(rect, startAngle, sweepAngle - 0.05, false, segmentPaint);
-      
-      // Draw filled (bright) segment if elapsed reaches into this step
+
+      canvas.drawArc(rect, startAngle, max(0.01, sweepAngle - 0.05), false, segmentPaint);
+
       if (currentElapsed > 0) {
-        double filledSecs = min(currentElapsed, stepSecs);
-        double filledSweepAngle = (filledSecs / totalSeconds) * 2 * pi;
-        
-        Paint filledPaint = Paint()
+        final double filledSecs = min(currentElapsed, stepSecs);
+        final double filledSweepAngle = (filledSecs / totalSeconds) * 2 * pi;
+
+        final Paint filledPaint = Paint()
           ..color = stepColor
           ..style = PaintingStyle.stroke
           ..strokeCap = StrokeCap.round
-          ..strokeWidth = strokeWidth + 2; // slightly thicker for pop effect
-          
+          ..strokeWidth = strokeWidth + 2;
+
         canvas.drawArc(rect, startAngle, filledSweepAngle, false, filledPaint);
         currentElapsed -= filledSecs;
       }

@@ -97,7 +97,10 @@ class _BasecampScreenState extends State<BasecampScreen> {
           }
         );
       },
-    );
+    ).whenComplete(() {
+      nameCtrl.dispose();
+      descCtrl.dispose();
+    });
   }
 
   void _confirmDelete(int id, String name) {
@@ -257,6 +260,7 @@ class _BasecampScreenState extends State<BasecampScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'basecamp_create_fab',
         backgroundColor: AppTheme.primaryBrown,
         onPressed: _showCreateDialog,
         child: const Icon(CupertinoIcons.add, color: Colors.white),

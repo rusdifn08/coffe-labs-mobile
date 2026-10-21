@@ -41,6 +41,9 @@ dependencies:
   image_picker: ^1.2.3
   audioplayers: ^6.7.1
   flag: ^7.0.2
+  shorebird_code_push: ^2.0.7
+  package_info_plus: ^10.2.2
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:
@@ -66,11 +69,12 @@ flutter:
   uses-material-design: true
 
   assets:
-    - lib/theme/rusdi.png
     - assets/audio/
     - assets/images/avatars/
     - assets/images/avatars/portraits/
     - assets/images/avatars/covers/
+    - assets/images/characters/
+    - assets/images/grinders/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

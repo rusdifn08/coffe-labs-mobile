@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
-import '../services/profile_service.dart';
+import '../services/auth_service.dart';
+import '../services/trial_service.dart';
 import 'main_layout.dart';
 import 'onboarding_screen.dart';
 
@@ -28,14 +29,17 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   Future<void> _goNext() async {
-    final isRegistered = await ProfileService.isUserRegistered();
+    // Warm up backend di Render secara senyap di background
+    AuthService.warmUpBackend();
+    final isAuthed = await AuthService.isLoggedIn();
+    final isTrial = await TrialService.isTrialMode();
     await Future.delayed(const Duration(milliseconds: 1400));
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
-            isRegistered ? const MainLayout() : const OnboardingScreen(),
+            (isAuthed || isTrial) ? const MainLayout() : const OnboardingScreen(),
         transitionsBuilder: (context, anim, secondaryAnimation, child) =>
             FadeTransition(opacity: anim, child: child),
         transitionDuration: const Duration(milliseconds: 400),

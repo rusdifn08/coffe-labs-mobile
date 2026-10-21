@@ -6,10 +6,12 @@ class AppTheme {
   static const Color primaryBrown = Color(0xFF6B4423); // Espresso
   static const Color lightBrown = Color(0xFF9A7B4F);   // Latte
   static const Color accentAmber = Color(0xFFECA400);  // Warm Accent
+  static const Color accentGold = Color(0xFFD4AF37);   // Gold Accent
   static const Color bgCream = Color(0xFFF9F6F0);      // Soft Background
   static const Color surfaceWhite = Colors.white;
   static const Color textDark = Color(0xFF332B25);     // Dark Brown/Black text
   static const Color textMuted = Color(0xFF8F857D);    // Muted text
+  static const Color dividerColor = Color(0xFFE8DFD8); // Soft divider
 
   static ThemeData get lightTheme {
     return ThemeData(

@@ -171,7 +171,10 @@ class _BrewJournalScreenState extends State<BrewJournalScreen> {
           },
         );
       },
-    );
+    ).whenComplete(() {
+      noteCtrl.dispose();
+      grindCtrl.dispose();
+    });
   }
 
   @override
@@ -182,6 +185,7 @@ class _BrewJournalScreenState extends State<BrewJournalScreen> {
         centerTitle: true,
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'brew_journal_add_fab',
         onPressed: () => _openAddSheet(),
         backgroundColor: AppTheme.primaryBrown,
         icon: const Icon(CupertinoIcons.pen, color: Colors.white),

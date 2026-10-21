@@ -1,16 +1,21 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'seed_data.dart';
 import '../utils/barista_utils.dart';
 
 class ApiService {
-  static const String _recipesKey = 'coffeehub_recipes_v11';
-  static const String _basecampsKey = 'coffeehub_basecamps_v11';
+  static const String _customRecipesKey = 'coffeehub_custom_recipes_v2';
+  static const String _deletedDefaultIdsKey = 'coffeehub_deleted_default_ids_v1';
+  static const String _legacyRecipesKey = 'coffeehub_recipes_v11';
+  static const String _basecampsKey = 'coffeehub_basecamps_v12';
   static const String _historyKey = 'coffeehub_history_v3';
   static const String _favoritesKey = 'coffeehub_favorites_v1';
   static const String _journalKey = 'coffeehub_brew_journal_v1';
 
-  static List<dynamic>? _recipesCache;
+  static final ValueNotifier<int> changeNotifier = ValueNotifier<int>(0);
+
+  static List<Map<String, dynamic>>? _recipesCache;
   static List<dynamic>? _historyCache;
   static Set<int>? _favoritesCache;
 
@@ -20,71 +25,233 @@ class ApiService {
     _favoritesCache = null;
   }
 
-  // --- RECIPES ---
+  static void _notifyChanged() {
+    changeNotifier.value++;
+  }
+
+  static int _toInt(dynamic value, int fallback) {
+    if (value == null) return fallback;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString().trim()) ?? fallback;
+  }
+
+  static num _toNum(dynamic value, num fallback) {
+    if (value == null) return fallback;
+    if (value is num) return value;
+    return num.tryParse(value.toString().trim()) ?? fallback;
+  }
+
+  static String _nonEmptyString(dynamic value, String fallback) {
+    final s = value?.toString().trim() ?? '';
+    return s.isEmpty ? fallback : s;
+  }
+
+  static String _offlineAssetOrPath(dynamic value) {
+    final s = value?.toString().trim() ?? '';
+    if (s.isEmpty || s.startsWith('http')) {
+      return 'assets/images/avatars/generic_fallback.jpg';
+    }
+    return s;
+  }
+
+  /// Menjamin tidak ada satupun field resep atau step yang bernilai null.
+  static Map<String, dynamic> sanitizeRecipe(Map<dynamic, dynamic> raw, {int fallbackId = 1}) {
+    final id = _toInt(raw['id'], fallbackId);
+    final title = _nonEmptyString(raw['title'], 'Custom Brew Recipe');
+    final author = _nonEmptyString(raw['author'], 'Barista');
+    var category = _nonEmptyString(raw['category'], 'V60');
+    if (category == 'V60 Pour Over') category = 'V60';
+    if (category == 'Japanese Iced') category = 'Japanese';
+
+    final method = _nonEmptyString(raw['method'], category);
+    final beanName = _nonEmptyString(raw['beanName'], 'Specialty Single Origin');
+    final grindSize = _nonEmptyString(raw['grindSize'], 'Medium (22 Klik Comandante)');
+    final waterTempCelsius = _toInt(raw['waterTempCelsius'], 92);
+    final coffeeWeightGrams = _toNum(raw['coffeeWeightGrams'], 15);
+    final iceWeightGrams = _toInt(
+      raw['iceWeightGrams'],
+      category.toLowerCase().contains('iced') ? 90 : 0,
+    );
+
+    final rawSteps = raw['steps'];
+    final List<Map<String, dynamic>> sanitizedSteps = [];
+    int sumDuration = 0;
+    int sumWater = 0;
+
+    if (rawSteps is List && rawSteps.isNotEmpty) {
+      for (int i = 0; i < rawSteps.length; i++) {
+        final s = rawSteps[i];
+        if (s is Map) {
+          final stepTitle = _nonEmptyString(s['title'], 'Step ${i + 1}');
+          final duration = _toInt(s['durationSeconds'] ?? s['timeSeconds'], 30);
+          final waterAdded = _toInt(s['waterAddedGrams'] ?? s['waterGrams'], 0);
+          sumDuration += duration;
+          sumWater += waterAdded;
+
+          String defaultInstruction;
+          if (waterAdded > 0 && i == 0) {
+            defaultInstruction =
+                'Tuang ${waterAdded}g air ($waterTempCelsius°C) secara merata untuk fase blooming & degassing selama ${duration}s.';
+          } else if (waterAdded > 0) {
+            defaultInstruction =
+                'Tuang ${waterAdded}g air secara spiral stabil hingga mencapai total ${sumWater}g pada timbangan dalam ${duration}s.';
+          } else {
+            defaultInstruction =
+                'Tahan fase imersi / biarkan air terekstraksi dan mengalir turun (drawdown) selama ${duration}s.';
+          }
+
+          final instruction = _nonEmptyString(s['instruction'], defaultInstruction);
+
+          sanitizedSteps.add({
+            'stepOrder': i + 1,
+            'title': stepTitle,
+            'durationSeconds': duration,
+            'waterAddedGrams': waterAdded,
+            'timeSeconds': duration,
+            'waterGrams': waterAdded,
+            'cumulativeWaterGrams': sumWater,
+            'instruction': instruction,
+          });
+        }
+      }
+    }
+
+    if (sanitizedSteps.isEmpty) {
+      final fallbackWater = _toInt(raw['totalWaterWeightGrams'], 225);
+      final bloomWater = (fallbackWater * 0.2).round().clamp(30, 60);
+      final mainWater = (fallbackWater - bloomWater).clamp(50, 500);
+      sanitizedSteps.addAll([
+        {
+          'stepOrder': 1,
+          'title': '1. Blooming',
+          'durationSeconds': 35,
+          'waterAddedGrams': bloomWater,
+          'timeSeconds': 35,
+          'waterGrams': bloomWater,
+          'cumulativeWaterGrams': bloomWater,
+          'instruction': 'Tuang ${bloomWater}g air secara merata dan goyangkan dripper lembut.',
+        },
+        {
+          'stepOrder': 2,
+          'title': '2. Main Pour',
+          'durationSeconds': 95,
+          'waterAddedGrams': mainWater,
+          'timeSeconds': 95,
+          'waterGrams': mainWater,
+          'cumulativeWaterGrams': bloomWater + mainWater,
+          'instruction': 'Tuang ${mainWater}g air secara spiral stabil hingga mencapai ${bloomWater + mainWater}g.',
+        },
+      ]);
+      sumDuration = 130;
+      sumWater = bloomWater + mainWater;
+    }
+
+    final rawTotalWater = _toInt(raw['totalWaterWeightGrams'], 0);
+    final totalWaterWeightGrams = rawTotalWater > 0 ? rawTotalWater : (sumWater > 0 ? sumWater : 225);
+
+    final rawTotalTime = _toInt(raw['totalTimeSeconds'], 0);
+    final totalTimeSeconds = rawTotalTime > 0 ? rawTotalTime : (sumDuration > 0 ? sumDuration : 130);
+
+    final coverUrl = _offlineAssetOrPath(raw['coverImageUrl'] ?? raw['authorImageUrl']);
+    final avatarUrl = _offlineAssetOrPath(raw['authorAvatarUrl'] ?? raw['authorImageUrl']);
+
+    return {
+      'id': id,
+      'title': title,
+      'author': author,
+      'coverImageUrl': coverUrl,
+      'authorAvatarUrl': avatarUrl,
+      'authorImageUrl': coverUrl,
+      'beanName': beanName,
+      'variety': _nonEmptyString(raw['variety'] ?? raw['beanVariety'], 'Specialty Arabica'),
+      'process': _nonEmptyString(raw['process'] ?? raw['beanProcess'], ''),
+      'roastLevel': _nonEmptyString(raw['roastLevel'], 'Light-Medium'),
+      'method': method,
+      'category': category,
+      'waterTempCelsius': waterTempCelsius,
+      'grindSize': grindSize,
+      'coffeeWeightGrams': coffeeWeightGrams,
+      'totalWaterWeightGrams': totalWaterWeightGrams,
+      'iceWeightGrams': iceWeightGrams,
+      'waterPpm': _nonEmptyString(raw['waterPpm'], '70-85 ppm'),
+      'tastingNotes': _nonEmptyString(raw['tastingNotes'], 'Balanced Sweetness, Clean Acidity, Aromatic Finish'),
+      'totalTimeSeconds': totalTimeSeconds,
+      'description': _nonEmptyString(
+        raw['description'],
+        'Resep seduh profesional menggunakan $method pada suhu $waterTempCelsius°C dengan gilingan $grindSize.',
+      ),
+      'isCustom': raw['isCustom'] == true,
+      'createdAt': _nonEmptyString(raw['createdAt'], DateTime.now().toIso8601String()),
+      'steps': sanitizedSteps,
+    };
+  }
+
+  // --- RECIPES (100% OFFLINE: DEFAULT DARI SEED_DATA + CUSTOM LOKAL) ---
   static Future<List<dynamic>> getRecipes({bool forceRefresh = false}) async {
     if (!forceRefresh && _recipesCache != null) {
       return List<dynamic>.from(_recipesCache!);
     }
 
     final prefs = await SharedPreferences.getInstance();
-    String? jsonStr = prefs.getString(_recipesKey);
 
-    // Migrasi dari key lama sekali
-    jsonStr ??= prefs.getString('coffeehub_recipes_v10');
-    jsonStr ??= prefs.getString('coffeehub_recipes_v9');
-
-    List<dynamic> recipes;
-    if (jsonStr == null) {
-      final seed = SeedData.getDefaultRecipes();
-      await prefs.setString(_recipesKey, json.encode(seed));
-      recipes = seed;
-    } else {
-      recipes = json.decode(jsonStr) as List<dynamic>;
-      // Pastikan Neo Brew ada + sync foto author dari seed terbaru
-      final seed = SeedData.getDefaultRecipes();
-      final seedById = {for (final r in seed) r['id']: r};
-      bool mutated = false;
-
-      if (!recipes.any((r) => r['id'] == 100) && seedById.containsKey(100)) {
-        recipes.add(seedById[100]);
-        mutated = true;
+    // 1. Migrasi resep custom lama dari key legacy jika belum dimigrasikan
+    String? customJsonStr = prefs.getString(_customRecipesKey);
+    if (customJsonStr == null) {
+      final legacyStr = prefs.getString(_legacyRecipesKey) ??
+          prefs.getString('coffeehub_recipes_v10') ??
+          prefs.getString('coffeehub_recipes_v9');
+      final List<Map<String, dynamic>> migratedCustom = [];
+      if (legacyStr != null) {
+        try {
+          final decoded = json.decode(legacyStr) as List<dynamic>;
+          for (final item in decoded) {
+            if (item is Map && item['isCustom'] == true) {
+              migratedCustom.add(sanitizeRecipe(item, fallbackId: 500 + migratedCustom.length));
+            }
+          }
+        } catch (_) {}
       }
-
-      for (var i = 0; i < recipes.length; i++) {
-        final id = recipes[i]['id'];
-        final seeded = seedById[id];
-        if (seeded == null) continue;
-        final oldCover = recipes[i]['coverImageUrl']?.toString() ??
-            recipes[i]['authorImageUrl']?.toString() ?? '';
-        final newCover = seeded['coverImageUrl']?.toString() ??
-            seeded['authorImageUrl']?.toString() ?? '';
-        if (newCover.isNotEmpty && oldCover != newCover) {
-          recipes[i]['coverImageUrl'] = newCover;
-          recipes[i]['authorImageUrl'] = newCover;
-          mutated = true;
-        }
-        final oldAvatar = recipes[i]['authorAvatarUrl']?.toString() ?? '';
-        final newAvatar = seeded['authorAvatarUrl']?.toString() ?? '';
-        if (newAvatar.isNotEmpty && oldAvatar != newAvatar) {
-          recipes[i]['authorAvatarUrl'] = newAvatar;
-          mutated = true;
-        }
-        if (recipes[i]['author'] != seeded['author']) {
-          recipes[i]['author'] = seeded['author'];
-          mutated = true;
-        }
-      }
-
-      if (mutated) {
-        await prefs.setString(_recipesKey, json.encode(recipes));
-      } else if (prefs.getString(_recipesKey) == null) {
-        await prefs.setString(_recipesKey, json.encode(recipes));
-      }
+      customJsonStr = json.encode(migratedCustom);
+      await prefs.setString(_customRecipesKey, customJsonStr);
     }
 
-    recipes.sort((a, b) {
+    final deletedIdsRaw = prefs.getStringList(_deletedDefaultIdsKey) ?? [];
+    final deletedDefaultIds = deletedIdsRaw.map((e) => int.tryParse(e) ?? -1).toSet();
+
+    // 2. Muat seluruh resep default langsung dari SeedData (selalu terbarui & 100% offline)
+    final defaultSeeds = SeedData.getDefaultRecipes();
+    final List<Map<String, dynamic>> allRecipes = [];
+
+    for (final r in defaultSeeds) {
+      final id = _toInt(r['id'], 0);
+      if (deletedDefaultIds.contains(id)) continue;
+      allRecipes.add(sanitizeRecipe(r, fallbackId: id));
+    }
+
+    // 3. Gabungkan resep custom buatan pengguna di urutan teratas
+    final List<Map<String, dynamic>> customRecipes = [];
+    try {
+      final rawCustomList = json.decode(customJsonStr) as List<dynamic>;
+      for (int i = 0; i < rawCustomList.length; i++) {
+        final item = rawCustomList[i];
+        if (item is Map) {
+          final sanitized = sanitizeRecipe(item, fallbackId: 500 + i);
+          sanitized['isCustom'] = true;
+          customRecipes.add(sanitized);
+        }
+      }
+    } catch (_) {}
+
+    // Urutkan resep default secara rapi (Neo Brew & 50 resep baru + WBrC historis)
+    allRecipes.sort((a, b) {
       final idA = a['id'] as int;
       final idB = b['id'] as int;
+      if (idA == 100) return -1;
+      if (idB == 100) return 1;
+      if (idA > 100 && idB <= 100) return -1;
+      if (idB > 100 && idA <= 100) return 1;
+      if (idA > 100 && idB > 100) return idA.compareTo(idB);
       int score(int id) {
         final group = (id - 1) ~/ 3;
         final rank = (id - 1) % 3;
@@ -93,33 +260,67 @@ class ApiService {
       return score(idA).compareTo(score(idB));
     });
 
-    _recipesCache = recipes;
-    return List<dynamic>.from(recipes);
+    final merged = <Map<String, dynamic>>[...customRecipes, ...allRecipes];
+    _recipesCache = merged;
+    return List<dynamic>.from(merged);
   }
 
-  static Future<void> createRecipe(Map<String, dynamic> data) async {
+  static Future<Map<String, dynamic>> createRecipe(Map<String, dynamic> data) async {
     final prefs = await SharedPreferences.getInstance();
     final currentRecipes = await getRecipes();
 
-    var newId = 1;
+    var newId = 501;
     for (final r in currentRecipes) {
-      if (r['id'] != null && r['id'] >= newId) newId = r['id'] + 1;
+      final rId = _toInt(r['id'], 0);
+      if (rId >= newId) newId = rId + 1;
     }
+
     data['id'] = newId;
+    data['isCustom'] = true;
     data['createdAt'] = DateTime.now().toIso8601String();
 
-    currentRecipes.insert(0, data);
-    _recipesCache = currentRecipes;
-    await prefs.setString(_recipesKey, json.encode(currentRecipes));
+    final sanitized = sanitizeRecipe(data, fallbackId: newId);
+    sanitized['isCustom'] = true;
+
+    // Simpan ke daftar custom recipes lokal
+    final customJsonStr = prefs.getString(_customRecipesKey);
+    List<dynamic> customList = [];
+    if (customJsonStr != null) {
+      try {
+        customList = json.decode(customJsonStr) as List<dynamic>;
+      } catch (_) {}
+    }
+    customList.insert(0, sanitized);
+    await prefs.setString(_customRecipesKey, json.encode(customList));
+
+    _recipesCache = null;
+    await getRecipes(forceRefresh: true);
+    _notifyChanged();
+    return sanitized;
   }
 
   static Future<void> deleteRecipe(int id) async {
     final prefs = await SharedPreferences.getInstance();
-    final currentRecipes = await getRecipes();
-    currentRecipes.removeWhere((r) => r['id'] == id);
-    _recipesCache = currentRecipes;
-    await prefs.setString(_recipesKey, json.encode(currentRecipes));
+    final customJsonStr = prefs.getString(_customRecipesKey);
+    if (customJsonStr != null) {
+      try {
+        final customList = json.decode(customJsonStr) as List<dynamic>;
+        final beforeLen = customList.length;
+        customList.removeWhere((r) => r is Map && _toInt(r['id'], -1) == id);
+        if (customList.length != beforeLen) {
+          await prefs.setString(_customRecipesKey, json.encode(customList));
+        }
+      } catch (_) {}
+    }
+
+    final deletedIds = (prefs.getStringList(_deletedDefaultIdsKey) ?? []).toSet();
+    deletedIds.add(id.toString());
+    await prefs.setStringList(_deletedDefaultIdsKey, deletedIds.toList());
+
+    _recipesCache = null;
     await removeFavorite(id);
+    await getRecipes(forceRefresh: true);
+    _notifyChanged();
   }
 
   static Future<List<dynamic>> getRecipesByAuthor(String rawAuthor) async {
@@ -134,9 +335,7 @@ class ApiService {
   // --- BASECAMPS ---
   static Future<List<dynamic>> getBasecamps() async {
     final prefs = await SharedPreferences.getInstance();
-    String? jsonStr = prefs.getString(_basecampsKey) ??
-        prefs.getString('coffeehub_basecamps_v10') ??
-        prefs.getString('coffeehub_basecamps_v9');
+    String? jsonStr = prefs.getString(_basecampsKey);
 
     if (jsonStr == null) {
       final seed = SeedData.getDefaultBasecamps();
@@ -153,12 +352,13 @@ class ApiService {
 
     var newId = 1;
     for (final r in currentBasecamps) {
-      if (r['id'] != null && r['id'] >= newId) newId = r['id'] + 1;
+      if (r['id'] != null && r['id'] >= newId) newId = (r['id'] as int) + 1;
     }
     data['id'] = newId;
 
     currentBasecamps.insert(0, data);
     await prefs.setString(_basecampsKey, json.encode(currentBasecamps));
+    _notifyChanged();
   }
 
   static Future<void> deleteBasecamp(int id) async {
@@ -166,6 +366,7 @@ class ApiService {
     final currentBasecamps = await getBasecamps();
     currentBasecamps.removeWhere((r) => r['id'] == id);
     await prefs.setString(_basecampsKey, json.encode(currentBasecamps));
+    _notifyChanged();
   }
 
   // --- HISTORY ---
@@ -174,7 +375,7 @@ class ApiService {
     final jsonStr = prefs.getString(_historyKey);
     var history = jsonStr != null ? json.decode(jsonStr) as List<dynamic> : <dynamic>[];
 
-    final record = Map<String, dynamic>.from(recipe);
+    final record = sanitizeRecipe(recipe);
     record['brewedAt'] = DateTime.now().toIso8601String();
 
     history.insert(0, record);
@@ -182,6 +383,7 @@ class ApiService {
 
     _historyCache = history;
     await prefs.setString(_historyKey, json.encode(history));
+    _notifyChanged();
   }
 
   static Future<List<dynamic>> getBrewHistory() async {
@@ -189,7 +391,11 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     final jsonStr = prefs.getString(_historyKey);
     if (jsonStr == null) return [];
-    final history = json.decode(jsonStr) as List<dynamic>;
+    final rawHistory = json.decode(jsonStr) as List<dynamic>;
+    final history = rawHistory
+        .whereType<Map>()
+        .map((r) => sanitizeRecipe(r))
+        .toList();
     _historyCache = history;
     return List<dynamic>.from(history);
   }
@@ -219,7 +425,7 @@ class ApiService {
     if (_favoritesCache != null) return Set<int>.from(_favoritesCache!);
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getStringList(_favoritesKey) ?? [];
-    _favoritesCache = raw.map(int.parse).toSet();
+    _favoritesCache = raw.map((e) => int.tryParse(e) ?? -1).where((e) => e > 0).toSet();
     return Set<int>.from(_favoritesCache!);
   }
 
@@ -238,6 +444,7 @@ class ApiService {
     }
     _favoritesCache = ids;
     await prefs.setStringList(_favoritesKey, ids.map((e) => e.toString()).toList());
+    _notifyChanged();
   }
 
   static Future<void> removeFavorite(int id) async {
@@ -246,6 +453,7 @@ class ApiService {
     ids.remove(id);
     _favoritesCache = ids;
     await prefs.setStringList(_favoritesKey, ids.map((e) => e.toString()).toList());
+    _notifyChanged();
   }
 
   static Future<List<dynamic>> getFavoriteRecipes() async {
@@ -273,6 +481,7 @@ class ApiService {
       entries.removeRange(100, entries.length);
     }
     await prefs.setString(_journalKey, json.encode(entries));
+    _notifyChanged();
   }
 
   static Future<void> deleteJournalEntry(int id) async {
@@ -280,6 +489,7 @@ class ApiService {
     final entries = await getJournalEntries();
     entries.removeWhere((e) => e['id'] == id);
     await prefs.setString(_journalKey, json.encode(entries));
+    _notifyChanged();
   }
 
   /// Daftar barista unik dari resep (untuk toolkit / spotlight).

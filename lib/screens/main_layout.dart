@@ -4,8 +4,9 @@ import 'home_screen.dart';
 import 'recipe_feed_screen.dart';
 import 'brew_selection_screen.dart';
 import 'toolkit_screen.dart';
-import 'settings_screen.dart';
+import 'profile_screen.dart';
 import '../services/audio_service.dart';
+import '../services/app_update_service.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -17,12 +18,20 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AppUpdateService.checkForUpdate(context: context, isManual: false);
+    });
+  }
+
   final List<Widget> _pages = const [
     HomeScreen(),
     RecipeFeedScreen(),
     BrewSelectionScreen(),
     ToolkitScreen(),
-    SettingsScreen(),
+    ProfileScreen(),
   ];
 
   @override
