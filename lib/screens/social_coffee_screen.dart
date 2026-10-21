@@ -7,6 +7,7 @@ import '../services/auth_service.dart';
 import '../services/social_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/barista_utils.dart';
+import 'basecamp_screen.dart';
 import 'brew_timer_screen.dart';
 
 class SocialCoffeeScreen extends StatefulWidget {
@@ -78,6 +79,16 @@ class _SocialCoffeeScreenState extends State<SocialCoffeeScreen> {
         ),
         centerTitle: true,
         actions: [
+          IconButton(
+            tooltip: 'Basecamp Komunitas',
+            icon: const Icon(CupertinoIcons.person_3_fill, color: AppTheme.primaryBrown),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const BasecampScreen()),
+              );
+            },
+          ),
           IconButton(
             tooltip: 'Segarkan Feed',
             icon: const Icon(CupertinoIcons.arrow_clockwise),
@@ -219,6 +230,41 @@ class _SocialCoffeeScreenState extends State<SocialCoffeeScreen> {
                 Text(
                   'Eksplorasi teknik seduh para barista, salin resep favorit ke tab Seduh, dan tinggalkan masukan!',
                   style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.85)),
+                ),
+                const SizedBox(height: 10),
+                InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const BasecampScreen()),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accentGold.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppTheme.accentGold.withValues(alpha: 0.6)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(CupertinoIcons.person_3_fill, size: 13, color: AppTheme.accentGold),
+                        SizedBox(width: 6),
+                        Text(
+                          'Buka Basecamp Barista',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Icon(CupertinoIcons.chevron_right, size: 11, color: Colors.white70),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),

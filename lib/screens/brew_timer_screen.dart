@@ -319,114 +319,309 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
     );
   }
 
+  Widget _buildCompactSensorySlider({
+    required String label,
+    required double value,
+    required Color activeColor,
+    required ValueChanged<double> onChanged,
+  }) {
+    return SizedBox(
+      height: 28,
+      child: Row(
+        children: [
+          SizedBox(
+            width: 115,
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.textDark),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Expanded(
+            child: SliderTheme(
+              data: SliderThemeData(
+                trackHeight: 3.0,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5.5),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 10),
+                activeTrackColor: activeColor,
+                inactiveTrackColor: activeColor.withValues(alpha: 0.18),
+                thumbColor: activeColor,
+                overlayColor: activeColor.withValues(alpha: 0.15),
+              ),
+              child: Slider(
+                value: value,
+                min: 1.0,
+                max: 5.0,
+                divisions: 8,
+                onChanged: onChanged,
+              ),
+            ),
+          ),
+          SizedBox(
+            width: 26,
+            child: Text(
+              value.toStringAsFixed(1),
+              textAlign: TextAlign.end,
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: activeColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _promptJournal() {
     if (!mounted) return;
-    double rating = 4.5;
-    String tasteDiagnosis = 'Manis & Seimbang (Sweet Spot)';
-    final notesCtrl = TextEditingController(text: _recipe['tastingNotes']?.toString() ?? 'Brew selesai via timer.');
+    double acidity = 3.0;
+    double sweetness = 3.5;
+    double bitterness = 2.0;
+    double body = 3.0;
+    double overallScore = 4.5;
+
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Brew Selesai! ☕'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Bagaimana karakter ekstraksi seduhan ini?'),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [
-                    'Asam / Tipis (Under)',
-                    'Manis & Seimbang (Sweet Spot)',
-                    'Pahit / Sepat (Over)',
-                  ].map((label) {
-                    final selected = tasteDiagnosis == label;
-                    return ChoiceChip(
-                      label: Text(label, style: TextStyle(fontSize: 11, color: selected ? Colors.white : AppTheme.textDark)),
-                      selected: selected,
-                      selectedColor: AppTheme.primaryBrown,
-                      visualDensity: VisualDensity.compact,
-                      onSelected: (_) => setDialogState(() => tasteDiagnosis = label),
-                    );
-                  }).toList(),
-                ),
-                if (tasteDiagnosis.contains('Under')) ...[
+        builder: (ctx, setDialogState) {
+          // Dynamic Live Diagnosis & Advice
+          String status = 'Harmonis & Nikmat 👍';
+          String badge = 'SWEET SPOT';
+          IconData icon = CupertinoIcons.checkmark_circle_fill;
+          Color color = Colors.green.shade700;
+          Color bgColor = Colors.green.withValues(alpha: 0.08);
+          String advice = '✨ Keseimbangan rasa manis dan keasaman sangat ideal!';
+
+          if (bitterness >= 4.0 || (bitterness - sweetness >= 1.5)) {
+            status = 'Over-Extracted (Terlalu Pahit & Sepat)';
+            badge = 'OVER-EXTRACTED';
+            icon = CupertinoIcons.exclamationmark_triangle_fill;
+            color = Colors.redAccent;
+            bgColor = Colors.red.withValues(alpha: 0.08);
+            advice = '💡 Kasarkan gilingan 1-2 klik atau turunkan suhu air -2°C.';
+          } else if (acidity >= 4.0 && sweetness <= 2.5) {
+            status = 'Under-Extracted (Asam Tajam / Tipis)';
+            badge = 'UNDER-EXTRACTED';
+            icon = CupertinoIcons.bolt_fill;
+            color = Colors.orange.shade800;
+            bgColor = Colors.orange.withValues(alpha: 0.08);
+            advice = '💡 Haluskan gilingan 1-2 klik atau naikkan suhu air +2°C.';
+          } else if (body <= 1.5) {
+            status = 'Under-Body (Seduhan Terlalu Encer)';
+            badge = 'LOW BODY';
+            icon = CupertinoIcons.drop;
+            color = Colors.blueGrey;
+            bgColor = Colors.blueGrey.withValues(alpha: 0.08);
+            advice = '💡 Perpanjang waktu blooming 10-15s atau percepat tuang pour.';
+          } else if (sweetness >= 3.5 && bitterness <= 2.5 && acidity >= 2.5 && acidity <= 3.5) {
+            status = 'Sweet Spot! Ekstraksi Seimbang 🎯';
+            badge = 'SWEET SPOT';
+            icon = CupertinoIcons.checkmark_circle_fill;
+            color = Colors.green.shade700;
+            bgColor = Colors.green.withValues(alpha: 0.08);
+            advice = '✨ Keseimbangan rasa manis dan keasaman sangat ideal!';
+          }
+
+          return Dialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+            insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Header
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(7),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryBrown.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(CupertinoIcons.flame_fill, color: AppTheme.primaryBrown, size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Evaluasi Hasil Seduh',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.textDark),
+                            ),
+                            Text(
+                              _recipe['title']?.toString() ?? 'Seduhan Kopi',
+                              style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentGold.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(CupertinoIcons.star_fill, size: 12, color: AppTheme.accentAmber),
+                            const SizedBox(width: 4),
+                            Text(
+                              overallScore.toStringAsFixed(1),
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryBrown),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Compact Sensory Sliders
+                  _buildCompactSensorySlider(
+                    label: 'Keasaman (Acidity)',
+                    value: acidity,
+                    activeColor: Colors.amber.shade700,
+                    onChanged: (v) => setDialogState(() => acidity = v),
+                  ),
+                  _buildCompactSensorySlider(
+                    label: 'Kemanisan (Sweetness)',
+                    value: sweetness,
+                    activeColor: Colors.deepOrangeAccent,
+                    onChanged: (v) => setDialogState(() => sweetness = v),
+                  ),
+                  _buildCompactSensorySlider(
+                    label: 'Kepahitan (Bitterness)',
+                    value: bitterness,
+                    activeColor: Colors.brown.shade700,
+                    onChanged: (v) => setDialogState(() => bitterness = v),
+                  ),
+                  _buildCompactSensorySlider(
+                    label: 'Ketebalan (Body)',
+                    value: body,
+                    activeColor: Colors.teal.shade700,
+                    onChanged: (v) => setDialogState(() => body = v),
+                  ),
+                  _buildCompactSensorySlider(
+                    label: 'Skor Keseluruhan',
+                    value: overallScore,
+                    activeColor: AppTheme.primaryBrown,
+                    onChanged: (v) => setDialogState(() => overallScore = v),
+                  ),
+
                   const SizedBox(height: 8),
-                  const Text(
-                    '💡 Saran BrewBerikutnya: Haluskan gilingan 1-2 klik atau naikkan suhu +2°C.',
-                    style: TextStyle(fontSize: 11.5, color: Colors.orange, fontWeight: FontWeight.w600),
-                  ),
-                ] else if (tasteDiagnosis.contains('Over')) ...[
-                  const SizedBox(height: 8),
-                  const Text(
-                    '💡 Saran Brew Berikutnya: Kasarkan gilingan 1-2 klik atau turunkan suhu -2°C.',
-                    style: TextStyle(fontSize: 11.5, color: Colors.redAccent, fontWeight: FontWeight.w600),
-                  ),
-                ],
-                const SizedBox(height: 12),
-                Text('Rating: ${rating.toStringAsFixed(1)}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                Slider(
-                  value: rating,
-                  min: 1,
-                  max: 5,
-                  divisions: 8,
-                  activeColor: AppTheme.accentAmber,
-                  onChanged: (v) => setDialogState(() => rating = v),
-                ),
-                TextField(
-                  controller: notesCtrl,
-                  maxLines: 2,
-                  decoration: InputDecoration(
-                    labelText: 'Catatan rasa',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Nanti')),
-            TextButton(
-              onPressed: () async {
-                final notesText = notesCtrl.text.trim();
-                Navigator.pop(ctx);
-                await ApiService.addJournalEntry({
-                  'recipeId': _recipe['id'],
-                  'recipeTitle': _recipe['title'],
-                  'author': _recipe['author'],
-                  'authorAvatarUrl': _recipe['authorAvatarUrl'],
-                  'authorImageUrl': _recipe['coverImageUrl'],
-                  'grindNote': '${_recipe['grindSize'] ?? ''} • $tasteDiagnosis',
-                  'rating': rating,
-                  'notes': notesText.isEmpty ? 'Brew selesai ($tasteDiagnosis).' : '[$tasteDiagnosis] $notesText',
-                });
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Tersimpan di Jurnal Brew.'),
-                    action: SnackBarAction(
-                      label: 'Buka',
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const BrewJournalScreen()),
-                        );
-                      },
+
+                  // Smart Diagnosis Box
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: bgColor,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: color.withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(icon, size: 13, color: color),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                status,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: color,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          advice,
+                          style: const TextStyle(fontSize: 10.5, color: AppTheme.textDark, height: 1.25),
+                        ),
+                      ],
                     ),
                   ),
-                );
-              },
-              child: const Text('Simpan'),
+
+                  const SizedBox(height: 12),
+
+                  // Action Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            side: BorderSide(color: AppTheme.primaryBrown.withValues(alpha: 0.25)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('Lewati', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        flex: 2,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryBrown,
+                            foregroundColor: Colors.white,
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(vertical: 9),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            elevation: 1,
+                          ),
+                          onPressed: () async {
+                            Navigator.pop(ctx);
+                            await ApiService.addJournalEntry({
+                              'recipeId': _recipe['id'],
+                              'recipeTitle': _recipe['title'],
+                              'author': _recipe['author'],
+                              'authorAvatarUrl': _recipe['authorAvatarUrl'],
+                              'authorImageUrl': _recipe['coverImageUrl'],
+                              'grindNote': '${_recipe['grindSize'] ?? ''} • $badge',
+                              'rating': overallScore,
+                              'notes': '$status | Asam: ${acidity.toStringAsFixed(1)}, Manis: ${sweetness.toStringAsFixed(1)}, Pahit: ${bitterness.toStringAsFixed(1)}, Body: ${body.toStringAsFixed(1)}. $advice',
+                            });
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Tersimpan di Jurnal Brew.'),
+                                action: SnackBarAction(
+                                  label: 'Buka',
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => const BrewJournalScreen()),
+                                    );
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(CupertinoIcons.bookmark_fill, size: 13),
+                          label: const Text('Simpan ke Jurnal', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          );
+        },
       ),
-    ).whenComplete(() => notesCtrl.dispose());
+    );
   }
 
   String _formatTime(int seconds) {
@@ -482,6 +677,29 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
         centerTitle: true,
         actions: [
           IconButton(
+            tooltip: 'Musik Santai Seduh (Ganti Lagu)',
+            icon: const Icon(CupertinoIcons.music_note_list, size: 20),
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final newTitle = await AudioService.nextTrack();
+              if (mounted) {
+                messenger.showSnackBar(
+                  SnackBar(
+                    duration: const Duration(seconds: 2),
+                    content: Row(
+                      children: [
+                        const Icon(CupertinoIcons.music_note, color: Colors.amber, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text('🎵 Memutar: $newTitle', style: const TextStyle(fontWeight: FontWeight.bold))),
+                      ],
+                    ),
+                  ),
+                );
+                setState(() {});
+              }
+            },
+          ),
+          IconButton(
             tooltip: 'Brew Doctor (Saran Koreksi Rasa)',
             icon: const Icon(CupertinoIcons.lightbulb, size: 20),
             onPressed: _showDialInDoctorSheet,
@@ -490,6 +708,38 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
       ),
       body: Column(
         children: [
+          if (_isRunning)
+            Padding(
+              padding: const EdgeInsets.only(top: 2, bottom: 4),
+              child: InkWell(
+                onTap: () async {
+                  await AudioService.nextTrack();
+                  if (mounted) setState(() {});
+                },
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentGold.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppTheme.accentGold.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(CupertinoIcons.music_note, size: 11, color: AppTheme.primaryBrown),
+                      const SizedBox(width: 5),
+                      Text(
+                        AudioService.currentTrackTitle,
+                        style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppTheme.primaryBrown),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(CupertinoIcons.forward_fill, size: 9, color: AppTheme.primaryBrown),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           if (iceWeightGrams > 0)
             Container(
               width: double.infinity,

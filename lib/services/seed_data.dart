@@ -4573,19 +4573,6 @@ class SeedData {
   }
 
   static List<Map<String, dynamic>> getDefaultBasecamps() {
-    return [
-      {
-        "id": 1,
-        "name": "WBrC Champions Club",
-        "description": "Komunitas diskusi eksklusif membedah teknik seduh, kurva ekstraksi, dan profil air para Juara Dunia World Brewers Cup.",
-        "isPrivate": false
-      },
-      {
-        "id": 2,
-        "name": "Hybrid Dripper Enthusiast",
-        "description": "Forum eksperimen resep Hario Switch, NextLevel Pulsar, dan Clever Dripper (kombinasi perkolasi & imersi).",
-        "isPrivate": false
-      }
-    ];
+    return [];
   }
 }

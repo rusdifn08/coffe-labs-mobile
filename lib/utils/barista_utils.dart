@@ -168,11 +168,20 @@ class BaristaUtils {
                             : 23);
 
     final int microns = (c40Clicks * 30).clamp(300, 1100);
-    final int timemoreC2 = (c40Clicks * 0.72).round().clamp(10, 26);
-    final int kingrinderK6 = (c40Clicks * 3.7).round().clamp(45, 130);
-    final String oneZpressoK = (c40Clicks * 0.32).toStringAsFixed(1);
-    final int baratzaEncore = (c40Clicks * 0.68).round().clamp(8, 30);
-    final String fellowOde = (c40Clicks * 0.22).clamp(1.0, 10.0).toStringAsFixed(1);
+    final int timemoreC2C3 = (c40Clicks * 0.72).round().clamp(10, 28);
+    final int timemoreEsp = (c40Clicks * 2.5).round().clamp(25, 80);
+    final String oneZpressoK = (c40Clicks * 0.32).clamp(4.0, 9.5).toStringAsFixed(1);
+    final int oneZpressoJxPro = (c40Clicks * 1.5).round().clamp(20, 48);
+    final int oneZpressoQ2 = (c40Clicks * 0.75).round().clamp(12, 28);
+    final int kingrinderK6 = (c40Clicks * 3.7).round().clamp(50, 130);
+    final int kingrinderK2 = (c40Clicks * 2.8).round().clamp(40, 110);
+    final int baratzaEncore = (c40Clicks * 0.68).round().clamp(10, 28);
+    final int baratzaEsp = (c40Clicks * 1.1).round().clamp(18, 38);
+    final String fellowOde = (c40Clicks * 0.22).clamp(2.0, 8.5).toStringAsFixed(1);
+    final String eurekaMignon = (c40Clicks * 0.25).clamp(2.0, 7.0).toStringAsFixed(1);
+    final String ek43 = (c40Clicks * 0.42).clamp(6.0, 12.5).toStringAsFixed(1);
+    final int harioSkerton = (c40Clicks * 0.45).round().clamp(5, 14);
+    final int porlex = (c40Clicks * 0.48).round().clamp(6, 15);
 
     String texture = 'Gula Pasir Halus (Table Salt)';
     if (c40Clicks <= 16) {
@@ -187,15 +196,34 @@ class BaristaUtils {
       texture = 'Garam Laut Kasar (Sea Salt)';
     }
 
+    String wilfaSetting = 'Filter (Tengah)';
+    if (c40Clicks <= 18) {
+      wilfaSetting = 'Aeropress / Fine Filter';
+    } else if (c40Clicks <= 24) {
+      wilfaSetting = 'Filter / V60 (Tengah)';
+    } else {
+      wilfaSetting = 'French Press / Coarse';
+    }
+
     return {
       'Kategori': shortGrindLabel(rawGrind),
       'Ukuran Partikel': '~$microns µm ($texture)',
-      'Comandante C40': '$c40Clicks Klik',
-      'Timemore C2 / C3': '$timemoreC2 Klik',
-      'Kingrinder K6': '$kingrinderK6 Klik',
-      '1Zpresso K-Ultra / ZP6': 'Angka $oneZpressoK',
+      'Comandante C40 MK3/MK4': '$c40Clicks Klik',
+      'Timemore C2 / C3 / Slim': '$timemoreC2C3 Klik',
+      'Timemore C3 ESP': '$timemoreEsp Klik (Dial Luar)',
+      '1Zpresso K-Ultra / K-Max': 'Angka $oneZpressoK',
+      '1Zpresso JX-Pro / J-Max': '$oneZpressoJxPro Klik (2-3 Putaran)',
+      '1Zpresso Q2 / Q Air': '$oneZpressoQ2 Klik',
+      'Kingrinder K6': '$kingrinderK6 Klik (Dial Luar)',
+      'Kingrinder K2 / K4': '$kingrinderK2 Klik',
+      'Fellow Ode Gen 2': 'Setting $fellowOde (Skala 1-11)',
       'Baratza Encore': 'Setting $baratzaEncore',
-      'Fellow Ode Gen 2': 'Setting $fellowOde',
+      'Baratza Encore ESP': 'Setting $baratzaEsp (Filter Range)',
+      'Wilfa Svart Aroma': wilfaSetting,
+      'Eureka Mignon Filtro/Crono': 'Setting $eurekaMignon',
+      'Mahlkönig EK43 / EK43S': 'Skala $ek43',
+      'Hario Skerton Pro / Smart G': '$harioSkerton Klik',
+      'Porlex Mini / Tall II': '$porlex Klik',
     };
   }
 

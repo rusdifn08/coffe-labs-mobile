@@ -134,63 +134,94 @@ class _BasecampScreenState extends State<BasecampScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Basecamps'),
+        title: const Text('Basecamp Komunitas'),
         centerTitle: true,
       ),
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.all(20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Live Audio Rooms', style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    height: 110,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: 4,
-                      itemBuilder: (context, index) {
-                        return Container(
-                          width: 80,
-                          margin: const EdgeInsets.only(right: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppTheme.primaryBrown,
+                          AppTheme.primaryBrown.withValues(alpha: 0.85),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryBrown.withValues(alpha: 0.15),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(CupertinoIcons.person_3_fill, color: AppTheme.accentGold, size: 26),
+                        ),
+                        const SizedBox(width: 14),
+                        const Expanded(
                           child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Stack(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 35,
-                                    backgroundColor: AppTheme.primaryBrown.withValues(alpha: 0.1),
-                                    child: const Icon(CupertinoIcons.mic_fill, color: AppTheme.primaryBrown, size: 30),
-                                  ),
-                                  Positioned(
-                                    bottom: 0,
-                                    right: 0,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.green, 
-                                        shape: BoxShape.circle,
-                                        border: Border.all(color: Colors.white, width: 2),
-                                      ),
-                                      child: const Text('24', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                                    ),
-                                  )
-                                ],
+                              Text(
+                                'BASECAMP KOMUNITAS',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.8,
+                                  color: AppTheme.accentGold,
+                                ),
                               ),
-                              const SizedBox(height: 8),
-                              const Text('Q&A V60', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                              SizedBox(height: 4),
+                              Text(
+                                'Ruang Kumpul Barista',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Wadah grup seduh, diskusi resep, dan sharing tips kopi antar barista.',
+                                style: TextStyle(fontSize: 11, color: Colors.white70),
+                              ),
                             ],
                           ),
-                        );
-                      },
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 32),
-                  Text('Your Groups', style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Daftar Grup Basecamp', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                      TextButton.icon(
+                        onPressed: _showCreateDialog,
+                        icon: const Icon(CupertinoIcons.plus_circle_fill, size: 16, color: AppTheme.primaryBrown),
+                        label: const Text('Buat Grup', style: TextStyle(color: AppTheme.primaryBrown, fontWeight: FontWeight.bold, fontSize: 13)),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -199,14 +230,54 @@ class _BasecampScreenState extends State<BasecampScreen> {
             future: _basecampsFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator()));
-              } else if (snapshot.hasError) {
-                return SliverToBoxAdapter(child: Center(child: Text('Error: ${snapshot.error}')));
-              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                 return const SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.all(24.0),
-                    child: Center(child: Text('No Basecamps found. Create one!')),
+                    padding: EdgeInsets.all(32.0),
+                    child: Center(child: CircularProgressIndicator(color: AppTheme.primaryBrown)),
+                  ),
+                );
+              } else if (snapshot.hasError) {
+                return SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Center(child: Text('Error: ${snapshot.error}')),
+                  ),
+                );
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(CupertinoIcons.person_3, size: 54, color: AppTheme.textMuted.withValues(alpha: 0.5)),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Belum Ada Basecamp Komunitas',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.textDark),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Jadilah yang pertama membuat ruang kumpul dan berdiskusi seduhan!',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryBrown,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                            onPressed: _showCreateDialog,
+                            icon: const Icon(CupertinoIcons.add, size: 16),
+                            label: const Text('Buat Basecamp Baru', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 );
               }
@@ -259,11 +330,13 @@ class _BasecampScreenState extends State<BasecampScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         heroTag: 'basecamp_create_fab',
         backgroundColor: AppTheme.primaryBrown,
+        foregroundColor: Colors.white,
         onPressed: _showCreateDialog,
-        child: const Icon(CupertinoIcons.add, color: Colors.white),
+        icon: const Icon(CupertinoIcons.add, color: Colors.white, size: 18),
+        label: const Text('Buat Basecamp', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
       ),
     );
   }

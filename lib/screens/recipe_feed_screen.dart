@@ -4,7 +4,7 @@ import 'package:flag/flag.dart';
 import '../data/brew_visual_catalog.dart';
 import '../theme/app_theme.dart';
 import '../utils/barista_utils.dart';
-import 'basecamp_screen.dart';
+import 'social_coffee_screen.dart';
 import 'barista_profile_screen.dart';
 import 'recipe_detail_screen.dart';
 import 'brew_timer_screen.dart';
@@ -1146,13 +1146,17 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'recipe_feed_basecamp_fab',
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'recipe_feed_social_fab',
         backgroundColor: AppTheme.primaryBrown,
         onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const BasecampScreen()));
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const SocialCoffeeScreen()));
         },
-        child: const Icon(CupertinoIcons.group_solid, color: Colors.white),
+        icon: const Icon(CupertinoIcons.chat_bubble_2_fill, color: Colors.white, size: 20),
+        label: const Text(
+          'Social Coffee',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+        ),
       ),
     );
   }

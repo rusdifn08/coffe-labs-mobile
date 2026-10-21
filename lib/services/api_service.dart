@@ -338,12 +338,21 @@ class ApiService {
     String? jsonStr = prefs.getString(_basecampsKey);
 
     if (jsonStr == null) {
-      final seed = SeedData.getDefaultBasecamps();
-      await prefs.setString(_basecampsKey, json.encode(seed));
-      return seed;
+      return [];
     }
 
-    return json.decode(jsonStr) as List<dynamic>;
+    try {
+      final list = json.decode(jsonStr) as List<dynamic>;
+      // Hapus data dummy legacy jika masih tersimpan di cache
+      final cleaned = list
+          .where((b) =>
+              b['name'] != 'WBrC Champions Club' &&
+              b['name'] != 'Hybrid Dripper Enthusiast')
+          .toList();
+      return cleaned;
+    } catch (_) {
+      return [];
+    }
   }
 
   static Future<void> createBasecamp(Map<String, dynamic> data) async {
