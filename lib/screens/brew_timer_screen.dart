@@ -27,6 +27,9 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
   bool _isRunning = false;
   bool _isPreparing = false;
 
+  final ScrollController _stepScrollController = ScrollController();
+  int _lastScrolledStepIndex = -1;
+
   late Map<String, dynamic> _recipe;
   late String title;
   late int totalSeconds;
@@ -77,7 +80,27 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
     _timer?.cancel();
     _prepTimer?.cancel();
     AudioService.stopBgm();
+    _stepScrollController.dispose();
     super.dispose();
+  }
+
+  void _checkAutoScroll() {
+    if (steps.isEmpty) return;
+    final activeIndex = _getActiveStepIndex();
+    if (activeIndex != _lastScrolledStepIndex) {
+      _lastScrolledStepIndex = activeIndex;
+      _scrollToStep(activeIndex);
+    }
+  }
+
+  void _scrollToStep(int index) {
+    if (!_stepScrollController.hasClients) return;
+    final double targetOffset = (index * 115.0).clamp(0.0, _stepScrollController.position.maxScrollExtent);
+    _stepScrollController.animateTo(
+      targetOffset,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOutCubic,
+    );
   }
 
   void _startMainTimer() {
@@ -88,11 +111,13 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
     });
 
     AudioService.startBgm();
+    _checkAutoScroll();
 
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_elapsedSeconds < totalSeconds) {
         setState(() => _elapsedSeconds++);
+        _checkAutoScroll();
 
         int accumulated = 0;
         for (final step in steps) {
@@ -171,6 +196,8 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
       _isRunning = false;
       _isPreparing = false;
     });
+    _lastScrolledStepIndex = 0;
+    _scrollToStep(0);
   }
 
   void _jumpToStep(int targetIndex) {
@@ -187,6 +214,8 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
       }
       _elapsedSeconds = startSec;
     });
+    _lastScrolledStepIndex = clamped;
+    _scrollToStep(clamped);
   }
 
   void _add10SecondsToActiveStep() {
@@ -417,14 +446,6 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
     return steps.length - 1;
   }
 
-  int _getStepStartSeconds(int stepIdx) {
-    int sum = 0;
-    for (int i = 0; i < stepIdx && i < steps.length; i++) {
-      sum += _stepDuration(steps[i]);
-    }
-    return sum;
-  }
-
   int _getStepRemainingSeconds(int activeIdx) {
     if (activeIdx < 0 || activeIdx >= steps.length) return 0;
     int accumulated = 0;
@@ -448,19 +469,8 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
     if (_elapsedSeconds >= totalSeconds && steps.isNotEmpty) activeIndex = steps.length - 1;
 
     final activeStep = steps.isNotEmpty ? steps[activeIndex] : null;
-    final activeStepWater = activeStep != null ? _stepWater(activeStep) : 0;
-    final activeStepDur = activeStep != null ? _stepDuration(activeStep).clamp(1, 3600) : 30;
-    final prevTargetWater = activeIndex > 0 ? _getCumulativeWaterUpTo(activeIndex - 1) : 0;
     final activeTargetWater = activeStep != null ? _getCumulativeWaterUpTo(activeIndex) : 0;
     final activeStepRemaining = _getStepRemainingSeconds(activeIndex);
-    final activeInstruction = activeStep?['instruction']?.toString() ?? '';
-
-    // Hitung target timbangan live detik demi detik saat menuang
-    final stepStartSec = _getStepStartSeconds(activeIndex);
-    final elapsedInStep = (_elapsedSeconds - stepStartSec).clamp(0, activeStepDur);
-    final stepProgress = (elapsedInStep / activeStepDur).clamp(0.0, 1.0);
-    final liveScaleTarget = (prevTargetWater + (activeStepWater * stepProgress)).round();
-    final flowRate = activeStepWater > 0 ? (activeStepWater / activeStepDur).toStringAsFixed(1) : '0.0';
 
     int runningWater = 0;
     int runningTime = 0;
@@ -505,11 +515,11 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
             ),
 
           const SizedBox(height: 6),
-          // CIRCULAR TIMER DISPLAY
+          // CIRCULAR TIMER DISPLAY (Diperbesar sedikit, info timbangan flow rate dihilangkan)
           Center(
             child: SizedBox(
-              width: 215,
-              height: 215,
+              width: 245,
+              height: 245,
               child: CustomPaint(
                 painter: SegmentedTimerPainter(
                   steps: steps,
@@ -523,12 +533,12 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                       if (_isPreparing) ...[
                         const Text(
                           'SIAP SEDUH',
-                          style: TextStyle(color: AppTheme.textMuted, fontSize: 12, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: AppTheme.textMuted, fontSize: 13, fontWeight: FontWeight.bold),
                         ),
                         Text(
                           '$_prepSeconds',
                           style: const TextStyle(
-                            fontSize: 64,
+                            fontSize: 70,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.accentAmber,
                           ),
@@ -541,47 +551,34 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                           ),
                           child: const Text(
                             'Lewati Hitung Mundur →',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryBrown),
+                            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppTheme.primaryBrown),
                           ),
                         ),
                       ] else if (_elapsedSeconds > 0 && _elapsedSeconds >= totalSeconds) ...[
                         const Text(
                           'Enjoy your',
-                          style: TextStyle(color: AppTheme.primaryBrown, fontSize: 20, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: AppTheme.primaryBrown, fontSize: 22, fontWeight: FontWeight.bold),
                         ),
                         const Text(
                           'coffee!',
-                          style: TextStyle(color: AppTheme.primaryBrown, fontSize: 28, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: AppTheme.primaryBrown, fontSize: 30, fontWeight: FontWeight.bold),
                         ),
                       ] else ...[
                         Text(
                           _formatTime(_elapsedSeconds),
                           style: TextStyle(
-                            fontSize: 48,
+                            fontSize: 54,
                             fontWeight: FontWeight.bold,
                             color: _isEndingSoon() ? Colors.red : AppTheme.primaryBrown,
+                            letterSpacing: -0.5,
                           ),
                         ),
                         Text(
                           'Target ${_formatTime(totalSeconds)} · ${activeTargetWater}g',
-                          style: const TextStyle(color: AppTheme.textMuted, fontSize: 12.5, fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryBrown.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            activeStepWater > 0
-                                ? 'Timbangan: ~${liveScaleTarget}g ($flowRate g/dtk)'
-                                : 'Timbangan: ${activeTargetWater}g (Tahan)',
-                            style: const TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.primaryBrown,
-                            ),
+                          style: const TextStyle(
+                            color: AppTheme.textMuted,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -591,71 +588,12 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 14),
 
-          // LIVE ACTIVE STEP INSTRUCTION BANNER
-          if (activeStep != null)
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.symmetric(horizontal: 20),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryBrown,
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryBrown.withValues(alpha: 0.2),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          activeStep['title']?.toString() ?? 'Step ${activeIndex + 1}',
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppTheme.accentAmber,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          activeStepWater > 0
-                              ? '+${activeStepWater}g → Target ${activeTargetWater}g (${activeStepRemaining}s)'
-                              : 'Tahan / Imersi (${activeStepRemaining}s)',
-                          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (activeInstruction.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      activeInstruction,
-                      style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.35),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
-          const SizedBox(height: 10),
-          // SCROLLABLE STEPS LIST
+          // SCROLLABLE STEPS LIST (Auto Scroll & Auto Switch, Active step di-highlight coklat elegan)
           Expanded(
             child: ListView.builder(
+              controller: _stepScrollController,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
               itemCount: steps.length,
               itemBuilder: (context, index) {
@@ -677,15 +615,30 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                   onTap: () => _jumpToStep(index),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 250),
-                    margin: const EdgeInsets.only(bottom: 10),
+                    margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: isActive ? stepColor.withValues(alpha: 0.1) : AppTheme.surfaceWhite,
+                      color: isActive ? AppTheme.primaryBrown : AppTheme.surfaceWhite,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isActive ? stepColor : AppTheme.primaryBrown.withValues(alpha: 0.1),
-                        width: isActive ? 2 : 1,
+                        color: isActive ? AppTheme.accentAmber : AppTheme.primaryBrown.withValues(alpha: 0.1),
+                        width: isActive ? 1.8 : 1.0,
                       ),
+                      boxShadow: isActive
+                          ? [
+                              BoxShadow(
+                                color: AppTheme.primaryBrown.withValues(alpha: 0.28),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
+                          : [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.02),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -693,10 +646,14 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                         Row(
                           children: [
                             Container(
-                              width: 34,
-                              height: 34,
+                              width: 36,
+                              height: 36,
                               decoration: BoxDecoration(
-                                color: isDone ? stepColor : (isActive ? stepColor : stepColor.withValues(alpha: 0.2)),
+                                color: isDone
+                                    ? Colors.green.shade600
+                                    : (isActive
+                                        ? AppTheme.accentAmber
+                                        : stepColor.withValues(alpha: 0.2)),
                                 shape: BoxShape.circle,
                               ),
                               child: Center(
@@ -707,6 +664,7 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                                         style: TextStyle(
                                           color: isActive ? Colors.white : stepColor,
                                           fontWeight: FontWeight.bold,
+                                          fontSize: 14,
                                         ),
                                       ),
                               ),
@@ -716,13 +674,39 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    step['title']?.toString() ?? 'Step ${index + 1}',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: isActive ? 15 : 13.5,
-                                      color: isActive ? AppTheme.textDark : AppTheme.textMuted,
-                                    ),
+                                  Row(
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          step['title']?.toString() ?? 'Step ${index + 1}',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: isActive ? 15 : 13.5,
+                                            color: isActive ? Colors.white : AppTheme.textDark,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      if (isActive) ...[
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.accentAmber,
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            '${activeStepRemaining}s',
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                   const SizedBox(height: 3),
                                   Row(
@@ -730,7 +714,9 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                                       Icon(
                                         stepWater > 0 ? CupertinoIcons.drop_fill : CupertinoIcons.timer,
                                         size: 12,
-                                        color: stepWater > 0 ? Colors.blueAccent : AppTheme.accentAmber,
+                                        color: isActive
+                                            ? AppTheme.accentAmber
+                                            : (stepWater > 0 ? Colors.blueAccent : AppTheme.accentAmber),
                                       ),
                                       const SizedBox(width: 4),
                                       Flexible(
@@ -738,7 +724,11 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                                           stepWater > 0
                                               ? '+${stepWater}g Air (Target: ${cumulativeTarget}g)'
                                               : 'Imersi / Drawdown (Total: ${cumulativeTarget}g)',
-                                          style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                                          style: TextStyle(
+                                            fontSize: 11.5,
+                                            color: isActive ? Colors.white.withValues(alpha: 0.9) : AppTheme.textMuted,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
@@ -755,12 +745,15 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,
-                                    color: isActive ? AppTheme.textDark : AppTheme.textMuted,
+                                    color: isActive ? Colors.white : AppTheme.textDark,
                                   ),
                                 ),
                                 Text(
                                   '${_formatTime(startSec)}-${_formatTime(endSec)}',
-                                  style: const TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: isActive ? Colors.white70 : AppTheme.textMuted,
+                                  ),
                                 ),
                               ],
                             ),
@@ -768,12 +761,23 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                         ),
                         if (instruction.isNotEmpty) ...[
                           const SizedBox(height: 8),
-                          Text(
-                            instruction,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isActive ? AppTheme.textDark : AppTheme.textMuted,
-                              height: 1.35,
+                          Container(
+                            padding: isActive
+                                ? const EdgeInsets.symmetric(horizontal: 10, vertical: 6)
+                                : EdgeInsets.zero,
+                            decoration: isActive
+                                ? BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.18),
+                                    borderRadius: BorderRadius.circular(8),
+                                  )
+                                : null,
+                            child: Text(
+                              instruction,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isActive ? Colors.white.withValues(alpha: 0.95) : AppTheme.textMuted,
+                                height: 1.35,
+                              ),
                             ),
                           ),
                         ],

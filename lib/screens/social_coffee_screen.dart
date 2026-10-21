@@ -666,7 +666,7 @@ class _SocialCoffeeScreenState extends State<SocialCoffeeScreen> {
           // Metric row: Wrap agar tidak overflow pada layar kecil
           Wrap(
             spacing: 6,
-            runSpacing: 4,
+            runSpacing: 6,
             children: [
               _metricPill(CupertinoIcons.circle_grid_hex, '${coffee}g Kopi'),
               _metricPill(CupertinoIcons.drop, '${water}ml Air'),
@@ -689,26 +689,23 @@ class _SocialCoffeeScreenState extends State<SocialCoffeeScreen> {
   }
 
   Widget _metricPill(IconData icon, String label) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceWhite,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: AppTheme.primaryBrown.withValues(alpha: 0.1)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 11, color: AppTheme.primaryBrown),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: AppTheme.textDark),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceWhite,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: AppTheme.primaryBrown.withValues(alpha: 0.1)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: AppTheme.primaryBrown),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+          ),
+        ],
       ),
     );
   }
