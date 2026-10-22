@@ -519,7 +519,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           textInputAction: TextInputAction.next,
           decoration: InputDecoration(
             labelText: 'Username',
-            hintText: 'rusdifn08',
+            hintText: 'Masukkan username',
             prefixIcon: const Icon(CupertinoIcons.person_fill, color: AppTheme.primaryBrown, size: 20),
             filled: true,
             fillColor: AppTheme.bgCream.withValues(alpha: 0.5),

@@ -306,6 +306,43 @@ class AuthService {
     }
   }
 
+  /// Mengubah password pengguna aktif
+  static Future<Map<String, dynamic>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        return {'success': false, 'message': 'Sesi telah berakhir. Silakan login kembali.'};
+      }
+
+      final baseUrl = await getBaseUrl();
+      final uri = Uri.parse('$baseUrl/api/auth/change-password');
+
+      final response = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({
+          'current_password': currentPassword,
+          'new_password': newPassword,
+        }),
+      ).timeout(const Duration(seconds: 25));
+
+      final data = json.decode(response.body) as Map<String, dynamic>;
+      if (response.statusCode == 200) {
+        return {'success': true, 'message': data['message'] ?? 'Password berhasil diubah!'};
+      } else {
+        return {'success': false, 'message': data['message'] ?? 'Gagal mengubah password.'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal menghubungi server: $e'};
+    }
+  }
+
   /// Logout pengguna dan bersihkan sesi
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();

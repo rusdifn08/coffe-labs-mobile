@@ -12,6 +12,7 @@ class AppTheme {
   static const Color textDark = Color(0xFF332B25);     // Dark Brown/Black text
   static const Color textMuted = Color(0xFF8F857D);    // Muted text
   static const Color dividerColor = Color(0xFFE8DFD8); // Soft divider
+  static const Color borderWarm = Color(0xFFE8DFD8);   // Warm border
 
   static ThemeData get lightTheme {
     return ThemeData(

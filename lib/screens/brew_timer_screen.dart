@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import '../services/audio_service.dart';
 import '../services/api_service.dart';
 import '../services/trial_service.dart';
+import '../widgets/thermal_receipt_sheet.dart';
 import 'brew_journal_screen.dart';
 
 class BrewTimerScreen extends StatefulWidget {
@@ -574,7 +575,32 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                           child: const Text('Lewati', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentGold.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppTheme.accentGold.withValues(alpha: 0.4)),
+                        ),
+                        child: IconButton(
+                          tooltip: 'Print Struk Bluetooth',
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          constraints: const BoxConstraints(),
+                          icon: const Icon(CupertinoIcons.printer_fill, size: 18, color: AppTheme.primaryBrown),
+                          onPressed: () {
+                            ThermalReceiptSheet.show(
+                              context,
+                              _recipe,
+                              tastingNotes: [
+                                status,
+                                'Asam: ${acidity.toStringAsFixed(1)} | Manis: ${sweetness.toStringAsFixed(1)} | Pahit: ${bitterness.toStringAsFixed(1)} | Body: ${body.toStringAsFixed(1)}',
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       Expanded(
                         flex: 2,
                         child: ElevatedButton.icon(
@@ -671,6 +697,11 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
         title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
         centerTitle: true,
         actions: [
+          IconButton(
+            tooltip: 'Print Struk Resep (Bluetooth)',
+            icon: const Icon(CupertinoIcons.printer_fill, size: 20),
+            onPressed: () => ThermalReceiptSheet.show(context, _recipe),
+          ),
           IconButton(
             tooltip: 'Brew Doctor (Saran Koreksi Rasa)',
             icon: const Icon(CupertinoIcons.lightbulb, size: 20),

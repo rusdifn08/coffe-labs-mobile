@@ -10,6 +10,7 @@ import 'add_recipe_screen.dart';
 import 'barista_profile_screen.dart';
 import 'brew_timer_screen.dart';
 import 'onboarding_screen.dart';
+import '../widgets/thermal_receipt_sheet.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
   final dynamic recipeData;
@@ -580,6 +581,21 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               ),
             ),
             actions: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 7.0, horizontal: 3.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.35),
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    tooltip: 'Print Struk Resep (Bluetooth Kasir)',
+                    icon: const Icon(CupertinoIcons.printer_fill, color: Colors.white, size: 18),
+                    onPressed: () => ThermalReceiptSheet.show(context, scaledRecipe),
+                  ),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 7.0, horizontal: 3.0),
                 child: Container(
@@ -1381,30 +1397,53 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         ],
       ),
       bottomSheet: Container(
-        padding: const EdgeInsets.fromLTRB(24, 14, 24, 24),
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
         decoration: BoxDecoration(
           color: AppTheme.bgCream,
           boxShadow: [
             BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 10, offset: const Offset(0, -5)),
           ],
         ),
-        child: SizedBox(
-          width: double.infinity,
-          height: 54,
-          child: ElevatedButton.icon(
-            onPressed: _startBrewing,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryBrown,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Row(
+          children: [
+            Container(
+              height: 52,
+              width: 52,
+              margin: const EdgeInsets.only(right: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.borderWarm),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 2)),
+                ],
+              ),
+              child: IconButton(
+                tooltip: 'Print Struk Resep (Bluetooth Kasir)',
+                icon: const Icon(CupertinoIcons.printer_fill, color: AppTheme.primaryBrown, size: 22),
+                onPressed: () => ThermalReceiptSheet.show(context, scaledRecipe),
+              ),
             ),
-            icon: const Icon(CupertinoIcons.play_fill, color: Colors.white, size: 20),
-            label: Text(
-              _scaledCoffeeGrams != _baseCoffeeGrams
-                  ? 'Mulai Brew (${coffeeWeight}g → ${totalWater}g Air)'
-                  : 'Mulai Guided Brewing',
-              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            Expanded(
+              child: SizedBox(
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: _startBrewing,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryBrown,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  icon: const Icon(CupertinoIcons.play_fill, color: Colors.white, size: 20),
+                  label: Text(
+                    _scaledCoffeeGrams != _baseCoffeeGrams
+                        ? 'Mulai Brew (${coffeeWeight}g → ${totalWater}g)'
+                        : 'Mulai Guided Brewing',
+                    style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
