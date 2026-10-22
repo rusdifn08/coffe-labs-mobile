@@ -1248,13 +1248,15 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                     ),
                   ),
                   Expanded(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
+                    child: Wrap(
+                      alignment: WrapAlignment.end,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 4,
+                      runSpacing: 3,
                       children: [
                         if (isLocked) ...[
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                            margin: const EdgeInsets.only(right: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                             decoration: BoxDecoration(
                               color: Colors.grey.shade700,
                               borderRadius: BorderRadius.circular(6),
@@ -1262,12 +1264,12 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(CupertinoIcons.lock_fill, size: 9, color: Colors.white),
-                                SizedBox(width: 3),
+                                Icon(CupertinoIcons.lock_fill, size: 8.5, color: Colors.white),
+                                SizedBox(width: 2.5),
                                 Text(
                                   'Terkunci',
                                   style: TextStyle(
-                                    fontSize: 8.5,
+                                    fontSize: 8,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
                                   ),
@@ -1276,30 +1278,65 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                             ),
                           ),
                         ],
-                        Text(
-                          '${coffeeWeight}g',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: isLocked ? Colors.grey.shade600 : AppTheme.textMuted,
-                            fontWeight: FontWeight.bold,
+                        // Chip Kopi (Background Coklat & Icon Biji Kopi)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 2.5),
+                          decoration: BoxDecoration(
+                            color: isLocked ? Colors.grey.shade300 : const Color(0xFFF6EFEA),
+                            borderRadius: BorderRadius.circular(7),
+                            border: Border.all(
+                              color: isLocked ? Colors.grey.shade400 : AppTheme.primaryBrown.withValues(alpha: 0.22),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CoffeeBeanIcon(
+                                size: 9.5,
+                                color: isLocked ? Colors.grey.shade600 : AppTheme.primaryBrown,
+                              ),
+                              const SizedBox(width: 3.5),
+                              Text(
+                                '${coffeeWeight}g',
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: isLocked ? Colors.grey.shade700 : AppTheme.primaryBrown,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 3),
-                        Icon(
-                          iceWeight > 0 ? CupertinoIcons.snow : CupertinoIcons.drop,
-                          size: 10,
-                          color: isLocked ? Colors.grey.shade500 : Colors.blueAccent,
-                        ),
-                        Flexible(
-                          child: Text(
-                            iceWeight > 0 ? '${totalWater + iceWeight}g' : '${totalWater}ml',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: isLocked ? Colors.grey.shade600 : AppTheme.textMuted,
-                              fontWeight: FontWeight.bold,
+                        // Chip Air (Background Biru & Icon Air)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 2.5),
+                          decoration: BoxDecoration(
+                            color: isLocked ? Colors.grey.shade300 : const Color(0xFFE8F3FA),
+                            borderRadius: BorderRadius.circular(7),
+                            border: Border.all(
+                              color: isLocked ? Colors.grey.shade400 : Colors.blue.withValues(alpha: 0.25),
+                              width: 0.8,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                iceWeight > 0 ? CupertinoIcons.snow : CupertinoIcons.drop_fill,
+                                size: 9.5,
+                                color: isLocked ? Colors.grey.shade600 : const Color(0xFF1976D2),
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                iceWeight > 0 ? '${totalWater + iceWeight}g' : '${totalWater}ml',
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: isLocked ? Colors.grey.shade700 : const Color(0xFF1976D2),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -1494,4 +1531,66 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
       ),
     );
   }
+}
+
+class CoffeeBeanIcon extends StatelessWidget {
+  final double size;
+  final Color color;
+  const CoffeeBeanIcon({super.key, this.size = 10, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        painter: _CoffeeBeanPainter(color: color),
+      ),
+    );
+  }
+}
+
+class _CoffeeBeanPainter extends CustomPainter {
+  final Color color;
+  const _CoffeeBeanPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final fillPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = true;
+
+    final linePaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.9)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = (size.width * 0.12).clamp(0.8, 1.4)
+      ..strokeCap = StrokeCap.round
+      ..isAntiAlias = true;
+
+    canvas.save();
+    canvas.translate(size.width / 2, size.height / 2);
+    canvas.rotate(-0.45); // ~26 degree tilt
+
+    // Draw the oval body of coffee bean
+    final rect = Rect.fromCenter(
+      center: Offset.zero,
+      width: size.width * 0.72,
+      height: size.height * 0.96,
+    );
+    canvas.drawOval(rect, fillPaint);
+
+    // The iconic center crease curve of the bean
+    final path = Path();
+    final h = size.height * 0.38;
+    final w = size.width * 0.14;
+    path.moveTo(0, -h);
+    path.cubicTo(w, -h * 0.35, -w, h * 0.35, 0, h);
+    canvas.drawPath(path, linePaint);
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _CoffeeBeanPainter oldDelegate) => oldDelegate.color != color;
 }
