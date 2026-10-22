@@ -646,15 +646,6 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
     return steps.length - 1;
   }
 
-  int _getStepRemainingSeconds(int activeIdx) {
-    if (activeIdx < 0 || activeIdx >= steps.length) return 0;
-    int accumulated = 0;
-    for (int i = 0; i <= activeIdx; i++) {
-      accumulated += _stepDuration(steps[i]);
-    }
-    return (accumulated - _elapsedSeconds).clamp(0, 3600);
-  }
-
   int _getCumulativeWaterUpTo(int stepIdx) {
     int sum = 0;
     for (int i = 0; i <= stepIdx && i < steps.length; i++) {
@@ -670,7 +661,6 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
 
     final activeStep = steps.isNotEmpty ? steps[activeIndex] : null;
     final activeTargetWater = activeStep != null ? _getCumulativeWaterUpTo(activeIndex) : 0;
-    final activeStepRemaining = _getStepRemainingSeconds(activeIndex);
 
     int runningWater = 0;
     int runningTime = 0;
@@ -875,39 +865,15 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          step['title']?.toString() ?? 'Step ${index + 1}',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: isActive ? 15 : 13.5,
-                                            color: isActive ? Colors.white : AppTheme.textDark,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      if (isActive) ...[
-                                        const SizedBox(width: 6),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: AppTheme.accentAmber,
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: Text(
-                                            '${activeStepRemaining}s',
-                                            style: const TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ],
+                                  Text(
+                                    step['title']?.toString() ?? 'Step ${index + 1}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: isActive ? 15 : 13.5,
+                                      color: isActive ? Colors.white : AppTheme.textDark,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 3),
                                   Row(
