@@ -1244,102 +1244,106 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                     onTap: isLocked ? _showTrialLockDialog : () => _openBarista(recipe),
                     child: BaristaAvatar(
                       imageUrl: (recipe['authorAvatarUrl'] ?? recipe['authorImageUrl'])?.toString(),
-                      radius: 18,
+                      radius: 16,
                     ),
                   ),
+                  const SizedBox(width: 4),
                   Expanded(
-                    child: Wrap(
-                      alignment: WrapAlignment.end,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 4,
-                      runSpacing: 3,
-                      children: [
-                        if (isLocked) ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade700,
-                              borderRadius: BorderRadius.circular(6),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (isLocked) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                              margin: const EdgeInsets.only(right: 3),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade700,
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(CupertinoIcons.lock_fill, size: 7.5, color: Colors.white),
+                                  SizedBox(width: 2),
+                                  Text(
+                                    'Terkunci',
+                                    style: TextStyle(
+                                      fontSize: 7.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            child: const Row(
+                          ],
+                          // Chip Kopi (Background Coklat & Icon Biji Kopi)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4.5, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: isLocked ? Colors.grey.shade300 : const Color(0xFFF6EFEA),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: isLocked ? Colors.grey.shade400 : AppTheme.primaryBrown.withValues(alpha: 0.22),
+                                width: 0.7,
+                              ),
+                            ),
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(CupertinoIcons.lock_fill, size: 8.5, color: Colors.white),
-                                SizedBox(width: 2.5),
+                                CoffeeBeanIcon(
+                                  size: 8.5,
+                                  color: isLocked ? Colors.grey.shade600 : AppTheme.primaryBrown,
+                                ),
+                                const SizedBox(width: 2.5),
                                 Text(
-                                  'Terkunci',
+                                  '${coffeeWeight}g',
                                   style: TextStyle(
-                                    fontSize: 8,
+                                    fontSize: 8.5,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                                    color: isLocked ? Colors.grey.shade700 : AppTheme.primaryBrown,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 3),
+                          // Chip Air (Background Biru & Icon Air)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4.5, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: isLocked ? Colors.grey.shade300 : const Color(0xFFE8F3FA),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: isLocked ? Colors.grey.shade400 : Colors.blue.withValues(alpha: 0.25),
+                                width: 0.7,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  iceWeight > 0 ? CupertinoIcons.snow : CupertinoIcons.drop_fill,
+                                  size: 8.5,
+                                  color: isLocked ? Colors.grey.shade600 : const Color(0xFF1976D2),
+                                ),
+                                const SizedBox(width: 2),
+                                Text(
+                                  iceWeight > 0 ? '${totalWater + iceWeight}g' : '${totalWater}ml',
+                                  style: TextStyle(
+                                    fontSize: 8.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: isLocked ? Colors.grey.shade700 : const Color(0xFF1976D2),
                                   ),
                                 ),
                               ],
                             ),
                           ),
                         ],
-                        // Chip Kopi (Background Coklat & Icon Biji Kopi)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 2.5),
-                          decoration: BoxDecoration(
-                            color: isLocked ? Colors.grey.shade300 : const Color(0xFFF6EFEA),
-                            borderRadius: BorderRadius.circular(7),
-                            border: Border.all(
-                              color: isLocked ? Colors.grey.shade400 : AppTheme.primaryBrown.withValues(alpha: 0.22),
-                              width: 0.8,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              CoffeeBeanIcon(
-                                size: 9.5,
-                                color: isLocked ? Colors.grey.shade600 : AppTheme.primaryBrown,
-                              ),
-                              const SizedBox(width: 3.5),
-                              Text(
-                                '${coffeeWeight}g',
-                                style: TextStyle(
-                                  fontSize: 9.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: isLocked ? Colors.grey.shade700 : AppTheme.primaryBrown,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Chip Air (Background Biru & Icon Air)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 2.5),
-                          decoration: BoxDecoration(
-                            color: isLocked ? Colors.grey.shade300 : const Color(0xFFE8F3FA),
-                            borderRadius: BorderRadius.circular(7),
-                            border: Border.all(
-                              color: isLocked ? Colors.grey.shade400 : Colors.blue.withValues(alpha: 0.25),
-                              width: 0.8,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                iceWeight > 0 ? CupertinoIcons.snow : CupertinoIcons.drop_fill,
-                                size: 9.5,
-                                color: isLocked ? Colors.grey.shade600 : const Color(0xFF1976D2),
-                              ),
-                              const SizedBox(width: 3),
-                              Text(
-                                iceWeight > 0 ? '${totalWater + iceWeight}g' : '${totalWater}ml',
-                                style: TextStyle(
-                                  fontSize: 9.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: isLocked ? Colors.grey.shade700 : const Color(0xFF1976D2),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ],
