@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
 import '../services/profile_service.dart';
+import '../services/language_service.dart';
+import '../services/coffee_translator.dart';
 import '../utils/barista_utils.dart';
 import 'barista_profile_screen.dart';
 import 'brew_timer_screen.dart';
@@ -36,12 +38,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _loadData();
     ApiService.changeNotifier.addListener(_onExternalChange);
     ProfileService.changeNotifier.addListener(_onExternalChange);
+    LanguageService.changeNotifier.addListener(_onExternalChange);
   }
 
   @override
   void dispose() {
     ApiService.changeNotifier.removeListener(_onExternalChange);
     ProfileService.changeNotifier.removeListener(_onExternalChange);
+    LanguageService.changeNotifier.removeListener(_onExternalChange);
     _fadeCtrl.dispose();
     super.dispose();
   }
@@ -106,14 +110,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Selamat pagi,';
-    if (hour < 15) return 'Selamat siang,';
-    if (hour < 19) return 'Selamat sore,';
-    return 'Selamat malam,';
+    final isEn = LanguageService.isEnglish;
+    if (hour < 12) return isEn ? 'Good morning,' : 'Selamat pagi,';
+    if (hour < 15) return isEn ? 'Good afternoon,' : 'Selamat siang,';
+    if (hour < 19) return isEn ? 'Good evening,' : 'Selamat sore,';
+    return isEn ? 'Good evening,' : 'Selamat malam,';
   }
 
   @override
   Widget build(BuildContext context) {
+    final isEn = LanguageService.isEnglish;
+
     return Scaffold(
       body: SafeArea(
         child: RefreshIndicator(
@@ -170,12 +177,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ),
                   const SizedBox(height: 28),
                   Text(
-                    'Mau brew\napa hari ini?',
+                    isEn ? 'What would you\nlike to brew today?' : 'Mau brew\napa hari ini?',
                     style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 32, height: 1.15),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Eksplorasi resep presisi, inspirasi seduh, dan kreasi rasa terbaik.',
+                    isEn
+                        ? 'Explore precision recipes, brewing inspiration, and craft flavors.'
+                        : 'Eksplorasi resep presisi, inspirasi seduh, dan kreasi rasa terbaik.',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 28),
@@ -237,7 +246,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   if (_isLoading)
                     const Center(child: CircularProgressIndicator(color: AppTheme.primaryBrown))
                   else if (_frequent.isNotEmpty) ...[
-                    Text('Paling Sering Dipakai', style: Theme.of(context).textTheme.titleLarge),
+                    Text(
+                      isEn ? 'Most Frequently Brewed' : 'Paling Sering Dipakai',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                     const SizedBox(height: 16),
                     SizedBox(
                       height: 220,
@@ -252,15 +264,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ],
 
                   if (!_isLoading) ...[
-                    Text('Baru Dicoba', style: Theme.of(context).textTheme.titleLarge),
+                    Text(
+                      isEn ? 'Recent Brews' : 'Baru Dicoba',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                     const SizedBox(height: 16),
                     if (_history.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 12),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
                         child: Center(
                           child: Text(
-                            'Belum ada brew. Mulai dari tab Recipes atau Brew.',
-                            style: TextStyle(color: AppTheme.textMuted),
+                            isEn
+                                ? 'No brews yet. Start from Recipes or Brew tab.'
+                                : 'Belum ada brew. Mulai dari tab Recipes atau Brew.',
+                            style: const TextStyle(color: AppTheme.textMuted),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -278,7 +295,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildRecipeCard(BuildContext context, dynamic recipe) {
-    final title = recipe['title'] ?? 'Unknown Recipe';
+    final title = CoffeeTranslator.translateTitle(recipe['title']?.toString() ?? 'Unknown Recipe');
     final author = recipe['author'] ?? 'Anonymous';
     final category = recipe['category'] ?? 'V60';
 
@@ -376,7 +393,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildHistoryTile(BuildContext context, dynamic recipe) {
-    final title = recipe['title'] ?? 'Unknown Recipe';
+    final title = CoffeeTranslator.translateTitle(recipe['title']?.toString() ?? 'Unknown Recipe');
     final author = recipe['author'] ?? 'Anonymous';
     final authorImageUrl =
         (recipe['authorAvatarUrl'] ?? recipe['authorImageUrl'])?.toString();

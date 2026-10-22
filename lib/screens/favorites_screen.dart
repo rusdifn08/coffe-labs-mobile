@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/language_service.dart';
+import '../services/coffee_translator.dart';
 import '../theme/app_theme.dart';
 import '../utils/barista_utils.dart';
 import 'brew_timer_screen.dart';
@@ -34,18 +36,21 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isEn = LanguageService.isEnglish;
     return Scaffold(
-      appBar: AppBar(title: const Text('Resep Favorit'), centerTitle: true),
+      appBar: AppBar(title: Text(isEn ? 'Favorite Recipes' : 'Resep Favorit'), centerTitle: true),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryBrown))
           : _favorites.isEmpty
-              ? const Center(
+              ? Center(
                   child: Padding(
-                    padding: EdgeInsets.all(32),
+                    padding: const EdgeInsets.all(32),
                     child: Text(
-                      'Belum ada favorit.\nTap ikon hati di detail resep untuk menyimpan.',
+                      isEn
+                          ? 'No favorites yet.\nTap the heart icon on a recipe detail to save.'
+                          : 'Belum ada favorit.\nTap ikon hati di detail resep untuk menyimpan.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: AppTheme.textMuted, height: 1.5),
+                      style: const TextStyle(color: AppTheme.textMuted, height: 1.5),
                     ),
                   ),
                 )
@@ -58,6 +63,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     itemBuilder: (context, index) {
                       final recipe = _favorites[index];
                       final author = recipe['author']?.toString() ?? '';
+                      final rawTitle = recipe['title']?.toString() ?? 'Recipe';
+                      final title = isEn ? CoffeeTranslator.translateTitle(rawTitle) : rawTitle;
+
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
@@ -76,7 +84,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                               radius: 24,
                             ),
                             title: Text(
-                              recipe['title'] ?? 'Resep',
+                              title,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),

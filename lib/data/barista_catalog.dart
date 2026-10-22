@@ -1,4 +1,5 @@
 import '../utils/barista_utils.dart';
+import '../services/coffee_translator.dart';
 
 /// Profil metadata barista (bio singkat untuk layar profil, 100% offline).
 class BaristaProfile {
@@ -19,6 +20,10 @@ class BaristaProfile {
     required this.bio,
     this.imageAsset,
   });
+
+  String get localizedBio => CoffeeTranslator.translateBio(bio);
+  String get localizedCountry => CoffeeTranslator.translateCountry(country);
+  String get localizedSpecialty => CoffeeTranslator.translateSpecialty(specialty);
 }
 
 class BaristaCatalog {

@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flag/flag.dart';
 import '../services/api_service.dart';
+import '../services/language_service.dart';
+import '../services/coffee_translator.dart';
 import '../theme/app_theme.dart';
 import '../utils/barista_utils.dart';
 import '../data/brew_visual_catalog.dart';
@@ -454,7 +456,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final scaledRecipe = _buildScaledRecipe();
-    final String title = scaledRecipe['title'] as String;
+    final String rawTitle = scaledRecipe['title'] as String;
     final String rawAuthor = scaledRecipe['author'] as String;
     final String authorName = BaristaUtils.cleanName(rawAuthor);
     final String countryCode = BaristaUtils.countryCode(rawAuthor);
@@ -482,13 +484,26 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         .where((e) => e.isNotEmpty)
         .toList();
 
+    final bool isEn = LanguageService.isEnglish;
+    final String title = isEn ? CoffeeTranslator.translateTitle(rawTitle) : rawTitle;
+
     final List<String> prepChecklist = [
-      'Bilas kertas filter (Paper Rinse) & panaskan server',
-      'Timbang & giling ${coffeeWeight}g kopi (${BaristaUtils.shortGrindLabel(grindSize)})',
+      isEn
+          ? 'Rinse paper filter (Paper Rinse) & preheat server'
+          : 'Bilas kertas filter (Paper Rinse) & panaskan server',
+      isEn
+          ? 'Weigh & grind ${coffeeWeight}g coffee (${BaristaUtils.shortGrindLabel(grindSize)})'
+          : 'Timbang & giling ${coffeeWeight}g kopi (${BaristaUtils.shortGrindLabel(grindSize)})',
       iceWeight > 0
-          ? 'Siapkan ${iceWeight}g es batu di server + ${totalWater}g air panas ($waterTemp°C)'
-          : 'Panaskan minimal ${totalWater + 50}ml air hingga suhu $waterTemp°C',
-      'Tuang bubuk kopi ke dripper, ratakan bed, dan Tare timbangan ke 0.0g',
+          ? (isEn
+              ? 'Prepare ${iceWeight}g ice in server + ${totalWater}g hot water ($waterTemp°C)'
+              : 'Siapkan ${iceWeight}g es batu di server + ${totalWater}g air panas ($waterTemp°C)')
+          : (isEn
+              ? 'Heat at least ${totalWater + 50}ml water to $waterTemp°C'
+              : 'Panaskan minimal ${totalWater + 50}ml air hingga suhu $waterTemp°C'),
+      isEn
+          ? 'Add grounds to dripper, flatten bed, and Tare scale to 0.0g'
+          : 'Tuang bubuk kopi ke dripper, ratakan bed, dan Tare timbangan ke 0.0g',
     ];
 
     int cumulativeWater = 0;
@@ -778,22 +793,22 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Row(
+                            Row(
                               children: [
-                                Icon(CupertinoIcons.slider_horizontal_3, size: 16, color: AppTheme.primaryBrown),
-                                SizedBox(width: 6),
+                                const Icon(CupertinoIcons.slider_horizontal_3, size: 16, color: AppTheme.primaryBrown),
+                                const SizedBox(width: 6),
                                 Text(
-                                  'Sesuaikan Dosis Kopi (Auto-Scale)',
-                                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                                  isEn ? 'Adjust Coffee Dose (Auto-Scale)' : 'Sesuaikan Dosis Kopi (Auto-Scale)',
+                                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppTheme.textDark),
                                 ),
                               ],
                             ),
                             if (_scaledCoffeeGrams != _baseCoffeeGrams)
                               GestureDetector(
                                 onTap: () => setState(() => _scaledCoffeeGrams = _baseCoffeeGrams),
-                                child: const Text(
-                                  'Reset Asli',
-                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryBrown),
+                                child: Text(
+                                  isEn ? 'Reset Original' : 'Reset Asli',
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryBrown),
                                 ),
                               ),
                           ],
@@ -876,22 +891,28 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            _buildParamItem(CupertinoIcons.circle_bottomthird_split, 'Dose Kopi', '${coffeeWeight}g'),
+                            _buildParamItem(
+                              CupertinoIcons.circle_bottomthird_split,
+                              isEn ? 'Coffee Dose' : 'Dose Kopi',
+                              '${coffeeWeight}g',
+                            ),
                             _buildParamItem(
                               CupertinoIcons.drop_fill,
-                              iceWeight > 0 ? 'Air + Es' : 'Total Air',
+                              isEn
+                                  ? (iceWeight > 0 ? 'Water + Ice' : 'Total Water')
+                                  : (iceWeight > 0 ? 'Air + Es' : 'Total Air'),
                               iceWeight > 0 ? '${totalWater}g + ${iceWeight}g' : '${totalWater}g',
                             ),
-                            _buildParamItem(CupertinoIcons.divide, 'Rasio', ratio),
+                            _buildParamItem(CupertinoIcons.divide, isEn ? 'Ratio' : 'Rasio', ratio),
                           ],
                         ),
                         const Divider(height: 24),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            _buildParamItem(CupertinoIcons.thermometer, 'Suhu Air', '$waterTemp°C'),
-                            _buildParamItem(CupertinoIcons.timer, 'Total Waktu', _formatTime(totalTimeSeconds)),
-                            _buildParamItem(CupertinoIcons.drop, 'Mineral Air', waterPpm),
+                            _buildParamItem(CupertinoIcons.thermometer, isEn ? 'Water Temp' : 'Suhu Air', '$waterTemp°C'),
+                            _buildParamItem(CupertinoIcons.timer, isEn ? 'Total Time' : 'Total Waktu', _formatTime(totalTimeSeconds)),
+                            _buildParamItem(CupertinoIcons.drop, isEn ? 'Water TDS' : 'Mineral Air', waterPpm),
                           ],
                         ),
                       ],
@@ -980,14 +1001,14 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(color: AppTheme.accentAmber.withValues(alpha: 0.3)),
                                     ),
-                                    child: const Row(
+                                    child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(CupertinoIcons.compass, size: 13, color: AppTheme.primaryBrown),
-                                        SizedBox(width: 5),
+                                        const Icon(CupertinoIcons.compass, size: 13, color: AppTheme.primaryBrown),
+                                        const SizedBox(width: 5),
                                         Text(
-                                          'Konversi Grinder',
-                                          style: TextStyle(
+                                          isEn ? 'Grinder Converter' : 'Konversi Grinder',
+                                          style: const TextStyle(
                                             fontSize: 11,
                                             fontWeight: FontWeight.bold,
                                             color: AppTheme.primaryBrown,
@@ -1121,15 +1142,15 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                 padding: EdgeInsets.symmetric(vertical: 10),
                                 child: Divider(height: 1, color: Color(0xFFF2ECE4)),
                               ),
-                              const Padding(
-                                padding: EdgeInsets.only(bottom: 8),
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
                                 child: Row(
                                   children: [
-                                    Icon(CupertinoIcons.sparkles, size: 14, color: AppTheme.accentAmber),
-                                    SizedBox(width: 6),
+                                    const Icon(CupertinoIcons.sparkles, size: 14, color: AppTheme.accentAmber),
+                                    const SizedBox(width: 6),
                                     Text(
-                                      'Profil Rasa (Tasting Notes)',
-                                      style: TextStyle(
+                                      isEn ? 'Tasting Notes & Flavor Profile' : 'Profil Rasa (Tasting Notes)',
+                                      style: const TextStyle(
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.bold,
                                         color: AppTheme.textMuted,
@@ -1176,9 +1197,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                   children: [
                                     const Icon(CupertinoIcons.checkmark_seal_fill, size: 16, color: AppTheme.primaryBrown),
                                     const SizedBox(width: 8),
-                                    const Text(
-                                      'Checklist Persiapan Sebelum Brew',
-                                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                                    Text(
+                                      isEn ? 'Pre-Brew Preparation Checklist' : 'Checklist Persiapan Sebelum Brew',
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textDark),
                                     ),
                                     const SizedBox(width: 6),
                                     Container(
@@ -1202,7 +1223,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                     size: 20,
                                     color: _showPrepChecklist ? AppTheme.primaryBrown : AppTheme.textMuted,
                                   ),
-                                  tooltip: _showPrepChecklist ? 'Sembunyikan Persiapan' : 'Tampilkan Persiapan',
+                                  tooltip: _showPrepChecklist
+                                      ? (isEn ? 'Hide Prep Checklist' : 'Sembunyikan Persiapan')
+                                      : (isEn ? 'Show Prep Checklist' : 'Tampilkan Persiapan'),
                                   onPressed: () => setState(() => _showPrepChecklist = !_showPrepChecklist),
                                 ),
                               ],
@@ -1260,10 +1283,13 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   const SizedBox(height: 24),
 
                   // Description / Philosophy
-                  Text('Filosofi & Teknik Ekstraksi', style: Theme.of(context).textTheme.titleLarge),
+                  Text(
+                    isEn ? 'Brew Philosophy & Extraction Technique' : 'Filosofi & Teknik Ekstraksi',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                   const SizedBox(height: 10),
                   Text(
-                    description,
+                    CoffeeTranslator.translatePhilosophy(description),
                     style: const TextStyle(color: AppTheme.textDark, height: 1.6, fontSize: 14),
                   ),
                   const SizedBox(height: 28),
@@ -1272,9 +1298,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Tahapan Seduh', style: Theme.of(context).textTheme.titleLarge),
+                      Text(isEn ? 'Brewing Steps' : 'Tahapan Seduh', style: Theme.of(context).textTheme.titleLarge),
                       Text(
-                        '${steps.length} Tahap',
+                        isEn ? '${steps.length} Steps' : '${steps.length} Tahap',
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryBrown),
                       ),
                     ],
@@ -1295,7 +1321,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'Persiapan Japanese Iced: Masukkan ${iceWeight}g es batu ke dalam server sebelum memulai tuangan air panas (${totalWater}g).',
+                              isEn
+                                  ? 'Japanese Iced Preparation: Place ${iceWeight}g ice in server before hot water pour (${totalWater}g).'
+                                  : 'Persiapan Japanese Iced: Masukkan ${iceWeight}g es batu ke dalam server sebelum memulai tuangan air panas (${totalWater}g).',
                               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textDark),
                             ),
                           ),
@@ -1347,7 +1375,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      s['title']?.toString() ?? 'Step ${idx + 1}',
+                                      CoffeeTranslator.translateStepTitle(s['title']?.toString() ?? 'Step ${idx + 1}'),
                                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                     ),
                                     const SizedBox(height: 2),
@@ -1367,7 +1395,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  waterAdded > 0 ? '+${waterAdded}g → ${targetScale}g' : 'Imersi / Tunggu',
+                                  waterAdded > 0 ? '+${waterAdded}g → ${targetScale}g' : (isEn ? 'Immersion / Drawdown' : 'Imersi / Tunggu'),
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
@@ -1380,7 +1408,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           if (instruction.isNotEmpty) ...[
                             const SizedBox(height: 10),
                             Text(
-                              instruction,
+                              CoffeeTranslator.translateInstruction(instruction),
                               style: const TextStyle(fontSize: 12.5, color: AppTheme.textDark, height: 1.45),
                             ),
                           ],
@@ -1419,7 +1447,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 ],
               ),
               child: IconButton(
-                tooltip: 'Print Struk Resep (Bluetooth Kasir)',
+                tooltip: isEn ? 'Print Recipe Receipt (Bluetooth)' : 'Print Struk Resep (Bluetooth Kasir)',
                 icon: const Icon(CupertinoIcons.printer_fill, color: AppTheme.primaryBrown, size: 22),
                 onPressed: () => ThermalReceiptSheet.show(context, scaledRecipe),
               ),
@@ -1436,8 +1464,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   icon: const Icon(CupertinoIcons.play_fill, color: Colors.white, size: 20),
                   label: Text(
                     _scaledCoffeeGrams != _baseCoffeeGrams
-                        ? 'Mulai Brew (${coffeeWeight}g → ${totalWater}g)'
-                        : 'Mulai Guided Brewing',
+                        ? (isEn ? 'Start Brew (${coffeeWeight}g → ${totalWater}g)' : 'Mulai Brew (${coffeeWeight}g → ${totalWater}g)')
+                        : (isEn ? 'Start Guided Brewing' : 'Mulai Guided Brewing'),
                     style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                 ),

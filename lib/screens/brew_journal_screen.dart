@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/language_service.dart';
+import '../services/coffee_translator.dart';
 import '../theme/app_theme.dart';
 import '../utils/barista_utils.dart';
 
@@ -76,22 +78,24 @@ class _BrewJournalScreenState extends State<BrewJournalScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Text('Catat Hasil Brew', style: Theme.of(context).textTheme.titleLarge),
+                    Text(LanguageService.isEnglish ? 'Log Brew Result' : 'Catat Hasil Brew', style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<int>(
                       key: ValueKey(selectedRecipeId),
                       initialValue: selectedRecipeId,
                       decoration: InputDecoration(
-                        labelText: 'Resep',
+                        labelText: LanguageService.isEnglish ? 'Recipe' : 'Resep',
                         filled: true,
                         fillColor: Colors.white,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       items: recipes.map<DropdownMenuItem<int>>((r) {
+                        final rawT = (r['title'] as String?) ?? 'Recipe';
+                        final t = LanguageService.isEnglish ? CoffeeTranslator.translateTitle(rawT) : rawT;
                         return DropdownMenuItem(
                           value: r['id'] as int,
                           child: Text(
-                            (r['title'] as String?) ?? 'Resep',
+                            t,
                             overflow: TextOverflow.ellipsis,
                           ),
                         );
@@ -112,7 +116,7 @@ class _BrewJournalScreenState extends State<BrewJournalScreen> {
                     TextField(
                       controller: grindCtrl,
                       decoration: InputDecoration(
-                        labelText: 'Grind / catatan teknis',
+                        labelText: LanguageService.isEnglish ? 'Grind / technical notes' : 'Grind / catatan teknis',
                         filled: true,
                         fillColor: Colors.white,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -133,7 +137,7 @@ class _BrewJournalScreenState extends State<BrewJournalScreen> {
                       controller: noteCtrl,
                       maxLines: 3,
                       decoration: InputDecoration(
-                        labelText: 'Catatan rasa (manis, asam, body...)',
+                        labelText: LanguageService.isEnglish ? 'Flavor notes (sweet, acid, body...)' : 'Catatan rasa (manis, asam, body...)',
                         filled: true,
                         fillColor: Colors.white,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -161,7 +165,7 @@ class _BrewJournalScreenState extends State<BrewJournalScreen> {
                                 _load();
                               },
                         style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryBrown),
-                        child: const Text('Simpan Jurnal', style: TextStyle(color: Colors.white)),
+                        child: Text(LanguageService.isEnglish ? 'Save Journal' : 'Simpan Jurnal', style: const TextStyle(color: Colors.white)),
                       ),
                     ),
                   ],
@@ -179,9 +183,10 @@ class _BrewJournalScreenState extends State<BrewJournalScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isEn = LanguageService.isEnglish;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Jurnal Brew'),
+        title: Text(isEn ? 'Brew Journal' : 'Jurnal Brew'),
         centerTitle: true,
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -189,18 +194,20 @@ class _BrewJournalScreenState extends State<BrewJournalScreen> {
         onPressed: () => _openAddSheet(),
         backgroundColor: AppTheme.primaryBrown,
         icon: const Icon(CupertinoIcons.pen, color: Colors.white),
-        label: const Text('Catat', style: TextStyle(color: Colors.white)),
+        label: Text(isEn ? 'Log Brew' : 'Catat', style: const TextStyle(color: Colors.white)),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryBrown))
           : _entries.isEmpty
-              ? const Center(
+              ? Center(
                   child: Padding(
-                    padding: EdgeInsets.all(32),
+                    padding: const EdgeInsets.all(32),
                     child: Text(
-                      'Jurnal masih kosong.\nCatat rasa, grind, dan rating setelah brew.',
+                      isEn
+                          ? 'Journal is still empty.\nRecord flavor, grind, and rating after brewing.'
+                          : 'Jurnal masih kosong.\nCatat rasa, grind, dan rating setelah brew.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: AppTheme.textMuted, height: 1.5),
+                      style: const TextStyle(color: AppTheme.textMuted, height: 1.5),
                     ),
                   ),
                 )

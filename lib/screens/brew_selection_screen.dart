@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
+import '../services/language_service.dart';
 import '../utils/barista_utils.dart';
 import 'brew_timer_screen.dart';
 import 'recipe_detail_screen.dart';
@@ -180,10 +181,13 @@ class _BrewSelectionScreenState extends State<BrewSelectionScreen> {
                               final remaining = await TrialService.getRemainingLockDuration();
                               if (!mounted) return;
                               final days = remaining != null ? (remaining.inDays + 1) : 7;
+                              final isEn = LanguageService.isEnglish;
                               TrialService.showLockedDialog(
                                 context: context,
-                                title: 'Batas Seduh Trial Tercapai',
-                                message: 'Anda telah mencapai batas 10 kali seduh pada mode trial. Fitur seduh terkunci selama 1 minggu ($days hari tersisa).\n\nSilakan login atau daftar akun resmi yang disetujui Admin untuk seduh tanpa batas!',
+                                title: isEn ? 'Trial Brew Limit Reached' : 'Batas Seduh Trial Tercapai',
+                                message: isEn
+                                    ? 'You have reached the 10-brew limit on trial mode. Brewing is locked for 1 week ($days days remaining).\n\nPlease log in or sign up with an Admin-approved account to brew without limits!'
+                                    : 'Anda telah mencapai batas 10 kali seduh pada mode trial. Fitur seduh terkunci selama 1 minggu ($days hari tersisa).\n\nSilakan login atau daftar akun resmi yang disetujui Admin untuk seduh tanpa batas!',
                                 onLoginTap: () {
                                   Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingScreen()));
                                 },
@@ -256,23 +260,24 @@ class _BrewSelectionScreenState extends State<BrewSelectionScreen> {
   }
 
   void _confirmDelete(int id, String title) {
+    final isEn = LanguageService.isEnglish;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Hapus Resep?'),
-        content: Text('Yakin ingin menghapus resep "$title"?'),
+        title: Text(isEn ? 'Delete Recipe?' : 'Hapus Resep?'),
+        content: Text(isEn ? 'Are you sure you want to delete recipe "$title"?' : 'Yakin ingin menghapus resep "$title"?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(isEn ? 'Cancel' : 'Batal')),
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
               await ApiService.deleteRecipe(id);
               _loadRecipes();
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Resep berhasil dihapus')));
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isEn ? 'Recipe deleted successfully' : 'Resep berhasil dihapus')));
               }
             },
-            child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+            child: Text(isEn ? 'Delete' : 'Hapus', style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),

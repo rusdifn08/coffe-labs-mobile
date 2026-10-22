@@ -12,10 +12,13 @@ import 'add_recipe_screen.dart';
 import 'onboarding_screen.dart';
 import '../services/api_service.dart';
 import '../services/trial_service.dart';
+import '../services/language_service.dart';
+import '../services/coffee_translator.dart';
 
 class _NoteCategoryItem {
   final String id;
   final String label;
+  final String labelEn;
   final String emoji;
   final List<String> groups;
   final List<String> keywords;
@@ -23,16 +26,20 @@ class _NoteCategoryItem {
   const _NoteCategoryItem({
     required this.id,
     required this.label,
+    required this.labelEn,
     required this.emoji,
     required this.groups,
     required this.keywords,
   });
+
+  String get localizedLabel => LanguageService.isEnglish ? labelEn : label;
 }
 
 const List<_NoteCategoryItem> _noteCategories = [
   _NoteCategoryItem(
     id: 'floral',
     label: 'Floral',
+    labelEn: 'Floral',
     emoji: '🌸',
     groups: ['Floral'],
     keywords: ['floral', 'flower', 'jasmine', 'rose', 'hibiscus', 'blossom', 'lavender', 'chamomile', 'bunga', 'elderflower'],
@@ -40,6 +47,7 @@ const List<_NoteCategoryItem> _noteCategories = [
   _NoteCategoryItem(
     id: 'fruity',
     label: 'Fruity & Tropical',
+    labelEn: 'Fruity & Tropical',
     emoji: '🍑',
     groups: ['Stone Fruit', 'Tropical', 'Orchard Fruit'],
     keywords: ['fruit', 'fruity', 'peach', 'apricot', 'plum', 'mango', 'passion', 'pineapple', 'lychee', 'guava', 'papaya', 'melon', 'apple', 'pear', 'grape', 'buah'],
@@ -47,6 +55,7 @@ const List<_NoteCategoryItem> _noteCategories = [
   _NoteCategoryItem(
     id: 'citrus',
     label: 'Citrus',
+    labelEn: 'Citrus',
     emoji: '🍋',
     groups: ['Citrus'],
     keywords: ['citrus', 'lemon', 'bergamot', 'orange', 'grapefruit', 'lime', 'mandarin', 'yuzu', 'tangerine', 'jeruk'],
@@ -54,6 +63,7 @@ const List<_NoteCategoryItem> _noteCategories = [
   _NoteCategoryItem(
     id: 'berry',
     label: 'Berry',
+    labelEn: 'Berry',
     emoji: '🍓',
     groups: ['Berry'],
     keywords: ['berry', 'strawberry', 'blueberry', 'currant', 'raspberry', 'cherry', 'blackberry', 'cranberry'],
@@ -61,6 +71,7 @@ const List<_NoteCategoryItem> _noteCategories = [
   _NoteCategoryItem(
     id: 'sweet_cocoa',
     label: 'Cokelat & Manis',
+    labelEn: 'Chocolate & Sweet',
     emoji: '🍫',
     groups: ['Sweet', 'Cocoa'],
     keywords: ['choco', 'chocolate', 'cocoa', 'cacao', 'honey', 'caramel', 'toffee', 'maple', 'sugar', 'sweet', 'vanilla', 'creamy', 'madu', 'cokelat', 'karamel'],
@@ -68,6 +79,7 @@ const List<_NoteCategoryItem> _noteCategories = [
   _NoteCategoryItem(
     id: 'nutty_spices',
     label: 'Nutty & Rempah',
+    labelEn: 'Nutty & Spices',
     emoji: '🥜',
     groups: ['Nutty', 'Herbal'],
     keywords: ['nut', 'nutty', 'almond', 'hazelnut', 'walnut', 'pecan', 'spice', 'spices', 'cinnamon', 'herbal', 'lemongrass', 'rempah', 'kacang'],
@@ -75,6 +87,7 @@ const List<_NoteCategoryItem> _noteCategories = [
   _NoteCategoryItem(
     id: 'tea_winey',
     label: 'Teh & Fermentasi',
+    labelEn: 'Tea & Fermentation',
     emoji: '🍵',
     groups: ['Tea-like', 'Winey'],
     keywords: ['tea', 'earl grey', 'oolong', 'black tea', 'green tea', 'wine', 'winey', 'rum', 'whiskey', 'ferment', 'teh'],
@@ -82,6 +95,7 @@ const List<_NoteCategoryItem> _noteCategories = [
   _NoteCategoryItem(
     id: 'mouthfeel',
     label: 'Mouthfeel & Body',
+    labelEn: 'Mouthfeel & Body',
     emoji: '✨',
     groups: ['Mouthfeel'],
     keywords: ['clean', 'juicy', 'silky', 'body', 'creamy', 'round', 'smooth', 'mouthfeel', 'finish'],
@@ -124,22 +138,39 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
     'Cone',
   ];
 
-  final List<String> _pourFilterOptions = const [
-    'Semua',
-    '1-2x Pour',
-    '3x Pouring',
-    '4x Pouring',
-    '5x+ Pouring',
-    'Full Immersion',
-  ];
+  List<String> get _pourFilterOptions => LanguageService.isEnglish
+      ? const [
+          'All',
+          '1-2x Pour',
+          '3x Pouring',
+          '4x Pouring',
+          '5x+ Pouring',
+          'Full Immersion',
+        ]
+      : const [
+          'Semua',
+          '1-2x Pour',
+          '3x Pouring',
+          '4x Pouring',
+          '5x+ Pouring',
+          'Full Immersion',
+        ];
 
-  final List<String> _originFilterOptions = const [
-    'Semua',
-    '🇮🇩 Barista Indonesia',
-    '🌍 Barista Internasional',
-    '❄️ Resep Pakai Es',
-    '⚡ Cepat (≤ 2:15)',
-  ];
+  List<String> get _originFilterOptions => LanguageService.isEnglish
+      ? const [
+          'All',
+          '🇮🇩 Indonesian Baristas',
+          '🌍 International Baristas',
+          '❄️ Iced Recipes',
+          '⚡ Fast (≤ 2:15)',
+        ]
+      : const [
+          'Semua',
+          '🇮🇩 Barista Indonesia',
+          '🌍 Barista Internasional',
+          '❄️ Resep Pakai Es',
+          '⚡ Cepat (≤ 2:15)',
+        ];
 
   @override
   void initState() {
@@ -147,7 +178,12 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
     _loadData();
     ApiService.changeNotifier.addListener(_loadData);
     TrialService.changeNotifier.addListener(_onTrialChanged);
+    LanguageService.changeNotifier.addListener(_onLanguageChanged);
     _checkTrial();
+  }
+
+  void _onLanguageChanged() {
+    if (mounted) setState(() {});
   }
 
   void _checkTrial() async {
@@ -163,6 +199,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
   void dispose() {
     ApiService.changeNotifier.removeListener(_loadData);
     TrialService.changeNotifier.removeListener(_onTrialChanged);
+    LanguageService.changeNotifier.removeListener(_onLanguageChanged);
     super.dispose();
   }
 
@@ -188,11 +225,11 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
   int get _activeFilterCount {
     int c = 0;
     if (_selectedCategory != 'All') c++;
-    if (_selectedPourFilter != 'Semua') c++;
-    if (_selectedDripperFilter != 'Semua') c++;
-    if (_selectedBaristaFilter != 'Semua') c++;
-    if (_selectedNoteFilter != 'Semua') c++;
-    if (_selectedOriginFilter != 'Semua') c++;
+    if (_selectedPourFilter != 'Semua' && _selectedPourFilter != 'All') c++;
+    if (_selectedDripperFilter != 'Semua' && _selectedDripperFilter != 'All') c++;
+    if (_selectedBaristaFilter != 'Semua' && _selectedBaristaFilter != 'All') c++;
+    if (_selectedNoteFilter != 'Semua' && _selectedNoteFilter != 'All') c++;
+    if (_selectedOriginFilter != 'Semua' && _selectedOriginFilter != 'All') c++;
     return c;
   }
 
@@ -210,7 +247,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
   }
 
   bool _matchesPourFilter(Map<String, dynamic> r) {
-    if (_selectedPourFilter == 'Semua') return true;
+    if (_selectedPourFilter == 'Semua' || _selectedPourFilter == 'All') return true;
     final pours = BrewVisualCatalog.countPours(r);
     final cat = (r['category'] ?? '').toString().toLowerCase();
     if (_selectedPourFilter == 'Full Immersion') {
@@ -224,7 +261,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
   }
 
   bool _matchesDripperFilter(Map<String, dynamic> r) {
-    if (_selectedDripperFilter == 'Semua') return true;
+    if (_selectedDripperFilter == 'Semua' || _selectedDripperFilter == 'All') return true;
     final matched = BrewVisualCatalog.matchDripper(
       r['method']?.toString(),
       category: r['category']?.toString(),
@@ -233,14 +270,17 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
   }
 
   bool _matchesNoteFilter(Map<String, dynamic> r) {
-    if (_selectedNoteFilter == 'Semua') return true;
+    if (_selectedNoteFilter == 'Semua' || _selectedNoteFilter == 'All') return true;
     final notesStr = '${r['tastingNotes'] ?? ''} ${r['beanName'] ?? ''} ${r['description'] ?? ''}'.toLowerCase();
 
-    // Cek apakah filter merupakan tingkat kategori (misal: "🌸 Floral" atau "Semua Floral")
+    // Cek apakah filter merupakan tingkat kategori
     for (final cat in _noteCategories) {
       if (_selectedNoteFilter == '${cat.emoji} ${cat.label}' ||
+          _selectedNoteFilter == '${cat.emoji} ${cat.labelEn}' ||
           _selectedNoteFilter == 'Semua ${cat.label}' ||
-          _selectedNoteFilter == cat.label) {
+          _selectedNoteFilter == 'All ${cat.labelEn}' ||
+          _selectedNoteFilter == cat.label ||
+          _selectedNoteFilter == cat.labelEn) {
         if (cat.keywords.any((kw) => notesStr.contains(kw.toLowerCase()))) return true;
         final catNotes = BrewVisualCatalog.flavorNotes.where((fn) => cat.groups.contains(fn.group));
         return catNotes.any((fn) {
@@ -305,13 +345,13 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Row(
+                          Row(
                             children: [
-                              Icon(CupertinoIcons.slider_horizontal_3, color: AppTheme.primaryBrown, size: 20),
-                              SizedBox(width: 8),
+                              const Icon(CupertinoIcons.slider_horizontal_3, color: AppTheme.primaryBrown, size: 20),
+                              const SizedBox(width: 8),
                               Text(
-                                'Filter Resep Lengkap',
-                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                                LanguageService.isEnglish ? 'All Recipe Filters' : 'Filter Resep Lengkap',
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textDark),
                               ),
                             ],
                           ),
@@ -320,7 +360,10 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                               if (_activeFilterCount > 0)
                                 TextButton(
                                   onPressed: () => updateFilter(_resetAllFilters),
-                                  child: const Text('Reset Semua', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                                  child: Text(
+                                    LanguageService.isEnglish ? 'Reset All' : 'Reset Semua',
+                                    style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+                                  ),
                                 ),
                               IconButton(
                                 icon: const Icon(CupertinoIcons.xmark_circle_fill, color: AppTheme.textMuted),
@@ -338,7 +381,10 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
                         children: [
                           // 1. FILTER BY JUMLAH POURING
-                          _filterSectionTitle(CupertinoIcons.drop_fill, '1. Jumlah Pouring / Struktur Tuangan'),
+                          _filterSectionTitle(
+                            CupertinoIcons.drop_fill,
+                            LanguageService.isEnglish ? '1. Pour Count / Structure' : '1. Jumlah Pouring / Struktur Tuangan',
+                          ),
                           const SizedBox(height: 10),
                           Wrap(
                             spacing: 8,
@@ -364,7 +410,10 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                           const SizedBox(height: 22),
 
                           // 2. FILTER BY DRIPPER / ALAT SEDUH (VISUAL GAMBAR)
-                          _filterSectionTitle(CupertinoIcons.cube_box_fill, '2. Pilih Dripper / Alat Seduh'),
+                          _filterSectionTitle(
+                            CupertinoIcons.cube_box_fill,
+                            LanguageService.isEnglish ? '2. Dripper / Brewing Gear' : '2. Pilih Dripper / Alat Seduh',
+                          ),
                           const SizedBox(height: 10),
                           SizedBox(
                             height: 106,
@@ -372,11 +421,11 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                               scrollDirection: Axis.horizontal,
                               children: [
                                 _dripperFilterCard(
-                                  shortName: 'Semua',
-                                  subtitle: 'Semua Alat',
-                                  selected: _selectedDripperFilter == 'Semua',
+                                  shortName: LanguageService.isEnglish ? 'All' : 'Semua',
+                                  subtitle: LanguageService.isEnglish ? 'All Gear' : 'Semua Alat',
+                                  selected: _selectedDripperFilter == 'Semua' || _selectedDripperFilter == 'All',
                                   item: null,
-                                  onTap: () => updateFilter(() => _selectedDripperFilter = 'Semua'),
+                                  onTap: () => updateFilter(() => _selectedDripperFilter = LanguageService.isEnglish ? 'All' : 'Semua'),
                                 ),
                                 ...BrewVisualCatalog.drippers.map((d) {
                                   final selected = _selectedDripperFilter == d.shortName;
@@ -394,7 +443,10 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                           const SizedBox(height: 22),
 
                           // 3. FILTER BY BARISTA / ORANGNYA SIAPA (VISUAL FOTO WAJAH)
-                          _filterSectionTitle(CupertinoIcons.person_2_fill, '3. Pilih Barista / Brewer'),
+                          _filterSectionTitle(
+                            CupertinoIcons.person_2_fill,
+                            LanguageService.isEnglish ? '3. Barista / Brewer' : '3. Pilih Barista / Brewer',
+                          ),
                           const SizedBox(height: 10),
                           SizedBox(
                             height: 104,
@@ -403,9 +455,9 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                               itemCount: _uniqueBaristas.length + 1,
                               itemBuilder: (context, idx) {
                                 if (idx == 0) {
-                                  final sel = _selectedBaristaFilter == 'Semua';
+                                  final sel = _selectedBaristaFilter == 'Semua' || _selectedBaristaFilter == 'All';
                                   return GestureDetector(
-                                    onTap: () => updateFilter(() => _selectedBaristaFilter = 'Semua'),
+                                    onTap: () => updateFilter(() => _selectedBaristaFilter = LanguageService.isEnglish ? 'All' : 'Semua'),
                                     child: Container(
                                       width: 78,
                                       margin: const EdgeInsets.only(right: 10),
@@ -425,7 +477,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                                           ),
                                           const SizedBox(height: 6),
                                           Text(
-                                            'Semua',
+                                            LanguageService.isEnglish ? 'All' : 'Semua',
                                             style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: sel ? Colors.white : AppTheme.textDark),
                                           ),
                                         ],
@@ -478,7 +530,10 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                           const SizedBox(height: 22),
 
                           // 4. FILTER BY TEKNIK / KATEGORI
-                          _filterSectionTitle(CupertinoIcons.lab_flask_solid, '4. Teknik Seduh'),
+                          _filterSectionTitle(
+                            CupertinoIcons.lab_flask_solid,
+                            LanguageService.isEnglish ? '4. Brew Method' : '4. Teknik Seduh',
+                          ),
                           const SizedBox(height: 10),
                           Wrap(
                             spacing: 8,
@@ -504,16 +559,27 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                           const SizedBox(height: 22),
 
                           // 5. FILTER BY TASTING NOTES (FILTER KATEGORI: FLORAL, FRUITY, CITRUS, DLL.)
-                          _filterSectionTitle(CupertinoIcons.sparkles, '5. Tasting Notes & Karakter Rasa'),
+                          _filterSectionTitle(
+                            CupertinoIcons.sparkles,
+                            LanguageService.isEnglish ? '5. Tasting Notes & Flavor Profile' : '5. Tasting Notes & Karakter Rasa',
+                          ),
                           const SizedBox(height: 6),
                           Text(
-                            _selectedNoteFilter == 'Semua'
-                                ? 'Pilih kategori rasa untuk menampilkan pilihan notes yang relevan:'
-                                : 'Filter aktif: $_selectedNoteFilter',
+                            _selectedNoteFilter == 'Semua' || _selectedNoteFilter == 'All'
+                                ? (LanguageService.isEnglish
+                                    ? 'Select a flavor category to explore relevant notes:'
+                                    : 'Pilih kategori rasa untuk menampilkan pilihan notes yang relevan:')
+                                : (LanguageService.isEnglish
+                                    ? 'Active filter: $_selectedNoteFilter'
+                                    : 'Filter aktif: $_selectedNoteFilter'),
                             style: TextStyle(
                               fontSize: 11.5,
-                              color: _selectedNoteFilter == 'Semua' ? AppTheme.textMuted : AppTheme.primaryBrown,
-                              fontWeight: _selectedNoteFilter == 'Semua' ? FontWeight.normal : FontWeight.bold,
+                              color: (_selectedNoteFilter == 'Semua' || _selectedNoteFilter == 'All')
+                                  ? AppTheme.textMuted
+                                  : AppTheme.primaryBrown,
+                              fontWeight: (_selectedNoteFilter == 'Semua' || _selectedNoteFilter == 'All')
+                                  ? FontWeight.normal
+                                  : FontWeight.bold,
                             ),
                           ),
                           const SizedBox(height: 10),
@@ -529,7 +595,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                                 final isCatActive = activeNoteCategoryModal == cat.id;
                                 return ChoiceChip(
                                   label: Text(
-                                    '${cat.emoji} ${cat.label}',
+                                    '${cat.emoji} ${cat.localizedLabel}',
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
@@ -564,8 +630,11 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                                   .where((fn) => curCat.groups.contains(fn.group))
                                   .toList();
                               final isCategorySelected = _selectedNoteFilter == '${curCat.emoji} ${curCat.label}' ||
+                                  _selectedNoteFilter == '${curCat.emoji} ${curCat.labelEn}' ||
                                   _selectedNoteFilter == 'Semua ${curCat.label}' ||
-                                  _selectedNoteFilter == curCat.label;
+                                  _selectedNoteFilter == 'All ${curCat.labelEn}' ||
+                                  _selectedNoteFilter == curCat.label ||
+                                  _selectedNoteFilter == curCat.labelEn;
 
                               return Container(
                                 padding: const EdgeInsets.all(12),
@@ -583,24 +652,26 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
-                                          '${curCat.emoji} Pilihan Notes ${curCat.label} (${categoryNotes.length})',
+                                          LanguageService.isEnglish
+                                              ? '${curCat.emoji} ${curCat.localizedLabel} Notes (${categoryNotes.length})'
+                                              : '${curCat.emoji} Pilihan Notes ${curCat.label} (${categoryNotes.length})',
                                           style: const TextStyle(
                                             fontSize: 12.5,
                                             fontWeight: FontWeight.bold,
                                             color: AppTheme.textDark,
                                           ),
                                         ),
-                                        if (_selectedNoteFilter != 'Semua')
+                                        if (_selectedNoteFilter != 'Semua' && _selectedNoteFilter != 'All')
                                           GestureDetector(
-                                            onTap: () => updateFilter(() => _selectedNoteFilter = 'Semua'),
-                                            child: const Row(
+                                            onTap: () => updateFilter(() => _selectedNoteFilter = LanguageService.isEnglish ? 'All' : 'Semua'),
+                                            child: Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                Icon(CupertinoIcons.clear_circled_solid, size: 13, color: Colors.redAccent),
-                                                SizedBox(width: 4),
+                                                const Icon(CupertinoIcons.clear_circled_solid, size: 13, color: Colors.redAccent),
+                                                const SizedBox(width: 4),
                                                 Text(
-                                                  'Hapus Notes',
-                                                  style: TextStyle(
+                                                  LanguageService.isEnglish ? 'Clear Notes' : 'Hapus Notes',
+                                                  style: const TextStyle(
                                                     fontSize: 11.5,
                                                     fontWeight: FontWeight.bold,
                                                     color: Colors.redAccent,
@@ -619,7 +690,9 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                                         // Pilihan Semua di kategori ini
                                         ChoiceChip(
                                           label: Text(
-                                            'Semua ${curCat.label} ${curCat.emoji}',
+                                            LanguageService.isEnglish
+                                                ? 'All ${curCat.localizedLabel} ${curCat.emoji}'
+                                                : 'Semua ${curCat.label} ${curCat.emoji}',
                                             style: TextStyle(
                                               fontSize: 11.5,
                                               fontWeight: FontWeight.bold,
@@ -634,7 +707,9 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                                           ),
                                           onSelected: (_) {
                                             updateFilter(() {
-                                              _selectedNoteFilter = isCategorySelected ? 'Semua' : '${curCat.emoji} ${curCat.label}';
+                                              _selectedNoteFilter = isCategorySelected
+                                                  ? (LanguageService.isEnglish ? 'All' : 'Semua')
+                                                  : '${curCat.emoji} ${curCat.localizedLabel}';
                                             });
                                           },
                                         ),
@@ -645,7 +720,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                                             noteText: fn.label,
                                             selected: sel,
                                             onTap: () => updateFilter(() {
-                                              _selectedNoteFilter = sel ? 'Semua' : fn.label;
+                                              _selectedNoteFilter = sel ? (LanguageService.isEnglish ? 'All' : 'Semua') : fn.label;
                                             }),
                                           );
                                         }),
@@ -659,7 +734,10 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                           const SizedBox(height: 22),
 
                           // 6. FILTER BY ASAL & DURASI
-                          _filterSectionTitle(CupertinoIcons.globe, '6. Asal Barista & Durasi'),
+                          _filterSectionTitle(
+                            CupertinoIcons.globe,
+                            LanguageService.isEnglish ? '6. Barista Origin & Duration' : '6. Asal Barista & Durasi',
+                          ),
                           const SizedBox(height: 10),
                           Wrap(
                             spacing: 8,
@@ -703,9 +781,9 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                             backgroundColor: AppTheme.primaryBrown,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           ),
-                          child: const Text(
-                            'Terapkan Filter',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                          child: Text(
+                            LanguageService.isEnglish ? 'Apply Filters' : 'Terapkan Filter',
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                           ),
                         ),
                       ),
@@ -796,13 +874,14 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
   }
 
   void _confirmDelete(int id, String title) {
+    final isEn = LanguageService.isEnglish;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Hapus Resep?'),
-        content: Text('Yakin ingin menghapus "$title"?'),
+        title: Text(isEn ? 'Delete Recipe?' : 'Hapus Resep?'),
+        content: Text(isEn ? 'Are you sure you want to delete "$title"?' : 'Yakin ingin menghapus "$title"?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(isEn ? 'Cancel' : 'Batal')),
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
@@ -810,7 +889,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                 await ApiService.deleteRecipe(id);
                 _loadData();
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Resep dihapus')));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isEn ? 'Recipe deleted' : 'Resep dihapus')));
                 }
               } catch (e) {
                 if (mounted) {
@@ -818,7 +897,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                 }
               }
             },
-            child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+            child: Text(isEn ? 'Delete' : 'Hapus', style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -826,10 +905,13 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
   }
 
   void _showTrialLockDialog() {
+    final isEn = LanguageService.isEnglish;
     TrialService.showLockedDialog(
       context: context,
-      title: 'Resep Terkunci (Mode Trial)',
-      message: 'Resep ini berada di luar batas 10 resep mode trial.\n\nSilakan login atau daftar akun resmi yang disetujui Admin untuk membuka seluruh koleksi resep dan menikmati pengalaman seduh tanpa batas!',
+      title: isEn ? 'Recipe Locked (Trial Mode)' : 'Resep Terkunci (Mode Trial)',
+      message: isEn
+          ? 'This recipe is outside the 10 trial recipes limit.\n\nPlease log in or sign up with an Admin-approved account to unlock all 96+ champion recipes and enjoy unlimited precision brewing!'
+          : 'Resep ini berada di luar batas 10 resep mode trial.\n\nSilakan login atau daftar akun resmi yang disetujui Admin untuk membuka seluruh koleksi resep dan menikmati pengalaman seduh tanpa batas!',
       onLoginTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingScreen()));
       },
@@ -872,6 +954,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isEn = LanguageService.isEnglish;
     List<dynamic> filteredRecipes = _allRecipes.where((raw) {
       final r = raw is Map ? ApiService.sanitizeRecipe(raw) : <String, dynamic>{};
       final catLower = _selectedCategory.toLowerCase();
@@ -883,6 +966,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
       final authorStr = (r['author'] ?? '').toString();
       final cleanAuthor = BaristaUtils.cleanName(authorStr);
       bool matchesBarista = _selectedBaristaFilter == 'Semua' ||
+          _selectedBaristaFilter == 'All' ||
           cleanAuthor.toLowerCase() == _selectedBaristaFilter.toLowerCase();
 
       final isIndo = BaristaUtils.countryCode(authorStr) == 'id';
@@ -891,13 +975,13 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
       final totalSecs = (r['totalTimeSeconds'] ?? 180) as num;
 
       bool matchesOrigin = true;
-      if (_selectedOriginFilter == '🇮🇩 Barista Indonesia') {
+      if (_selectedOriginFilter.contains('Indonesia')) {
         matchesOrigin = isIndo;
-      } else if (_selectedOriginFilter == '🌍 Barista Internasional') {
+      } else if (_selectedOriginFilter.contains('Internasional') || _selectedOriginFilter.contains('International')) {
         matchesOrigin = !isIndo;
-      } else if (_selectedOriginFilter == '❄️ Resep Pakai Es') {
+      } else if (_selectedOriginFilter.contains('Es') || _selectedOriginFilter.contains('Iced')) {
         matchesOrigin = isIced;
-      } else if (_selectedOriginFilter == '⚡ Cepat (≤ 2:15)') {
+      } else if (_selectedOriginFilter.contains('Cepat') || _selectedOriginFilter.contains('Fast')) {
         matchesOrigin = totalSecs <= 135;
       }
 
@@ -947,12 +1031,12 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            tooltip: 'Pilihkan Resep Acak',
+            tooltip: isEn ? 'Surprise Me (Random Recipe)' : 'Pilihkan Resep Acak',
             icon: const Icon(CupertinoIcons.sparkles),
             onPressed: () => _surpriseMe(filteredRecipes),
           ),
           IconButton(
-            tooltip: 'Tambah Resep Sendiri',
+            tooltip: isEn ? 'Add Custom Recipe' : 'Tambah Resep Sendiri',
             icon: const Icon(CupertinoIcons.add),
             onPressed: () async {
               bool? didAdd = await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddRecipeScreen()));
@@ -986,7 +1070,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                     child: TextField(
                       onChanged: (val) => setState(() => _searchQuery = val),
                       decoration: InputDecoration(
-                        hintText: 'Cari barista, biji, dripper, notes...',
+                        hintText: isEn ? 'Search barista, beans, dripper, notes...' : 'Cari barista, biji, dripper, notes...',
                         hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 13),
                         border: InputBorder.none,
                         icon: const Icon(CupertinoIcons.search, color: AppTheme.textMuted, size: 18),
@@ -1086,16 +1170,16 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                       scrollDirection: Axis.horizontal,
                       child: Row(
                         children: [
-                          if (_selectedPourFilter != 'Semua')
-                            _activeFilterChip(_selectedPourFilter, () => setState(() => _selectedPourFilter = 'Semua')),
-                          if (_selectedDripperFilter != 'Semua')
-                            _activeFilterChip(_selectedDripperFilter, () => setState(() => _selectedDripperFilter = 'Semua')),
-                          if (_selectedBaristaFilter != 'Semua')
-                            _activeFilterChip(_selectedBaristaFilter, () => setState(() => _selectedBaristaFilter = 'Semua')),
-                          if (_selectedNoteFilter != 'Semua')
-                            _activeFilterChip(_selectedNoteFilter, () => setState(() => _selectedNoteFilter = 'Semua')),
-                          if (_selectedOriginFilter != 'Semua')
-                            _activeFilterChip(_selectedOriginFilter, () => setState(() => _selectedOriginFilter = 'Semua')),
+                          if (_selectedPourFilter != 'Semua' && _selectedPourFilter != 'All')
+                            _activeFilterChip(_selectedPourFilter, () => setState(() => _selectedPourFilter = isEn ? 'All' : 'Semua')),
+                          if (_selectedDripperFilter != 'Semua' && _selectedDripperFilter != 'All')
+                            _activeFilterChip(_selectedDripperFilter, () => setState(() => _selectedDripperFilter = isEn ? 'All' : 'Semua')),
+                          if (_selectedBaristaFilter != 'Semua' && _selectedBaristaFilter != 'All')
+                            _activeFilterChip(_selectedBaristaFilter, () => setState(() => _selectedBaristaFilter = isEn ? 'All' : 'Semua')),
+                          if (_selectedNoteFilter != 'Semua' && _selectedNoteFilter != 'All')
+                            _activeFilterChip(_selectedNoteFilter, () => setState(() => _selectedNoteFilter = isEn ? 'All' : 'Semua')),
+                          if (_selectedOriginFilter != 'Semua' && _selectedOriginFilter != 'All')
+                            _activeFilterChip(_selectedOriginFilter, () => setState(() => _selectedOriginFilter = isEn ? 'All' : 'Semua')),
                         ],
                       ),
                     ),
@@ -1103,7 +1187,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                   TextButton(
                     onPressed: _resetAllFilters,
                     style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-                    child: const Text('Reset', style: TextStyle(fontSize: 11, color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                    child: Text(isEn ? 'Reset' : 'Reset', style: const TextStyle(fontSize: 11, color: Colors.redAccent, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -1121,11 +1205,11 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                           children: [
                             const Icon(CupertinoIcons.search, size: 42, color: AppTheme.textMuted),
                             const SizedBox(height: 10),
-                            const Text('Tidak ada resep yang cocok dengan filter ini.'),
+                            Text(isEn ? 'No recipes match this filter.' : 'Tidak ada resep yang cocok dengan filter ini.'),
                             const SizedBox(height: 8),
                             TextButton(
                               onPressed: _resetAllFilters,
-                              child: const Text('Reset Filter'),
+                              child: Text(isEn ? 'Reset Filter' : 'Reset Filter'),
                             ),
                           ],
                         ),
@@ -1184,15 +1268,18 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
   }
 
   Widget _buildGridCard(BuildContext context, dynamic rawRecipe, int index) {
+    final isEn = LanguageService.isEnglish;
     final recipe = rawRecipe is Map ? ApiService.sanitizeRecipe(rawRecipe) : <String, dynamic>{};
     final bool isLocked = _isTrial && index >= 10;
     int id = recipe['id'] as int;
-    String title = recipe['title'] as String;
+    String rawTitle = recipe['title'] as String;
+    String title = isEn ? CoffeeTranslator.translateTitle(rawTitle) : rawTitle;
     String rawAuthor = recipe['author'] as String;
     String authorName = BaristaUtils.cleanName(rawAuthor);
     String countryCode = BaristaUtils.countryCode(rawAuthor);
     String category = recipe['category'] as String;
-    String description = recipe['description'] as String;
+    String rawDescription = recipe['description'] as String;
+    String description = isEn ? CoffeeTranslator.translatePhilosophy(rawDescription) : rawDescription;
     String shortGrind = BaristaUtils.shortGrindLabel(recipe['grindSize']?.toString());
     num coffeeWeight = recipe['coffeeWeightGrams'] as int;
     num totalWater = recipe['totalWaterWeightGrams'] as int;
@@ -1263,14 +1350,14 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                                 color: Colors.grey.shade700,
                                 borderRadius: BorderRadius.circular(5),
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(CupertinoIcons.lock_fill, size: 7.5, color: Colors.white),
-                                  SizedBox(width: 2),
+                                  const Icon(CupertinoIcons.lock_fill, size: 7.5, color: Colors.white),
+                                  const SizedBox(width: 2),
                                   Text(
-                                    'Terkunci',
-                                    style: TextStyle(
+                                    isEn ? 'Locked' : 'Terkunci',
+                                    style: const TextStyle(
                                       fontSize: 7.5,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white,
@@ -1519,7 +1606,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                     color: Colors.white,
                   ),
                   label: Text(
-                    isLocked ? 'Terkunci' : 'Brew',
+                    isLocked ? (isEn ? 'Locked' : 'Terkunci') : 'Brew',
                     style: const TextStyle(color: Colors.white, fontSize: 12),
                   ),
                   style: ElevatedButton.styleFrom(

@@ -73,9 +73,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (name.isNotEmpty) {
       await ProfileService.setUserName(name);
       if (mounted) {
+        final isEn = LanguageService.isEnglish;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Nama profil berhasil disimpan!'),
+          SnackBar(
+            content: Text(isEn ? 'Profile name successfully saved!' : 'Nama profil berhasil disimpan!'),
             backgroundColor: AppTheme.primaryBrown,
           ),
         );
@@ -84,9 +85,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       }
     } else {
+      final isEn = LanguageService.isEnglish;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Nama tidak boleh kosong'),
+        SnackBar(
+          content: Text(isEn ? 'Name cannot be empty' : 'Nama tidak boleh kosong'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -95,9 +97,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showChangePasswordDialog() {
     if (_currentUser == null) {
+      final isEn = LanguageService.isEnglish;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Fitur ubah password memerlukan akun login aktif.'),
+        SnackBar(
+          content: Text(isEn ? 'Changing password requires an active logged-in account.' : 'Fitur ubah password memerlukan akun login aktif.'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -118,11 +121,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         builder: (dialogCtx, setDialogState) => AlertDialog(
           backgroundColor: AppTheme.surfaceWhite,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-          title: const Row(
+          title: Row(
             children: [
-              Icon(CupertinoIcons.lock_shield_fill, color: AppTheme.primaryBrown, size: 24),
-              SizedBox(width: 10),
-              Text('Ubah Password', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              const Icon(CupertinoIcons.lock_shield_fill, color: AppTheme.primaryBrown, size: 24),
+              const SizedBox(width: 10),
+              Text(LanguageService.isEnglish ? 'Change Password' : 'Ubah Password', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             ],
           ),
           content: SingleChildScrollView(
@@ -130,9 +133,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
-                  'Masukkan kata sandi lama dan kata sandi baru minimal 6 karakter.',
-                  style: TextStyle(fontSize: 12.5, color: AppTheme.textMuted),
+                Text(
+                  LanguageService.isEnglish
+                      ? 'Enter your current password and a new password (min. 6 characters).'
+                      : 'Masukkan kata sandi lama dan kata sandi baru minimal 6 karakter.',
+                  style: const TextStyle(fontSize: 12.5, color: AppTheme.textMuted),
                 ),
                 const SizedBox(height: 16),
 
@@ -141,7 +146,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   controller: currentPassCtrl,
                   obscureText: obscureCurrent,
                   decoration: InputDecoration(
-                    labelText: 'Password Saat Ini',
+                    labelText: LanguageService.isEnglish ? 'Current Password' : 'Password Saat Ini',
                     filled: true,
                     fillColor: AppTheme.bgCream.withValues(alpha: 0.5),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -158,7 +163,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   controller: newPassCtrl,
                   obscureText: obscureNew,
                   decoration: InputDecoration(
-                    labelText: 'Password Baru (min. 6)',
+                    labelText: LanguageService.isEnglish ? 'New Password (min. 6)' : 'Password Baru (min. 6)',
                     filled: true,
                     fillColor: AppTheme.bgCream.withValues(alpha: 0.5),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -175,7 +180,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   controller: confirmPassCtrl,
                   obscureText: obscureConfirm,
                   decoration: InputDecoration(
-                    labelText: 'Konfirmasi Password Baru',
+                    labelText: LanguageService.isEnglish ? 'Confirm New Password' : 'Konfirmasi Password Baru',
                     filled: true,
                     fillColor: AppTheme.bgCream.withValues(alpha: 0.5),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -191,7 +196,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           actions: [
             TextButton(
               onPressed: isSubmitting ? null : () => Navigator.pop(ctx),
-              child: const Text('Batal', style: TextStyle(color: AppTheme.textMuted)),
+              child: Text(LanguageService.isEnglish ? 'Cancel' : 'Batal', style: const TextStyle(color: AppTheme.textMuted)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -208,19 +213,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                       if (currentPass.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Masukkan password saat ini.'), backgroundColor: Colors.redAccent),
+                          SnackBar(
+                            content: Text(LanguageService.isEnglish ? 'Please enter current password.' : 'Masukkan password saat ini.'),
+                            backgroundColor: Colors.redAccent,
+                          ),
                         );
                         return;
                       }
                       if (newPass.length < 6) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Password baru minimal 6 karakter.'), backgroundColor: Colors.redAccent),
+                          SnackBar(
+                            content: Text(LanguageService.isEnglish ? 'New password must be at least 6 characters.' : 'Password baru minimal 6 karakter.'),
+                            backgroundColor: Colors.redAccent,
+                          ),
                         );
                         return;
                       }
                       if (newPass != confirmPass) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Konfirmasi password tidak cocok!'), backgroundColor: Colors.redAccent),
+                          SnackBar(
+                            content: Text(LanguageService.isEnglish ? 'Passwords do not match!' : 'Konfirmasi password tidak cocok!'),
+                            backgroundColor: Colors.redAccent,
+                          ),
                         );
                         return;
                       }
@@ -239,7 +253,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(result['message'] ?? 'Status update password.'),
+                            content: Text(result['message'] ?? (LanguageService.isEnglish ? 'Password update status.' : 'Status update password.')),
                             backgroundColor: result['success'] == true ? Colors.green : Colors.redAccent,
                           ),
                         );
@@ -247,7 +261,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
               child: isSubmitting
                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Simpan Password Baru'),
+                  : Text(LanguageService.isEnglish ? 'Save New Password' : 'Simpan Password Baru'),
             ),
           ],
         ),
@@ -371,7 +385,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Tutup', style: TextStyle(color: AppTheme.primaryBrown))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(LanguageService.isEnglish ? 'Close' : 'Tutup', style: const TextStyle(color: AppTheme.primaryBrown)),
+          ),
         ],
       ),
     );
@@ -379,10 +396,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isEn = LanguageService.isEnglish;
+
     return Scaffold(
       backgroundColor: AppTheme.bgCream,
       appBar: AppBar(
-        title: const Text('Pengaturan Profil'),
+        title: Text(isEn ? 'Profile Settings' : 'Pengaturan Profil'),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -432,7 +451,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 ),
                 icon: const Icon(CupertinoIcons.sparkles, size: 14),
-                label: const Text("Ganti Karakter Avatar", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                label: Text(
+                  isEn ? "Change Avatar Character" : "Ganti Karakter Avatar",
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -450,12 +472,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Identitas Barista', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
+                  Text(
+                    isEn ? 'Barista Identity' : 'Identitas Barista',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
+                  ),
                   const SizedBox(height: 10),
                   TextField(
                     controller: _nameController,
                     decoration: InputDecoration(
-                      labelText: "Nama Lengkap",
+                      labelText: isEn ? "Full Name" : "Nama Lengkap",
                       labelStyle: const TextStyle(color: AppTheme.textMuted),
                       filled: true,
                       fillColor: AppTheme.bgCream.withValues(alpha: 0.5),
@@ -473,7 +498,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text("Simpan Nama", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                      child: Text(
+                        isEn ? "Save Name" : "Simpan Nama",
+                        style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],
@@ -494,7 +522,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Keamanan & Kata Sandi', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
+                  Text(
+                    isEn ? 'Security & Password' : 'Keamanan & Kata Sandi',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
+                  ),
                   const SizedBox(height: 10),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
@@ -506,9 +537,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       child: const Icon(CupertinoIcons.lock_shield_fill, color: Colors.brown, size: 22),
                     ),
-                    title: const Text('Ubah Password Akun', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    title: Text(
+                      isEn ? 'Change Account Password' : 'Ubah Password Akun',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
                     subtitle: Text(
-                      _currentUser != null ? 'Perbarui kata sandi akun @${_currentUser!.username}' : 'Login akun terlebih dahulu',
+                      _currentUser != null
+                          ? (isEn ? 'Update password for @${_currentUser!.username}' : 'Perbarui kata sandi akun @${_currentUser!.username}')
+                          : (isEn ? 'Please log in to your account first' : 'Login akun terlebih dahulu'),
                       style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted),
                     ),
                     trailing: const Icon(CupertinoIcons.chevron_forward, size: 18, color: AppTheme.textMuted),
@@ -532,7 +568,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Bahasa & Wilayah', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
+                  Text(
+                    isEn ? 'Language & Region' : 'Bahasa & Wilayah',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
+                  ),
                   const SizedBox(height: 10),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
@@ -544,7 +583,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       child: const Icon(CupertinoIcons.globe, color: Colors.blueAccent, size: 22),
                     ),
-                    title: const Text('Bahasa / Language', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    title: Text(isEn ? 'Language' : 'Bahasa / Language', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                     subtitle: Text(
                       LanguageService.getLanguageLabel(_selectedLanguage),
                       style: const TextStyle(fontSize: 11.5, color: AppTheme.primaryBrown, fontWeight: FontWeight.bold),
@@ -570,7 +609,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Dukungan & Sistem', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
+                  Text(
+                    isEn ? 'Support & System' : 'Dukungan & Sistem',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
+                  ),
                   const SizedBox(height: 10),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
@@ -582,8 +624,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       child: const Icon(CupertinoIcons.chat_bubble_2_fill, color: Colors.teal, size: 22),
                     ),
-                    title: const Text('Beri Masukan / Laporkan Bug', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    subtitle: const Text('Kirim masukan langsung ke tim pengembang', style: TextStyle(fontSize: 11.5, color: AppTheme.textMuted)),
+                    title: Text(
+                      isEn ? 'Feedback / Report Bug' : 'Beri Masukan / Laporkan Bug',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    subtitle: Text(
+                      isEn ? 'Send feedback directly to development team' : 'Kirim masukan langsung ke tim pengembang',
+                      style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted),
+                    ),
                     trailing: const Icon(CupertinoIcons.chevron_forward, size: 18, color: AppTheme.textMuted),
                     onTap: () {
                       Navigator.push(
@@ -603,8 +651,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       child: const Icon(CupertinoIcons.arrow_clockwise_circle_fill, color: Colors.purple, size: 22),
                     ),
-                    title: const Text('Periksa Pembaruan Sistem', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    subtitle: const Text('OTA Shorebird Patch & Versi Native', style: TextStyle(fontSize: 11.5, color: AppTheme.textMuted)),
+                    title: Text(
+                      isEn ? 'Check System Updates' : 'Periksa Pembaruan Sistem',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    subtitle: Text(
+                      isEn ? 'OTA Shorebird Patch & Native Version' : 'OTA Shorebird Patch & Versi Native',
+                      style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted),
+                    ),
                     trailing: const Icon(CupertinoIcons.chevron_forward, size: 18, color: AppTheme.textMuted),
                     onTap: () {
                       AppUpdateService.checkForUpdate(context: context, isManual: true);

@@ -6,6 +6,8 @@ import '../theme/app_theme.dart';
 import '../services/audio_service.dart';
 import '../services/api_service.dart';
 import '../services/trial_service.dart';
+import '../services/language_service.dart';
+import '../services/coffee_translator.dart';
 import '../widgets/thermal_receipt_sheet.dart';
 import 'brew_journal_screen.dart';
 
@@ -233,15 +235,17 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
       steps[idx]['timeSeconds'] = curDur + 10;
       _recomputeTotalSeconds();
     });
+    final isEn = LanguageService.isEnglish;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Ditambahkan +10 detik pada Tahap ${idx + 1}'),
+        content: Text(isEn ? 'Added +10s to Step ${idx + 1}' : 'Ditambahkan +10 detik pada Tahap ${idx + 1}'),
         duration: const Duration(seconds: 1),
       ),
     );
   }
 
   void _showDialInDoctorSheet() {
+    final isEn = LanguageService.isEnglish;
     showModalBottomSheet(
       context: context,
       backgroundColor: AppTheme.bgCream,
@@ -257,9 +261,9 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Brew Doctor (Panduan Koreksi Rasa)',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                Text(
+                  isEn ? 'Brew Doctor (Flavor Correction Guide)' : 'Brew Doctor (Panduan Koreksi Rasa)',
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.textDark),
                 ),
                 IconButton(
                   icon: const Icon(CupertinoIcons.xmark_circle_fill, color: AppTheme.textMuted),
@@ -271,20 +275,26 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
             _doctorTipCard(
               icon: CupertinoIcons.bolt_fill,
               color: Colors.orange,
-              title: 'Terlalu Asam / Kecut / Tipis (Under-Extracted)',
-              fix: '• Haluskan gilingan 1–2 klik\n• Naikkan suhu air +2°C\n• Tuang sedikit lebih lambat atau tambah waktu bloom.',
+              title: isEn ? 'Too Sour / Acidic / Thin (Under-Extracted)' : 'Terlalu Asam / Kecut / Tipis (Under-Extracted)',
+              fix: isEn
+                  ? '• Fine grind by 1–2 clicks\n• Raise water temp by +2°C\n• Pour slightly slower or extend bloom time.'
+                  : '• Haluskan gilingan 1–2 klik\n• Naikkan suhu air +2°C\n• Tuang sedikit lebih lambat atau tambah waktu bloom.',
             ),
             _doctorTipCard(
               icon: CupertinoIcons.flame_fill,
               color: Colors.redAccent,
-              title: 'Terlalu Pahit / Sepat / Kering (Over-Extracted)',
-              fix: '• Kasarkan gilingan 1–2 klik\n• Turunkan suhu air -2°C\n• Kurangi goyangan (swirl) dan tuang lebih lembut di tengah.',
+              title: isEn ? 'Too Bitter / Astringent / Dry (Over-Extracted)' : 'Terlalu Pahit / Sepat / Kering (Over-Extracted)',
+              fix: isEn
+                  ? '• Coarsen grind by 1–2 clicks\n• Lower water temp by -2°C\n• Reduce agitation (swirl) and pour gently in center.'
+                  : '• Kasarkan gilingan 1–2 klik\n• Turunkan suhu air -2°C\n• Kurangi goyangan (swirl) dan tuang lebih lembut di tengah.',
             ),
             _doctorTipCard(
               icon: CupertinoIcons.drop,
               color: Colors.blueAccent,
-              title: 'Kurang Body / Terlalu Encer (Weak)',
-              fix: '• Gunakan rasio lebih pendek (misal 1:14 atau 1:15)\n• Tambahkan dosis kopi +1g hingga +2g.',
+              title: isEn ? 'Low Body / Watery Brew (Weak)' : 'Kurang Body / Terlalu Encer (Weak)',
+              fix: isEn
+                  ? '• Use a tighter ratio (e.g. 1:14 or 1:15)\n• Increase coffee dose by +1g to +2g.'
+                  : '• Gunakan rasio lebih pendek (misal 1:14 atau 1:15)\n• Tambahkan dosis kopi +1g hingga +2g.',
             ),
           ],
         ),
@@ -384,47 +394,63 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
     double body = 3.0;
     double overallScore = 4.5;
 
+    final isEn = LanguageService.isEnglish;
+
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) {
           // Dynamic Live Diagnosis & Advice
-          String status = 'Harmonis & Nikmat 👍';
+          String status = isEn ? 'Harmonious & Balanced 👍' : 'Harmonis & Nikmat 👍';
           String badge = 'SWEET SPOT';
           IconData icon = CupertinoIcons.checkmark_circle_fill;
           Color color = Colors.green.shade700;
           Color bgColor = Colors.green.withValues(alpha: 0.08);
-          String advice = '✨ Keseimbangan rasa manis dan keasaman sangat ideal!';
+          String advice = isEn
+              ? '✨ Sweetness and acidity balance is spot-on!'
+              : '✨ Keseimbangan rasa manis dan keasaman sangat ideal!';
 
           if (bitterness >= 4.0 || (bitterness - sweetness >= 1.5)) {
-            status = 'Over-Extracted (Terlalu Pahit & Sepat)';
+            status = isEn ? 'Over-Extracted (Too Bitter & Astringent)' : 'Over-Extracted (Terlalu Pahit & Sepat)';
             badge = 'OVER-EXTRACTED';
             icon = CupertinoIcons.exclamationmark_triangle_fill;
             color = Colors.redAccent;
             bgColor = Colors.red.withValues(alpha: 0.08);
-            advice = '💡 Kasarkan gilingan 1-2 klik atau turunkan suhu air -2°C.';
+            advice = isEn
+                ? '💡 Coarsen grind 1-2 clicks or lower water temp -2°C.'
+                : '💡 Kasarkan gilingan 1-2 klik atau turunkan suhu air -2°C.';
           } else if (acidity >= 4.0 && sweetness <= 2.5) {
-            status = 'Under-Extracted (Asam Tajam / Tipis)';
+            status = isEn ? 'Under-Extracted (Sharp Acidity / Hollow)' : 'Under-Extracted (Asam Tajam / Tipis)';
             badge = 'UNDER-EXTRACTED';
             icon = CupertinoIcons.bolt_fill;
             color = Colors.orange.shade800;
             bgColor = Colors.orange.withValues(alpha: 0.08);
-            advice = '💡 Haluskan gilingan 1-2 klik atau naikkan suhu air +2°C.';
+            advice = isEn
+                ? '💡 Fine grind 1-2 clicks or raise water temp +2°C.'
+                : '💡 Haluskan gilingan 1-2 klik atau naikkan suhu air +2°C.';
           } else if (body <= 1.5) {
-            status = 'Under-Body (Seduhan Terlalu Encer)';
+            status = isEn ? 'Low Body (Watery Brew)' : 'Under-Body (Seduhan Terlalu Encer)';
             badge = 'LOW BODY';
             icon = CupertinoIcons.drop;
             color = Colors.blueGrey;
             bgColor = Colors.blueGrey.withValues(alpha: 0.08);
-            advice = '💡 Perpanjang waktu blooming 10-15s atau percepat tuang pour.';
+            advice = isEn
+                ? '💡 Extend bloom by 10-15s or adjust pour agitation.'
+                : '💡 Perpanjang waktu blooming 10-15s atau percepat tuang pour.';
           } else if (sweetness >= 3.5 && bitterness <= 2.5 && acidity >= 2.5 && acidity <= 3.5) {
-            status = 'Sweet Spot! Ekstraksi Seimbang 🎯';
+            status = isEn ? 'Sweet Spot! Balanced Extraction 🎯' : 'Sweet Spot! Ekstraksi Seimbang 🎯';
             badge = 'SWEET SPOT';
             icon = CupertinoIcons.checkmark_circle_fill;
             color = Colors.green.shade700;
             bgColor = Colors.green.withValues(alpha: 0.08);
-            advice = '✨ Keseimbangan rasa manis dan keasaman sangat ideal!';
+            advice = isEn
+                ? '✨ Sweetness and acidity balance is spot-on!'
+                : '✨ Keseimbangan rasa manis dan keasaman sangat ideal!';
           }
+
+          final displayRecipeTitle = isEn
+              ? CoffeeTranslator.translateTitle(_recipe['title']?.toString() ?? 'Brewed Coffee')
+              : (_recipe['title']?.toString() ?? 'Seduhan Kopi');
 
           return Dialog(
             backgroundColor: Colors.white,
@@ -452,12 +478,12 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Evaluasi Hasil Seduh',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.textDark),
+                            Text(
+                              isEn ? 'Sensory Evaluation' : 'Evaluasi Hasil Seduh',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.textDark),
                             ),
                             Text(
-                              _recipe['title']?.toString() ?? 'Seduhan Kopi',
+                              displayRecipeTitle,
                               style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -488,31 +514,31 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
 
                   // Compact Sensory Sliders
                   _buildCompactSensorySlider(
-                    label: 'Keasaman (Acidity)',
+                    label: isEn ? 'Acidity' : 'Keasaman (Acidity)',
                     value: acidity,
                     activeColor: Colors.amber.shade700,
                     onChanged: (v) => setDialogState(() => acidity = v),
                   ),
                   _buildCompactSensorySlider(
-                    label: 'Kemanisan (Sweetness)',
+                    label: isEn ? 'Sweetness' : 'Kemanisan (Sweetness)',
                     value: sweetness,
                     activeColor: Colors.deepOrangeAccent,
                     onChanged: (v) => setDialogState(() => sweetness = v),
                   ),
                   _buildCompactSensorySlider(
-                    label: 'Kepahitan (Bitterness)',
+                    label: isEn ? 'Bitterness' : 'Kepahitan (Bitterness)',
                     value: bitterness,
                     activeColor: Colors.brown.shade700,
                     onChanged: (v) => setDialogState(() => bitterness = v),
                   ),
                   _buildCompactSensorySlider(
-                    label: 'Ketebalan (Body)',
+                    label: isEn ? 'Body & Texture' : 'Ketebalan (Body)',
                     value: body,
                     activeColor: Colors.teal.shade700,
                     onChanged: (v) => setDialogState(() => body = v),
                   ),
                   _buildCompactSensorySlider(
-                    label: 'Skor Keseluruhan',
+                    label: isEn ? 'Overall Score' : 'Skor Keseluruhan',
                     value: overallScore,
                     activeColor: AppTheme.primaryBrown,
                     onChanged: (v) => setDialogState(() => overallScore = v),
@@ -572,7 +598,7 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
                           onPressed: () => Navigator.pop(ctx),
-                          child: const Text('Lewati', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                          child: Text(isEn ? 'Skip' : 'Lewati', style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -583,7 +609,7 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                           border: Border.all(color: AppTheme.accentGold.withValues(alpha: 0.4)),
                         ),
                         child: IconButton(
-                          tooltip: 'Print Struk Bluetooth',
+                          tooltip: isEn ? 'Print Bluetooth Receipt' : 'Print Struk Bluetooth',
                           visualDensity: VisualDensity.compact,
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                           constraints: const BoxConstraints(),
@@ -594,7 +620,7 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                               _recipe,
                               tastingNotes: [
                                 status,
-                                'Asam: ${acidity.toStringAsFixed(1)} | Manis: ${sweetness.toStringAsFixed(1)} | Pahit: ${bitterness.toStringAsFixed(1)} | Body: ${body.toStringAsFixed(1)}',
+                                '${isEn ? "Acidity" : "Asam"}: ${acidity.toStringAsFixed(1)} | ${isEn ? "Sweetness" : "Manis"}: ${sweetness.toStringAsFixed(1)} | ${isEn ? "Bitterness" : "Pahit"}: ${bitterness.toStringAsFixed(1)} | Body: ${body.toStringAsFixed(1)}',
                               ],
                             );
                           },
@@ -622,14 +648,14 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                               'authorImageUrl': _recipe['coverImageUrl'],
                               'grindNote': '${_recipe['grindSize'] ?? ''} • $badge',
                               'rating': overallScore,
-                              'notes': '$status | Asam: ${acidity.toStringAsFixed(1)}, Manis: ${sweetness.toStringAsFixed(1)}, Pahit: ${bitterness.toStringAsFixed(1)}, Body: ${body.toStringAsFixed(1)}. $advice',
+                              'notes': '$status | ${isEn ? "Acidity" : "Asam"}: ${acidity.toStringAsFixed(1)}, ${isEn ? "Sweetness" : "Manis"}: ${sweetness.toStringAsFixed(1)}, ${isEn ? "Bitterness" : "Pahit"}: ${bitterness.toStringAsFixed(1)}, Body: ${body.toStringAsFixed(1)}. $advice',
                             });
                             if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text('Tersimpan di Jurnal Brew.'),
+                                content: Text(isEn ? 'Saved to Brew Journal.' : 'Tersimpan di Jurnal Brew.'),
                                 action: SnackBarAction(
-                                  label: 'Buka',
+                                  label: isEn ? 'View' : 'Buka',
                                   onPressed: () {
                                     Navigator.push(
                                       context,
@@ -641,7 +667,7 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                             );
                           },
                           icon: const Icon(CupertinoIcons.bookmark_fill, size: 13),
-                          label: const Text('Simpan ke Jurnal', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          label: Text(isEn ? 'Save to Journal' : 'Simpan ke Jurnal', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],
@@ -682,6 +708,9 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isEn = LanguageService.isEnglish;
+    final displayTitle = isEn ? CoffeeTranslator.translateTitle(title) : title;
+
     int activeIndex = (_elapsedSeconds > 0 || _isRunning) ? _getActiveStepIndex() : 0;
     if (_elapsedSeconds >= totalSeconds && steps.isNotEmpty) activeIndex = steps.length - 1;
 
@@ -694,16 +723,16 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
     return Scaffold(
       backgroundColor: AppTheme.bgCream,
       appBar: AppBar(
-        title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+        title: Text(displayTitle, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
         centerTitle: true,
         actions: [
           IconButton(
-            tooltip: 'Print Struk Resep (Bluetooth)',
+            tooltip: isEn ? 'Print Bluetooth Receipt' : 'Print Struk Resep (Bluetooth)',
             icon: const Icon(CupertinoIcons.printer_fill, size: 20),
             onPressed: () => ThermalReceiptSheet.show(context, _recipe),
           ),
           IconButton(
-            tooltip: 'Brew Doctor (Saran Koreksi Rasa)',
+            tooltip: isEn ? 'Brew Doctor (Flavor Correction)' : 'Brew Doctor (Saran Koreksi Rasa)',
             icon: const Icon(CupertinoIcons.lightbulb, size: 20),
             onPressed: _showDialInDoctorSheet,
           ),
@@ -728,7 +757,9 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Japanese Iced: Siapkan ${iceWeightGrams}g Es di Server + ${totalWaterGrams}g Air Panas ($waterTempCelsius°C)',
+                      isEn
+                          ? 'Japanese Iced: Prepare ${iceWeightGrams}g Ice in Server + ${totalWaterGrams}g Hot Water ($waterTempCelsius°C)'
+                          : 'Japanese Iced: Siapkan ${iceWeightGrams}g Es di Server + ${totalWaterGrams}g Air Panas ($waterTempCelsius°C)',
                       style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppTheme.textDark),
                     ),
                   ),
@@ -753,9 +784,9 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       if (_isPreparing) ...[
-                        const Text(
-                          'SIAP SEDUH',
-                          style: TextStyle(color: AppTheme.textMuted, fontSize: 13, fontWeight: FontWeight.bold),
+                        Text(
+                          isEn ? 'GET READY' : 'SIAP SEDUH',
+                          style: const TextStyle(color: AppTheme.textMuted, fontSize: 13, fontWeight: FontWeight.bold),
                         ),
                         Text(
                           '$_prepSeconds',
@@ -771,9 +802,9 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                             visualDensity: VisualDensity.compact,
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                           ),
-                          child: const Text(
-                            'Lewati Hitung Mundur →',
-                            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppTheme.primaryBrown),
+                          child: Text(
+                            isEn ? 'Skip Countdown →' : 'Lewati Hitung Mundur →',
+                            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppTheme.primaryBrown),
                           ),
                         ),
                       ] else if (_elapsedSeconds > 0 && _elapsedSeconds >= totalSeconds) ...[
@@ -831,7 +862,10 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                 final bool isActive = index == activeIndex && !_isPreparing && (_isRunning || _elapsedSeconds > 0);
                 final bool isDone = _elapsedSeconds > 0 && (index < activeIndex || _elapsedSeconds >= totalSeconds);
                 final Color stepColor = _getColorForStep(index);
-                final String instruction = step['instruction']?.toString() ?? '';
+                final rawTitle = step['title']?.toString() ?? 'Step ${index + 1}';
+                final stepTitle = isEn ? CoffeeTranslator.translateStepTitle(rawTitle) : rawTitle;
+                final rawInstruction = step['instruction']?.toString() ?? '';
+                final instruction = isEn ? CoffeeTranslator.translateInstruction(rawInstruction) : rawInstruction;
 
                 return GestureDetector(
                   onTap: () => _jumpToStep(index),
@@ -897,7 +931,7 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    step['title']?.toString() ?? 'Step ${index + 1}',
+                                    stepTitle,
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: isActive ? 15 : 13.5,
@@ -920,8 +954,12 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                                       Flexible(
                                         child: Text(
                                           stepWater > 0
-                                              ? '+${stepWater}g Air (Target: ${cumulativeTarget}g)'
-                                              : 'Imersi / Drawdown (Total: ${cumulativeTarget}g)',
+                                              ? (isEn
+                                                  ? '+${stepWater}g Water (Target: ${cumulativeTarget}g)'
+                                                  : '+${stepWater}g Air (Target: ${cumulativeTarget}g)')
+                                              : (isEn
+                                                  ? 'Immersion / Drawdown (Total: ${cumulativeTarget}g)'
+                                                  : 'Imersi / Drawdown (Total: ${cumulativeTarget}g)'),
                                           style: TextStyle(
                                             fontSize: 11.5,
                                             color: isActive ? Colors.white.withValues(alpha: 0.9) : AppTheme.textMuted,
@@ -1000,13 +1038,13 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 IconButton(
-                  tooltip: 'Tahap Sebelumnya',
+                  tooltip: isEn ? 'Previous Step' : 'Tahap Sebelumnya',
                   onPressed: activeIndex > 0 ? () => _jumpToStep(activeIndex - 1) : null,
                   icon: const Icon(CupertinoIcons.backward_end_fill, color: AppTheme.primaryBrown),
                 ),
                 FloatingActionButton.small(
                   heroTag: 'reset',
-                  tooltip: 'Reset Timer',
+                  tooltip: isEn ? 'Reset Timer' : 'Reset Timer',
                   backgroundColor: AppTheme.bgCream,
                   elevation: 0,
                   onPressed: _resetTimer,
@@ -1035,13 +1073,13 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text(
-                    '+10d',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.primaryBrown),
+                  child: Text(
+                    isEn ? '+10s' : '+10d',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.primaryBrown),
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Tahap Berikutnya',
+                  tooltip: isEn ? 'Next Step' : 'Tahap Berikutnya',
                   onPressed: activeIndex < steps.length - 1 ? () => _jumpToStep(activeIndex + 1) : null,
                   icon: const Icon(CupertinoIcons.forward_end_fill, color: AppTheme.primaryBrown),
                 ),
