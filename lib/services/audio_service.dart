@@ -1,86 +1,152 @@
-import 'dart:math';
+import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 
 class AudioService {
   static AudioPlayer? _bgmPlayer;
-  static final AudioPlayer _sfxPlayer = AudioPlayer();
-  static final AudioPlayer _tickPlayer = AudioPlayer();
+  static final AudioPlayer _sfxPlayer = AudioPlayer(playerId: 'coffee_sfx');
+  static final AudioPlayer _tickPlayer = AudioPlayer(playerId: 'coffee_tick');
+  static bool _isInitialized = false;
+  static bool _shouldBePlayingBgm = false;
+  static StreamSubscription<PlayerState>? _bgmStateSub;
 
-  static final List<Map<String, String>> chillTracks = [
-    {'title': 'Chill Coffee Lounge', 'path': 'audio/calm_music.m4a'},
-    {'title': 'Morning Lo-Fi Harmony', 'path': 'audio/chill_lofi_morning.wav'},
-    {'title': 'Rainy Day Barista Jazz', 'path': 'audio/barista_rainy_day.wav'},
-    {'title': 'Zen Flow Meditation', 'path': 'audio/zen_brew_meditation.wav'},
-    {'title': 'Acoustic Sunrise Vibes', 'path': 'audio/acoustic_coffee_vibes.wav'},
-  ];
+  // Track favorit pengguna: Chill Coffee Lounge
+  static const String chillTrackPath = 'audio/calm_music.m4a';
+  static const String currentTrackTitle = 'Chill Coffee Lounge';
 
-  static int _currentTrackIndex = 0;
-  static String currentTrackTitle = 'Chill Coffee Lounge';
+  // Audio context: Jangan meminta Audio Focus eksklusif agar SFX & BGM bisa overlap tanpa saling memutus
+  static final AudioContext _bgmContext = AudioContext(
+    android: const AudioContextAndroid(
+      isSpeakerphoneOn: false,
+      stayAwake: true,
+      contentType: AndroidContentType.music,
+      usageType: AndroidUsageType.media,
+      audioFocus: AndroidAudioFocus.none,
+    ),
+    iOS: AudioContextIOS(
+      category: AVAudioSessionCategory.playback,
+      options: const {
+        AVAudioSessionOptions.mixWithOthers,
+      },
+    ),
+  );
+
+  static final AudioContext _sfxContext = AudioContext(
+    android: const AudioContextAndroid(
+      isSpeakerphoneOn: false,
+      stayAwake: false,
+      contentType: AndroidContentType.sonification,
+      usageType: AndroidUsageType.assistanceSonification,
+      audioFocus: AndroidAudioFocus.none,
+    ),
+    iOS: AudioContextIOS(
+      category: AVAudioSessionCategory.ambient,
+      options: const {
+        AVAudioSessionOptions.mixWithOthers,
+      },
+    ),
+  );
+
+  static Future<void> _initContext() async {
+    if (_isInitialized) return;
+    try {
+      await AudioPlayer.global.setAudioContext(_bgmContext);
+      await _sfxPlayer.setAudioContext(_sfxContext);
+      await _sfxPlayer.setPlayerMode(PlayerMode.lowLatency);
+      await _tickPlayer.setAudioContext(_sfxContext);
+      await _tickPlayer.setPlayerMode(PlayerMode.lowLatency);
+      _isInitialized = true;
+    } catch (e) {
+      debugPrint('⚠️ AudioService._initContext warning: $e');
+    }
+  }
 
   static Future<void> playClick() async {
     try {
+      await _initContext();
+      await _sfxPlayer.stop();
       await _sfxPlayer.play(AssetSource('audio/click.wav'), volume: 0.5);
-    } catch (_) {
-      // Ignore
-    }
+      ensureBgmPlaying();
+    } catch (_) {}
   }
 
   static Future<void> playTick() async {
     try {
-      await _tickPlayer.play(AssetSource('audio/tick.wav'), volume: 0.7);
-    } catch (_) {
-      // Ignore
-    }
+      await _initContext();
+      await _tickPlayer.stop();
+      await _tickPlayer.play(AssetSource('audio/tick.wav'), volume: 0.6);
+      ensureBgmPlaying();
+    } catch (_) {}
   }
 
   static Future<void> playTransition() async {
     try {
-      await _sfxPlayer.play(AssetSource('audio/transition.wav'), volume: 1.0);
-    } catch (_) {
-      // Ignore
-    }
+      await _initContext();
+      await _sfxPlayer.stop();
+      await _sfxPlayer.play(AssetSource('audio/transition.wav'), volume: 0.85);
+      ensureBgmPlaying();
+    } catch (_) {}
   }
 
   static Future<void> playEnjoy() async {
     try {
+      await _initContext();
+      await _sfxPlayer.stop();
       await _sfxPlayer.play(AssetSource('audio/enjoy.wav'), volume: 1.0);
-    } catch (_) {
-      // Ignore
-    }
+    } catch (_) {}
   }
 
-  /// Memulai pemutaran musik santai saat seduh kopi (acak otomatis & loop)
-  /// Menyelesaikan bug freeze/silent pada brew kedua dengan dispose & fresh allocation.
-  static Future<void> startBgm({int? specificIndex}) async {
+  /// Memulai pemutaran musik santai 'Chill Coffee Lounge' saat menyeduh
+  static Future<void> startBgm() async {
     try {
-      await stopBgm();
+      await _initContext();
+      _shouldBePlayingBgm = true;
 
-      if (chillTracks.isEmpty) return;
+      // Bersihkan player lama jika ada
+      if (_bgmPlayer != null) {
+        await _bgmStateSub?.cancel();
+        _bgmStateSub = null;
+        await _bgmPlayer?.stop();
+        await _bgmPlayer?.dispose();
+        _bgmPlayer = null;
+      }
 
-      _currentTrackIndex = specificIndex ?? Random().nextInt(chillTracks.length);
-      final track = chillTracks[_currentTrackIndex];
-      currentTrackTitle = track['title'] ?? 'Relaxing Brew';
+      final player = AudioPlayer(playerId: 'coffee_bgm');
+      _bgmPlayer = player;
+      await player.setAudioContext(_bgmContext);
+      await player.setPlayerMode(PlayerMode.mediaPlayer);
+      await player.setReleaseMode(ReleaseMode.loop);
 
-      _bgmPlayer = AudioPlayer();
-      await _bgmPlayer!.setReleaseMode(ReleaseMode.loop);
-      await _bgmPlayer!.play(AssetSource(track['path']!), volume: 0.55);
-      debugPrint('☕ AudioService: Memutar BGM "$currentTrackTitle" (${track['path']})');
+      // Auto-resume jika OS Android mencoba menghentikan BGM saat transisi step atau countdown tick
+      _bgmStateSub = player.onPlayerStateChanged.listen((state) {
+        if (_shouldBePlayingBgm && state == PlayerState.paused) {
+          debugPrint('☕ AudioService: Auto-resuming BGM after OS interrupt');
+          player.resume();
+        }
+      });
+
+      await player.play(AssetSource(chillTrackPath), volume: 0.55);
+      debugPrint('☕ AudioService: Memutar $currentTrackTitle ($chillTrackPath)');
     } catch (e) {
       debugPrint('⚠️ AudioService.startBgm error: $e');
     }
   }
 
-  /// Pindah ke musik santai berikutnya saat sedang menyeduh
-  static Future<String> nextTrack() async {
-    _currentTrackIndex = (_currentTrackIndex + 1) % chillTracks.length;
-    await startBgm(specificIndex: _currentTrackIndex);
-    return currentTrackTitle;
+  /// Memastikan BGM tetap aktif & berputar jika sempat di-pause oleh sistem
+  static void ensureBgmPlaying() {
+    if (_shouldBePlayingBgm && _bgmPlayer != null) {
+      if (_bgmPlayer!.state == PlayerState.paused) {
+        _bgmPlayer!.resume();
+      }
+    }
   }
 
   /// Menghentikan BGM dan membersihkan alokasi native player
   static Future<void> stopBgm() async {
+    _shouldBePlayingBgm = false;
     try {
+      await _bgmStateSub?.cancel();
+      _bgmStateSub = null;
       if (_bgmPlayer != null) {
         await _bgmPlayer!.stop();
         await _bgmPlayer!.dispose();

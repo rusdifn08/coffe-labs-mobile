@@ -119,6 +119,11 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
         setState(() => _elapsedSeconds++);
         _checkAutoScroll();
 
+        // Pastikan background music tetap berputar lancar tanpa terhenti oleh OS
+        if (_elapsedSeconds % 2 == 0) {
+          AudioService.ensureBgmPlaying();
+        }
+
         int accumulated = 0;
         for (final step in steps) {
           accumulated += _stepDuration(step);
@@ -677,29 +682,6 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            tooltip: 'Musik Santai Seduh (Ganti Lagu)',
-            icon: const Icon(CupertinoIcons.music_note_list, size: 20),
-            onPressed: () async {
-              final messenger = ScaffoldMessenger.of(context);
-              final newTitle = await AudioService.nextTrack();
-              if (mounted) {
-                messenger.showSnackBar(
-                  SnackBar(
-                    duration: const Duration(seconds: 2),
-                    content: Row(
-                      children: [
-                        const Icon(CupertinoIcons.music_note, color: Colors.amber, size: 16),
-                        const SizedBox(width: 8),
-                        Expanded(child: Text('🎵 Memutar: $newTitle', style: const TextStyle(fontWeight: FontWeight.bold))),
-                      ],
-                    ),
-                  ),
-                );
-                setState(() {});
-              }
-            },
-          ),
-          IconButton(
             tooltip: 'Brew Doctor (Saran Koreksi Rasa)',
             icon: const Icon(CupertinoIcons.lightbulb, size: 20),
             onPressed: _showDialInDoctorSheet,
@@ -708,42 +690,11 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
       ),
       body: Column(
         children: [
-          if (_isRunning)
-            Padding(
-              padding: const EdgeInsets.only(top: 2, bottom: 4),
-              child: InkWell(
-                onTap: () async {
-                  await AudioService.nextTrack();
-                  if (mounted) setState(() {});
-                },
-                borderRadius: BorderRadius.circular(14),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppTheme.accentGold.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppTheme.accentGold.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(CupertinoIcons.music_note, size: 11, color: AppTheme.primaryBrown),
-                      const SizedBox(width: 5),
-                      Text(
-                        AudioService.currentTrackTitle,
-                        style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppTheme.primaryBrown),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(CupertinoIcons.forward_fill, size: 9, color: AppTheme.primaryBrown),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          if (iceWeightGrams > 0)
+          // Banner Japanese Iced: Siapkan es di server sebelum mulai seduh (hilang setelah hitung mundur 5 detik selesai)
+          if (iceWeightGrams > 0 && (_isPreparing || _elapsedSeconds == 0))
             Container(
               width: double.infinity,
-              margin: const EdgeInsets.fromLTRB(20, 4, 20, 6),
+              margin: const EdgeInsets.fromLTRB(20, 6, 20, 6),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.lightBlue.withValues(alpha: 0.14),
