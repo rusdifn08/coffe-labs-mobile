@@ -70,6 +70,9 @@ class _ToolkitIconPainter extends CustomPainter {
       case 'social':
         _paintSocial(canvas, w, h);
         break;
+      case 'marketplace':
+        _paintMarketplace(canvas, w, h);
+        break;
     }
   }
 
@@ -371,6 +374,52 @@ class _ToolkitIconPainter extends CustomPainter {
     steam2.moveTo(w * 0.44, h * 0.44);
     steam2.cubicTo(w * 0.42, h * 0.40, w * 0.46, h * 0.38, w * 0.44, h * 0.34);
     canvas.drawPath(steam2, steamPaint);
+  }
+
+  // 8. Marketplace: Specialty Coffee Shopping Bag & Beans
+  void _paintMarketplace(Canvas canvas, double w, double h) {
+    // Bag body with gradient
+    final bagPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [primaryColor, secondaryColor],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ).createShader(Rect.fromLTWH(0, 0, w, h))
+      ..style = PaintingStyle.fill;
+
+    final bagRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(w * 0.18, h * 0.30, w * 0.64, h * 0.58),
+      Radius.circular(w * 0.14),
+    );
+    canvas.drawRRect(bagRect, bagPaint);
+
+    // Bag handles
+    final handlePaint = Paint()
+      ..color = primaryColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w * 0.08
+      ..strokeCap = StrokeCap.round;
+
+    final handlePath = Path();
+    handlePath.moveTo(w * 0.34, h * 0.30);
+    handlePath.cubicTo(w * 0.34, h * 0.10, w * 0.66, h * 0.10, w * 0.66, h * 0.30);
+    canvas.drawPath(handlePath, handlePaint);
+
+    // White Coffee bean emblem on bag center
+    final beanPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.9)
+      ..style = PaintingStyle.fill;
+    canvas.drawOval(Rect.fromCenter(center: Offset(w * 0.5, h * 0.58), width: w * 0.22, height: w * 0.28), beanPaint);
+
+    final seamPaint = Paint()
+      ..color = primaryColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w * 0.035
+      ..strokeCap = StrokeCap.round;
+    final seamPath = Path();
+    seamPath.moveTo(w * 0.5, h * 0.47);
+    seamPath.cubicTo(w * 0.46, h * 0.56, w * 0.54, h * 0.60, w * 0.5, h * 0.69);
+    canvas.drawPath(seamPath, seamPaint);
   }
 
   @override

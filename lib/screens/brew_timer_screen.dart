@@ -8,6 +8,7 @@ import '../services/api_service.dart';
 import '../services/trial_service.dart';
 import '../services/language_service.dart';
 import '../services/coffee_translator.dart';
+import '../services/smart_scale_service.dart';
 import '../widgets/thermal_receipt_sheet.dart';
 import 'brew_journal_screen.dart';
 
@@ -68,6 +69,19 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
     _recomputeTotalSeconds();
     ApiService.recordBrew(_recipe);
     TrialService.recordTrialBrew();
+
+    SmartScaleService.instance.addListener(_onScaleChanged);
+    SmartScaleService.instance.onAutoStartBrewTimer = () {
+      if (_isPreparing) {
+        _startMainTimer();
+      } else if (!_isRunning && _elapsedSeconds == 0) {
+        _toggleTimer();
+      }
+    };
+  }
+
+  void _onScaleChanged() {
+    if (mounted) setState(() {});
   }
 
   void _recomputeTotalSeconds() {
@@ -80,6 +94,8 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
 
   @override
   void dispose() {
+    SmartScaleService.instance.removeListener(_onScaleChanged);
+    SmartScaleService.instance.onAutoStartBrewTimer = null;
     _timer?.cancel();
     _prepTimer?.cancel();
     AudioService.stopBgm();
@@ -841,7 +857,52 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
+
+          // Live Smart Scale Badge (if Bluetooth scale is connected)
+          if (SmartScaleService.instance.isConnected)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryBrown.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.accentGold.withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(CupertinoIcons.gauge, size: 14, color: AppTheme.primaryBrown),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${SmartScaleService.instance.currentWeight.toStringAsFixed(1)}g',
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: AppTheme.primaryBrown),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '(${SmartScaleService.instance.flowRate.toStringAsFixed(1)} g/s)',
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.accentGold),
+                  ),
+                  const SizedBox(width: 12),
+                  InkWell(
+                    onTap: () => SmartScaleService.instance.tare(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryBrown,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        isEn ? 'TARE' : 'NOL-KAN',
+                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          const SizedBox(height: 6),
 
           // SCROLLABLE STEPS LIST (Auto Scroll & Auto Switch, Active step di-highlight coklat elegan)
           Expanded(

@@ -1,0 +1,117 @@
+name: Build Android & iOS
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # ==========================================
+  # 1. BUILD ANDROID (APK & AAB)
+  # ==========================================
+  build-android:
+    name: Build Android APK & AAB
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Verify Code Quality
+        run: flutter analyze --no-fatal-infos
+
+      - name: Build Universal Release APK
+        run: flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols
+
+      - name: Build Split-per-ABI APKs (Compressed)
+        run: flutter build apk --release --split-per-abi
+
+      - name: Build Android App Bundle (AAB for Play Store)
+        run: flutter build appbundle --release
+
+      - name: Upload Universal APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coffee-labs-universal-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
+
+      - name: Upload Split-per-ABI APKs Artifact (Compressed)
+        uses: actions/upload-artifact@v4
+        with:
+          name: coffee-labs-split-apks
+          path: build/app/outputs/flutter-apk/app-*.apk
+          retention-days: 14
+
+      - name: Upload App Bundle Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coffee-labs-playstore-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 14
+
+  # ==========================================
+  # 2. BUILD IOS (IPA & APP)
+  # ==========================================
+  build-ios:
+    name: Build iOS Archive & IPA
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build iOS Release (No Codesign)
+        run: flutter build ios --release --no-codesign
+
+      - name: Package iOS App & IPA
+        run: |
+          cd build/ios/iphoneos
+          mkdir -p Payload
+          cp -r Runner.app Payload/
+          zip -r CoffeeLabs-iOS-Release.ipa Payload
+          zip -r Runner.app.zip Runner.app
+
+      - name: Upload iOS IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coffee-labs-ios-ipa
+          path: build/ios/iphoneos/CoffeeLabs-iOS-Release.ipa
+          retention-days: 14
+
+      - name: Upload iOS App Bundle Archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: coffee-labs-ios-app-zip
+          path: build/ios/iphoneos/Runner.app.zip
+          retention-days: 14

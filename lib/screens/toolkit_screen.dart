@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../services/language_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/toolkit_vector_icons.dart';
 import 'bean_radar_screen.dart';
@@ -7,17 +8,60 @@ import 'brew_journal_screen.dart';
 import 'coffee_roastery_screen.dart';
 import 'favorites_screen.dart';
 import 'flavor_wheel_screen.dart';
+import 'marketplace_screen.dart';
+import 'smart_scale_screen.dart';
 import 'social_coffee_screen.dart';
 
-class ToolkitScreen extends StatelessWidget {
+class ToolkitScreen extends StatefulWidget {
   const ToolkitScreen({super.key});
 
   @override
+  State<ToolkitScreen> createState() => _ToolkitScreenState();
+}
+
+class _ToolkitScreenState extends State<ToolkitScreen> {
+  @override
+  void initState() {
+    super.initState();
+    LanguageService.changeNotifier.addListener(_onLanguageChange);
+  }
+
+  @override
+  void dispose() {
+    LanguageService.changeNotifier.removeListener(_onLanguageChange);
+    super.dispose();
+  }
+
+  void _onLanguageChange() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isEn = LanguageService.isEnglish;
+
     final List<_ToolkitItem> items = [
       _ToolkitItem(
-        title: 'Favorite',
-        subtitle: 'Koleksi resep seduh favorit Anda',
+        title: isEn ? 'Marketplace' : 'Marketplace Kopi',
+        subtitle: isEn ? 'Fresh beans from 50+ roasteries & checkout' : 'Katalog biji kopi 50+ roastery & checkout',
+        iconType: 'marketplace',
+        primaryColor: const Color(0xFF8D4925),
+        secondaryColor: const Color(0xFFD7A86E),
+        gradientColors: [const Color(0xFFFBE9E7), const Color(0xFFFFCCBC)],
+        destination: const MarketplaceScreen(),
+      ),
+      _ToolkitItem(
+        title: isEn ? 'Smart Scale' : 'Smart Scale Brew',
+        subtitle: isEn ? 'Bluetooth scale (Timemore/Acaia) & live flow rate' : 'Koneksi timbangan Bluetooth Timemore & flow-rate',
+        iconType: 'scale',
+        primaryColor: const Color(0xFF00838F),
+        secondaryColor: const Color(0xFF80DEEA),
+        gradientColors: [const Color(0xFFE0F7FA), const Color(0xFFB2EBF2)],
+        destination: const SmartScaleScreen(),
+      ),
+      _ToolkitItem(
+        title: isEn ? 'Favorites' : 'Favorite',
+        subtitle: isEn ? 'Saved champion recipes collection' : 'Koleksi resep seduh favorit Anda',
         iconType: 'favorite',
         primaryColor: const Color(0xFFD32F2F),
         secondaryColor: const Color(0xFFFF8A80),
@@ -25,8 +69,8 @@ class ToolkitScreen extends StatelessWidget {
         destination: const FavoritesScreen(),
       ),
       _ToolkitItem(
-        title: 'Cupping Flavour',
-        subtitle: 'SCA wheel & profil sensorik rasa',
+        title: isEn ? 'Cupping Flavor' : 'Cupping Flavour',
+        subtitle: isEn ? 'SCA flavor wheel & sensory profile' : 'SCA wheel & profil sensorik rasa',
         iconType: 'cupping',
         primaryColor: const Color(0xFFE65100),
         secondaryColor: const Color(0xFFFFB74D),
@@ -34,8 +78,8 @@ class ToolkitScreen extends StatelessWidget {
         destination: const FlavorWheelScreen(),
       ),
       _ToolkitItem(
-        title: 'Coffee Roastery',
-        subtitle: 'Katalog 50 roastery & lineup kopi',
+        title: isEn ? 'Coffee Roastery' : 'Coffee Roastery',
+        subtitle: isEn ? 'Catalog of 50 roasteries & lineups' : 'Katalog 50 roastery & lineup kopi',
         iconType: 'roastery',
         primaryColor: const Color(0xFF5D4037),
         secondaryColor: const Color(0xFFBCAAA4),
@@ -43,8 +87,8 @@ class ToolkitScreen extends StatelessWidget {
         destination: const CoffeeRoasteryScreen(),
       ),
       _ToolkitItem(
-        title: 'Beans Radar',
-        subtitle: 'Cari biji kopi terdekat via lokasi',
+        title: isEn ? 'Beans Radar' : 'Beans Radar',
+        subtitle: isEn ? 'Find closest specialty beans via GPS' : 'Cari biji kopi terdekat via lokasi',
         iconType: 'radar',
         primaryColor: const Color(0xFF00796B),
         secondaryColor: const Color(0xFF80CBC4),
@@ -52,8 +96,8 @@ class ToolkitScreen extends StatelessWidget {
         destination: const BeanRadarScreen(),
       ),
       _ToolkitItem(
-        title: 'Jurnal Brew',
-        subtitle: 'Catatan ekstraksi & log seduh harian',
+        title: isEn ? 'Brew Journal' : 'Jurnal Brew',
+        subtitle: isEn ? 'Extraction logs & sensory ratings' : 'Catatan ekstraksi & log seduh harian',
         iconType: 'journal',
         primaryColor: const Color(0xFF303F9F),
         secondaryColor: const Color(0xFF9FA8DA),
@@ -61,8 +105,8 @@ class ToolkitScreen extends StatelessWidget {
         destination: const BrewJournalScreen(),
       ),
       _ToolkitItem(
-        title: 'Social Coffee',
-        subtitle: 'Komunitas barista, diskusi & bagikan resep',
+        title: isEn ? 'Social Coffee' : 'Social Coffee',
+        subtitle: isEn ? 'Barista community & recipe sharing' : 'Komunitas barista, diskusi & bagikan resep',
         iconType: 'social',
         primaryColor: const Color(0xFFE91E63),
         secondaryColor: const Color(0xFFFF80AB),
@@ -74,7 +118,7 @@ class ToolkitScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppTheme.bgCream,
       appBar: AppBar(
-        title: const Text('Barista Toolkit'),
+        title: Text(isEn ? 'Barista Precision Toolkit' : 'Barista Toolkit'),
         centerTitle: true,
       ),
       body: ListView(
@@ -124,9 +168,9 @@ class ToolkitScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 6),
-                      const Text(
-                        'Peralatan Presisi Barista',
-                        style: TextStyle(
+                      Text(
+                        isEn ? 'Barista Precision Equipment' : 'Peralatan Presisi Barista',
+                        style: const TextStyle(
                           fontSize: 16.5,
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
@@ -134,7 +178,9 @@ class ToolkitScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        'Akses cepat fitur favorit, cupping, radar lokasi, dan katalog roastery nasional.',
+                        isEn
+                            ? 'Specialty marketplace, smart Bluetooth scale, cupping wheel, roasteries, and extraction logs.'
+                            : 'Akses cepat marketplace kopi, timbangan Bluetooth, cupping, radar lokasi, dan katalog roastery nasional.',
                         style: TextStyle(
                           fontSize: 11,
                           color: Colors.white.withValues(alpha: 0.85),
@@ -159,7 +205,7 @@ class ToolkitScreen extends StatelessWidget {
           ),
           const SizedBox(height: 14),
 
-          // 2-Column Grid of 6 Professional & Simple Cards
+          // 2-Column Grid of 8 Professional Cards
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
