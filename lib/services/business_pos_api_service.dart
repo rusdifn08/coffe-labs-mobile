@@ -183,6 +183,37 @@ class BusinessPosApiService {
     return true;
   }
 
+  static Future<bool> updateMenuItem(String id, Map<String, dynamic> payload) async {
+    try {
+      final baseUrl = await AuthService.getBaseUrl();
+      final uri = Uri.parse('$baseUrl/api/v1/business/menu/$id');
+      await http.patch(
+        uri,
+        headers: await _headers(),
+        body: json.encode(payload),
+      ).timeout(const Duration(seconds: 8));
+    } catch (e) {
+      debugPrint('Error updating menu item on server: $e');
+    }
+
+    final currentLocal = await loadLocalMenuItems();
+    final index = currentLocal.indexWhere((i) => i.id == id);
+    if (index >= 0) {
+      final old = currentLocal[index];
+      currentLocal[index] = old.copyWith(
+        name: payload['name']?.toString() ?? old.name,
+        priceCents: (payload['price_cents'] as num?)?.toInt() ?? old.priceCents,
+        category: payload['category']?.toString() ?? old.category,
+        showInAod: payload['show_in_aod'] as bool? ?? old.showInAod,
+        showInPos: payload['show_in_pos'] as bool? ?? old.showInPos,
+        isAvailable: payload['is_available'] as bool? ?? old.isAvailable,
+        displayOrder: (payload['display_order'] as num?)?.toInt() ?? old.displayOrder,
+      );
+      await _saveLocalMenuItems(currentLocal);
+    }
+    return true;
+  }
+
   static Future<Map<String, dynamic>?> uploadAndValidateAsset(File file) async {
     try {
       final baseUrl = await AuthService.getBaseUrl();

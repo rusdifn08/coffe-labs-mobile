@@ -107,6 +107,9 @@ class BusinessMenuItem {
   final bool hasVerifiedTransparency;
   final int displayOrder;
   final bool isAvailable;
+  final bool showInAod; // Tampil di Mode Pajangan (AOD Display Pelanggan)
+  final bool showInPos; // Tersedia untuk Transaksi Kasir POS
+  final List<String> tags; // e.g. ['Best Seller', 'Signature', 'Seasonal']
 
   const BusinessMenuItem({
     required this.id,
@@ -121,6 +124,9 @@ class BusinessMenuItem {
     this.hasVerifiedTransparency = true,
     this.displayOrder = 0,
     this.isAvailable = true,
+    this.showInAod = true,
+    this.showInPos = true,
+    this.tags = const [],
   });
 
   String get formattedPrice {
@@ -129,6 +135,40 @@ class BusinessMenuItem {
       (Match m) => '${m[1]}.',
     );
     return 'Rp $thousands';
+  }
+
+  BusinessMenuItem copyWith({
+    String? name,
+    String? description,
+    String? category,
+    int? priceCents,
+    String? currency,
+    String? assetUrl,
+    String? assetFormat,
+    bool? hasVerifiedTransparency,
+    int? displayOrder,
+    bool? isAvailable,
+    bool? showInAod,
+    bool? showInPos,
+    List<String>? tags,
+  }) {
+    return BusinessMenuItem(
+      id: id,
+      storeId: storeId,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      category: category ?? this.category,
+      priceCents: priceCents ?? this.priceCents,
+      currency: currency ?? this.currency,
+      assetUrl: assetUrl ?? this.assetUrl,
+      assetFormat: assetFormat ?? this.assetFormat,
+      hasVerifiedTransparency: hasVerifiedTransparency ?? this.hasVerifiedTransparency,
+      displayOrder: displayOrder ?? this.displayOrder,
+      isAvailable: isAvailable ?? this.isAvailable,
+      showInAod: showInAod ?? this.showInAod,
+      showInPos: showInPos ?? this.showInPos,
+      tags: tags ?? this.tags,
+    );
   }
 
   factory BusinessMenuItem.fromJson(Map<String, dynamic> json) {
@@ -145,6 +185,9 @@ class BusinessMenuItem {
       hasVerifiedTransparency: json['has_verified_transparency'] != false,
       displayOrder: (json['display_order'] as num?)?.toInt() ?? 0,
       isAvailable: json['is_available'] != false,
+      showInAod: json['show_in_aod'] != false,
+      showInPos: json['show_in_pos'] != false,
+      tags: (json['tags'] as List?)?.map((e) => e.toString()).toList() ?? const [],
     );
   }
 
@@ -162,6 +205,9 @@ class BusinessMenuItem {
       'has_verified_transparency': hasVerifiedTransparency,
       'display_order': displayOrder,
       'is_available': isAvailable,
+      'show_in_aod': showInAod,
+      'show_in_pos': showInPos,
+      'tags': tags,
     };
   }
 }

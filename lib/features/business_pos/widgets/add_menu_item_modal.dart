@@ -14,12 +14,34 @@ class AddMenuItemModal extends StatefulWidget {
   });
 
   static void show(BuildContext context, {required VoidCallback onMenuAdded}) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => AddMenuItemModal(onMenuAdded: onMenuAdded),
-    );
+    final isWide = MediaQuery.of(context).size.width > 650;
+    if (isWide) {
+      showDialog(
+        context: context,
+        barrierColor: Colors.black87,
+        builder: (ctx) => Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 620, maxHeight: 780),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: AddMenuItemModal(onMenuAdded: onMenuAdded),
+              ),
+            ),
+          ),
+        ),
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => AddMenuItemModal(onMenuAdded: onMenuAdded),
+      );
+    }
   }
 
   @override
@@ -41,6 +63,10 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
   String? _uploadStatusText;
   bool _uploadIsValid = true;
 
+  // Dual-Menu Assignment Flags (Pembeda Menu Kasir vs Menu Display AOD)
+  bool _showInAod = true;
+  bool _showInPos = true;
+
   final List<String> _categories = [
     'Signature Coffee',
     'Filter Coffee',
@@ -49,12 +75,13 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
     'Cold Brew',
     'Mocktail Coffee',
     'Bakery & Pastry',
-    'Manual Brew',
+    'Biji Kopi (Retail)',
+    'Add-ons & Sirup',
   ];
 
   final List<Map<String, String>> _presetVisuals = [
     {
-      'label': 'Espresso & Crema',
+      'label': 'Espresso Crema',
       'url': 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=500&q=80',
     },
     {
@@ -84,6 +111,14 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
     {
       'label': 'Matcha Green Latte',
       'url': 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&w=500&q=80',
+    },
+    {
+      'label': 'Vanilla Cold Foam',
+      'url': 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=500&q=80',
+    },
+    {
+      'label': 'Cinnamon Roll',
+      'url': 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=500&q=80',
     },
   ];
 
@@ -130,7 +165,7 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
       setState(() {
         _isSaving = false;
         _uploadIsValid = false;
-        _uploadStatusText = 'Gagal memilih gambar: $e';
+        _uploadStatusText = 'Gagal memilih gambar dari galeri: $e';
       });
     }
   }
@@ -151,9 +186,7 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
         if (uploadRes != null && uploadRes['asset_url'] != null) {
           finalAssetUrl = uploadRes['asset_url'] as String;
         }
-      } catch (_) {
-        // Failsafe fallback menggunakan path lokal atau preset
-      }
+      } catch (_) {}
     }
 
     final payload = {
@@ -167,6 +200,8 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
       'has_verified_transparency': true,
       'display_order': 1,
       'is_available': true,
+      'show_in_aod': _showInAod,
+      'show_in_pos': _showInPos,
     };
 
     final created = await BusinessPosApiService.createMenuItem(payload);
@@ -187,7 +222,7 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Menu "$name" berhasil ditambahkan ke Display & Kasir!',
+                    'Menu "$name" berhasil disimpan! (${_showInAod ? "Tayang di AOD & Kasir" : "Kasir Saja"})',
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -199,7 +234,7 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             backgroundColor: Colors.redAccent,
-            content: Text('Gagal menyimpan menu. Periksa koneksi backend.'),
+            content: Text('Gagal menyimpan menu. Periksa input data.'),
           ),
         );
       }
@@ -209,10 +244,9 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final formattedPrice = 'Rp ${_priceController.text.replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.88,
-      margin: EdgeInsets.only(bottom: bottomInset),
       decoration: const BoxDecoration(
         color: Color(0xFF141414),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -224,9 +258,9 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
       ),
       child: Column(
         children: [
-          // Drag Handle & Header
+          // Header Bar
           Container(
-            padding: const EdgeInsets.fromLTRB(20, 12, 16, 12),
+            padding: const EdgeInsets.fromLTRB(20, 14, 16, 14),
             decoration: const BoxDecoration(
               border: Border(bottom: BorderSide(color: Colors.white12)),
             ),
@@ -246,11 +280,11 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Tambah Menu Display & Kasir',
+                        'Tambah Menu Baru (POS & AOD)',
                         style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        'Menu langsung aktif di Kasir POS dan Kiosk AOD Pelanggan',
+                        'Atur menu jualan kasir dan menu display pelanggan secara mandiri',
                         style: TextStyle(color: Colors.white54, fontSize: 11),
                       ),
                     ],
@@ -264,49 +298,89 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
             ),
           ),
 
-          // Scrollable Form Body
+          // Scrollable Body
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              padding: EdgeInsets.fromLTRB(20, 16, 20, 20 + bottomInset),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 1. Nama Menu
-                    const Text(
-                      'Nama Menu *',
-                      style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12.5, fontWeight: FontWeight.bold),
+                    // Dual-Menu Switchers (Pembeda Jualan Kasir vs Pajangan AOD)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1A1A1A),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.25)),
+                      ),
+                      child: Column(
+                        children: [
+                          SwitchListTile.adaptive(
+                            contentPadding: EdgeInsets.zero,
+                            activeTrackColor: const Color(0xFFD4AF37),
+                            title: const Row(
+                              children: [
+                                Icon(CupertinoIcons.tv_fill, color: Color(0xFFD4AF37), size: 16),
+                                SizedBox(width: 8),
+                                Text('Tayangkan di Display Pelanggan (AOD)', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            subtitle: const Text(
+                              'Aktifkan agar menu tampil di layar tablet meja bar pelanggan.',
+                              style: TextStyle(color: Colors.white54, fontSize: 11),
+                            ),
+                            value: _showInAod,
+                            onChanged: (val) => setState(() => _showInAod = val),
+                          ),
+                          const Divider(color: Colors.white10, height: 16),
+                          SwitchListTile.adaptive(
+                            contentPadding: EdgeInsets.zero,
+                            activeTrackColor: const Color(0xFFD4AF37),
+                            title: const Row(
+                              children: [
+                                Icon(CupertinoIcons.bag_fill, color: Colors.greenAccent, size: 16),
+                                SizedBox(width: 8),
+                                Text('Tersedia untuk Transaksi Kasir (POS)', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            subtitle: const Text(
+                              'Aktifkan agar barista bisa memilih menu ini saat mencatat pesanan.',
+                              style: TextStyle(color: Colors.white54, fontSize: 11),
+                            ),
+                            value: _showInPos,
+                            onChanged: (val) => setState(() => _showInPos = val),
+                          ),
+                        ],
+                      ),
                     ),
+
+                    const SizedBox(height: 18),
+
+                    // 1. Nama Menu
+                    const Text('Nama Menu *', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12.5, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _nameController,
                       style: const TextStyle(color: Colors.white, fontSize: 14),
                       decoration: InputDecoration(
-                        hintText: 'Misal: Iced Spanish Latte / V60 Geisha',
+                        hintText: 'Misal: Iced Spanish Latte / V60 Geisha Anaerobic',
                         hintStyle: const TextStyle(color: Colors.white30, fontSize: 13),
                         filled: true,
                         fillColor: const Color(0xFF1E1E1E),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFD4AF37), width: 1.0),
-                        ),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFD4AF37))),
                       ),
-                      validator: (val) {
-                        if (val == null || val.trim().isEmpty) return 'Nama menu wajib diisi';
-                        return null;
-                      },
+                      onChanged: (_) => setState(() {}),
+                      validator: (val) => (val == null || val.trim().isEmpty) ? 'Nama menu wajib diisi' : null,
                     ),
 
                     const SizedBox(height: 16),
 
                     // 2. Kategori Menu
-                    const Text(
-                      'Kategori Menu',
-                      style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12.5, fontWeight: FontWeight.bold),
-                    ),
+                    const Text('Kategori Menu', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12.5, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
@@ -314,14 +388,7 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
                       children: _categories.map((cat) {
                         final isSel = cat == _selectedCategory;
                         return ChoiceChip(
-                          label: Text(
-                            cat,
-                            style: TextStyle(
-                              color: isSel ? Colors.black : Colors.white70,
-                              fontSize: 11.5,
-                              fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-                            ),
-                          ),
+                          label: Text(cat, style: TextStyle(color: isSel ? Colors.black : Colors.white70, fontSize: 11.5, fontWeight: isSel ? FontWeight.bold : FontWeight.normal)),
                           selected: isSel,
                           selectedColor: const Color(0xFFD4AF37),
                           backgroundColor: const Color(0xFF1E1E1E),
@@ -334,45 +401,33 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
                     const SizedBox(height: 16),
 
                     // 3. Harga Jual
-                    const Text(
-                      'Harga Menu (Rp) *',
-                      style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12.5, fontWeight: FontWeight.bold),
+                    const Text('Harga Jual (Rp) *', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12.5, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 6),
+                    TextFormField(
+                      controller: _priceController,
+                      keyboardType: TextInputType.number,
+                      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                      decoration: InputDecoration(
+                        prefixText: 'Rp  ',
+                        prefixStyle: const TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold),
+                        filled: true,
+                        fillColor: const Color(0xFF1E1E1E),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFD4AF37))),
+                      ),
+                      onChanged: (_) => setState(() {}),
+                      validator: (val) {
+                        if (val == null || val.trim().isEmpty) return 'Harga wajib diisi';
+                        final n = int.tryParse(val.replaceAll(RegExp(r'[^\d]'), ''));
+                        if (n == null || n < 0) return 'Format harga tidak valid';
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _priceController,
-                            keyboardType: TextInputType.number,
-                            style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-                            decoration: InputDecoration(
-                              prefixText: 'Rp  ',
-                              prefixStyle: const TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold),
-                              filled: true,
-                              fillColor: const Color(0xFF1E1E1E),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: Color(0xFFD4AF37), width: 1.0),
-                              ),
-                            ),
-                            validator: (val) {
-                              if (val == null || val.trim().isEmpty) return 'Harga wajib diisi';
-                              final n = int.tryParse(val.replaceAll(RegExp(r'[^\d]'), ''));
-                              if (n == null || n < 0) return 'Format harga tidak valid';
-                              return null;
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    // Quick price shortcuts
                     Wrap(
                       spacing: 6,
-                      children: [20000, 28000, 35000, 42000, 50000].map((amount) {
+                      children: [20000, 25000, 35000, 42000, 48000, 60000].map((amount) {
                         return ActionChip(
                           label: Text('${amount ~/ 1000}K', style: const TextStyle(color: Colors.white70, fontSize: 11)),
                           backgroundColor: const Color(0xFF222222),
@@ -384,28 +439,22 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
 
                     const SizedBox(height: 16),
 
-                    // 4. Deskripsi / Tasting Notes
-                    const Text(
-                      'Deskripsi / Catatan Rasa (Tasting Notes)',
-                      style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12.5, fontWeight: FontWeight.bold),
-                    ),
+                    // 4. Deskripsi
+                    const Text('Deskripsi Singkat / Tasting Notes', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12.5, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _descController,
                       maxLines: 2,
                       style: const TextStyle(color: Colors.white, fontSize: 13),
                       decoration: InputDecoration(
-                        hintText: 'Misal: Catatan rasa peach, melati, dan madu bergamot segar.',
+                        hintText: 'Misal: Single Origin Colombia Washed, aroma peach dan melati.',
                         hintStyle: const TextStyle(color: Colors.white30, fontSize: 12),
                         filled: true,
                         fillColor: const Color(0xFF1E1E1E),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFD4AF37), width: 1.0),
-                        ),
                       ),
+                      onChanged: (_) => setState(() {}),
                     ),
 
                     const SizedBox(height: 18),
@@ -414,18 +463,12 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Visual Menu (AOD Pitch-Black Ready)',
-                          style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12.5, fontWeight: FontWeight.bold),
-                        ),
+                        const Text('Visual Menu (AOD Pitch-Black)', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12.5, fontWeight: FontWeight.bold)),
                         TextButton.icon(
                           onPressed: _pickImage,
-                          style: TextButton.styleFrom(
-                            foregroundColor: const Color(0xFFD4AF37),
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                          ),
+                          style: TextButton.styleFrom(foregroundColor: const Color(0xFFD4AF37)),
                           icon: const Icon(CupertinoIcons.photo_on_rectangle, size: 14),
-                          label: const Text('Upload File Sendiri', style: TextStyle(fontSize: 11.5)),
+                          label: const Text('Pilih dari Galeri', style: TextStyle(fontSize: 11.5)),
                         ),
                       ],
                     ),
@@ -437,25 +480,16 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
                         decoration: BoxDecoration(
                           color: _uploadIsValid ? Colors.green.withValues(alpha: 0.15) : Colors.red.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: _uploadIsValid ? Colors.greenAccent : Colors.redAccent,
-                            width: 0.8,
-                          ),
+                          border: Border.all(color: _uploadIsValid ? Colors.greenAccent : Colors.redAccent, width: 0.8),
                         ),
-                        child: Text(
-                          _uploadStatusText!,
-                          style: TextStyle(
-                            color: _uploadIsValid ? Colors.greenAccent : Colors.redAccent,
-                            fontSize: 11,
-                          ),
-                        ),
+                        child: Text(_uploadStatusText!, style: TextStyle(color: _uploadIsValid ? Colors.greenAccent : Colors.redAccent, fontSize: 11)),
                       ),
                       const SizedBox(height: 8),
                     ],
 
                     const SizedBox(height: 6),
 
-                    // Pilihan Preset Cepat (Instant Select)
+                    // Preset Icon Grid
                     SizedBox(
                       height: 90,
                       child: ListView.separated(
@@ -476,15 +510,12 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
                             },
                             borderRadius: BorderRadius.circular(12),
                             child: Container(
-                              width: 80,
+                              width: 82,
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
                                 color: const Color(0xFF1E1E1E),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isSel ? const Color(0xFFD4AF37) : Colors.white12,
-                                  width: isSel ? 1.5 : 1.0,
-                                ),
+                                border: Border.all(color: isSel ? const Color(0xFFD4AF37) : Colors.white12, width: isSel ? 1.5 : 1.0),
                               ),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -496,11 +527,7 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
                                       width: 44,
                                       height: 44,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) => const Icon(
-                                        Icons.local_cafe,
-                                        color: Color(0xFFD4AF37),
-                                        size: 28,
-                                      ),
+                                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.local_cafe, color: Color(0xFFD4AF37), size: 28),
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -508,11 +535,7 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
                                     v['label']!,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: isSel ? const Color(0xFFD4AF37) : Colors.white70,
-                                      fontSize: 9.5,
-                                      fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-                                    ),
+                                    style: TextStyle(color: isSel ? const Color(0xFFD4AF37) : Colors.white70, fontSize: 9.5, fontWeight: isSel ? FontWeight.bold : FontWeight.normal),
                                   ),
                                 ],
                               ),
@@ -522,12 +545,68 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
                       ),
                     ),
 
+                    const SizedBox(height: 20),
+
+                    // Live AOD OLED Preview Card
+                    const Text('Live Preview di Layar Display AOD Pelanggan:', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 140,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.black, // #000000 True Black OLED Preview
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFF262626), width: 1.0),
+                      ),
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.network(
+                              _selectedAssetUrl,
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => const Icon(Icons.local_cafe, color: Color(0xFFD4AF37), size: 40),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  _nameController.text.isNotEmpty ? _nameController.text : 'Nama Menu Kopi',
+                                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _descController.text.isNotEmpty ? _descController.text : 'Deskripsi rasa seduhan kopi pilihan...',
+                                  style: const TextStyle(color: Colors.white54, fontSize: 11),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  formattedPrice,
+                                  style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 13, fontWeight: FontWeight.w900),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
                     const SizedBox(height: 24),
 
-                    // Tombol Submit
+                    // Submit Button
                     SizedBox(
                       width: double.infinity,
-                      height: 48,
+                      height: 50,
                       child: ElevatedButton.icon(
                         onPressed: _isSaving ? null : _handleSave,
                         style: ElevatedButton.styleFrom(
@@ -540,7 +619,7 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
                             ? const CupertinoActivityIndicator(color: Colors.black)
                             : const Icon(CupertinoIcons.checkmark_seal_fill, size: 18),
                         label: Text(
-                          _isSaving ? 'Menyimpan Menu...' : 'Simpan & Tampilkan ke AOD',
+                          _isSaving ? 'Menyimpan Menu...' : 'Simpan Menu ke Kasir & Display',
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                       ),

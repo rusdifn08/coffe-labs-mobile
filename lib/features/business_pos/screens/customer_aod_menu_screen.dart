@@ -7,6 +7,7 @@ import '../../../models/business_pos_models.dart';
 import '../../../providers/aod_display_engine_provider.dart';
 import '../../../providers/workspace_mode_provider.dart';
 import '../../../services/business_pos_api_service.dart';
+import 'oled_diagnostic_screen.dart';
 
 class CustomerAodMenuScreen extends ConsumerStatefulWidget {
   final BusinessStoreConfig config;
@@ -51,7 +52,8 @@ class _CustomerAodMenuScreenState extends ConsumerState<CustomerAodMenuScreen> {
     final items = await BusinessPosApiService.fetchMenuList();
     if (mounted) {
       setState(() {
-        _menuItems = items;
+        // Bedakan menu jualan kasir dengan menu pajangan display AOD
+        _menuItems = items.where((item) => item.showInAod && item.isAvailable).toList();
         _isLoading = false;
       });
     }
@@ -114,10 +116,50 @@ class _CustomerAodMenuScreenState extends ConsumerState<CustomerAodMenuScreen> {
                                   child: CupertinoActivityIndicator(color: Color(0xFFD4AF37)),
                                 )
                               : _menuItems.isEmpty
-                                  ? const Center(
-                                      child: Text(
-                                        'Belum ada menu yang diatur.',
-                                        style: TextStyle(color: Colors.white54),
+                                  ? Center(
+                                      child: Container(
+                                        constraints: const BoxConstraints(maxWidth: 420),
+                                        padding: const EdgeInsets.all(24),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF0F0F0F),
+                                          borderRadius: BorderRadius.circular(20),
+                                          border: Border.all(color: const Color(0xFF262626)),
+                                        ),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(14),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFD4AF37).withValues(alpha: 0.12),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const Icon(CupertinoIcons.tv, color: Color(0xFFD4AF37), size: 36),
+                                            ),
+                                            const SizedBox(height: 14),
+                                            const Text(
+                                              'Belum Ada Menu di Pajangan AOD',
+                                              style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            const Text(
+                                              'Menu kasir sengaja dipisahkan dari pajangan etalase bar pelanggan agar tampilan tablet selalu rapi.\n\nUntuk memunculkan menu di layar ini:\n1. Buka Mode Kasir (Gunakan PIN default: 1234)\n2. Buka tombol Kelola Menu\n3. Nyalakan switch "Tayang di AOD"',
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(color: Colors.white60, fontSize: 12, height: 1.45),
+                                            ),
+                                            const SizedBox(height: 18),
+                                            ElevatedButton.icon(
+                                              onPressed: _showPinDialog,
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: const Color(0xFFD4AF37),
+                                                foregroundColor: Colors.black,
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                              ),
+                                              icon: const Icon(CupertinoIcons.lock_shield, size: 16),
+                                              label: const Text('Buka Kasir untuk Mengatur (PIN: 1234)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     )
                                   : LayoutBuilder(
@@ -218,28 +260,61 @@ class _CustomerAodMenuScreenState extends ConsumerState<CustomerAodMenuScreen> {
             ),
           ],
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-          decoration: BoxDecoration(
-            color: const Color(0xFF161616),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF262626)),
-          ),
-          child: const Row(
-            children: [
-              Icon(CupertinoIcons.sparkles, color: Color(0xFFD4AF37), size: 12),
-              SizedBox(width: 4),
-              Text(
-                'ARTISAN COFFEE SELECTION',
-                style: TextStyle(
-                  color: Color(0xFFD4AF37),
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.0,
+        Row(
+          children: [
+            // OLED Health & Diagnostic Pill
+            InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const OledDiagnosticScreen()),
+                );
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF141414),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF262626)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(CupertinoIcons.waveform_path_ecg, color: Color(0xFFD4AF37), size: 12),
+                    SizedBox(width: 5),
+                    Text(
+                      'OLED Diagnostic',
+                      style: TextStyle(color: Color(0xFFD4AF37), fontSize: 10.5, fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF161616),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF262626)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(CupertinoIcons.sparkles, color: Color(0xFFD4AF37), size: 12),
+                  SizedBox(width: 4),
+                  Text(
+                    'ARTISAN SELECTION',
+                    style: TextStyle(
+                      color: Color(0xFFD4AF37),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -481,7 +556,39 @@ class _VerifyCashierPinModalState extends State<_VerifyCashierPinModal> {
             // Numeric Keypad
             _buildNumpad(),
 
-            const SizedBox(height: 10),
+            const SizedBox(height: 14),
+
+            // Tombol Pintas PIN Default
+            InkWell(
+              onTap: _isChecking
+                  ? null
+                  : () {
+                      setState(() => _pin = '1234');
+                      _verifyPin();
+                    },
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.4)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(CupertinoIcons.bolt_fill, size: 14, color: Color(0xFFD4AF37)),
+                    SizedBox(width: 6),
+                    Text(
+                      'Buka Cepat (PIN Default: 1234)',
+                      style: TextStyle(color: Color(0xFFD4AF37), fontSize: 11.5, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 8),
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('Batal', style: TextStyle(color: Colors.white54)),
