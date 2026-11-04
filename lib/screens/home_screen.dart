@@ -1,32 +1,42 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../core/router/app_router.dart';
+import '../features/brew/controllers/brew_history_controller.dart';
+import '../features/gamification/models/coffee_level.dart';
+import '../features/gamification/services/gamification_service.dart';
+import '../features/gamification/widgets/level_roadmap_modal.dart';
+import '../features/recipes/controllers/recipe_list_controller.dart';
+import '../features/home/widgets/home_quick_access_section.dart';
+import '../features/home/widgets/home_brew_methods_section.dart';
+import '../features/home/widgets/home_bean_recommender_banner.dart';
+import '../features/home/widgets/home_frequent_recipe_card.dart';
+import '../features/home/widgets/home_recent_brew_tile.dart';
 import '../services/api_service.dart';
 import '../services/profile_service.dart';
 import '../services/language_service.dart';
-import '../services/coffee_translator.dart';
-import '../utils/barista_utils.dart';
-import 'barista_profile_screen.dart';
-import 'brew_timer_screen.dart';
-import 'favorites_screen.dart';
-import 'settings_screen.dart';
-import 'onboarding_screen.dart';
 import '../services/trial_service.dart';
+import '../services/user_brew_usage_service.dart';
+import '../features/brew_methods/models/brew_method_item.dart';
+import '../theme/app_theme.dart';
+import '../utils/barista_utils.dart';
+import '../widgets/home_header_profile_row.dart';
+import 'brew_methods_screen.dart';
 
-class HomeScreen extends StatefulWidget {
+/// Halaman Beranda Coffee Labs yang terintegrasi penuh dengan Riverpod ConsumerStatefulWidget.
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
-  List<dynamic> _history = [];
-  List<dynamic> _frequent = [];
-  List<Map<String, dynamic>> _baristas = [];
-  bool _isLoading = true;
+class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProviderStateMixin {
+  bool _showBrewMethods = false;
   String _userName = 'Barista';
   String? _userImagePath;
+  List<Map<String, dynamic>> _baristas = [];
+  GamificationStats? _gamificationStats;
   late AnimationController _fadeCtrl;
   late Animation<double> _fadeAnim;
 
@@ -35,44 +45,42 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     super.initState();
     _fadeCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
-    _loadData();
-    ApiService.changeNotifier.addListener(_onExternalChange);
-    ProfileService.changeNotifier.addListener(_onExternalChange);
-    LanguageService.changeNotifier.addListener(_onExternalChange);
+    _fadeCtrl.forward();
+    _loadProfileAndBaristas();
+    GamificationService.changeNotifier.addListener(_loadGamificationStats);
   }
 
   @override
   void dispose() {
-    ApiService.changeNotifier.removeListener(_onExternalChange);
-    ProfileService.changeNotifier.removeListener(_onExternalChange);
-    LanguageService.changeNotifier.removeListener(_onExternalChange);
+    GamificationService.changeNotifier.removeListener(_loadGamificationStats);
     _fadeCtrl.dispose();
     super.dispose();
   }
 
-  void _onExternalChange() {
-    _loadData(silent: true);
+  Future<void> _loadGamificationStats() async {
+    final stats = await GamificationService.instance.getStats();
+    if (!mounted) return;
+    setState(() => _gamificationStats = stats);
   }
 
-  Future<void> _loadData({bool silent = false}) async {
-    if (!silent) setState(() => _isLoading = true);
-    final history = await ApiService.getBrewHistory();
-    final frequent = await ApiService.getFrequentBrews();
-    final userName = await ProfileService.getUserName();
-    final userImagePath = await ProfileService.getUserImagePath();
+  Future<void> _loadProfileAndBaristas() async {
+    final name = await ProfileService.getUserName();
+    final img = await ProfileService.getUserImagePath();
     final baristas = await ApiService.getUniqueBaristas();
+    final stats = await GamificationService.instance.getStats();
     if (!mounted) return;
     setState(() {
-      _history = history;
-      _frequent = frequent;
-      _userName = userName;
-      _userImagePath = userImagePath;
-      _baristas = baristas.take(12).toList();
-      _isLoading = false;
+      _userName = name;
+      _userImagePath = img;
+      _baristas = baristas;
+      _gamificationStats = stats;
     });
-    if (!silent) {
-      _fadeCtrl.forward(from: 0);
-    }
+  }
+
+  Future<void> _refreshAll() async {
+    await ref.read(recipeListControllerProvider.notifier).refreshRecipes();
+    ref.invalidate(brewHistoryControllerProvider);
+    await _loadProfileAndBaristas();
   }
 
   Future<void> _brewRecipe(dynamic recipe) async {
@@ -86,25 +94,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           title: 'Batas Seduh Trial Tercapai',
           message: 'Anda telah mencapai batas 10 kali seduh pada mode trial. Fitur seduh terkunci selama 1 minggu ($days hari tersisa).\n\nSilakan login atau daftar akun resmi yang disetujui Admin untuk seduh tanpa batas!',
           onLoginTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingScreen()));
+            context.push('${AppRoutes.onboarding}?upgrade=true');
           },
         );
       }
       return;
     }
     if (!mounted) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => BrewTimerScreen(recipeData: recipe)),
-    );
+    context.push(AppRoutes.brewTimer, extra: recipe);
   }
 
   void _openSettings() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const SettingsScreen()),
-    ).then((changed) {
-      if (changed == true) _loadData();
+    context.push(AppRoutes.settings).then((changed) {
+      if (changed == true) _loadProfileAndBaristas();
     });
   }
 
@@ -119,63 +121,59 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    if (_showBrewMethods) {
+      return BrewMethodsScreen(
+        onBack: () => setState(() => _showBrewMethods = false),
+      );
+    }
+
     final isEn = LanguageService.isEnglish;
+    final historyAsync = ref.watch(brewHistoryControllerProvider);
+    final recipesAsync = ref.watch(recipeListControllerProvider);
+
+    // Dapatkan riwayat seduh untuk menyusun urutan metode & barista berdasarkan data riil pengguna
+    final history = historyAsync.value ?? const [];
+    final sortedMethods = UserBrewUsageService.sortMethodsByUserUsage(BrewMethodItem.allMethods, history);
+    final sortedBaristas = UserBrewUsageService.sortBaristasByUserUsage(_baristas, history);
+    final displayedBaristas = sortedBaristas.take(15).toList();
+
+    final currentLvl = _gamificationStats?.level ?? CoffeeLevel.allLevels.first;
 
     return Scaffold(
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _loadData,
+          onRefresh: _refreshAll,
           color: AppTheme.primaryBrown,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(24.0),
             child: FadeTransition(
               opacity: _fadeAnim,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 960),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      GestureDetector(
-                        onTap: _openSettings,
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 24,
-                              backgroundColor: AppTheme.bgCream,
-                              backgroundImage: ProfileService.getImageProvider(_userImagePath),
-                            ),
-                            const SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(_getGreeting(), style: Theme.of(context).textTheme.bodyMedium),
-                                Text(_userName, style: Theme.of(context).textTheme.titleLarge),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryBrown.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          icon: const Icon(CupertinoIcons.heart_fill),
-                          color: AppTheme.primaryBrown,
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => const FavoritesScreen()),
-                            ).then((_) => _loadData());
-                          },
-                        ),
-                      ),
-                    ],
+                      HomeHeaderProfileRow(
+                    userImagePath: _userImagePath,
+                    userName: _userName,
+                    gamificationStats: _gamificationStats,
+                    currentLevel: currentLvl,
+                    greeting: _getGreeting(),
+                    onTapProfile: () {
+                      if (_gamificationStats != null) {
+                        LevelRoadmapModal.show(context, stats: _gamificationStats!, avatarPath: _userImagePath);
+                      } else {
+                        _openSettings();
+                      }
+                    },
+                    onTapFavorites: () {
+                      context.push(AppRoutes.favorites);
+                    },
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 22),
+
                   Text(
                     isEn ? 'What would you\nlike to brew today?' : 'Mau brew\napa hari ini?',
                     style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 32, height: 1.15),
@@ -187,32 +185,47 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         : 'Eksplorasi resep presisi, inspirasi seduh, dan kreasi rasa terbaik.',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 16),
 
-                  // Barista spotlight
-                  if (!_isLoading && _baristas.isNotEmpty) ...[
+                  // Quick Access Section (Social, Marketplace, Beans Radar)
+                  HomeQuickAccessSection(isEn: isEn),
+                  const SizedBox(height: 20),
+
+                  // Brew Methods Section (Disusun berdasarkan frekuensi seduh user)
+                  HomeBrewMethodsSection(
+                    isEn: isEn,
+                    onSeeAll: () => setState(() => _showBrewMethods = true),
+                    methods: sortedMethods,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Smart Brew Dial-In Banner
+                  HomeBeanRecommenderBanner(isEn: isEn),
+                  const SizedBox(height: 20),
+
+                  // Barista spotlight (Disusun berdasarkan frekuensi seduh resep barista oleh user)
+                  if (sortedBaristas.isNotEmpty) ...[
                     Text('Barista Spotlight', style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 12),
                     SizedBox(
-                      height: 108,
+                      height: 114,
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
-                        itemCount: _baristas.length,
+                        itemCount: displayedBaristas.length,
                         itemBuilder: (context, index) {
-                          final b = _baristas[index];
+                          final b = displayedBaristas[index];
+                          final brewCount = (b['userBrewCount'] as num?)?.toInt() ?? 0;
                           final heroTag = 'home_barista_${BaristaUtils.slugFromAuthor(b['author'] as String)}';
                           return GestureDetector(
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => BaristaProfileScreen(
-                                    rawAuthor: b['author'] as String,
-                                    imageUrl: b['imageUrl'] as String?,
-                                    coverImageUrl: b['coverImageUrl'] as String?,
-                                    heroTag: heroTag,
-                                  ),
-                                ),
+                              context.push(
+                                AppRoutes.baristaProfile,
+                                extra: {
+                                  'rawAuthor': b['author'] as String,
+                                  'imageUrl': b['imageUrl'] as String?,
+                                  'coverImageUrl': b['coverImageUrl'] as String?,
+                                  'heroTag': heroTag,
+                                },
                               );
                             },
                             child: Container(
@@ -220,10 +233,43 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               margin: const EdgeInsets.only(right: 12),
                               child: Column(
                                 children: [
-                                  BaristaAvatar(
-                                    imageUrl: b['imageUrl'] as String?,
-                                    radius: 30,
-                                    heroTag: heroTag,
+                                  Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      BaristaAvatar(
+                                        imageUrl: b['imageUrl'] as String?,
+                                        radius: 30,
+                                        heroTag: heroTag,
+                                      ),
+                                      if (brewCount > 0)
+                                        Positioned(
+                                          right: -2,
+                                          bottom: -2,
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                            decoration: BoxDecoration(
+                                              color: AppTheme.accentGold,
+                                              borderRadius: BorderRadius.circular(6),
+                                              border: Border.all(color: Colors.white, width: 1.2),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black.withValues(alpha: 0.25),
+                                                  blurRadius: 3,
+                                                  offset: const Offset(0, 1),
+                                                ),
+                                              ],
+                                            ),
+                                            child: Text(
+                                              '${brewCount}x',
+                                              style: const TextStyle(
+                                                fontSize: 8.5,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
@@ -243,199 +289,87 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     const SizedBox(height: 24),
                   ],
 
-                  if (_isLoading)
-                    const Center(child: CircularProgressIndicator(color: AppTheme.primaryBrown))
-                  else if (_frequent.isNotEmpty) ...[
-                    Text(
-                      isEn ? 'Most Frequently Brewed' : 'Paling Sering Dipakai',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      height: 220,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        clipBehavior: Clip.none,
-                        itemCount: _frequent.length,
-                        itemBuilder: (context, index) => _buildRecipeCard(context, _frequent[index]),
-                      ),
-                    ),
-                    const SizedBox(height: 28),
-                  ],
-
-                  if (!_isLoading) ...[
-                    Text(
-                      isEn ? 'Recent Brews' : 'Baru Dicoba',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 16),
-                    if (_history.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Center(
-                          child: Text(
-                            isEn
-                                ? 'No brews yet. Start from Recipes or Brew tab.'
-                                : 'Belum ada brew. Mulai dari tab Recipes atau Brew.',
-                            style: const TextStyle(color: AppTheme.textMuted),
-                            textAlign: TextAlign.center,
+                  // Paling sering diseduh (dari recipes)
+                  recipesAsync.maybeWhen(
+                    data: (recipes) {
+                      final frequent = recipes.take(6).toList();
+                      if (frequent.isEmpty) return const SizedBox.shrink();
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isEn ? 'Featured Precision Brews' : 'Resep Pilihan Rekomendasi',
+                            style: Theme.of(context).textTheme.titleLarge,
                           ),
-                        ),
-                      )
-                    else
-                      ..._history.take(10).map((recipe) => _buildHistoryTile(context, recipe)),
-                  ],
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            height: 220,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              clipBehavior: Clip.none,
+                              itemCount: frequent.length,
+                              itemBuilder: (context, index) {
+                                return HomeFrequentRecipeCard(
+                                  recipe: frequent[index],
+                                  onTap: () => _brewRecipe(frequent[index]),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 28),
+                        ],
+                      );
+                    },
+                    orElse: () => const SizedBox.shrink(),
+                  ),
+
+                  // Recent Brews (dari historyAsync)
+                  Text(
+                    isEn ? 'Recent Brews' : 'Baru Dicoba',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  historyAsync.when(
+                    loading: () => const Center(
+                      child: CircularProgressIndicator(color: AppTheme.primaryBrown),
+                    ),
+                    error: (err, _) => Center(
+                      child: Text('Error: $err', style: const TextStyle(color: Colors.redAccent)),
+                    ),
+                    data: (history) {
+                      if (history.isEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: Center(
+                            child: Text(
+                              isEn
+                                  ? 'No brews yet. Start from Recipes or Brew tab.'
+                                  : 'Belum ada brew. Mulai dari tab Recipes atau Brew.',
+                              style: const TextStyle(color: AppTheme.textMuted),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        );
+                      }
+                      return Column(
+                        children: history
+                            .take(10)
+                            .map((r) => HomeRecentBrewTile(
+                                  recipe: r,
+                                  onTap: () => _brewRecipe(r),
+                                ))
+                            .toList(),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildRecipeCard(BuildContext context, dynamic recipe) {
-    final title = CoffeeTranslator.translateTitle(recipe['title']?.toString() ?? 'Unknown Recipe');
-    final author = recipe['author'] ?? 'Anonymous';
-    final category = recipe['category'] ?? 'V60';
-
-    IconData catIcon = CupertinoIcons.flame_fill;
-    Color catColor = Colors.orange;
-    if (category.toLowerCase().contains('hybrid') || category.toLowerCase().contains('origami')) {
-      catIcon = CupertinoIcons.lab_flask_solid;
-      catColor = Colors.blue;
-    } else if (category.toLowerCase().contains('flat')) {
-      catIcon = CupertinoIcons.cube_fill;
-      catColor = Colors.green;
-    }
-
-    final coverImageUrl = (recipe['coverImageUrl'] ?? recipe['authorImageUrl'])?.toString();
-    final authorAvatarUrl = (recipe['authorAvatarUrl'] ?? recipe['authorImageUrl'])?.toString();
-
-    return GestureDetector(
-      onTap: () => _brewRecipe(recipe),
-      onLongPress: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => BaristaProfileScreen(
-              rawAuthor: author.toString(),
-              imageUrl: authorAvatarUrl,
-              coverImageUrl: coverImageUrl,
-            ),
-          ),
-        );
-      },
-      child: Container(
-        width: 170,
-        margin: const EdgeInsets.only(right: 16),
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceWhite,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppTheme.primaryBrown.withValues(alpha: 0.1)),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primaryBrown.withValues(alpha: 0.05),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: SizedBox(
-                height: 100,
-                width: double.infinity,
-                child: BaristaUtils.buildOfflineImage(
-                  coverImageUrl,
-                  fit: BoxFit.cover,
-                  cacheWidth: 340,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 14, height: 1.2),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const Spacer(),
-            Text(
-              BaristaUtils.cleanName(author.toString()),
-              style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.bold),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(catIcon, color: catColor, size: 12),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    category,
-                    style: const TextStyle(fontSize: 10, color: AppTheme.textDark),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHistoryTile(BuildContext context, dynamic recipe) {
-    final title = CoffeeTranslator.translateTitle(recipe['title']?.toString() ?? 'Unknown Recipe');
-    final author = recipe['author'] ?? 'Anonymous';
-    final authorImageUrl =
-        (recipe['authorAvatarUrl'] ?? recipe['authorImageUrl'])?.toString();
-
-    return GestureDetector(
-      onTap: () => _brewRecipe(recipe),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceWhite,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.primaryBrown.withValues(alpha: 0.1)),
-        ),
-        child: Row(
-          children: [
-            BaristaAvatar(imageUrl: authorImageUrl, radius: 20),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'by ${BaristaUtils.cleanName(author.toString())}',
-                    style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            const Icon(CupertinoIcons.play_arrow_solid, color: AppTheme.primaryBrown, size: 16),
-          ],
-        ),
-      ),
-    );
-  }
+    ),
+  ),
+);
+}
 }

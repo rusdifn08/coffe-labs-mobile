@@ -53,7 +53,7 @@ class _BaristaProfileScreenState extends State<BaristaProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final imageUrl = _profile.imageAsset ?? widget.imageUrl;
-    final coverImageUrl = widget.coverImageUrl ?? widget.imageUrl ?? imageUrl;
+    final coverImageUrl = _profile.coverAsset ?? widget.coverImageUrl ?? widget.imageUrl ?? imageUrl;
 
     return Scaffold(
       backgroundColor: AppTheme.bgCream,

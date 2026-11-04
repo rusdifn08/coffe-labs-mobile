@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:coffee_hub_mobile/main.dart';
 import 'package:coffee_hub_mobile/services/api_service.dart';
@@ -19,7 +20,8 @@ void main() {
       'coffeehub_is_trial_mode': true,
     });
 
-    await tester.pumpWidget(const CoffeeHubApp());
+    await tester.pumpWidget(const ProviderScope(child: CoffeeHubApp()));
+    await tester.pump();
     expect(find.text('Coffee Labs'), findsOneWidget);
     expect(find.text('Master Your Brew'), findsOneWidget);
 
@@ -32,7 +34,7 @@ void main() {
   test('Offline default recipes and custom recipe sanitization have zero nulls', () async {
     SharedPreferences.setMockInitialValues({});
     final defaults = SeedData.getDefaultRecipes();
-    expect(defaults.length, equals(159));
+    expect(defaults.length, equals(478));
 
     final recipes = await ApiService.getRecipes();
     expect(recipes.length, equals(defaults.length));
@@ -90,41 +92,39 @@ void main() {
     expect(customSteps[0]['instruction'], isNotEmpty);
   });
 
-  test('TrialService limits brews to 10 and locks, resets after 7 days', () async {
+  test('TrialService visitor system allows free brewing and locks precision toolkit', () async {
     SharedPreferences.setMockInitialValues({
       'coffeehub_is_trial_mode': true,
       'coffeehub_trial_brews_count': 0,
     });
 
-    // Check initial state
+    // Check initial visitor state
     expect(await TrialService.isTrialMode(), isTrue);
     expect(await TrialService.canBrew(), isTrue);
     expect(await TrialService.getTrialBrewsCount(), equals(0));
-    expect(await TrialService.isRecipeAccessible(0), isTrue);
-    expect(await TrialService.isRecipeAccessible(9), isTrue);
-    expect(await TrialService.isRecipeAccessible(10), isFalse);
 
-    // Record 9 brews
-    for (int i = 0; i < 9; i++) {
+    // Record brews beyond 10 - visitor is NOT locked out
+    for (int i = 0; i < 12; i++) {
       await TrialService.recordTrialBrew();
     }
-    expect(await TrialService.getTrialBrewsCount(), equals(9));
+    expect(await TrialService.getTrialBrewsCount(), equals(12));
     expect(await TrialService.canBrew(), isTrue);
+    expect(await TrialService.isBrewLocked(), isFalse);
 
-    // 10th brew locks trial
-    await TrialService.recordTrialBrew();
-    expect(await TrialService.getTrialBrewsCount(), equals(10));
-    expect(await TrialService.canBrew(), isFalse);
-    expect(await TrialService.isBrewLocked(), isTrue);
+    // Verify Barista Toolkit locking matrix for visitor
+    // 1. Ekosistem & Komunitas is 100% UNLOCKED for visitors
+    expect(TrialService.isToolkitItemLocked(isTrial: true, sectionId: 'ecosystem'), isFalse);
 
-    // Simulate 8 days later
-    final prefs = await SharedPreferences.getInstance();
-    final eightDaysAgo = DateTime.now().subtract(const Duration(days: 8)).millisecondsSinceEpoch;
-    await prefs.setInt('coffeehub_trial_lock_timestamp', eightDaysAgo);
+    // 2. Lab Ekstraksi & Dial-In is LOCKED for visitors
+    expect(TrialService.isToolkitItemLocked(isTrial: true, sectionId: 'lab'), isTrue);
 
-    // Now it should auto reset
-    expect(await TrialService.canBrew(), isTrue);
-    expect(await TrialService.getTrialBrewsCount(), equals(0));
+    // 3. Sains Kopi & Kesegaran is LOCKED for visitors
+    expect(TrialService.isToolkitItemLocked(isTrial: true, sectionId: 'science'), isTrue);
+
+    // When not in trial (registered Pro / Barista account), all sections are unlocked
+    expect(TrialService.isToolkitItemLocked(isTrial: false, sectionId: 'ecosystem'), isFalse);
+    expect(TrialService.isToolkitItemLocked(isTrial: false, sectionId: 'lab'), isFalse);
+    expect(TrialService.isToolkitItemLocked(isTrial: false, sectionId: 'science'), isFalse);
   });
 
   test('AuthUser and Admin model verification', () {

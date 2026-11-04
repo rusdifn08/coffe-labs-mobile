@@ -1,43 +1,20 @@
-class BrewLog {
-  final String? id;
-  final String beanName;
-  final String method;
-  final double coffeeWeight;
-  final double waterWeight;
-  final int totalBrewTimeSeconds;
-  final DateTime createdAt;
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  BrewLog({
-    this.id,
-    required this.beanName,
-    required this.method,
-    required this.coffeeWeight,
-    required this.waterWeight,
-    required this.totalBrewTimeSeconds,
-    required this.createdAt,
-  });
+part 'brew_log.freezed.dart';
+part 'brew_log.g.dart';
 
-  factory BrewLog.fromJson(Map<String, dynamic> json) {
-    return BrewLog(
-      id: json['id']?.toString(),
-      beanName: json['beanName'],
-      method: json['method'],
-      coffeeWeight: json['coffeeWeight']?.toDouble() ?? 0.0,
-      waterWeight: json['waterWeight']?.toDouble() ?? 0.0,
-      totalBrewTimeSeconds: json['totalBrewTimeSeconds'] ?? 0,
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
-    );
-  }
+/// Model domain & DTO immutable untuk Riwayat Seduh (BrewLog) menggunakan Freezed.
+@freezed
+abstract class BrewLog with _$BrewLog {
+  const factory BrewLog({
+    String? id,
+    required String beanName,
+    required String method,
+    @Default(15.0) double coffeeWeight,
+    @Default(240.0) double waterWeight,
+    @Default(180) int totalBrewTimeSeconds,
+    required DateTime createdAt,
+  }) = _BrewLog;
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'beanName': beanName,
-      'method': method,
-      'coffeeWeight': coffeeWeight,
-      'waterWeight': waterWeight,
-      'totalBrewTimeSeconds': totalBrewTimeSeconds,
-      'createdAt': createdAt.toIso8601String(),
-    };
-  }
+  factory BrewLog.fromJson(Map<String, dynamic> json) => _$BrewLogFromJson(json);
 }

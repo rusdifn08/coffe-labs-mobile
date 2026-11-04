@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../data/barista_catalog.dart';
 import '../theme/app_theme.dart';
 
 /// Utilitas nama/negara/slug barista dari field author resep (100% Offline).
@@ -79,6 +80,8 @@ class BaristaUtils {
     if (lowerRaw.contains('dustin')) return 'dustin_wijaya';
     if (lowerRaw.contains('ray janson')) return 'ray_janson';
     if (lowerRaw.contains('prawiraanga')) return 'prawiraanga';
+    if (lowerRaw.contains('samo smrke') || lowerRaw.contains('samo bloom')) return 'samo_smrke';
+    if (lowerRaw.contains('lance hedrick')) return 'lance_hedrick';
     if (lowerRaw.contains('edrick')) return 'edrick';
     if (lowerRaw.contains('space roastery')) return 'space_roastery';
     if (lowerRaw.contains('smoking barrels')) return 'smoking_barrels';
@@ -86,8 +89,18 @@ class BaristaUtils {
     if (lowerRaw.contains('kreator double bloom')) return 'double_bloom_id';
     if (lowerRaw.contains('daily caffeine') || lowerRaw.contains('panna')) return 'panna_roastery';
     if (lowerRaw.contains('relo')) return 'kopi_relo';
-    if (lowerRaw.contains('mandie')) return 'melvin_fugol';
-    if (lowerRaw.contains('fugol')) return 'melvin_fugol';
+    if (lowerRaw.contains('mandie')) return 'mandie_fugol';
+    if (lowerRaw.contains('fugol')) return 'fugol_coffee';
+    if (lowerRaw.contains('anthony douglas')) return 'anthony_douglas';
+    if (lowerRaw.contains('andanu')) return 'andanu_prasetyo';
+    if (lowerRaw.contains('agnieszka')) return 'agnieszka_rojewska';
+    if (lowerRaw.contains('dick bradsell')) return 'dick_bradsell';
+    if (lowerRaw.contains('gianni frasi')) return 'gianni_frasi';
+    if (lowerRaw.contains('hiroshi sawada')) return 'hiroshi_sawada';
+    if (lowerRaw.contains('athens')) return 'athens_barista_community';
+    if (lowerRaw.contains('archivist')) return 'archivist_seoul';
+    if (lowerRaw.contains('fore coffee')) return 'fore_coffee';
+    if (lowerRaw.contains('common grounds')) return 'common_grounds';
     if (lowerRaw.contains('instinct')) return 'instinct_roastery';
     if (lowerRaw.contains('hungry bird')) return 'hungry_bird_coffee';
     if (lowerRaw.contains('seniman')) return 'seniman_coffee';
@@ -128,15 +141,59 @@ class BaristaUtils {
     return name;
   }
 
-  static String? imageUrlFromRecipe(Map<String, dynamic> recipe) {
-    final url = (recipe['authorAvatarUrl'] ?? recipe['authorImageUrl'])?.toString();
-    if (url != null && url.isNotEmpty) return url;
+  static String imageUrlFromRecipe(dynamic rawRecipe) {
+    if (rawRecipe is! Map) return 'assets/images/avatars/generic_fallback.jpg';
+    final recipe = rawRecipe;
     final author = (recipe['author'] ?? '').toString();
+    final rawUrl = (recipe['authorAvatarUrl'] ?? recipe['authorImageUrl'])?.toString();
+
+    // Jika custom recipe pengguna dengan foto custom, gunakan url custom
+    if (recipe['isCustom'] == true && rawUrl != null && rawUrl.isNotEmpty) {
+      return rawUrl;
+    }
+
     final slug = slugFromAuthor(author);
-    if (slug.isNotEmpty && !(recipe['isCustom'] == true)) {
+    if (slug.isNotEmpty) {
+      final known = BaristaCatalog.bySlug[slug];
+      if (known?.imageAsset != null && !known!.imageAsset!.contains('generic_fallback')) {
+        return known.imageAsset!;
+      }
       return 'assets/images/avatars/portraits/$slug.jpg';
     }
-    return null;
+
+    if (rawUrl != null &&
+        rawUrl.isNotEmpty &&
+        !rawUrl.contains('generic_fallback') &&
+        !rawUrl.contains('avatar_')) {
+      return rawUrl;
+    }
+
+    return 'assets/images/avatars/generic_fallback.jpg';
+  }
+
+  static String coverUrlFromRecipe(dynamic rawRecipe) {
+    if (rawRecipe is! Map) return 'assets/images/avatars/generic_fallback.jpg';
+    final recipe = rawRecipe;
+    final author = (recipe['author'] ?? '').toString();
+    final rawCover = (recipe['coverImageUrl'] ?? recipe['authorImageUrl'])?.toString();
+
+    if (recipe['isCustom'] == true && rawCover != null && rawCover.isNotEmpty) {
+      return rawCover;
+    }
+
+    final slug = slugFromAuthor(author);
+    final catalogCover = BaristaCatalog.coverForSlug(slug);
+    if (catalogCover != null) {
+      return catalogCover;
+    }
+
+    if (rawCover != null &&
+        rawCover.isNotEmpty &&
+        !rawCover.contains('generic_fallback')) {
+      return rawCover;
+    }
+
+    return imageUrlFromRecipe(rawRecipe);
   }
 
   /// Mengambil label singkat gilingan tanpa informasi klik/mikron dalam kurung

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shorebird_code_push/shorebird_code_push.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'auth_service.dart';
@@ -94,8 +96,13 @@ class AppUpdateService {
     }
   }
 
+  static const String _cachedVersionCheckKey = 'gatekeeper_cached_version_check';
+
   /// Melakukan pengecekan versi ke Rust Axum Version Gatekeeper
-  static Future<VersionCheckResult?> checkVersionFromGatekeeper() async {
+  /// Dilengkapi offline fallback & caching untuk mengatasi cold-start Render free tier
+  static Future<VersionCheckResult?> checkVersionFromGatekeeper({
+    Duration timeout = const Duration(seconds: 8),
+  }) async {
     try {
       final baseUrl = await AuthService.getBaseUrl();
       final versionInfo = await getAppVersionInfo();
@@ -117,17 +124,47 @@ class AppUpdateService {
         '&patch_number=${versionInfo['patchNumber']}',
       );
 
-      final response = await http.get(uri).timeout(const Duration(seconds: 15));
+      final response = await http.get(uri).timeout(timeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
+        // Cache hasil sukses ke SharedPreferences
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(_cachedVersionCheckKey, response.body);
+        } catch (_) {}
         return VersionCheckResult.fromJson(data);
       }
-      return null;
+      return _getCachedVersionResult();
+    } on TimeoutException {
+      debugPrint('Gatekeeper version check timeout ($timeout). Menggunakan fallback versi lokal.');
+      return _getCachedVersionResult();
     } catch (e) {
-      debugPrint('Error checking version from Gatekeeper: $e');
-      return null;
+      debugPrint('Catatan Gatekeeper: $e. Menggunakan fallback versi lokal.');
+      return _getCachedVersionResult();
     }
+  }
+
+  /// Ambil cache hasil version check terakhir jika jaringan offline atau backend sedang cold-start
+  static Future<VersionCheckResult?> _getCachedVersionResult() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cached = prefs.getString(_cachedVersionCheckKey);
+      if (cached != null && cached.isNotEmpty) {
+        final data = json.decode(cached) as Map<String, dynamic>;
+        return VersionCheckResult.fromJson(data);
+      }
+    } catch (_) {}
+    // Default safe fallback jika belum ada cache sama sekali
+    return const VersionCheckResult(
+      actionCode: 'UP_TO_DATE',
+      targetPatch: null,
+      latestBaseVersion: '1.0.0',
+      latestBuildNumber: 1,
+      isForceUpdate: false,
+      releaseNotes: 'Aplikasi berjalan normal dengan versi stabil saat ini.',
+      downloadUrl: 'https://github.com/rusdi-labs/coffee-hub-mobile/releases/latest',
+    );
   }
 
   /// Eksekutor Orkestrasi Update (The Hybrid 3-Tier Execution)
@@ -287,14 +324,15 @@ class AppUpdateService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      ).timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
         return data['data'] as Map<String, dynamic>?;
       }
       return null;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Admin config fetch error: $e');
       return null;
     }
   }
@@ -315,10 +353,11 @@ class AppUpdateService {
           'Authorization': 'Bearer $token',
         },
         body: json.encode(payload),
-      ).timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 8));
 
       return response.statusCode == 200;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Admin config update error: $e');
       return false;
     }
   }

@@ -88,7 +88,7 @@ class _TasteMatchScreenState extends State<TasteMatchScreen> {
                             final r = _liked[i];
                             return ListTile(
                               leading: BaristaAvatar(
-                                  imageUrl: (r['authorAvatarUrl'] ?? r['authorImageUrl'])?.toString(),
+                                  imageUrl: BaristaUtils.imageUrlFromRecipe(r),
                                   radius: 22),
                               title: Text(r['title'] ?? '', maxLines: 1, overflow: TextOverflow.ellipsis),
                               subtitle: Text(BaristaUtils.cleanName(r['author']?.toString() ?? '')),

@@ -43,3 +43,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Python caches
+__pycache__/
+*.pyc
+tools/__pycache__/
+
+# Raw brewer uploads
+brewer/

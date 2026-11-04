@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import '../features/admin/widgets/admin_user_card.dart';
+import '../features/admin/widgets/admin_user_stats_card.dart';
+import '../models/admin_user_stats.dart';
 import '../services/auth_service.dart';
-import '../services/profile_service.dart';
+import '../theme/app_theme.dart';
 
 class AdminApprovalScreen extends StatefulWidget {
   const AdminApprovalScreen({super.key});
@@ -14,6 +16,7 @@ class AdminApprovalScreen extends StatefulWidget {
 class _AdminApprovalScreenState extends State<AdminApprovalScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   List<AuthUser> _users = [];
+  AdminUserStats _stats = AdminUserStats.empty();
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -21,7 +24,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen> with SingleTi
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _loadUsers();
+    _loadData();
   }
 
   @override
@@ -30,26 +33,41 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen> with SingleTi
     super.dispose();
   }
 
-  Future<void> _loadUsers() async {
+  Future<void> _loadData() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      final list = await AuthService.getAdminUsers();
+      final listFuture = AuthService.getAdminUsers();
+      final statsFuture = AuthService.getAdminUserStats();
+      final results = await Future.wait([listFuture, statsFuture]);
+
       if (!mounted) return;
       setState(() {
-        _users = list;
+        _users = results[0] as List<AuthUser>;
+        _stats = results[1] as AdminUserStats;
         _isLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _errorMessage = 'Gagal memuat pengguna: $e';
+        _errorMessage = 'Gagal memuat data pengguna: $e';
         _isLoading = false;
       });
     }
+  }
+
+  bool _isNewRegistration(AuthUser user) {
+    if (user.status == 'pending') return true;
+    if (user.createdAt != null) {
+      try {
+        final created = DateTime.parse(user.createdAt!);
+        return DateTime.now().difference(created).inDays <= 7;
+      } catch (_) {}
+    }
+    return false;
   }
 
   Future<void> _handleAccept(AuthUser user) async {
@@ -58,18 +76,11 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen> with SingleTi
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Akun '${user.username}' berhasil disetujui (Approved)!"),
+          content: Text("Akun '${user.username}' berhasil diaktifkan!"),
           backgroundColor: Colors.green,
         ),
       );
-      _loadUsers();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Gagal menyetujui akun."),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      _loadData();
     }
   }
 
@@ -79,18 +90,11 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen> with SingleTi
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Akun '${user.username}' ditolak (Declined)."),
-          backgroundColor: Colors.redAccent,
+          content: Text("Akun '${user.username}' telah dinonaktifkan."),
+          backgroundColor: Colors.orange.shade800,
         ),
       );
-      _loadUsers();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Gagal menolak akun."),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      _loadData();
     }
   }
 
@@ -124,26 +128,31 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen> with SingleTi
           backgroundColor: Colors.brown,
         ),
       );
-      _loadUsers();
+      _loadData();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final pendingUsers = _users.where((u) => u.status == 'pending').toList();
-    final approvedUsers = _users.where((u) => u.status == 'approved').toList();
+    final newRegistrations = _users.where(_isNewRegistration).toList();
+    final allUsers = _users;
     final declinedUsers = _users.where((u) => u.status == 'declined').toList();
+    final activeUsers = _users.where((u) => u.status == 'approved').toList();
+
+    final totalCount = _stats.totalUsers > 0 ? _stats.totalUsers : _users.length;
+    final newCount = _stats.newRegistrations7d > 0 ? _stats.newRegistrations7d : newRegistrations.length;
+    final activeCount = _stats.activeUsers > 0 ? _stats.activeUsers : activeUsers.length;
 
     return Scaffold(
       backgroundColor: AppTheme.bgCream,
       appBar: AppBar(
-        title: const Text('Admin Approval Hub'),
+        title: const Text('Manajemen Pengguna & Pendaftaran'),
         centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(CupertinoIcons.arrow_clockwise),
             tooltip: 'Segarkan Data',
-            onPressed: _loadUsers,
+            onPressed: _loadData,
           ),
         ],
         bottom: TabBar(
@@ -157,8 +166,8 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen> with SingleTi
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('Pending'),
-                  if (pendingUsers.isNotEmpty) ...[
+                  const Text('Notifikasi Baru'),
+                  if (newRegistrations.isNotEmpty) ...[
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -167,7 +176,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen> with SingleTi
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
-                        '${pendingUsers.length}',
+                        '${newRegistrations.length}',
                         style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -179,9 +188,9 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen> with SingleTi
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('Approved'),
+                  const Text('Semua'),
                   const SizedBox(width: 6),
-                  Text('(${approvedUsers.length})', style: const TextStyle(fontSize: 12)),
+                  Text('(${allUsers.length})', style: const TextStyle(fontSize: 12)),
                 ],
               ),
             ),
@@ -189,7 +198,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen> with SingleTi
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('Declined'),
+                  const Text('Nonaktif'),
                   const SizedBox(width: 6),
                   Text('(${declinedUsers.length})', style: const TextStyle(fontSize: 12)),
                 ],
@@ -210,7 +219,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen> with SingleTi
                       Text(_errorMessage!, style: const TextStyle(color: AppTheme.textDark)),
                       const SizedBox(height: 16),
                       ElevatedButton(
-                        onPressed: _loadUsers,
+                        onPressed: _loadData,
                         style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryBrown),
                         child: const Text('Coba Lagi', style: TextStyle(color: Colors.white)),
                       ),
@@ -219,42 +228,47 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen> with SingleTi
                 )
               : RefreshIndicator(
                   color: AppTheme.primaryBrown,
-                  onRefresh: _loadUsers,
-                  child: TabBarView(
-                    controller: _tabController,
+                  onRefresh: _loadData,
+                  child: Column(
                     children: [
-                      _buildUserList(pendingUsers, type: 'pending'),
-                      _buildUserList(approvedUsers, type: 'approved'),
-                      _buildUserList(declinedUsers, type: 'declined'),
+                      AdminUserStatsCard(
+                        totalUsers: totalCount,
+                        newRegistrationsCount: newCount,
+                        activeUsers: activeCount,
+                      ),
+                      Expanded(
+                        child: TabBarView(
+                          controller: _tabController,
+                          children: [
+                            _buildList(newRegistrations, isNotificationTab: true),
+                            _buildList(allUsers),
+                            _buildList(declinedUsers),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
     );
   }
 
-  Widget _buildUserList(List<AuthUser> users, {required String type}) {
+  Widget _buildList(List<AuthUser> users, {bool isNotificationTab = false}) {
     if (users.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              type == 'pending'
-                  ? CupertinoIcons.check_mark_circled
-                  : type == 'approved'
-                      ? CupertinoIcons.person_3
-                      : CupertinoIcons.clear_circled,
-              size: 54,
+              isNotificationTab ? CupertinoIcons.bell_slash : CupertinoIcons.person_3,
+              size: 50,
               color: AppTheme.textMuted.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 12),
             Text(
-              type == 'pending'
-                  ? 'Tidak ada akun yang menunggu persetujuan.'
-                  : type == 'approved'
-                      ? 'Belum ada akun yang disetujui.'
-                      : 'Tidak ada akun yang ditolak.',
-              style: const TextStyle(color: AppTheme.textMuted, fontSize: 14),
+              isNotificationTab
+                  ? 'Belum ada notifikasi pendaftaran baru.'
+                  : 'Tidak ada data pengguna di tab ini.',
+              style: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
             ),
           ],
         ),
@@ -262,194 +276,20 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen> with SingleTi
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
       itemCount: users.length,
       itemBuilder: (context, index) {
         final user = users[index];
-        final isRusdiAdmin = user.username == 'rusdifn08';
+        final isNew = _isNewRegistration(user);
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          elevation: 1.5,
-          color: AppTheme.surfaceWhite,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CircleAvatar(
-                      radius: 26,
-                      backgroundColor: AppTheme.bgCream,
-                      backgroundImage: ProfileService.getImageProvider(user.avatarUrl),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  user.fullName,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.textDark),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              if (isRusdiAdmin) ...[
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.amber.shade700,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: const Text('ADMIN', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                                ),
-                              ],
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '@${user.username}',
-                            style: const TextStyle(color: AppTheme.primaryBrown, fontSize: 13, fontWeight: FontWeight.w600),
-                          ),
-                          if (user.createdAt != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              'Daftar: ${user.createdAt!.split("T").first}',
-                              style: const TextStyle(color: AppTheme.textMuted, fontSize: 11),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    _buildStatusChip(user.status),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                const Divider(height: 1, color: AppTheme.dividerColor),
-                const SizedBox(height: 12),
-
-                // Action Buttons
-                if (type == 'pending') ...[
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => _handleDecline(user),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.redAccent,
-                            side: const BorderSide(color: Colors.redAccent),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                          ),
-                          icon: const Icon(CupertinoIcons.xmark, size: 16),
-                          label: const Text('Decline', style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () => _handleAccept(user),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                          ),
-                          icon: const Icon(CupertinoIcons.checkmark, size: 16),
-                          label: const Text('Accept', style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ] else if (type == 'approved') ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      if (!isRusdiAdmin) ...[
-                        TextButton.icon(
-                          onPressed: () => _handleDecline(user),
-                          style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-                          icon: const Icon(CupertinoIcons.clear, size: 14),
-                          label: const Text('Cabut Akses (Decline)'),
-                        ),
-                      ] else ...[
-                        const Text('Akun Admin Utama', style: TextStyle(fontSize: 12, color: AppTheme.textMuted, fontStyle: FontStyle.italic)),
-                      ],
-                    ],
-                  ),
-                ] else ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      TextButton.icon(
-                        onPressed: () => _handleDelete(user),
-                        style: TextButton.styleFrom(foregroundColor: Colors.grey),
-                        icon: const Icon(CupertinoIcons.trash, size: 14),
-                        label: const Text('Hapus'),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () => _handleAccept(user),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        ),
-                        icon: const Icon(CupertinoIcons.checkmark, size: 14),
-                        label: const Text('Accept Sekarang'),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
+        return AdminUserCard(
+          user: user,
+          isNewRegistration: isNotificationTab || isNew,
+          onAccept: _handleAccept,
+          onDecline: _handleDecline,
+          onDelete: _handleDelete,
         );
       },
-    );
-  }
-
-  Widget _buildStatusChip(String status) {
-    Color bg;
-    Color fg;
-    String label;
-
-    switch (status.toLowerCase()) {
-      case 'approved':
-        bg = Colors.green.shade50;
-        fg = Colors.green.shade700;
-        label = 'Approved';
-        break;
-      case 'declined':
-        bg = Colors.red.shade50;
-        fg = Colors.red.shade700;
-        label = 'Declined';
-        break;
-      default:
-        bg = Colors.orange.shade50;
-        fg = Colors.orange.shade800;
-        label = 'Pending';
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: fg.withValues(alpha: 0.3)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(color: fg, fontSize: 11, fontWeight: FontWeight.bold),
-      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../features/recipes/controllers/recipe_list_controller.dart';
 import '../services/api_service.dart';
 import '../services/language_service.dart';
 import '../utils/barista_utils.dart';
@@ -8,37 +9,14 @@ import 'brew_timer_screen.dart';
 import 'recipe_detail_screen.dart';
 import 'add_recipe_screen.dart';
 import 'onboarding_screen.dart';
+import 'four_six_calculator_screen.dart';
+import 'dial_in_assistant_screen.dart';
 import '../services/trial_service.dart';
+import '../theme/app_theme.dart';
 
-class BrewSelectionScreen extends StatefulWidget {
+/// Halaman Resep Custom Saya yang menggunakan Riverpod ConsumerWidget dan AsyncValue.when.
+class BrewSelectionScreen extends ConsumerWidget {
   const BrewSelectionScreen({super.key});
-
-  @override
-  State<BrewSelectionScreen> createState() => _BrewSelectionScreenState();
-}
-
-class _BrewSelectionScreenState extends State<BrewSelectionScreen> {
-  late Future<List<dynamic>> _recipesFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadRecipes();
-    ApiService.changeNotifier.addListener(_loadRecipes);
-  }
-
-  @override
-  void dispose() {
-    ApiService.changeNotifier.removeListener(_loadRecipes);
-    super.dispose();
-  }
-
-  void _loadRecipes() {
-    if (!mounted) return;
-    setState(() {
-      _recipesFuture = ApiService.getRecipes();
-    });
-  }
 
   String _formatTime(int seconds) {
     int m = seconds ~/ 60;
@@ -47,48 +25,43 @@ class _BrewSelectionScreenState extends State<BrewSelectionScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final recipesAsync = ref.watch(recipeListControllerProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Custom Brews'),
         centerTitle: true,
       ),
-      body: FutureBuilder<List<dynamic>>(
-        future: _recipesFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: AppTheme.primaryBrown));
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return _buildEmptyState();
-          }
-
-          List<dynamic> allRecipes = snapshot.data!;
-          List<dynamic> myRecipes = allRecipes.where((r) => r['isCustom'] == true).toList();
+      body: recipesAsync.when(
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppTheme.primaryBrown),
+        ),
+        error: (err, stack) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text('Error: $err', style: const TextStyle(color: Colors.redAccent)),
+          ),
+        ),
+        data: (allRecipes) {
+          final myRecipes = allRecipes.where((r) => r['isCustom'] == true).toList();
 
           if (myRecipes.isEmpty) {
-            return _buildEmptyState();
+            return _buildEmptyState(context);
           }
 
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              int crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
-              
-              return GridView.builder(
-                padding: const EdgeInsets.all(24.0),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 0.75, 
-                ),
-                itemCount: myRecipes.length,
-                itemBuilder: (context, index) {
-                  return _buildRecipeCard(myRecipes[index]);
-                },
-              );
-            }
+          return GridView.builder(
+            padding: const EdgeInsets.all(24.0),
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 280,
+              mainAxisExtent: 215,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+            ),
+            itemCount: myRecipes.length,
+            itemBuilder: (context, index) {
+              return _buildRecipeCard(context, ref, myRecipes[index]);
+            },
           );
         },
       ),
@@ -96,8 +69,13 @@ class _BrewSelectionScreenState extends State<BrewSelectionScreen> {
         heroTag: 'brew_selection_add_fab',
         backgroundColor: AppTheme.primaryBrown,
         onPressed: () async {
-          bool? didAdd = await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddRecipeScreen()));
-          if (didAdd == true) _loadRecipes();
+          final didAdd = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AddRecipeScreen()),
+          );
+          if (didAdd == true) {
+            ref.read(recipeListControllerProvider.notifier).refreshRecipes();
+          }
         },
         icon: const Icon(CupertinoIcons.add, color: Colors.white),
         label: const Text('New Recipe', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -105,33 +83,69 @@ class _BrewSelectionScreenState extends State<BrewSelectionScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
+    final isEn = LanguageService.isEnglish;
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(CupertinoIcons.doc_text_search, size: 64, color: AppTheme.textMuted),
-            const SizedBox(height: 16),
-            const Text('No Custom Recipes Yet', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textDark)),
+            const Icon(CupertinoIcons.doc_text_search, size: 56, color: AppTheme.textMuted),
+            const SizedBox(height: 14),
+            Text(
+              isEn ? 'No Custom Recipes Yet' : 'Belum Ada Resep Custom',
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              isEn
+                  ? 'Create your own precision recipe, or launch one of our master calculators below:'
+                  : 'Buat resep seduh Anda sendiri, atau gunakan kalkulator seduh presisi di bawah:',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryBrown,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const FourSixCalculatorScreen()));
+              },
+              icon: const Icon(CupertinoIcons.timer, size: 16),
+              label: Text(isEn ? 'Open 4:6 Method Calculator' : 'Buka Kalkulator Metode 4:6'),
+            ),
             const SizedBox(height: 8),
-            const Text('Tap the + button below to create your very first custom brewing recipe!', textAlign: TextAlign.center, style: TextStyle(color: AppTheme.textMuted)),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.primaryBrown,
+                side: const BorderSide(color: AppTheme.primaryBrown),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const DialInAssistantScreen()));
+              },
+              icon: const Icon(CupertinoIcons.slider_horizontal_below_rectangle, size: 16),
+              label: Text(isEn ? 'Espresso & Filter Dial-In' : 'Asisten Dial-In Kopi'),
+            ),
           ],
         ),
-      )
+      ),
     );
   }
 
-  Widget _buildRecipeCard(dynamic rawRecipe) {
+  Widget _buildRecipeCard(BuildContext context, WidgetRef ref, dynamic rawRecipe) {
     final recipe = rawRecipe is Map ? ApiService.sanitizeRecipe(rawRecipe) : <String, dynamic>{};
-    int id = recipe['id'] as int;
+    int id = (recipe['id'] as num?)?.toInt() ?? 1;
     String title = recipe['title'] as String;
-    int time = recipe['totalTimeSeconds'] as int;
-    int coffee = recipe['coffeeWeightGrams'] as int;
-    int water = recipe['totalWaterWeightGrams'] as int;
-    int ice = recipe['iceWeightGrams'] as int? ?? 0;
-    int totalLiquid = water + ice;
+    int time = (recipe['totalTimeSeconds'] as num?)?.toInt() ?? 130;
+    num coffee = (recipe['coffeeWeightGrams'] as num?) ?? 15;
+    num water = (recipe['totalWaterWeightGrams'] as num?) ?? 225;
+    num ice = (recipe['iceWeightGrams'] as num?) ?? 0;
+    num totalLiquid = water + ice;
     String ratio = '1:${(totalLiquid / (coffee > 0 ? coffee : 15)).toStringAsFixed(1)}';
     String category = recipe['category'] as String;
     String grindSize = BaristaUtils.shortGrindLabel(recipe['grindSize']?.toString());
@@ -141,15 +155,19 @@ class _BrewSelectionScreenState extends State<BrewSelectionScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => RecipeDetailScreen(recipeData: recipe)),
-        ).then((_) => _loadRecipes());
+        );
       },
-      onLongPress: () => _confirmDelete(id, title),
+      onLongPress: () => _confirmDelete(context, ref, id, title),
       child: Container(
         decoration: BoxDecoration(
           color: AppTheme.surfaceWhite,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
-            BoxShadow(color: AppTheme.primaryBrown.withValues(alpha: 0.08), blurRadius: 15, offset: const Offset(0, 8))
+            BoxShadow(
+              color: AppTheme.primaryBrown.withValues(alpha: 0.08),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            )
           ],
         ),
         child: Column(
@@ -176,10 +194,10 @@ class _BrewSelectionScreenState extends State<BrewSelectionScreen> {
                         GestureDetector(
                           onTap: () async {
                             final canBrew = await TrialService.canBrew();
-                            if (!mounted) return;
+                            if (!context.mounted) return;
                             if (!canBrew) {
                               final remaining = await TrialService.getRemainingLockDuration();
-                              if (!mounted) return;
+                              if (!context.mounted) return;
                               final days = remaining != null ? (remaining.inDays + 1) : 7;
                               final isEn = LanguageService.isEnglish;
                               TrialService.showLockedDialog(
@@ -227,7 +245,10 @@ class _BrewSelectionScreenState extends State<BrewSelectionScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
               decoration: BoxDecoration(
                 color: AppTheme.bgCream,
-                borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20)),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
                 border: Border(top: BorderSide(color: AppTheme.primaryBrown.withValues(alpha: 0.1))),
               ),
               child: Column(
@@ -259,7 +280,7 @@ class _BrewSelectionScreenState extends State<BrewSelectionScreen> {
     );
   }
 
-  void _confirmDelete(int id, String title) {
+  void _confirmDelete(BuildContext context, WidgetRef ref, int id, String title) {
     final isEn = LanguageService.isEnglish;
     showDialog(
       context: context,
@@ -271,10 +292,11 @@ class _BrewSelectionScreenState extends State<BrewSelectionScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              await ApiService.deleteRecipe(id);
-              _loadRecipes();
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isEn ? 'Recipe deleted successfully' : 'Resep berhasil dihapus')));
+              await ref.read(recipeListControllerProvider.notifier).deleteRecipe(id);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(isEn ? 'Recipe deleted successfully' : 'Resep berhasil dihapus')),
+                );
               }
             },
             child: Text(isEn ? 'Delete' : 'Hapus', style: const TextStyle(color: Colors.red)),

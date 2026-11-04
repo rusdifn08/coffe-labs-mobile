@@ -1,122 +1,49 @@
+import '../features/recipe_feed/utils/recipe_filter_matcher.dart';
+import '../features/recipe_feed/widgets/recipe_delete_dialog.dart';
+import '../features/recipe_feed/widgets/recipe_feed_search_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flag/flag.dart';
-import '../data/brew_visual_catalog.dart';
-import '../theme/app_theme.dart';
-import '../utils/barista_utils.dart';
-import 'social_coffee_screen.dart';
-import 'barista_profile_screen.dart';
-import 'recipe_detail_screen.dart';
-import 'brew_timer_screen.dart';
-import 'add_recipe_screen.dart';
-import 'onboarding_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../core/router/app_router.dart';
+import '../features/recipes/controllers/recipe_list_controller.dart';
 import '../services/api_service.dart';
 import '../services/trial_service.dart';
 import '../services/language_service.dart';
 import '../services/coffee_translator.dart';
+import '../services/main_navigation_service.dart';
+import '../theme/app_theme.dart';
+import '../utils/barista_utils.dart';
+import '../features/recipe_feed/models/recipe_sort_option.dart';
+import '../features/recipe_feed/widgets/recipe_filter_modal.dart';
+import '../features/recipe_feed/widgets/recipe_sort_modal.dart';
+import '../features/recipe_feed/widgets/recipe_feed_grid_card.dart';
+import '../features/recipe_feed/widgets/landscape_recipe_inspector.dart';
+import '../features/recipe_feed/widgets/trial_lock_dialog.dart';
 
-class _NoteCategoryItem {
-  final String id;
-  final String label;
-  final String labelEn;
-  final String emoji;
-  final List<String> groups;
-  final List<String> keywords;
+/// Halaman Katalog Resep Dunia (World Recipes) dengan Riverpod ConsumerStatefulWidget.
+class RecipeFeedScreen extends ConsumerStatefulWidget {
+  final String? initialMethodFilter;
+  final String? initialMethodTitle;
 
-  const _NoteCategoryItem({
-    required this.id,
-    required this.label,
-    required this.labelEn,
-    required this.emoji,
-    required this.groups,
-    required this.keywords,
+  const RecipeFeedScreen({
+    super.key,
+    this.initialMethodFilter,
+    this.initialMethodTitle,
   });
 
-  String get localizedLabel => LanguageService.isEnglish ? labelEn : label;
-}
-
-const List<_NoteCategoryItem> _noteCategories = [
-  _NoteCategoryItem(
-    id: 'floral',
-    label: 'Floral',
-    labelEn: 'Floral',
-    emoji: '🌸',
-    groups: ['Floral'],
-    keywords: ['floral', 'flower', 'jasmine', 'rose', 'hibiscus', 'blossom', 'lavender', 'chamomile', 'bunga', 'elderflower'],
-  ),
-  _NoteCategoryItem(
-    id: 'fruity',
-    label: 'Fruity & Tropical',
-    labelEn: 'Fruity & Tropical',
-    emoji: '🍑',
-    groups: ['Stone Fruit', 'Tropical', 'Orchard Fruit'],
-    keywords: ['fruit', 'fruity', 'peach', 'apricot', 'plum', 'mango', 'passion', 'pineapple', 'lychee', 'guava', 'papaya', 'melon', 'apple', 'pear', 'grape', 'buah'],
-  ),
-  _NoteCategoryItem(
-    id: 'citrus',
-    label: 'Citrus',
-    labelEn: 'Citrus',
-    emoji: '🍋',
-    groups: ['Citrus'],
-    keywords: ['citrus', 'lemon', 'bergamot', 'orange', 'grapefruit', 'lime', 'mandarin', 'yuzu', 'tangerine', 'jeruk'],
-  ),
-  _NoteCategoryItem(
-    id: 'berry',
-    label: 'Berry',
-    labelEn: 'Berry',
-    emoji: '🍓',
-    groups: ['Berry'],
-    keywords: ['berry', 'strawberry', 'blueberry', 'currant', 'raspberry', 'cherry', 'blackberry', 'cranberry'],
-  ),
-  _NoteCategoryItem(
-    id: 'sweet_cocoa',
-    label: 'Cokelat & Manis',
-    labelEn: 'Chocolate & Sweet',
-    emoji: '🍫',
-    groups: ['Sweet', 'Cocoa'],
-    keywords: ['choco', 'chocolate', 'cocoa', 'cacao', 'honey', 'caramel', 'toffee', 'maple', 'sugar', 'sweet', 'vanilla', 'creamy', 'madu', 'cokelat', 'karamel'],
-  ),
-  _NoteCategoryItem(
-    id: 'nutty_spices',
-    label: 'Nutty & Rempah',
-    labelEn: 'Nutty & Spices',
-    emoji: '🥜',
-    groups: ['Nutty', 'Herbal'],
-    keywords: ['nut', 'nutty', 'almond', 'hazelnut', 'walnut', 'pecan', 'spice', 'spices', 'cinnamon', 'herbal', 'lemongrass', 'rempah', 'kacang'],
-  ),
-  _NoteCategoryItem(
-    id: 'tea_winey',
-    label: 'Teh & Fermentasi',
-    labelEn: 'Tea & Fermentation',
-    emoji: '🍵',
-    groups: ['Tea-like', 'Winey'],
-    keywords: ['tea', 'earl grey', 'oolong', 'black tea', 'green tea', 'wine', 'winey', 'rum', 'whiskey', 'ferment', 'teh'],
-  ),
-  _NoteCategoryItem(
-    id: 'mouthfeel',
-    label: 'Mouthfeel & Body',
-    labelEn: 'Mouthfeel & Body',
-    emoji: '✨',
-    groups: ['Mouthfeel'],
-    keywords: ['clean', 'juicy', 'silky', 'body', 'creamy', 'round', 'smooth', 'mouthfeel', 'finish'],
-  ),
-];
-
-class RecipeFeedScreen extends StatefulWidget {
-  const RecipeFeedScreen({super.key});
-
   @override
-  State<RecipeFeedScreen> createState() => _RecipeFeedScreenState();
+  ConsumerState<RecipeFeedScreen> createState() => _RecipeFeedScreenState();
 }
 
-class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
-  List<dynamic> _allRecipes = [];
+class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
   List<Map<String, dynamic>> _uniqueBaristas = [];
-  bool _isLoading = true;
   bool _isTrial = false;
 
   // Filter States
   String _searchQuery = '';
+  String _selectedMethodFilter = 'All';
+  String? _currentMethodTitle;
   String _selectedCategory = 'All';
   String _selectedPourFilter = 'Semua';
   String _selectedDripperFilter = 'Semua';
@@ -124,59 +51,23 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
   String _selectedNoteFilter = 'Semua';
   String _selectedOriginFilter = 'Semua';
   String _selectedNoteCategoryTab = 'floral';
+  RecipeSortOption _selectedSort = RecipeSortOption.defaultCurated;
+  bool _isSplitMode = false;
+  dynamic _selectedInspectionRecipe;
 
-  final List<String> _categories = const [
-    'All',
-    'V60',
-    'Japanese',
-    'AeroPress',
-    'French Press',
-    'Immersion',
-    'Hybrid',
-    'Flat Bottom',
-    'Origami',
-    'Cone',
-  ];
-
-  List<String> get _pourFilterOptions => LanguageService.isEnglish
-      ? const [
-          'All',
-          '1-2x Pour',
-          '3x Pouring',
-          '4x Pouring',
-          '5x+ Pouring',
-          'Full Immersion',
-        ]
-      : const [
-          'Semua',
-          '1-2x Pour',
-          '3x Pouring',
-          '4x Pouring',
-          '5x+ Pouring',
-          'Full Immersion',
-        ];
-
-  List<String> get _originFilterOptions => LanguageService.isEnglish
-      ? const [
-          'All',
-          '🇮🇩 Indonesian Baristas',
-          '🌍 International Baristas',
-          '❄️ Iced Recipes',
-          '⚡ Fast (≤ 2:15)',
-        ]
-      : const [
-          'Semua',
-          '🇮🇩 Barista Indonesia',
-          '🌍 Barista Internasional',
-          '❄️ Resep Pakai Es',
-          '⚡ Cepat (≤ 2:15)',
-        ];
+  List<String> get _categories => RecipeFilterMatcher.categories;
+  List<String> get _pourFilterOptions => RecipeFilterMatcher.pourFilterOptions(LanguageService.isEnglish);
+  List<String> get _originFilterOptions => RecipeFilterMatcher.originFilterOptions(LanguageService.isEnglish);
 
   @override
   void initState() {
     super.initState();
-    _loadData();
-    ApiService.changeNotifier.addListener(_loadData);
+    if (widget.initialMethodFilter != null && widget.initialMethodFilter!.isNotEmpty) {
+      _selectedMethodFilter = widget.initialMethodFilter!;
+    }
+    _currentMethodTitle = widget.initialMethodTitle;
+    MainNavigationService.methodFilterNotifier.addListener(_onMethodFilterNavChange);
+    _loadAuxiliaryData();
     TrialService.changeNotifier.addListener(_onTrialChanged);
     LanguageService.changeNotifier.addListener(_onLanguageChanged);
     _checkTrial();
@@ -197,33 +88,25 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
 
   @override
   void dispose() {
-    ApiService.changeNotifier.removeListener(_loadData);
     TrialService.changeNotifier.removeListener(_onTrialChanged);
     LanguageService.changeNotifier.removeListener(_onLanguageChanged);
+    MainNavigationService.methodFilterNotifier.removeListener(_onMethodFilterNavChange);
     super.dispose();
   }
 
-  Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+  Future<void> _loadAuxiliaryData() async {
     try {
-      final recipes = await ApiService.getRecipes();
       final baristas = await ApiService.getUniqueBaristas();
-      final isTrial = await TrialService.isTrialMode();
       if (!mounted) return;
       setState(() {
-        _allRecipes = recipes;
         _uniqueBaristas = baristas;
-        _isTrial = isTrial;
       });
-    } catch (e) {
-      debugPrint('Error loading recipes: $e');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+    } catch (_) {}
   }
 
   int get _activeFilterCount {
     int c = 0;
+    if (_selectedMethodFilter != 'All') c++;
     if (_selectedCategory != 'All') c++;
     if (_selectedPourFilter != 'Semua' && _selectedPourFilter != 'All') c++;
     if (_selectedDripperFilter != 'Semua' && _selectedDripperFilter != 'All') c++;
@@ -235,6 +118,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
 
   void _resetAllFilters() {
     setState(() {
+      _selectedMethodFilter = 'All';
       _selectedCategory = 'All';
       _selectedPourFilter = 'Semua';
       _selectedDripperFilter = 'Semua';
@@ -242,680 +126,97 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
       _selectedNoteFilter = 'Semua';
       _selectedOriginFilter = 'Semua';
       _selectedNoteCategoryTab = 'floral';
+      _selectedSort = RecipeSortOption.defaultCurated;
       _searchQuery = '';
     });
   }
 
-  bool _matchesPourFilter(Map<String, dynamic> r) {
-    if (_selectedPourFilter == 'Semua' || _selectedPourFilter == 'All') return true;
-    final pours = BrewVisualCatalog.countPours(r);
-    final cat = (r['category'] ?? '').toString().toLowerCase();
-    if (_selectedPourFilter == 'Full Immersion') {
-      return cat.contains('immersion');
+  void _onMethodFilterNavChange() {
+    final filter = MainNavigationService.methodFilterNotifier.value;
+    final title = MainNavigationService.methodTitleNotifier.value;
+    if (mounted && filter != null) {
+      setState(() {
+        _selectedMethodFilter = filter;
+        _currentMethodTitle = title;
+      });
     }
-    if (_selectedPourFilter == '1-2x Pour') return pours <= 2;
-    if (_selectedPourFilter == '3x Pouring') return pours == 3;
-    if (_selectedPourFilter == '4x Pouring') return pours == 4;
-    if (_selectedPourFilter == '5x+ Pouring') return pours >= 5;
-    return true;
   }
 
-  bool _matchesDripperFilter(Map<String, dynamic> r) {
-    if (_selectedDripperFilter == 'Semua' || _selectedDripperFilter == 'All') return true;
-    final matched = BrewVisualCatalog.matchDripper(
-      r['method']?.toString(),
-      category: r['category']?.toString(),
-    );
-    return matched.shortName == _selectedDripperFilter;
+  void _clearMethodFilterAndGoHome() {
+    MainNavigationService.clearMethodFilter();
+    setState(() {
+      _selectedMethodFilter = 'All';
+      _currentMethodTitle = null;
+    });
+    MainNavigationService.switchTab(0);
   }
 
-  bool _matchesNoteFilter(Map<String, dynamic> r) {
-    if (_selectedNoteFilter == 'Semua' || _selectedNoteFilter == 'All') return true;
-    final notesStr = '${r['tastingNotes'] ?? ''} ${r['beanName'] ?? ''} ${r['description'] ?? ''}'.toLowerCase();
-
-    // Cek apakah filter merupakan tingkat kategori
-    for (final cat in _noteCategories) {
-      if (_selectedNoteFilter == '${cat.emoji} ${cat.label}' ||
-          _selectedNoteFilter == '${cat.emoji} ${cat.labelEn}' ||
-          _selectedNoteFilter == 'Semua ${cat.label}' ||
-          _selectedNoteFilter == 'All ${cat.labelEn}' ||
-          _selectedNoteFilter == cat.label ||
-          _selectedNoteFilter == cat.labelEn) {
-        if (cat.keywords.any((kw) => notesStr.contains(kw.toLowerCase()))) return true;
-        final catNotes = BrewVisualCatalog.flavorNotes.where((fn) => cat.groups.contains(fn.group));
-        return catNotes.any((fn) {
-          final l = fn.label.toLowerCase();
-          return notesStr.contains(l) || notesStr.contains(l.split(' ').first);
-        });
-      }
-    }
-
-    final target = _selectedNoteFilter.toLowerCase();
-    final firstWord = target.split(' ').first;
-    return notesStr.contains(target) || notesStr.contains(firstWord);
+  void _clearMethodFilterOnly() {
+    MainNavigationService.clearMethodFilter();
+    setState(() {
+      _selectedMethodFilter = 'All';
+      _currentMethodTitle = null;
+    });
   }
 
   void _openFilterModal() {
-    String activeNoteCategoryModal = _selectedNoteCategoryTab;
-    if (_selectedNoteFilter != 'Semua') {
-      for (final cat in _noteCategories) {
-        if (_selectedNoteFilter == '${cat.emoji} ${cat.label}' ||
-            _selectedNoteFilter == 'Semua ${cat.label}' ||
-            _selectedNoteFilter == cat.label) {
-          activeNoteCategoryModal = cat.id;
-          break;
-        }
-        final inGroup = BrewVisualCatalog.flavorNotes
-            .where((fn) => cat.groups.contains(fn.group))
-            .any((fn) => fn.label == _selectedNoteFilter);
-        if (inGroup) {
-          activeNoteCategoryModal = cat.id;
-          break;
-        }
-      }
-    }
-
-    showModalBottomSheet(
+    RecipeFilterModal.show(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: AppTheme.bgCream,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setModalState) {
-            void updateFilter(VoidCallback fn) {
-              fn();
-              setModalState(() {});
-              setState(() {});
-            }
+      selectedPourFilter: _selectedPourFilter,
+      selectedDripperFilter: _selectedDripperFilter,
+      selectedBaristaFilter: _selectedBaristaFilter,
+      selectedCategory: _selectedCategory,
+      selectedOriginFilter: _selectedOriginFilter,
+      selectedNoteFilter: _selectedNoteFilter,
+      selectedNoteCategoryTab: _selectedNoteCategoryTab,
+      uniqueBaristas: _uniqueBaristas,
+      categories: _categories,
+      pourFilterOptions: _pourFilterOptions,
+      originFilterOptions: _originFilterOptions,
+      onApplyFilters: ({
+        required String pourFilter,
+        required String dripperFilter,
+        required String baristaFilter,
+        required String category,
+        required String originFilter,
+        required String noteFilter,
+        required String noteCategoryTab,
+      }) {
+        setState(() {
+          _selectedPourFilter = pourFilter;
+          _selectedDripperFilter = dripperFilter;
+          _selectedBaristaFilter = baristaFilter;
+          _selectedCategory = category;
+          _selectedOriginFilter = originFilter;
+          _selectedNoteFilter = noteFilter;
+          _selectedNoteCategoryTab = noteCategoryTab;
+        });
+      },
+      onResetAll: _resetAllFilters,
+    );
+  }
 
-            return DraggableScrollableSheet(
-              expand: false,
-              initialChildSize: 0.84,
-              minChildSize: 0.5,
-              maxChildSize: 0.94,
-              builder: (_, scrollCtrl) {
-                return Column(
-                  children: [
-                    // Modal Header
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 16, 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(CupertinoIcons.slider_horizontal_3, color: AppTheme.primaryBrown, size: 20),
-                              const SizedBox(width: 8),
-                              Text(
-                                LanguageService.isEnglish ? 'All Recipe Filters' : 'Filter Resep Lengkap',
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textDark),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              if (_activeFilterCount > 0)
-                                TextButton(
-                                  onPressed: () => updateFilter(_resetAllFilters),
-                                  child: Text(
-                                    LanguageService.isEnglish ? 'Reset All' : 'Reset Semua',
-                                    style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              IconButton(
-                                icon: const Icon(CupertinoIcons.xmark_circle_fill, color: AppTheme.textMuted),
-                                onPressed: () => Navigator.pop(ctx),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 1),
-                    Expanded(
-                      child: ListView(
-                        controller: scrollCtrl,
-                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-                        children: [
-                          // 1. FILTER BY JUMLAH POURING
-                          _filterSectionTitle(
-                            CupertinoIcons.drop_fill,
-                            LanguageService.isEnglish ? '1. Pour Count / Structure' : '1. Jumlah Pouring / Struktur Tuangan',
-                          ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: _pourFilterOptions.map((opt) {
-                              final selected = _selectedPourFilter == opt;
-                              return ChoiceChip(
-                                label: Text(
-                                  opt,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: selected ? Colors.white : AppTheme.textDark,
-                                  ),
-                                ),
-                                selected: selected,
-                                selectedColor: AppTheme.primaryBrown,
-                                backgroundColor: AppTheme.surfaceWhite,
-                                onSelected: (_) => updateFilter(() => _selectedPourFilter = opt),
-                              );
-                            }).toList(),
-                          ),
-                          const SizedBox(height: 22),
-
-                          // 2. FILTER BY DRIPPER / ALAT SEDUH (VISUAL GAMBAR)
-                          _filterSectionTitle(
-                            CupertinoIcons.cube_box_fill,
-                            LanguageService.isEnglish ? '2. Dripper / Brewing Gear' : '2. Pilih Dripper / Alat Seduh',
-                          ),
-                          const SizedBox(height: 10),
-                          SizedBox(
-                            height: 106,
-                            child: ListView(
-                              scrollDirection: Axis.horizontal,
-                              children: [
-                                _dripperFilterCard(
-                                  shortName: LanguageService.isEnglish ? 'All' : 'Semua',
-                                  subtitle: LanguageService.isEnglish ? 'All Gear' : 'Semua Alat',
-                                  selected: _selectedDripperFilter == 'Semua' || _selectedDripperFilter == 'All',
-                                  item: null,
-                                  onTap: () => updateFilter(() => _selectedDripperFilter = LanguageService.isEnglish ? 'All' : 'Semua'),
-                                ),
-                                ...BrewVisualCatalog.drippers.map((d) {
-                                  final selected = _selectedDripperFilter == d.shortName;
-                                  return _dripperFilterCard(
-                                    shortName: d.shortName,
-                                    subtitle: d.defaultCategory,
-                                    selected: selected,
-                                    item: d,
-                                    onTap: () => updateFilter(() => _selectedDripperFilter = d.shortName),
-                                  );
-                                }),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 22),
-
-                          // 3. FILTER BY BARISTA / ORANGNYA SIAPA (VISUAL FOTO WAJAH)
-                          _filterSectionTitle(
-                            CupertinoIcons.person_2_fill,
-                            LanguageService.isEnglish ? '3. Barista / Brewer' : '3. Pilih Barista / Brewer',
-                          ),
-                          const SizedBox(height: 10),
-                          SizedBox(
-                            height: 104,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: _uniqueBaristas.length + 1,
-                              itemBuilder: (context, idx) {
-                                if (idx == 0) {
-                                  final sel = _selectedBaristaFilter == 'Semua' || _selectedBaristaFilter == 'All';
-                                  return GestureDetector(
-                                    onTap: () => updateFilter(() => _selectedBaristaFilter = LanguageService.isEnglish ? 'All' : 'Semua'),
-                                    child: Container(
-                                      width: 78,
-                                      margin: const EdgeInsets.only(right: 10),
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: sel ? AppTheme.primaryBrown : AppTheme.surfaceWhite,
-                                        borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(color: AppTheme.primaryBrown.withValues(alpha: 0.2)),
-                                      ),
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          CircleAvatar(
-                                            radius: 22,
-                                            backgroundColor: sel ? Colors.white24 : AppTheme.bgCream,
-                                            child: Icon(CupertinoIcons.person_3_fill, size: 18, color: sel ? Colors.white : AppTheme.primaryBrown),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            LanguageService.isEnglish ? 'All' : 'Semua',
-                                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: sel ? Colors.white : AppTheme.textDark),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                }
-                                final b = _uniqueBaristas[idx - 1];
-                                final name = b['name'] as String;
-                                final sel = _selectedBaristaFilter == name;
-                                return GestureDetector(
-                                  onTap: () => updateFilter(() => _selectedBaristaFilter = name),
-                                  child: Container(
-                                    width: 82,
-                                    margin: const EdgeInsets.only(right: 10),
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: sel ? AppTheme.primaryBrown : AppTheme.surfaceWhite,
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: sel ? AppTheme.primaryBrown : AppTheme.primaryBrown.withValues(alpha: 0.15),
-                                        width: sel ? 2 : 1,
-                                      ),
-                                    ),
-                                    child: Column(
-                                      children: [
-                                        BaristaAvatar(
-                                          imageUrl: b['imageUrl'] as String?,
-                                          radius: 22,
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          name,
-                                          maxLines: 2,
-                                          textAlign: TextAlign.center,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color: sel ? Colors.white : AppTheme.textDark,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 22),
-
-                          // 4. FILTER BY TEKNIK / KATEGORI
-                          _filterSectionTitle(
-                            CupertinoIcons.lab_flask_solid,
-                            LanguageService.isEnglish ? '4. Brew Method' : '4. Teknik Seduh',
-                          ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: _categories.map((cat) {
-                              final selected = _selectedCategory == cat;
-                              return ChoiceChip(
-                                label: Text(
-                                  cat,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: selected ? Colors.white : AppTheme.textDark,
-                                  ),
-                                ),
-                                selected: selected,
-                                selectedColor: AppTheme.primaryBrown,
-                                backgroundColor: AppTheme.surfaceWhite,
-                                onSelected: (_) => updateFilter(() => _selectedCategory = cat),
-                              );
-                            }).toList(),
-                          ),
-                          const SizedBox(height: 22),
-
-                          // 5. FILTER BY TASTING NOTES (FILTER KATEGORI: FLORAL, FRUITY, CITRUS, DLL.)
-                          _filterSectionTitle(
-                            CupertinoIcons.sparkles,
-                            LanguageService.isEnglish ? '5. Tasting Notes & Flavor Profile' : '5. Tasting Notes & Karakter Rasa',
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            _selectedNoteFilter == 'Semua' || _selectedNoteFilter == 'All'
-                                ? (LanguageService.isEnglish
-                                    ? 'Select a flavor category to explore relevant notes:'
-                                    : 'Pilih kategori rasa untuk menampilkan pilihan notes yang relevan:')
-                                : (LanguageService.isEnglish
-                                    ? 'Active filter: $_selectedNoteFilter'
-                                    : 'Filter aktif: $_selectedNoteFilter'),
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              color: (_selectedNoteFilter == 'Semua' || _selectedNoteFilter == 'All')
-                                  ? AppTheme.textMuted
-                                  : AppTheme.primaryBrown,
-                              fontWeight: (_selectedNoteFilter == 'Semua' || _selectedNoteFilter == 'All')
-                                  ? FontWeight.normal
-                                  : FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          // Horizontal Category Pills
-                          SizedBox(
-                            height: 38,
-                            child: ListView.separated(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: _noteCategories.length,
-                              separatorBuilder: (_, _) => const SizedBox(width: 8),
-                              itemBuilder: (ctx, idx) {
-                                final cat = _noteCategories[idx];
-                                final isCatActive = activeNoteCategoryModal == cat.id;
-                                return ChoiceChip(
-                                  label: Text(
-                                    '${cat.emoji} ${cat.localizedLabel}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: isCatActive ? Colors.white : AppTheme.textDark,
-                                    ),
-                                  ),
-                                  selected: isCatActive,
-                                  selectedColor: AppTheme.primaryBrown,
-                                  backgroundColor: AppTheme.surfaceWhite,
-                                  side: BorderSide(
-                                    color: isCatActive ? AppTheme.primaryBrown : AppTheme.primaryBrown.withValues(alpha: 0.15),
-                                  ),
-                                  onSelected: (_) {
-                                    setModalState(() {
-                                      activeNoteCategoryModal = cat.id;
-                                      _selectedNoteCategoryTab = cat.id;
-                                    });
-                                  },
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          // Container Pilihan Notes untuk Kategori Terpilih
-                          Builder(
-                            builder: (_) {
-                              final curCat = _noteCategories.firstWhere(
-                                (c) => c.id == activeNoteCategoryModal,
-                                orElse: () => _noteCategories.first,
-                              );
-                              final categoryNotes = BrewVisualCatalog.flavorNotes
-                                  .where((fn) => curCat.groups.contains(fn.group))
-                                  .toList();
-                              final isCategorySelected = _selectedNoteFilter == '${curCat.emoji} ${curCat.label}' ||
-                                  _selectedNoteFilter == '${curCat.emoji} ${curCat.labelEn}' ||
-                                  _selectedNoteFilter == 'Semua ${curCat.label}' ||
-                                  _selectedNoteFilter == 'All ${curCat.labelEn}' ||
-                                  _selectedNoteFilter == curCat.label ||
-                                  _selectedNoteFilter == curCat.labelEn;
-
-                              return Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.surfaceWhite,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: AppTheme.primaryBrown.withValues(alpha: 0.15),
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          LanguageService.isEnglish
-                                              ? '${curCat.emoji} ${curCat.localizedLabel} Notes (${categoryNotes.length})'
-                                              : '${curCat.emoji} Pilihan Notes ${curCat.label} (${categoryNotes.length})',
-                                          style: const TextStyle(
-                                            fontSize: 12.5,
-                                            fontWeight: FontWeight.bold,
-                                            color: AppTheme.textDark,
-                                          ),
-                                        ),
-                                        if (_selectedNoteFilter != 'Semua' && _selectedNoteFilter != 'All')
-                                          GestureDetector(
-                                            onTap: () => updateFilter(() => _selectedNoteFilter = LanguageService.isEnglish ? 'All' : 'Semua'),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                const Icon(CupertinoIcons.clear_circled_solid, size: 13, color: Colors.redAccent),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  LanguageService.isEnglish ? 'Clear Notes' : 'Hapus Notes',
-                                                  style: const TextStyle(
-                                                    fontSize: 11.5,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.redAccent,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 10),
-                                    Wrap(
-                                      spacing: 8,
-                                      runSpacing: 8,
-                                      children: [
-                                        // Pilihan Semua di kategori ini
-                                        ChoiceChip(
-                                          label: Text(
-                                            LanguageService.isEnglish
-                                                ? 'All ${curCat.localizedLabel} ${curCat.emoji}'
-                                                : 'Semua ${curCat.label} ${curCat.emoji}',
-                                            style: TextStyle(
-                                              fontSize: 11.5,
-                                              fontWeight: FontWeight.bold,
-                                              color: isCategorySelected ? Colors.white : AppTheme.textDark,
-                                            ),
-                                          ),
-                                          selected: isCategorySelected,
-                                          selectedColor: AppTheme.primaryBrown,
-                                          backgroundColor: AppTheme.bgCream,
-                                          side: BorderSide(
-                                            color: isCategorySelected ? AppTheme.primaryBrown : AppTheme.primaryBrown.withValues(alpha: 0.15),
-                                          ),
-                                          onSelected: (_) {
-                                            updateFilter(() {
-                                              _selectedNoteFilter = isCategorySelected
-                                                  ? (LanguageService.isEnglish ? 'All' : 'Semua')
-                                                  : '${curCat.emoji} ${curCat.localizedLabel}';
-                                            });
-                                          },
-                                        ),
-                                        // Notes spesifik dalam kategori ini
-                                        ...categoryNotes.map((fn) {
-                                          final sel = _selectedNoteFilter == fn.label;
-                                          return FlavorNoteVisualBadge(
-                                            noteText: fn.label,
-                                            selected: sel,
-                                            onTap: () => updateFilter(() {
-                                              _selectedNoteFilter = sel ? (LanguageService.isEnglish ? 'All' : 'Semua') : fn.label;
-                                            }),
-                                          );
-                                        }),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 22),
-
-                          // 6. FILTER BY ASAL & DURASI
-                          _filterSectionTitle(
-                            CupertinoIcons.globe,
-                            LanguageService.isEnglish ? '6. Barista Origin & Duration' : '6. Asal Barista & Durasi',
-                          ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: _originFilterOptions.map((opt) {
-                              final selected = _selectedOriginFilter == opt;
-                              return ChoiceChip(
-                                label: Text(
-                                  opt,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: selected ? Colors.white : AppTheme.textDark,
-                                  ),
-                                ),
-                                selected: selected,
-                                selectedColor: AppTheme.accentAmber,
-                                backgroundColor: AppTheme.surfaceWhite,
-                                onSelected: (_) => updateFilter(() => _selectedOriginFilter = opt),
-                              );
-                            }).toList(),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Apply Button
-                    Container(
-                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-                      decoration: BoxDecoration(
-                        color: AppTheme.surfaceWhite,
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -4)),
-                        ],
-                      ),
-                      child: SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryBrown,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          ),
-                          child: Text(
-                            LanguageService.isEnglish ? 'Apply Filters' : 'Terapkan Filter',
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            );
-          },
-        );
+  void _openSortModal() {
+    RecipeSortModal.show(
+      context: context,
+      currentSort: _selectedSort,
+      onSortSelected: (sort) {
+        setState(() {
+          _selectedSort = sort;
+        });
       },
     );
   }
 
-  Widget _filterSectionTitle(IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: AppTheme.primaryBrown),
-        const SizedBox(width: 6),
-        Text(
-          text,
-          style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: AppTheme.textDark),
-        ),
-      ],
-    );
-  }
-
-  Widget _dripperFilterCard({
-    required String shortName,
-    required String subtitle,
-    required bool selected,
-    required DripperVisualItem? item,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 98,
-        margin: const EdgeInsets.only(right: 10),
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: selected ? AppTheme.primaryBrown : AppTheme.surfaceWhite,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: selected ? AppTheme.primaryBrown : AppTheme.primaryBrown.withValues(alpha: 0.15),
-            width: selected ? 2 : 1,
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (item != null)
-              DripperGraphicBadge(item: item, size: 42)
-            else
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: selected ? Colors.white24 : AppTheme.bgCream,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(CupertinoIcons.square_grid_2x2_fill, color: selected ? Colors.white : AppTheme.primaryBrown, size: 20),
-              ),
-            const SizedBox(height: 6),
-            Text(
-              shortName,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: selected ? Colors.white : AppTheme.textDark,
-              ),
-            ),
-            Text(
-              subtitle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 9.5,
-                color: selected ? Colors.white70 : AppTheme.textMuted,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _confirmDelete(int id, String title) {
-    final isEn = LanguageService.isEnglish;
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(isEn ? 'Delete Recipe?' : 'Hapus Resep?'),
-        content: Text(isEn ? 'Are you sure you want to delete "$title"?' : 'Yakin ingin menghapus "$title"?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(isEn ? 'Cancel' : 'Batal')),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              try {
-                await ApiService.deleteRecipe(id);
-                _loadData();
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isEn ? 'Recipe deleted' : 'Resep dihapus')));
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-                }
-              }
-            },
-            child: Text(isEn ? 'Delete' : 'Hapus', style: const TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
+  Future<void> _confirmDelete(int id, String title) async {
+    final deleted = await RecipeDeleteDialog.show(context, id: id, title: title);
+    if (deleted == true) {
+      ref.read(recipeListControllerProvider.notifier).deleteRecipe(id);
+    }
   }
 
   void _showTrialLockDialog() {
-    final isEn = LanguageService.isEnglish;
-    TrialService.showLockedDialog(
-      context: context,
-      title: isEn ? 'Recipe Locked (Trial Mode)' : 'Resep Terkunci (Mode Trial)',
-      message: isEn
-          ? 'This recipe is outside the 10 trial recipes limit.\n\nPlease log in or sign up with an Admin-approved account to unlock all 96+ champion recipes and enjoy unlimited precision brewing!'
-          : 'Resep ini berada di luar batas 10 resep mode trial.\n\nSilakan login atau daftar akun resmi yang disetujui Admin untuk membuka seluruh koleksi resep dan menikmati pengalaman seduh tanpa batas!',
-      onLoginTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingScreen()));
-      },
-    );
+    RecipeTrialLockDialog.show(context);
   }
 
   void _openDetail(dynamic recipe, {int? index}) {
@@ -923,31 +224,26 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
       _showTrialLockDialog();
       return;
     }
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => RecipeDetailScreen(recipeData: recipe)),
-    );
+    context.push(AppRoutes.recipeDetail, extra: recipe);
   }
 
   void _openBarista(dynamic recipe) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => BaristaProfileScreen(
-          rawAuthor: recipe['author']?.toString() ?? '',
-          imageUrl: (recipe['authorAvatarUrl'] ?? recipe['authorImageUrl'])?.toString(),
-          coverImageUrl: (recipe['coverImageUrl'] ?? recipe['authorImageUrl'])?.toString(),
-        ),
-      ),
+    context.push(
+      AppRoutes.baristaProfile,
+      extra: {
+        'rawAuthor': recipe['author']?.toString() ?? '',
+        'imageUrl': BaristaUtils.imageUrlFromRecipe(recipe),
+        'coverImageUrl': BaristaUtils.coverUrlFromRecipe(recipe),
+      },
     );
   }
 
   void _surpriseMe(List<dynamic> pool) {
-    var source = pool.isNotEmpty ? pool : _allRecipes;
+    if (pool.isEmpty) return;
+    var source = pool;
     if (_isTrial && source.length > 10) {
       source = source.take(10).toList();
     }
-    if (source.isEmpty) return;
     final picked = (List<dynamic>.from(source)..shuffle()).first;
     _openDetail(picked, index: 0);
   }
@@ -955,733 +251,439 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
   @override
   Widget build(BuildContext context) {
     final isEn = LanguageService.isEnglish;
-    List<dynamic> filteredRecipes = _allRecipes.where((raw) {
-      final r = raw is Map ? ApiService.sanitizeRecipe(raw) : <String, dynamic>{};
-      final catLower = _selectedCategory.toLowerCase();
-      bool matchesCategory = _selectedCategory == 'All' ||
-          r['category'] == _selectedCategory ||
-          (r['category'] ?? '').toString().toLowerCase().contains(catLower) ||
-          (r['method'] ?? '').toString().toLowerCase().contains(catLower) ||
-          (r['title'] ?? '').toString().toLowerCase().contains(catLower);
-      final authorStr = (r['author'] ?? '').toString();
-      final cleanAuthor = BaristaUtils.cleanName(authorStr);
-      bool matchesBarista = _selectedBaristaFilter == 'Semua' ||
-          _selectedBaristaFilter == 'All' ||
-          cleanAuthor.toLowerCase() == _selectedBaristaFilter.toLowerCase();
+    final recipesAsync = ref.watch(recipeListControllerProvider);
 
-      final isIndo = BaristaUtils.countryCode(authorStr) == 'id';
-      final iceGrams = (r['iceWeightGrams'] ?? 0) as num;
-      final isIced = iceGrams > 0 || (r['category'] ?? '').toString().toLowerCase().contains('iced');
-      final totalSecs = (r['totalTimeSeconds'] ?? 180) as num;
-
-      bool matchesOrigin = true;
-      if (_selectedOriginFilter.contains('Indonesia')) {
-        matchesOrigin = isIndo;
-      } else if (_selectedOriginFilter.contains('Internasional') || _selectedOriginFilter.contains('International')) {
-        matchesOrigin = !isIndo;
-      } else if (_selectedOriginFilter.contains('Es') || _selectedOriginFilter.contains('Iced')) {
-        matchesOrigin = isIced;
-      } else if (_selectedOriginFilter.contains('Cepat') || _selectedOriginFilter.contains('Fast')) {
-        matchesOrigin = totalSecs <= 135;
-      }
-
-      final q = _searchQuery.toLowerCase();
-      bool matchesSearch = q.isEmpty ||
-          authorStr.toLowerCase().contains(q) ||
-          (r['title'] != null && r['title'].toString().toLowerCase().contains(q)) ||
-          (r['method'] != null && r['method'].toString().toLowerCase().contains(q)) ||
-          (r['beanName'] != null && r['beanName'].toString().toLowerCase().contains(q)) ||
-          (r['tastingNotes'] != null && r['tastingNotes'].toString().toLowerCase().contains(q)) ||
-          (r['category'] != null && r['category'].toString().toLowerCase().contains(q));
-
-      return matchesCategory &&
-          matchesBarista &&
-          matchesOrigin &&
-          _matchesPourFilter(r) &&
-          _matchesDripperFilter(r) &&
-          _matchesNoteFilter(r) &&
-          matchesSearch;
-    }).toList();
-
-    return Scaffold(
-      appBar: AppBar(
-        leadingWidth: 72,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 18),
-          child: Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
-              decoration: BoxDecoration(
-                color: AppTheme.accentGold.withValues(alpha: 0.16),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppTheme.accentGold.withValues(alpha: 0.4), width: 1),
-              ),
-              child: Text(
-                '${filteredRecipes.length}',
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.primaryBrown,
-                ),
-              ),
-            ),
-          ),
-        ),
-        title: const Text('World Recipes'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            tooltip: isEn ? 'Surprise Me (Random Recipe)' : 'Pilihkan Resep Acak',
-            icon: const Icon(CupertinoIcons.sparkles),
-            onPressed: () => _surpriseMe(filteredRecipes),
-          ),
-          IconButton(
-            tooltip: isEn ? 'Add Custom Recipe' : 'Tambah Resep Sendiri',
-            icon: const Icon(CupertinoIcons.add),
-            onPressed: () async {
-              bool? didAdd = await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddRecipeScreen()));
-              if (didAdd == true) _loadData();
-            },
-          ),
-        ],
+    return recipesAsync.when(
+      loading: () => Scaffold(
+        appBar: AppBar(title: const Text('World Recipes'), centerTitle: true),
+        body: const Center(child: CircularProgressIndicator(color: AppTheme.primaryBrown)),
       ),
-      body: Column(
-        children: [
-          // Search Bar + Filter Modal Button
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: AppTheme.surfaceWhite,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppTheme.primaryBrown.withValues(alpha: 0.1)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.primaryBrown.withValues(alpha: 0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      onChanged: (val) => setState(() => _searchQuery = val),
-                      decoration: InputDecoration(
-                        hintText: isEn ? 'Search barista, beans, dripper, notes...' : 'Cari barista, biji, dripper, notes...',
-                        hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 13),
-                        border: InputBorder.none,
-                        icon: const Icon(CupertinoIcons.search, color: AppTheme.textMuted, size: 18),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                GestureDetector(
-                  onTap: _openFilterModal,
-                  child: Container(
-                    height: 48,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: _activeFilterCount > 0 ? AppTheme.primaryBrown : AppTheme.surfaceWhite,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppTheme.primaryBrown.withValues(alpha: 0.25)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.primaryBrown.withValues(alpha: 0.08),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          CupertinoIcons.slider_horizontal_3,
-                          size: 18,
-                          color: _activeFilterCount > 0 ? Colors.white : AppTheme.primaryBrown,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          _activeFilterCount > 0 ? 'Filter ($_activeFilterCount)' : 'Filter',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.bold,
-                            color: _activeFilterCount > 0 ? Colors.white : AppTheme.primaryBrown,
+      error: (err, stack) => Scaffold(
+        appBar: AppBar(title: const Text('World Recipes'), centerTitle: true),
+        body: Center(child: Text('Gagal memuat resep: $err')),
+      ),
+      data: (allRecipes) {
+        final List<dynamic> filteredRecipes = allRecipes.where((raw) {
+          final r = ApiService.sanitizeRecipe(raw);
+          final catLower = _selectedCategory.toLowerCase();
+          bool matchesCategory = _selectedCategory == 'All' ||
+              r['category'] == _selectedCategory ||
+              (r['category'] ?? '').toString().toLowerCase().contains(catLower) ||
+              (r['method'] ?? '').toString().toLowerCase().contains(catLower) ||
+              (r['title'] ?? '').toString().toLowerCase().contains(catLower);
+          final authorStr = (r['author'] ?? '').toString();
+          final cleanAuthor = BaristaUtils.cleanName(authorStr);
+          bool matchesBarista = _selectedBaristaFilter == 'Semua' ||
+              _selectedBaristaFilter == 'All' ||
+              cleanAuthor.toLowerCase() == _selectedBaristaFilter.toLowerCase();
+
+          final isIndo = BaristaUtils.countryCode(authorStr) == 'id';
+          final iceGrams = (r['iceWeightGrams'] ?? 0) as num;
+          final isIced = iceGrams > 0 || (r['category'] ?? '').toString().toLowerCase().contains('iced');
+          final totalSecs = (r['totalTimeSeconds'] ?? 180) as num;
+
+          bool matchesOrigin = true;
+          if (_selectedOriginFilter.contains('Indonesia')) {
+            matchesOrigin = isIndo;
+          } else if (_selectedOriginFilter.contains('Internasional') || _selectedOriginFilter.contains('International')) {
+            matchesOrigin = !isIndo;
+          } else if (_selectedOriginFilter.contains('Es') || _selectedOriginFilter.contains('Iced')) {
+            matchesOrigin = isIced;
+          } else if (_selectedOriginFilter.contains('Cepat') || _selectedOriginFilter.contains('Fast')) {
+            matchesOrigin = totalSecs <= 135;
+          }
+
+          final q = _searchQuery.toLowerCase();
+          bool matchesSearch = q.isEmpty ||
+              authorStr.toLowerCase().contains(q) ||
+              (r['title'] != null && r['title'].toString().toLowerCase().contains(q)) ||
+              (r['method'] != null && r['method'].toString().toLowerCase().contains(q)) ||
+              (r['beanName'] != null && r['beanName'].toString().toLowerCase().contains(q)) ||
+              (r['tastingNotes'] != null && r['tastingNotes'].toString().toLowerCase().contains(q)) ||
+              (r['category'] != null && r['category'].toString().toLowerCase().contains(q));
+
+          final matchesMethod = RecipeFilterMatcher.matchesMethod(r, _selectedMethodFilter);
+
+          return matchesCategory &&
+              matchesMethod &&
+              matchesBarista &&
+              matchesOrigin &&
+              RecipeFilterMatcher.matchesPour(r, _selectedPourFilter) &&
+              RecipeFilterMatcher.matchesDripper(r, _selectedDripperFilter) &&
+              RecipeFilterMatcher.matchesNote(r, _selectedNoteFilter) &&
+              matchesSearch;
+        }).toList();
+
+        // Terapkan sortir berdasarkan 5 kategori (+ default)
+        switch (_selectedSort) {
+          case RecipeSortOption.alphabetical:
+            filteredRecipes.sort((a, b) {
+              final titleA = (a['title'] ?? '').toString().toLowerCase();
+              final titleB = (b['title'] ?? '').toString().toLowerCase();
+              return titleA.compareTo(titleB);
+            });
+            break;
+
+          case RecipeSortOption.newest:
+            filteredRecipes.sort((a, b) {
+              final isCustomA = a['isCustom'] == true ? 1 : 0;
+              final isCustomB = b['isCustom'] == true ? 1 : 0;
+              if (isCustomA != isCustomB) return isCustomB.compareTo(isCustomA);
+              final idA = int.tryParse(a['id']?.toString() ?? '') ?? 0;
+              final idB = int.tryParse(b['id']?.toString() ?? '') ?? 0;
+              return idB.compareTo(idA);
+            });
+            break;
+
+          case RecipeSortOption.fastestBrew:
+            filteredRecipes.sort((a, b) {
+              final timeA = (a['totalTimeSeconds'] as num?)?.toInt() ?? 180;
+              final timeB = (b['totalTimeSeconds'] as num?)?.toInt() ?? 180;
+              return timeA.compareTo(timeB);
+            });
+            break;
+
+          case RecipeSortOption.coffeeDose:
+            filteredRecipes.sort((a, b) {
+              final doseA = (a['coffeeWeightGrams'] as num?)?.toInt() ?? 15;
+              final doseB = (b['coffeeWeightGrams'] as num?)?.toInt() ?? 15;
+              return doseA.compareTo(doseB);
+            });
+            break;
+
+          case RecipeSortOption.baristaName:
+            filteredRecipes.sort((a, b) {
+              final authorA = BaristaUtils.cleanName((a['author'] ?? '').toString()).toLowerCase();
+              final authorB = BaristaUtils.cleanName((b['author'] ?? '').toString()).toLowerCase();
+              return authorA.compareTo(authorB);
+            });
+            break;
+
+          case RecipeSortOption.defaultCurated:
+            break;
+        }
+
+        final showBackButton = Navigator.canPop(context) || _selectedMethodFilter != 'All';
+
+        return PopScope(
+          canPop: !showBackButton,
+          onPopInvokedWithResult: (didPop, result) {
+            if (!didPop && showBackButton) {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              } else {
+                _clearMethodFilterAndGoHome();
+              }
+            }
+          },
+          child: Scaffold(
+            appBar: AppBar(
+              leadingWidth: showBackButton ? 48 : 72,
+              leading: showBackButton
+                  ? IconButton(
+                      icon: const Icon(CupertinoIcons.chevron_back),
+                      onPressed: () {
+                        if (Navigator.canPop(context)) {
+                          Navigator.pop(context);
+                        } else {
+                          _clearMethodFilterAndGoHome();
+                        }
+                      },
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.only(left: 18),
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                          decoration: BoxDecoration(
+                            color: AppTheme.accentGold.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppTheme.accentGold.withValues(alpha: 0.4), width: 1),
+                          ),
+                          child: Text(
+                            '${filteredRecipes.length}',
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.primaryBrown,
+                            ),
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+              title: const Text('World Recipes'),
+              centerTitle: true,
+              actions: [
+                Builder(
+                  builder: (ctx) {
+                    final isLandscape = MediaQuery.of(ctx).orientation == Orientation.landscape;
+                    final isWide = MediaQuery.of(ctx).size.width >= 720;
+                    if (!isLandscape && !isWide) return const SizedBox.shrink();
+
+                    return IconButton(
+                      tooltip: _isSplitMode
+                          ? (isEn ? 'Switch to Multi-Grid View' : 'Mode Multi-Grid Katalog')
+                          : (isEn ? 'Switch to Split Inspector Cockpit' : 'Mode Cockpit Inspeksi Barista (Split)'),
+                      icon: Icon(
+                        _isSplitMode ? CupertinoIcons.rectangle_grid_2x2 : CupertinoIcons.sidebar_right,
+                        color: _isSplitMode ? AppTheme.accentGold : null,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isSplitMode = !_isSplitMode;
+                          if (_isSplitMode && _selectedInspectionRecipe == null && filteredRecipes.isNotEmpty) {
+                            _selectedInspectionRecipe = filteredRecipes.first;
+                          }
+                        });
+                      },
+                    );
+                  },
+                ),
+                IconButton(
+                  tooltip: isEn ? 'Surprise Me (Random Recipe)' : 'Pilihkan Resep Acak',
+                  icon: const Icon(CupertinoIcons.sparkles),
+                  onPressed: () => _surpriseMe(filteredRecipes),
+                ),
+                IconButton(
+                  tooltip: isEn ? 'Add Custom Recipe' : 'Tambah Resep Sendiri',
+                  icon: const Icon(CupertinoIcons.add),
+                  onPressed: () async {
+                    final didAdd = await context.push(AppRoutes.addRecipe);
+                    if (didAdd == true) {
+                      ref.read(recipeListControllerProvider.notifier).refreshRecipes();
+                    }
+                  },
                 ),
               ],
             ),
-          ),
+            body: LayoutBuilder(
+              builder: (context, constraints) {
+                final mediaQuery = MediaQuery.of(context);
+                final isLandscape = mediaQuery.orientation == Orientation.landscape;
+                final isWide = constraints.maxWidth >= 720;
+                final isLandscapeOrWide = isLandscape || isWide;
 
-          // Category Quick Chips
-          SizedBox(
-            height: 40,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              itemCount: _categories.length,
-              itemBuilder: (context, index) {
-                String cat = _categories[index];
-                bool isSelected = _selectedCategory == cat;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedCategory = cat),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: isSelected ? AppTheme.primaryBrown : AppTheme.surfaceWhite,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isSelected ? AppTheme.primaryBrown : AppTheme.primaryBrown.withValues(alpha: 0.2),
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        cat,
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : AppTheme.textDark,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          fontSize: 11.5,
+                if (isLandscapeOrWide && _isSplitMode) {
+                  return Row(
+                    children: [
+                      // Panel Kiri: Kontrol Pencarian, Filter & Grid 2-Kolom
+                      Expanded(
+                        flex: 11,
+                        child: Column(
+                          children: [
+                            RecipeFeedSearchBar(
+                              activeFilterCount: _activeFilterCount,
+                              categories: _categories,
+                              selectedCategory: _selectedCategory,
+                              selectedPourFilter: _selectedPourFilter,
+                              selectedDripperFilter: _selectedDripperFilter,
+                              selectedBaristaFilter: _selectedBaristaFilter,
+                              selectedNoteFilter: _selectedNoteFilter,
+                              selectedOriginFilter: _selectedOriginFilter,
+                              onSearchChanged: (val) => setState(() => _searchQuery = val),
+                              onOpenFilter: _openFilterModal,
+                              onOpenSort: _openSortModal,
+                              isSortActive: _selectedSort != RecipeSortOption.defaultCurated,
+                              activeSortLabel: _selectedSort != RecipeSortOption.defaultCurated ? _selectedSort.label : null,
+                              onResetSort: () => setState(() => _selectedSort = RecipeSortOption.defaultCurated),
+                              onCategorySelected: (cat) => setState(() => _selectedCategory = cat),
+                              onRemovePourFilter: () => setState(() => _selectedPourFilter = LanguageService.isEnglish ? 'All' : 'Semua'),
+                              onRemoveDripperFilter: () => setState(() => _selectedDripperFilter = LanguageService.isEnglish ? 'All' : 'Semua'),
+                              onRemoveBaristaFilter: () => setState(() => _selectedBaristaFilter = LanguageService.isEnglish ? 'All' : 'Semua'),
+                              onRemoveNoteFilter: () => setState(() => _selectedNoteFilter = LanguageService.isEnglish ? 'All' : 'Semua'),
+                              onRemoveOriginFilter: () => setState(() => _selectedOriginFilter = LanguageService.isEnglish ? 'All' : 'Semua'),
+                              onResetAll: _resetAllFilters,
+                            ),
+                            if (_selectedMethodFilter != 'All') _buildMethodFilterBanner(isEn),
+                            const SizedBox(height: 4),
+                            Expanded(
+                              child: _buildRecipeGrid(
+                                context,
+                                filteredRecipes,
+                                isSplitMode: true,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                      const VerticalDivider(width: 1, thickness: 1, color: AppTheme.dividerColor),
+                      // Panel Kanan: Cockpit Inspeksi Resep Barista & Mulai Seduh
+                      Expanded(
+                        flex: 9,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(8, 8, 16, 16),
+                          child: LandscapeRecipeInspector(
+                            rawRecipe: _selectedInspectionRecipe ?? (filteredRecipes.isNotEmpty ? filteredRecipes.first : null),
+                            isTrial: _isTrial,
+                            onTrialLocked: _showTrialLockDialog,
+                            onOpenFullDetail: () {
+                              if (_selectedInspectionRecipe != null) {
+                                _openDetail(_selectedInspectionRecipe);
+                              }
+                            },
+                            onClose: () => setState(() => _isSplitMode = false),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                // Default Tampilan Adaptif Grid Presisi (Bebas Ruang Kosong Berlebih)
+                return Column(
+                  children: [
+                    RecipeFeedSearchBar(
+                      activeFilterCount: _activeFilterCount,
+                      categories: _categories,
+                      selectedCategory: _selectedCategory,
+                      selectedPourFilter: _selectedPourFilter,
+                      selectedDripperFilter: _selectedDripperFilter,
+                      selectedBaristaFilter: _selectedBaristaFilter,
+                      selectedNoteFilter: _selectedNoteFilter,
+                      selectedOriginFilter: _selectedOriginFilter,
+                      onSearchChanged: (val) => setState(() => _searchQuery = val),
+                      onOpenFilter: _openFilterModal,
+                      onOpenSort: _openSortModal,
+                      isSortActive: _selectedSort != RecipeSortOption.defaultCurated,
+                      activeSortLabel: _selectedSort != RecipeSortOption.defaultCurated ? _selectedSort.label : null,
+                      onResetSort: () => setState(() => _selectedSort = RecipeSortOption.defaultCurated),
+                      onCategorySelected: (cat) => setState(() => _selectedCategory = cat),
+                      onRemovePourFilter: () => setState(() => _selectedPourFilter = LanguageService.isEnglish ? 'All' : 'Semua'),
+                      onRemoveDripperFilter: () => setState(() => _selectedDripperFilter = LanguageService.isEnglish ? 'All' : 'Semua'),
+                      onRemoveBaristaFilter: () => setState(() => _selectedBaristaFilter = LanguageService.isEnglish ? 'All' : 'Semua'),
+                      onRemoveNoteFilter: () => setState(() => _selectedNoteFilter = LanguageService.isEnglish ? 'All' : 'Semua'),
+                      onRemoveOriginFilter: () => setState(() => _selectedOriginFilter = LanguageService.isEnglish ? 'All' : 'Semua'),
+                      onResetAll: _resetAllFilters,
                     ),
-                  ),
+                    if (_selectedMethodFilter != 'All') _buildMethodFilterBanner(isEn),
+                    const SizedBox(height: 4),
+                    Expanded(
+                      child: _buildRecipeGrid(
+                        context,
+                        filteredRecipes,
+                        isSplitMode: false,
+                      ),
+                    ),
+                  ],
                 );
               },
             ),
-          ),
-
-          // Active Filters Banner (if any active)
-          if (_activeFilterCount > 0)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 6, 24, 2),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          if (_selectedPourFilter != 'Semua' && _selectedPourFilter != 'All')
-                            _activeFilterChip(_selectedPourFilter, () => setState(() => _selectedPourFilter = isEn ? 'All' : 'Semua')),
-                          if (_selectedDripperFilter != 'Semua' && _selectedDripperFilter != 'All')
-                            _activeFilterChip(_selectedDripperFilter, () => setState(() => _selectedDripperFilter = isEn ? 'All' : 'Semua')),
-                          if (_selectedBaristaFilter != 'Semua' && _selectedBaristaFilter != 'All')
-                            _activeFilterChip(_selectedBaristaFilter, () => setState(() => _selectedBaristaFilter = isEn ? 'All' : 'Semua')),
-                          if (_selectedNoteFilter != 'Semua' && _selectedNoteFilter != 'All')
-                            _activeFilterChip(_selectedNoteFilter, () => setState(() => _selectedNoteFilter = isEn ? 'All' : 'Semua')),
-                          if (_selectedOriginFilter != 'Semua' && _selectedOriginFilter != 'All')
-                            _activeFilterChip(_selectedOriginFilter, () => setState(() => _selectedOriginFilter = isEn ? 'All' : 'Semua')),
-                        ],
-                      ),
+            floatingActionButton: _isSplitMode
+                ? null
+                : FloatingActionButton.extended(
+                    heroTag: 'recipe_feed_social_fab',
+                    backgroundColor: AppTheme.primaryBrown,
+                    onPressed: () {
+                      context.push(AppRoutes.social);
+                    },
+                    icon: const Icon(CupertinoIcons.chat_bubble_2_fill, color: Colors.white, size: 20),
+                    label: const Text(
+                      'Social Coffee',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                     ),
                   ),
-                  TextButton(
-                    onPressed: _resetAllFilters,
-                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-                    child: Text(isEn ? 'Reset' : 'Reset', style: const TextStyle(fontSize: 11, color: Colors.redAccent, fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-            ),
-
-          const SizedBox(height: 4),
-          // Feed Grid
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryBrown))
-                : filteredRecipes.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(CupertinoIcons.search, size: 42, color: AppTheme.textMuted),
-                            const SizedBox(height: 10),
-                            Text(isEn ? 'No recipes match this filter.' : 'Tidak ada resep yang cocok dengan filter ini.'),
-                            const SizedBox(height: 8),
-                            TextButton(
-                              onPressed: _resetAllFilters,
-                              child: Text(isEn ? 'Reset Filter' : 'Reset Filter'),
-                            ),
-                          ],
-                        ),
-                      )
-                    : GridView.builder(
-                        padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.66,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                        ),
-                        itemCount: filteredRecipes.length,
-                        itemBuilder: (context, index) {
-                          return _buildGridCard(context, filteredRecipes[index], index);
-                        },
-                      ),
           ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'recipe_feed_social_fab',
-        backgroundColor: AppTheme.primaryBrown,
-        onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const SocialCoffeeScreen()));
-        },
-        icon: const Icon(CupertinoIcons.chat_bubble_2_fill, color: Colors.white, size: 20),
-        label: const Text(
-          'Social Coffee',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _activeFilterChip(String label, VoidCallback onRemove) {
+  Widget _buildMethodFilterBanner(bool isEn) {
     return Container(
-      margin: const EdgeInsets.only(right: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      margin: const EdgeInsets.fromLTRB(24, 6, 24, 2),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppTheme.accentAmber.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(14),
+        color: AppTheme.primaryBrown.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.primaryBrown.withValues(alpha: 0.15)),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryBrown)),
-          const SizedBox(width: 4),
+          const Icon(CupertinoIcons.slider_horizontal_3, size: 14, color: AppTheme.primaryBrown),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              isEn
+                  ? 'Method: ${_currentMethodTitle ?? widget.initialMethodTitle ?? _selectedMethodFilter}'
+                  : 'Metode: ${_currentMethodTitle ?? widget.initialMethodTitle ?? _selectedMethodFilter}',
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryBrown),
+            ),
+          ),
           GestureDetector(
-            onTap: onRemove,
-            child: const Icon(CupertinoIcons.xmark_circle_fill, size: 13, color: AppTheme.primaryBrown),
+            onTap: _clearMethodFilterOnly,
+            child: const Icon(CupertinoIcons.xmark_circle_fill, size: 16, color: AppTheme.primaryBrown),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildGridCard(BuildContext context, dynamic rawRecipe, int index) {
-    final isEn = LanguageService.isEnglish;
-    final recipe = rawRecipe is Map ? ApiService.sanitizeRecipe(rawRecipe) : <String, dynamic>{};
-    final bool isLocked = _isTrial && index >= 10;
-    int id = recipe['id'] as int;
-    String rawTitle = recipe['title'] as String;
-    String title = isEn ? CoffeeTranslator.translateTitle(rawTitle) : rawTitle;
-    String rawAuthor = recipe['author'] as String;
-    String authorName = BaristaUtils.cleanName(rawAuthor);
-    String countryCode = BaristaUtils.countryCode(rawAuthor);
-    String category = recipe['category'] as String;
-    String rawDescription = recipe['description'] as String;
-    String description = isEn ? CoffeeTranslator.translatePhilosophy(rawDescription) : rawDescription;
-    String shortGrind = BaristaUtils.shortGrindLabel(recipe['grindSize']?.toString());
-    num coffeeWeight = recipe['coffeeWeightGrams'] as int;
-    num totalWater = recipe['totalWaterWeightGrams'] as int;
-    int iceWeight = recipe['iceWeightGrams'] as int? ?? 0;
-    int pourCount = BrewVisualCatalog.countPours(recipe);
-    final rawNotes = (recipe['tastingNotes'] ?? '').toString().split(',');
-    final noteVisuals = rawNotes
-        .map((n) => n.trim())
-        .where((n) => n.isNotEmpty)
-        .take(3)
-        .map((n) => BrewVisualCatalog.matchNote(n))
-        .toList();
+  Widget _buildRecipeGrid(
+    BuildContext context,
+    List<dynamic> recipes, {
+    required bool isSplitMode,
+  }) {
+    if (recipes.isEmpty) {
+      final isEn = LanguageService.isEnglish;
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(CupertinoIcons.search, size: 42, color: AppTheme.textMuted),
+            const SizedBox(height: 10),
+            Text(isEn ? 'No recipes match this filter.' : 'Tidak ada resep yang cocok dengan filter ini.'),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: _resetAllFilters,
+              child: Text(isEn ? 'Reset Filter' : 'Reset Filter'),
+            ),
+          ],
+        ),
+      );
+    }
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onLongPress: isLocked
-          ? _showTrialLockDialog
-          : (recipe['isCustom'] == true ? () => _confirmDelete(id, title) : null),
-      onTap: isLocked ? _showTrialLockDialog : () => _openDetail(recipe, index: index),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isLocked ? const Color(0xFFE2E2E2) : AppTheme.surfaceWhite,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isLocked ? Colors.grey.shade400 : AppTheme.primaryBrown.withValues(alpha: 0.1),
-            width: isLocked ? 1.2 : 1.0,
-          ),
-          boxShadow: isLocked
-              ? null
-              : [
-                  BoxShadow(
-                    color: AppTheme.primaryBrown.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
+    return RefreshIndicator(
+      color: AppTheme.primaryBrown,
+      onRefresh: () => ref.read(recipeListControllerProvider.notifier).refreshRecipes(),
+      child: GridView.builder(
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 260,
+          mainAxisExtent: 242,
+          crossAxisSpacing: 14,
+          mainAxisSpacing: 14,
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: isLocked ? _showTrialLockDialog : () => _openBarista(recipe),
-                    child: BaristaAvatar(
-                      imageUrl: (recipe['authorAvatarUrl'] ?? recipe['authorImageUrl'])?.toString(),
-                      radius: 16,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerRight,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (isLocked) ...[
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                              margin: const EdgeInsets.only(right: 3),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade700,
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(CupertinoIcons.lock_fill, size: 7.5, color: Colors.white),
-                                  const SizedBox(width: 2),
-                                  Text(
-                                    isEn ? 'Locked' : 'Terkunci',
-                                    style: const TextStyle(
-                                      fontSize: 7.5,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                          // Chip Kopi (Background Coklat & Icon Biji Kopi)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4.5, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: isLocked ? Colors.grey.shade300 : const Color(0xFFF6EFEA),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                color: isLocked ? Colors.grey.shade400 : AppTheme.primaryBrown.withValues(alpha: 0.22),
-                                width: 0.7,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                CoffeeBeanIcon(
-                                  size: 8.5,
-                                  color: isLocked ? Colors.grey.shade600 : AppTheme.primaryBrown,
-                                ),
-                                const SizedBox(width: 2.5),
-                                Text(
-                                  '${coffeeWeight}g',
-                                  style: TextStyle(
-                                    fontSize: 8.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: isLocked ? Colors.grey.shade700 : AppTheme.primaryBrown,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 3),
-                          // Chip Air (Background Biru & Icon Air)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4.5, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: isLocked ? Colors.grey.shade300 : const Color(0xFFE8F3FA),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                color: isLocked ? Colors.grey.shade400 : Colors.blue.withValues(alpha: 0.25),
-                                width: 0.7,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  iceWeight > 0 ? CupertinoIcons.snow : CupertinoIcons.drop_fill,
-                                  size: 8.5,
-                                  color: isLocked ? Colors.grey.shade600 : const Color(0xFF1976D2),
-                                ),
-                                const SizedBox(width: 2),
-                                Text(
-                                  iceWeight > 0 ? '${totalWater + iceWeight}g' : '${totalWater}ml',
-                                  style: TextStyle(
-                                    fontSize: 8.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: isLocked ? Colors.grey.shade700 : const Color(0xFF1976D2),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: isLocked ? _showTrialLockDialog : () => _openBarista(recipe),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        authorName,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                          color: isLocked ? Colors.grey.shade700 : AppTheme.textDark,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (countryCode.isNotEmpty) ...[
-                      const SizedBox(width: 4),
-                      Flag.fromString(countryCode, height: 10, width: 14),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 4),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontSize: 13.5,
-                            height: 1.2,
-                            color: isLocked ? Colors.grey.shade800 : null,
-                          ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Wrap(
-                        spacing: 4,
-                        runSpacing: 4,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          if (noteVisuals.isNotEmpty) ...[
-                            ...noteVisuals.take(2).map((nv) {
-                              return Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: isLocked
-                                      ? Colors.grey.shade300
-                                      : nv.color.withValues(alpha: 0.12),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: isLocked
-                                        ? Colors.grey.shade400
-                                        : nv.color.withValues(alpha: 0.25),
-                                    width: 0.8,
-                                  ),
-                                ),
-                                child: Text(nv.emoji, style: const TextStyle(fontSize: 11)),
-                              );
-                            }),
-                          ],
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: isLocked
-                                  ? Colors.grey.shade300
-                                  : AppTheme.primaryBrown.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              '${pourCount}x Pour',
-                              style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                                color: isLocked ? Colors.grey.shade700 : AppTheme.primaryBrown,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (description.isNotEmpty)
-                      Expanded(
-                        child: Text(
-                          description,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: isLocked ? Colors.grey.shade600 : AppTheme.textMuted,
-                            height: 1.2,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 6),
-              // Category and Short Grind Size (Hanya "Medium" / "Medium-Fine" tanpa klik agar tidak overflow)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Text(
-                      category
-                          .replaceAll('V60 Pour Over', 'V60')
-                          .replaceAll('Japanese Iced', 'Japanese'),
-                      style: TextStyle(
-                        color: isLocked ? Colors.grey.shade600 : AppTheme.textMuted,
-                        fontSize: 10,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          CupertinoIcons.circle_grid_hex,
-                          size: 10,
-                          color: isLocked ? Colors.grey.shade600 : AppTheme.primaryBrown,
-                        ),
-                        const SizedBox(width: 3),
-                        Flexible(
-                          child: Text(
-                            shortGrind,
-                            style: TextStyle(
-                              color: isLocked ? Colors.grey.shade700 : AppTheme.primaryBrown,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: isLocked
-                      ? _showTrialLockDialog
-                      : () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => BrewTimerScreen(recipeData: recipe),
-                            ),
-                          );
-                        },
-                  icon: Icon(
-                    isLocked ? CupertinoIcons.lock_fill : CupertinoIcons.play_arrow_solid,
-                    size: 12,
-                    color: Colors.white,
-                  ),
-                  label: Text(
-                    isLocked ? (isEn ? 'Locked' : 'Terkunci') : 'Brew',
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isLocked ? Colors.grey.shade600 : AppTheme.primaryBrown,
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        itemCount: recipes.length,
+        itemBuilder: (context, index) {
+          return _buildGridCard(context, recipes[index], index, isSplitMode: isSplitMode);
+        },
       ),
     );
   }
-}
 
-class CoffeeBeanIcon extends StatelessWidget {
-  final double size;
-  final Color color;
-  const CoffeeBeanIcon({super.key, this.size = 10, required this.color});
+  Widget _buildGridCard(BuildContext context, dynamic rawRecipe, int index, {bool isSplitMode = false}) {
+    final recipe = ApiService.sanitizeRecipe(rawRecipe);
+    final isSelected = isSplitMode &&
+        _selectedInspectionRecipe != null &&
+        _selectedInspectionRecipe['id'] == recipe['id'];
 
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: size,
-      height: size,
-      child: CustomPaint(
-        painter: _CoffeeBeanPainter(color: color),
-      ),
+    return RecipeFeedGridCard(
+      rawRecipe: rawRecipe,
+      index: index,
+      isTrial: _isTrial,
+      isSelected: isSelected,
+      onTap: () {
+        if (isSplitMode) {
+          setState(() => _selectedInspectionRecipe = rawRecipe);
+        } else {
+          _openDetail(recipe, index: index);
+        }
+      },
+      onLongPress: recipe['isCustom'] == true
+          ? () => _confirmDelete(recipe['id'] as int, CoffeeTranslator.translateTitle(recipe['title'] as String))
+          : null,
+      onBaristaTap: () => _openBarista(recipe),
+      onTrialLocked: _showTrialLockDialog,
     );
   }
-}
-
-class _CoffeeBeanPainter extends CustomPainter {
-  final Color color;
-  const _CoffeeBeanPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final fillPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill
-      ..isAntiAlias = true;
-
-    final linePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.9)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = (size.width * 0.12).clamp(0.8, 1.4)
-      ..strokeCap = StrokeCap.round
-      ..isAntiAlias = true;
-
-    canvas.save();
-    canvas.translate(size.width / 2, size.height / 2);
-    canvas.rotate(-0.45); // ~26 degree tilt
-
-    // Draw the oval body of coffee bean
-    final rect = Rect.fromCenter(
-      center: Offset.zero,
-      width: size.width * 0.72,
-      height: size.height * 0.96,
-    );
-    canvas.drawOval(rect, fillPaint);
-
-    // The iconic center crease curve of the bean
-    final path = Path();
-    final h = size.height * 0.38;
-    final w = size.width * 0.14;
-    path.moveTo(0, -h);
-    path.cubicTo(w, -h * 0.35, -w, h * 0.35, 0, h);
-    canvas.drawPath(path, linePaint);
-
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant _CoffeeBeanPainter oldDelegate) => oldDelegate.color != color;
 }

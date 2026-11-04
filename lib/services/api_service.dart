@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'recipe_sanitizer.dart';
 import 'seed_data.dart';
 import '../utils/barista_utils.dart';
 
@@ -29,162 +30,9 @@ class ApiService {
     changeNotifier.value++;
   }
 
-  static int _toInt(dynamic value, int fallback) {
-    if (value == null) return fallback;
-    if (value is int) return value;
-    if (value is num) return value.toInt();
-    return int.tryParse(value.toString().trim()) ?? fallback;
-  }
-
-  static num _toNum(dynamic value, num fallback) {
-    if (value == null) return fallback;
-    if (value is num) return value;
-    return num.tryParse(value.toString().trim()) ?? fallback;
-  }
-
-  static String _nonEmptyString(dynamic value, String fallback) {
-    final s = value?.toString().trim() ?? '';
-    return s.isEmpty ? fallback : s;
-  }
-
-  static String _offlineAssetOrPath(dynamic value) {
-    final s = value?.toString().trim() ?? '';
-    if (s.isEmpty || s.startsWith('http')) {
-      return 'assets/images/avatars/generic_fallback.jpg';
-    }
-    return s;
-  }
-
   /// Menjamin tidak ada satupun field resep atau step yang bernilai null.
   static Map<String, dynamic> sanitizeRecipe(Map<dynamic, dynamic> raw, {int fallbackId = 1}) {
-    final id = _toInt(raw['id'], fallbackId);
-    final title = _nonEmptyString(raw['title'], 'Custom Brew Recipe');
-    final author = _nonEmptyString(raw['author'], 'Barista');
-    var category = _nonEmptyString(raw['category'], 'V60');
-    if (category == 'V60 Pour Over') category = 'V60';
-    if (category == 'Japanese Iced') category = 'Japanese';
-
-    final method = _nonEmptyString(raw['method'], category);
-    final beanName = _nonEmptyString(raw['beanName'], 'Specialty Single Origin');
-    final grindSize = _nonEmptyString(raw['grindSize'], 'Medium (22 Klik Comandante)');
-    final waterTempCelsius = _toInt(raw['waterTempCelsius'], 92);
-    final coffeeWeightGrams = _toNum(raw['coffeeWeightGrams'], 15);
-    final iceWeightGrams = _toInt(
-      raw['iceWeightGrams'],
-      category.toLowerCase().contains('iced') ? 90 : 0,
-    );
-
-    final rawSteps = raw['steps'];
-    final List<Map<String, dynamic>> sanitizedSteps = [];
-    int sumDuration = 0;
-    int sumWater = 0;
-
-    if (rawSteps is List && rawSteps.isNotEmpty) {
-      for (int i = 0; i < rawSteps.length; i++) {
-        final s = rawSteps[i];
-        if (s is Map) {
-          final stepTitle = _nonEmptyString(s['title'], 'Step ${i + 1}');
-          final duration = _toInt(s['durationSeconds'] ?? s['timeSeconds'], 30);
-          final waterAdded = _toInt(s['waterAddedGrams'] ?? s['waterGrams'], 0);
-          sumDuration += duration;
-          sumWater += waterAdded;
-
-          String defaultInstruction;
-          if (waterAdded > 0 && i == 0) {
-            defaultInstruction =
-                'Tuang ${waterAdded}g air ($waterTempCelsius°C) secara merata untuk fase blooming & degassing selama ${duration}s.';
-          } else if (waterAdded > 0) {
-            defaultInstruction =
-                'Tuang ${waterAdded}g air secara spiral stabil hingga mencapai total ${sumWater}g pada timbangan dalam ${duration}s.';
-          } else {
-            defaultInstruction =
-                'Tahan fase imersi / biarkan air terekstraksi dan mengalir turun (drawdown) selama ${duration}s.';
-          }
-
-          final instruction = _nonEmptyString(s['instruction'], defaultInstruction);
-
-          sanitizedSteps.add({
-            'stepOrder': i + 1,
-            'title': stepTitle,
-            'durationSeconds': duration,
-            'waterAddedGrams': waterAdded,
-            'timeSeconds': duration,
-            'waterGrams': waterAdded,
-            'cumulativeWaterGrams': sumWater,
-            'instruction': instruction,
-          });
-        }
-      }
-    }
-
-    if (sanitizedSteps.isEmpty) {
-      final fallbackWater = _toInt(raw['totalWaterWeightGrams'], 225);
-      final bloomWater = (fallbackWater * 0.2).round().clamp(30, 60);
-      final mainWater = (fallbackWater - bloomWater).clamp(50, 500);
-      sanitizedSteps.addAll([
-        {
-          'stepOrder': 1,
-          'title': '1. Blooming',
-          'durationSeconds': 35,
-          'waterAddedGrams': bloomWater,
-          'timeSeconds': 35,
-          'waterGrams': bloomWater,
-          'cumulativeWaterGrams': bloomWater,
-          'instruction': 'Tuang ${bloomWater}g air secara merata dan goyangkan dripper lembut.',
-        },
-        {
-          'stepOrder': 2,
-          'title': '2. Main Pour',
-          'durationSeconds': 95,
-          'waterAddedGrams': mainWater,
-          'timeSeconds': 95,
-          'waterGrams': mainWater,
-          'cumulativeWaterGrams': bloomWater + mainWater,
-          'instruction': 'Tuang ${mainWater}g air secara spiral stabil hingga mencapai ${bloomWater + mainWater}g.',
-        },
-      ]);
-      sumDuration = 130;
-      sumWater = bloomWater + mainWater;
-    }
-
-    final rawTotalWater = _toInt(raw['totalWaterWeightGrams'], 0);
-    final totalWaterWeightGrams = rawTotalWater > 0 ? rawTotalWater : (sumWater > 0 ? sumWater : 225);
-
-    final rawTotalTime = _toInt(raw['totalTimeSeconds'], 0);
-    final totalTimeSeconds = rawTotalTime > 0 ? rawTotalTime : (sumDuration > 0 ? sumDuration : 130);
-
-    final coverUrl = _offlineAssetOrPath(raw['coverImageUrl'] ?? raw['authorImageUrl']);
-    final avatarUrl = _offlineAssetOrPath(raw['authorAvatarUrl'] ?? raw['authorImageUrl']);
-
-    return {
-      'id': id,
-      'title': title,
-      'author': author,
-      'coverImageUrl': coverUrl,
-      'authorAvatarUrl': avatarUrl,
-      'authorImageUrl': coverUrl,
-      'beanName': beanName,
-      'variety': _nonEmptyString(raw['variety'] ?? raw['beanVariety'], 'Specialty Arabica'),
-      'process': _nonEmptyString(raw['process'] ?? raw['beanProcess'], ''),
-      'roastLevel': _nonEmptyString(raw['roastLevel'], 'Light-Medium'),
-      'method': method,
-      'category': category,
-      'waterTempCelsius': waterTempCelsius,
-      'grindSize': grindSize,
-      'coffeeWeightGrams': coffeeWeightGrams,
-      'totalWaterWeightGrams': totalWaterWeightGrams,
-      'iceWeightGrams': iceWeightGrams,
-      'waterPpm': _nonEmptyString(raw['waterPpm'], '70-85 ppm'),
-      'tastingNotes': _nonEmptyString(raw['tastingNotes'], 'Balanced Sweetness, Clean Acidity, Aromatic Finish'),
-      'totalTimeSeconds': totalTimeSeconds,
-      'description': _nonEmptyString(
-        raw['description'],
-        'Resep seduh profesional menggunakan $method pada suhu $waterTempCelsius°C dengan gilingan $grindSize.',
-      ),
-      'isCustom': raw['isCustom'] == true,
-      'createdAt': _nonEmptyString(raw['createdAt'], DateTime.now().toIso8601String()),
-      'steps': sanitizedSteps,
-    };
+    return RecipeSanitizer.sanitizeRecipe(raw, fallbackId: fallbackId);
   }
 
   // --- RECIPES (100% OFFLINE: DEFAULT DARI SEED_DATA + CUSTOM LOKAL) ---
@@ -224,7 +72,7 @@ class ApiService {
     final List<Map<String, dynamic>> allRecipes = [];
 
     for (final r in defaultSeeds) {
-      final id = _toInt(r['id'], 0);
+      final id = RecipeSanitizer.toInt(r['id'], 0);
       if (deletedDefaultIds.contains(id)) continue;
       allRecipes.add(sanitizeRecipe(r, fallbackId: id));
     }
@@ -271,7 +119,7 @@ class ApiService {
 
     var newId = 501;
     for (final r in currentRecipes) {
-      final rId = _toInt(r['id'], 0);
+      final rId = RecipeSanitizer.toInt(r['id'], 0);
       if (rId >= newId) newId = rId + 1;
     }
 
@@ -306,7 +154,7 @@ class ApiService {
       try {
         final customList = json.decode(customJsonStr) as List<dynamic>;
         final beforeLen = customList.length;
-        customList.removeWhere((r) => r is Map && _toInt(r['id'], -1) == id);
+        customList.removeWhere((r) => r is Map && RecipeSanitizer.toInt(r['id'], -1) == id);
         if (customList.length != beforeLen) {
           await prefs.setString(_customRecipesKey, json.encode(customList));
         }

@@ -1,22 +1,27 @@
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/router/app_router.dart';
 import 'theme/app_theme.dart';
-import 'screens/splash_screen.dart';
 
 void main() {
-  runApp(const CoffeeHubApp());
+  runApp(const ProviderScope(child: CoffeeHubApp()));
 }
 
-class CoffeeHubApp extends StatelessWidget {
+/// Root widget aplikasi Coffee Labs berbasis Riverpod ConsumerWidget & GoRouter deklaratif.
+class CoffeeHubApp extends ConsumerWidget {
   const CoffeeHubApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(appRouterProvider);
+
+    return MaterialApp.router(
       title: 'Coffee Labs',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      routerConfig: router,
       builder: (context, child) {
         // Mencegah bug sinkronisasi engine Chromium accessibility_bridge (AXTree) di Windows Desktop
         if (!kIsWeb && Platform.isWindows) {
@@ -24,7 +29,6 @@ class CoffeeHubApp extends StatelessWidget {
         }
         return child ?? const SizedBox();
       },
-      home: const SplashScreen(),
     );
   }
 }

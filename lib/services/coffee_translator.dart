@@ -310,8 +310,6 @@ class CoffeeTranslator {
     t = t.replaceAll('Imersi / Tunggu', 'Immersion / Drawdown');
     t = t.replaceAll('Aduk perlahan', 'Stir gently');
     t = t.replaceAll('Putar server perlahan', 'Swirl server gently');
-    t = t.replaceAll('hingga timbangan', 'until scale reads');
-    t = t.replaceAll('hingga', 'until');
 
     return t;
   }

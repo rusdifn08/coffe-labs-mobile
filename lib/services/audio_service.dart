@@ -10,6 +10,31 @@ class AudioService {
   static bool _shouldBePlayingBgm = false;
   static StreamSubscription<PlayerState>? _bgmStateSub;
 
+  static bool _isMuted = false;
+  static bool get isMuted => _isMuted;
+  static final ValueNotifier<bool> isMutedNotifier = ValueNotifier<bool>(false);
+
+  static void toggleMute() {
+    setMuted(!_isMuted);
+  }
+
+  static void setMuted(bool muted) {
+    _isMuted = muted;
+    isMutedNotifier.value = muted;
+    if (_isMuted) {
+      _bgmPlayer?.setVolume(0.0);
+    } else {
+      _bgmPlayer?.setVolume(0.55);
+      if (_shouldBePlayingBgm) {
+        if (_bgmPlayer == null) {
+          startBgm();
+        } else {
+          ensureBgmPlaying();
+        }
+      }
+    }
+  }
+
   // Track favorit pengguna: Chill Coffee Lounge
   static const String chillTrackPath = 'audio/calm_music.m4a';
   static const String currentTrackTitle = 'Chill Coffee Lounge';
@@ -40,7 +65,7 @@ class AudioService {
       audioFocus: AndroidAudioFocus.none,
     ),
     iOS: AudioContextIOS(
-      category: AVAudioSessionCategory.ambient,
+      category: AVAudioSessionCategory.playback,
       options: const {
         AVAudioSessionOptions.mixWithOthers,
       },
@@ -62,6 +87,7 @@ class AudioService {
   }
 
   static Future<void> playClick() async {
+    if (_isMuted) return;
     try {
       await _initContext();
       await _sfxPlayer.stop();
@@ -71,6 +97,7 @@ class AudioService {
   }
 
   static Future<void> playTick() async {
+    if (_isMuted) return;
     try {
       await _initContext();
       await _tickPlayer.stop();
@@ -80,6 +107,7 @@ class AudioService {
   }
 
   static Future<void> playTransition() async {
+    if (_isMuted) return;
     try {
       await _initContext();
       await _sfxPlayer.stop();
@@ -89,6 +117,7 @@ class AudioService {
   }
 
   static Future<void> playEnjoy() async {
+    if (_isMuted) return;
     try {
       await _initContext();
       await _sfxPlayer.stop();
@@ -98,9 +127,10 @@ class AudioService {
 
   /// Memulai pemutaran musik santai 'Chill Coffee Lounge' saat menyeduh
   static Future<void> startBgm() async {
+    _shouldBePlayingBgm = true;
+    if (_isMuted) return;
     try {
       await _initContext();
-      _shouldBePlayingBgm = true;
 
       // Bersihkan player lama jika ada
       if (_bgmPlayer != null) {
@@ -134,6 +164,7 @@ class AudioService {
 
   /// Memastikan BGM tetap aktif & berputar jika sempat di-pause oleh sistem
   static void ensureBgmPlaying() {
+    if (_isMuted) return;
     if (_shouldBePlayingBgm && _bgmPlayer != null) {
       if (_bgmPlayer!.state == PlayerState.paused) {
         _bgmPlayer!.resume();

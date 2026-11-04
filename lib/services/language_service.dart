@@ -9,8 +9,8 @@ class LanguageService {
   static const String _keyLanguage = 'app_selected_language';
   static final LanguageNotifier changeNotifier = LanguageNotifier();
 
-  // Bahasa bawaan (Default): English ('en')
-  static String _currentLanguage = 'en';
+  // Bahasa bawaan (Default): Bahasa Indonesia ('id')
+  static String _currentLanguage = 'id';
 
   static String get currentLanguage => _currentLanguage;
 
@@ -19,10 +19,10 @@ class LanguageService {
   static Future<String> getLanguage() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      _currentLanguage = prefs.getString(_keyLanguage) ?? 'en';
+      _currentLanguage = prefs.getString(_keyLanguage) ?? 'id';
       return _currentLanguage;
     } catch (_) {
-      return 'en';
+      return 'id';
     }
   }
 

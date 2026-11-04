@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
@@ -10,7 +9,18 @@ import '../services/language_service.dart';
 import '../services/coffee_translator.dart';
 import '../services/smart_scale_service.dart';
 import '../widgets/thermal_receipt_sheet.dart';
-import 'brew_journal_screen.dart';
+import '../features/brew/timer/widgets/brew_doctor_sheet.dart';
+import '../features/brew/timer/widgets/brew_sensory_evaluation_sheet.dart';
+import '../features/brew/timer/widgets/circular_brew_timer.dart';
+import '../features/brew/timer/widgets/brew_step_tile.dart';
+import '../features/brew/timer/widgets/brew_timer_controls.dart';
+import '../features/brew/timer/widgets/segmented_timer_painter.dart';
+import '../features/brew/timer/utils/brew_method_helper.dart';
+import '../features/brew/timer/widgets/brew_spec_header_bar.dart';
+import '../features/brew/timer/widgets/brew_iced_banner.dart';
+import '../features/brew/timer/widgets/brew_scale_live_badge.dart';
+import '../features/brew/tts/brewing_tts_service.dart';
+import '../features/gamification/services/gamification_service.dart';
 
 class BrewTimerScreen extends StatefulWidget {
   final dynamic recipeData;
@@ -24,15 +34,17 @@ class BrewTimerScreen extends StatefulWidget {
 class _BrewTimerScreenState extends State<BrewTimerScreen> {
   Timer? _timer;
   Timer? _prepTimer;
-
   int _elapsedSeconds = 0;
-  int _prepSeconds = 5;
-
+  int _prepSeconds = 5; // 5s lead time for T-5 vocal announcement and countdown
   bool _isRunning = false;
   bool _isPreparing = false;
-
   final ScrollController _stepScrollController = ScrollController();
   int _lastScrolledStepIndex = -1;
+
+  // TTS Tracking sets to prevent duplicate vocal prompts
+  final Set<int> _announcedStepIndices = {};
+  int _lastCountdownStepIndex = -1;
+  int _lastCountdownSec = -1;
 
   late Map<String, dynamic> _recipe;
   late String title;
@@ -70,6 +82,8 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
     ApiService.recordBrew(_recipe);
     TrialService.recordTrialBrew();
 
+    unawaited(BrewingTTSService.instance.preloadRecipeSteps(_recipe));
+
     SmartScaleService.instance.addListener(_onScaleChanged);
     SmartScaleService.instance.onAutoStartBrewTimer = () {
       if (_isPreparing) {
@@ -78,6 +92,24 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
         _toggleTimer();
       }
     };
+  }
+
+  void _announceStep(int stepIdx, {bool isNextStep = false}) {
+    if (stepIdx < 0 || stepIdx >= steps.length) return;
+    if (_announcedStepIndices.contains(stepIdx)) return;
+    _announcedStepIndices.add(stepIdx);
+
+    final s = steps[stepIdx];
+    BrewingTTSService.instance.speakInstruction(
+      title: (s['title'] ?? 'Tahap ${stepIdx + 1}').toString(),
+      instruction: (s['instruction'] ?? '').toString(),
+      stepIndex: stepIdx,
+      stepWaterGrams: _stepWater(s),
+      cumulativeWaterGrams: _getCumulativeWaterUpTo(stepIdx),
+      waterTempCelsius: waterTempCelsius,
+      durationSeconds: _stepDuration(s),
+      isNextStep: isNextStep,
+    );
   }
 
   void _onScaleChanged() {
@@ -99,6 +131,7 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
     _timer?.cancel();
     _prepTimer?.cancel();
     AudioService.stopBgm();
+    BrewingTTSService.instance.stop();
     _stepScrollController.dispose();
     super.dispose();
   }
@@ -129,6 +162,10 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
       _isRunning = true;
     });
 
+    if (steps.isNotEmpty && !_announcedStepIndices.contains(0)) {
+      _announceStep(0);
+    }
+
     AudioService.startBgm();
     _checkAutoScroll();
 
@@ -138,18 +175,31 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
         setState(() => _elapsedSeconds++);
         _checkAutoScroll();
 
-        // Pastikan background music tetap berputar lancar tanpa terhenti oleh OS
         if (_elapsedSeconds % 2 == 0) {
           AudioService.ensureBgmPlaying();
         }
 
         int accumulated = 0;
-        for (final step in steps) {
-          accumulated += _stepDuration(step);
+        for (int i = 0; i < steps.length; i++) {
+          final step = steps[i];
+          final stepDur = _stepDuration(step);
+          accumulated += stepDur;
           if (accumulated > _elapsedSeconds) {
             final int left = accumulated - _elapsedSeconds;
-            if (left <= 5 && left > 0) {
-              AudioService.playTick();
+
+            // Audio Timing:
+            // Pembacaan judul step dan deskripsi tepat di 5 detik sebelum masuk ke step selanjutnya
+            if (i + 1 < steps.length) {
+              if (left <= 5 && !_announcedStepIndices.contains(i + 1)) {
+                _announceStep(i + 1, isNextStep: true);
+              } else if (left <= 5 && left >= 1) {
+                if (_lastCountdownStepIndex != i || _lastCountdownSec != left) {
+                  _lastCountdownStepIndex = i;
+                  _lastCountdownSec = left;
+                  AudioService.playTick();
+                  BrewingTTSService.instance.speakCountdown(left);
+                }
+              }
             }
             break;
           } else if (accumulated == _elapsedSeconds && _elapsedSeconds != totalSeconds) {
@@ -161,6 +211,7 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
         setState(() => _isRunning = false);
         AudioService.stopBgm();
         AudioService.playEnjoy();
+        BrewingTTSService.instance.speakCompletion();
         _promptJournal();
       }
     });
@@ -184,6 +235,7 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
       _timer?.cancel();
       _prepTimer?.cancel();
       AudioService.stopBgm();
+      BrewingTTSService.instance.stop();
       setState(() {
         _isRunning = false;
         _isPreparing = false;
@@ -194,10 +246,20 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
       }
       if (_elapsedSeconds == 0 && _prepSeconds > 0) {
         setState(() => _isPreparing = true);
+
+        // Vocal Step 0 announcement at T-minus 5s
+        if (steps.isNotEmpty) {
+          _announceStep(0, isNextStep: false);
+        }
+
         _prepTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
           if (_prepSeconds > 1) {
-            AudioService.playTick();
-            setState(() => _prepSeconds--);
+            final nextPrep = _prepSeconds - 1;
+            if (nextPrep <= 5 && nextPrep >= 1) {
+              AudioService.playTick();
+              BrewingTTSService.instance.speakCountdown(nextPrep);
+            }
+            setState(() => _prepSeconds = nextPrep);
           } else {
             _prepTimer?.cancel();
             AudioService.playTransition();
@@ -214,6 +276,10 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
     _timer?.cancel();
     _prepTimer?.cancel();
     AudioService.stopBgm();
+    BrewingTTSService.instance.stop();
+    _announcedStepIndices.clear();
+    _lastCountdownSec = -1;
+    _lastCountdownStepIndex = -1;
     setState(() {
       _elapsedSeconds = 0;
       _prepSeconds = 5;
@@ -226,7 +292,9 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
 
   void _jumpToStep(int targetIndex) {
     if (steps.isEmpty) return;
+    BrewingTTSService.instance.stop();
     final clamped = targetIndex.clamp(0, steps.length - 1);
+    _announcedStepIndices.remove(clamped);
     int startSec = 0;
     for (int i = 0; i < clamped; i++) {
       startSec += _stepDuration(steps[i]);
@@ -240,6 +308,9 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
     });
     _lastScrolledStepIndex = clamped;
     _scrollToStep(clamped);
+    if (_isRunning) {
+      _announceStep(clamped);
+    }
   }
 
   void _add10SecondsToActiveStep() {
@@ -260,447 +331,17 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
     );
   }
 
-  void _showDialInDoctorSheet() {
-    final isEn = LanguageService.isEnglish;
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppTheme.bgCream,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  isEn ? 'Brew Doctor (Flavor Correction Guide)' : 'Brew Doctor (Panduan Koreksi Rasa)',
-                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.textDark),
-                ),
-                IconButton(
-                  icon: const Icon(CupertinoIcons.xmark_circle_fill, color: AppTheme.textMuted),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            _doctorTipCard(
-              icon: CupertinoIcons.bolt_fill,
-              color: Colors.orange,
-              title: isEn ? 'Too Sour / Acidic / Thin (Under-Extracted)' : 'Terlalu Asam / Kecut / Tipis (Under-Extracted)',
-              fix: isEn
-                  ? '• Fine grind by 1–2 clicks\n• Raise water temp by +2°C\n• Pour slightly slower or extend bloom time.'
-                  : '• Haluskan gilingan 1–2 klik\n• Naikkan suhu air +2°C\n• Tuang sedikit lebih lambat atau tambah waktu bloom.',
-            ),
-            _doctorTipCard(
-              icon: CupertinoIcons.flame_fill,
-              color: Colors.redAccent,
-              title: isEn ? 'Too Bitter / Astringent / Dry (Over-Extracted)' : 'Terlalu Pahit / Sepat / Kering (Over-Extracted)',
-              fix: isEn
-                  ? '• Coarsen grind by 1–2 clicks\n• Lower water temp by -2°C\n• Reduce agitation (swirl) and pour gently in center.'
-                  : '• Kasarkan gilingan 1–2 klik\n• Turunkan suhu air -2°C\n• Kurangi goyangan (swirl) dan tuang lebih lembut di tengah.',
-            ),
-            _doctorTipCard(
-              icon: CupertinoIcons.drop,
-              color: Colors.blueAccent,
-              title: isEn ? 'Low Body / Watery Brew (Weak)' : 'Kurang Body / Terlalu Encer (Weak)',
-              fix: isEn
-                  ? '• Use a tighter ratio (e.g. 1:14 or 1:15)\n• Increase coffee dose by +1g to +2g.'
-                  : '• Gunakan rasio lebih pendek (misal 1:14 atau 1:15)\n• Tambahkan dosis kopi +1g hingga +2g.',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _doctorTipCard({
-    required IconData icon,
-    required Color color,
-    required String title,
-    required String fix,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceWhite,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: 16),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(title, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppTheme.textDark)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(fix, style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted, height: 1.4)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCompactSensorySlider({
-    required String label,
-    required double value,
-    required Color activeColor,
-    required ValueChanged<double> onChanged,
-  }) {
-    return SizedBox(
-      height: 28,
-      child: Row(
-        children: [
-          SizedBox(
-            width: 115,
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.textDark),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          Expanded(
-            child: SliderTheme(
-              data: SliderThemeData(
-                trackHeight: 3.0,
-                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5.5),
-                overlayShape: const RoundSliderOverlayShape(overlayRadius: 10),
-                activeTrackColor: activeColor,
-                inactiveTrackColor: activeColor.withValues(alpha: 0.18),
-                thumbColor: activeColor,
-                overlayColor: activeColor.withValues(alpha: 0.15),
-              ),
-              child: Slider(
-                value: value,
-                min: 1.0,
-                max: 5.0,
-                divisions: 8,
-                onChanged: onChanged,
-              ),
-            ),
-          ),
-          SizedBox(
-            width: 26,
-            child: Text(
-              value.toStringAsFixed(1),
-              textAlign: TextAlign.end,
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: activeColor),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  void _showDialInDoctorSheet() => BrewDoctorSheet.show(context);
 
   void _promptJournal() {
-    if (!mounted) return;
-    double acidity = 3.0;
-    double sweetness = 3.5;
-    double bitterness = 2.0;
-    double body = 3.0;
-    double overallScore = 4.5;
-
-    final isEn = LanguageService.isEnglish;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) {
-          // Dynamic Live Diagnosis & Advice
-          String status = isEn ? 'Harmonious & Balanced 👍' : 'Harmonis & Nikmat 👍';
-          String badge = 'SWEET SPOT';
-          IconData icon = CupertinoIcons.checkmark_circle_fill;
-          Color color = Colors.green.shade700;
-          Color bgColor = Colors.green.withValues(alpha: 0.08);
-          String advice = isEn
-              ? '✨ Sweetness and acidity balance is spot-on!'
-              : '✨ Keseimbangan rasa manis dan keasaman sangat ideal!';
-
-          if (bitterness >= 4.0 || (bitterness - sweetness >= 1.5)) {
-            status = isEn ? 'Over-Extracted (Too Bitter & Astringent)' : 'Over-Extracted (Terlalu Pahit & Sepat)';
-            badge = 'OVER-EXTRACTED';
-            icon = CupertinoIcons.exclamationmark_triangle_fill;
-            color = Colors.redAccent;
-            bgColor = Colors.red.withValues(alpha: 0.08);
-            advice = isEn
-                ? '💡 Coarsen grind 1-2 clicks or lower water temp -2°C.'
-                : '💡 Kasarkan gilingan 1-2 klik atau turunkan suhu air -2°C.';
-          } else if (acidity >= 4.0 && sweetness <= 2.5) {
-            status = isEn ? 'Under-Extracted (Sharp Acidity / Hollow)' : 'Under-Extracted (Asam Tajam / Tipis)';
-            badge = 'UNDER-EXTRACTED';
-            icon = CupertinoIcons.bolt_fill;
-            color = Colors.orange.shade800;
-            bgColor = Colors.orange.withValues(alpha: 0.08);
-            advice = isEn
-                ? '💡 Fine grind 1-2 clicks or raise water temp +2°C.'
-                : '💡 Haluskan gilingan 1-2 klik atau naikkan suhu air +2°C.';
-          } else if (body <= 1.5) {
-            status = isEn ? 'Low Body (Watery Brew)' : 'Under-Body (Seduhan Terlalu Encer)';
-            badge = 'LOW BODY';
-            icon = CupertinoIcons.drop;
-            color = Colors.blueGrey;
-            bgColor = Colors.blueGrey.withValues(alpha: 0.08);
-            advice = isEn
-                ? '💡 Extend bloom by 10-15s or adjust pour agitation.'
-                : '💡 Perpanjang waktu blooming 10-15s atau percepat tuang pour.';
-          } else if (sweetness >= 3.5 && bitterness <= 2.5 && acidity >= 2.5 && acidity <= 3.5) {
-            status = isEn ? 'Sweet Spot! Balanced Extraction 🎯' : 'Sweet Spot! Ekstraksi Seimbang 🎯';
-            badge = 'SWEET SPOT';
-            icon = CupertinoIcons.checkmark_circle_fill;
-            color = Colors.green.shade700;
-            bgColor = Colors.green.withValues(alpha: 0.08);
-            advice = isEn
-                ? '✨ Sweetness and acidity balance is spot-on!'
-                : '✨ Keseimbangan rasa manis dan keasaman sangat ideal!';
-          }
-
-          final displayRecipeTitle = isEn
-              ? CoffeeTranslator.translateTitle(_recipe['title']?.toString() ?? 'Brewed Coffee')
-              : (_recipe['title']?.toString() ?? 'Seduhan Kopi');
-
-          return Dialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-            insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Header
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(7),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryBrown.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(CupertinoIcons.flame_fill, color: AppTheme.primaryBrown, size: 18),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              isEn ? 'Sensory Evaluation' : 'Evaluasi Hasil Seduh',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.textDark),
-                            ),
-                            Text(
-                              displayRecipeTitle,
-                              style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppTheme.accentGold.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(CupertinoIcons.star_fill, size: 12, color: AppTheme.accentAmber),
-                            const SizedBox(width: 4),
-                            Text(
-                              overallScore.toStringAsFixed(1),
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryBrown),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Compact Sensory Sliders
-                  _buildCompactSensorySlider(
-                    label: isEn ? 'Acidity' : 'Keasaman (Acidity)',
-                    value: acidity,
-                    activeColor: Colors.amber.shade700,
-                    onChanged: (v) => setDialogState(() => acidity = v),
-                  ),
-                  _buildCompactSensorySlider(
-                    label: isEn ? 'Sweetness' : 'Kemanisan (Sweetness)',
-                    value: sweetness,
-                    activeColor: Colors.deepOrangeAccent,
-                    onChanged: (v) => setDialogState(() => sweetness = v),
-                  ),
-                  _buildCompactSensorySlider(
-                    label: isEn ? 'Bitterness' : 'Kepahitan (Bitterness)',
-                    value: bitterness,
-                    activeColor: Colors.brown.shade700,
-                    onChanged: (v) => setDialogState(() => bitterness = v),
-                  ),
-                  _buildCompactSensorySlider(
-                    label: isEn ? 'Body & Texture' : 'Ketebalan (Body)',
-                    value: body,
-                    activeColor: Colors.teal.shade700,
-                    onChanged: (v) => setDialogState(() => body = v),
-                  ),
-                  _buildCompactSensorySlider(
-                    label: isEn ? 'Overall Score' : 'Skor Keseluruhan',
-                    value: overallScore,
-                    activeColor: AppTheme.primaryBrown,
-                    onChanged: (v) => setDialogState(() => overallScore = v),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // Smart Diagnosis Box
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: bgColor,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: color.withValues(alpha: 0.3)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(icon, size: 13, color: color),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                status,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: color,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          advice,
-                          style: const TextStyle(fontSize: 10.5, color: AppTheme.textDark, height: 1.25),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Action Buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            visualDensity: VisualDensity.compact,
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            side: BorderSide(color: AppTheme.primaryBrown.withValues(alpha: 0.25)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          onPressed: () => Navigator.pop(ctx),
-                          child: Text(isEn ? 'Skip' : 'Lewati', style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: AppTheme.accentGold.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppTheme.accentGold.withValues(alpha: 0.4)),
-                        ),
-                        child: IconButton(
-                          tooltip: isEn ? 'Print Bluetooth Receipt' : 'Print Struk Bluetooth',
-                          visualDensity: VisualDensity.compact,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                          constraints: const BoxConstraints(),
-                          icon: const Icon(CupertinoIcons.printer_fill, size: 18, color: AppTheme.primaryBrown),
-                          onPressed: () {
-                            ThermalReceiptSheet.show(
-                              context,
-                              _recipe,
-                              tastingNotes: [
-                                status,
-                                '${isEn ? "Acidity" : "Asam"}: ${acidity.toStringAsFixed(1)} | ${isEn ? "Sweetness" : "Manis"}: ${sweetness.toStringAsFixed(1)} | ${isEn ? "Bitterness" : "Pahit"}: ${bitterness.toStringAsFixed(1)} | Body: ${body.toStringAsFixed(1)}',
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        flex: 2,
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryBrown,
-                            foregroundColor: Colors.white,
-                            visualDensity: VisualDensity.compact,
-                            padding: const EdgeInsets.symmetric(vertical: 9),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            elevation: 1,
-                          ),
-                          onPressed: () async {
-                            Navigator.pop(ctx);
-                            await ApiService.addJournalEntry({
-                              'recipeId': _recipe['id'],
-                              'recipeTitle': _recipe['title'],
-                              'author': _recipe['author'],
-                              'authorAvatarUrl': _recipe['authorAvatarUrl'],
-                              'authorImageUrl': _recipe['coverImageUrl'],
-                              'grindNote': '${_recipe['grindSize'] ?? ''} • $badge',
-                              'rating': overallScore,
-                              'notes': '$status | ${isEn ? "Acidity" : "Asam"}: ${acidity.toStringAsFixed(1)}, ${isEn ? "Sweetness" : "Manis"}: ${sweetness.toStringAsFixed(1)}, ${isEn ? "Bitterness" : "Pahit"}: ${bitterness.toStringAsFixed(1)}, Body: ${body.toStringAsFixed(1)}. $advice',
-                            });
-                            if (!mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(isEn ? 'Saved to Brew Journal.' : 'Tersimpan di Jurnal Brew.'),
-                                action: SnackBarAction(
-                                  label: isEn ? 'View' : 'Buka',
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const BrewJournalScreen()),
-                                    );
-                                  },
-                                ),
-                              ),
-                            );
-                          },
-                          icon: const Icon(CupertinoIcons.bookmark_fill, size: 13),
-                          label: Text(isEn ? 'Save to Journal' : 'Simpan ke Jurnal', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
+    GamificationService.instance.recordBrewCompleted();
+    if (mounted) BrewSensoryEvaluationSheet.show(context, _recipe);
   }
 
   String _formatTime(int seconds) {
-    final m = seconds ~/ 60;
-    final s = seconds % 60;
-    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    final m = (seconds ~/ 60).toString().padLeft(2, '0');
+    final s = (seconds % 60).toString().padLeft(2, '0');
+    return '$m:$s';
   }
 
   int _getActiveStepIndex() {
@@ -726,13 +367,14 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
   Widget build(BuildContext context) {
     final isEn = LanguageService.isEnglish;
     final displayTitle = isEn ? CoffeeTranslator.translateTitle(title) : title;
-
     int activeIndex = (_elapsedSeconds > 0 || _isRunning) ? _getActiveStepIndex() : 0;
     if (_elapsedSeconds >= totalSeconds && steps.isNotEmpty) activeIndex = steps.length - 1;
-
     final activeStep = steps.isNotEmpty ? steps[activeIndex] : null;
     final activeTargetWater = activeStep != null ? _getCumulativeWaterUpTo(activeIndex) : 0;
-
+    final family = BrewMethodHelper.detectFamily(
+      method: _recipe['method']?.toString(),
+      category: _recipe['category']?.toString(),
+    );
     int runningWater = 0;
     int runningTime = 0;
 
@@ -754,478 +396,204 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Banner Japanese Iced: Siapkan es di server sebelum mulai seduh (hilang setelah hitung mundur 5 detik selesai)
-          if (iceWeightGrams > 0 && (_isPreparing || _elapsedSeconds == 0))
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.fromLTRB(20, 6, 20, 6),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.lightBlue.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(CupertinoIcons.snow, size: 16, color: Colors.blueAccent),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      isEn
-                          ? 'Japanese Iced: Prepare ${iceWeightGrams}g Ice in Server + ${totalWaterGrams}g Hot Water ($waterTempCelsius°C)'
-                          : 'Japanese Iced: Siapkan ${iceWeightGrams}g Es di Server + ${totalWaterGrams}g Air Panas ($waterTempCelsius°C)',
-                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppTheme.textDark),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
 
-          const SizedBox(height: 6),
-          // CIRCULAR TIMER DISPLAY (Diperbesar sedikit, info timbangan flow rate dihilangkan)
-          Center(
-            child: SizedBox(
-              width: 245,
-              height: 245,
-              child: CustomPaint(
-                painter: SegmentedTimerPainter(
-                  steps: steps,
-                  totalSeconds: totalSeconds,
-                  elapsedSeconds: _elapsedSeconds,
-                ),
-                child: Center(
+          if (isLandscape) {
+            // Mode Cockpit Seduh Landscape: Timer di Kiri, Alur Tuangan di Kanan
+            int lRunningWater = 0;
+            int lRunningTime = 0;
+
+            return Row(
+              children: [
+                // Panel Kiri: Timer & Kontrol Eksekusi
+                Expanded(
+                  flex: 5,
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      if (_isPreparing) ...[
-                        Text(
-                          isEn ? 'GET READY' : 'SIAP SEDUH',
-                          style: const TextStyle(color: AppTheme.textMuted, fontSize: 13, fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          '$_prepSeconds',
-                          style: const TextStyle(
-                            fontSize: 70,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.accentAmber,
+                      BrewSpecHeaderBar(recipe: _recipe),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CircularBrewTimer(
+                                steps: steps,
+                                totalSeconds: totalSeconds,
+                                elapsedSeconds: _elapsedSeconds,
+                                isPreparing: _isPreparing,
+                                prepSeconds: _prepSeconds,
+                                activeTargetWater: activeTargetWater,
+                                isEndingSoon: _isEndingSoon(),
+                                onSkipCountdown: _startMainTimer,
+                                formatTime: _formatTime,
+                                methodFamily: family,
+                              ),
+                            ],
                           ),
                         ),
-                        TextButton(
-                          onPressed: _startMainTimer,
-                          style: TextButton.styleFrom(
-                            visualDensity: VisualDensity.compact,
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                          ),
-                          child: Text(
-                            isEn ? 'Skip Countdown →' : 'Lewati Hitung Mundur →',
-                            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppTheme.primaryBrown),
-                          ),
-                        ),
-                      ] else if (_elapsedSeconds > 0 && _elapsedSeconds >= totalSeconds) ...[
-                        const Text(
-                          'Enjoy your',
-                          style: TextStyle(color: AppTheme.primaryBrown, fontSize: 22, fontWeight: FontWeight.bold),
-                        ),
-                        const Text(
-                          'coffee!',
-                          style: TextStyle(color: AppTheme.primaryBrown, fontSize: 30, fontWeight: FontWeight.bold),
-                        ),
-                      ] else ...[
-                        Text(
-                          _formatTime(_elapsedSeconds),
-                          style: TextStyle(
-                            fontSize: 54,
-                            fontWeight: FontWeight.bold,
-                            color: _isEndingSoon() ? Colors.red : AppTheme.primaryBrown,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        Text(
-                          'Target ${_formatTime(totalSeconds)} · ${activeTargetWater}g',
-                          style: const TextStyle(
-                            color: AppTheme.textMuted,
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+                      ),
+                      BrewTimerControls(
+                        activeIndex: activeIndex,
+                        stepsCount: steps.length,
+                        isRunning: _isRunning,
+                        isPreparing: _isPreparing,
+                        onPrevStep: activeIndex > 0 ? () => _jumpToStep(activeIndex - 1) : null,
+                        onNextStep: activeIndex < steps.length - 1 ? () => _jumpToStep(activeIndex + 1) : null,
+                        onReset: _resetTimer,
+                        onToggle: _toggleTimer,
+                        onAdd10Sec: _add10SecondsToActiveStep,
+                      ),
                     ],
                   ),
                 ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
+                const VerticalDivider(width: 1, thickness: 1, color: AppTheme.dividerColor),
+                // Panel Kanan: Smart Scale & Daftar Langkah Tuangan Auto-Scroll
+                Expanded(
+                  flex: 5,
+                  child: Column(
+                    children: [
+                      BrewScaleLiveBadge(isEn: isEn),
+                      Expanded(
+                        child: ListView.builder(
+                          controller: _stepScrollController,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                          itemCount: steps.length,
+                          itemBuilder: (context, index) {
+                            final step = steps[index];
+                            final int stepWater = _stepWater(step);
+                            final int stepDur = _stepDuration(step);
+                            final int startSec = lRunningTime;
+                            lRunningTime += stepDur;
+                            final int endSec = lRunningTime;
+                            lRunningWater += stepWater;
+                            final int cumulativeTarget = lRunningWater;
 
-          // Live Smart Scale Badge (if Bluetooth scale is connected)
-          if (SmartScaleService.instance.isConnected)
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryBrown.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.accentGold.withValues(alpha: 0.4)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(CupertinoIcons.gauge, size: 14, color: AppTheme.primaryBrown),
-                  const SizedBox(width: 6),
-                  Text(
-                    '${SmartScaleService.instance.currentWeight.toStringAsFixed(1)}g',
-                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: AppTheme.primaryBrown),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '(${SmartScaleService.instance.flowRate.toStringAsFixed(1)} g/s)',
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.accentGold),
-                  ),
-                  const SizedBox(width: 12),
-                  InkWell(
-                    onTap: () => SmartScaleService.instance.tare(),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryBrown,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        isEn ? 'TARE' : 'NOL-KAN',
-                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                            final bool isActive = index == activeIndex && !_isPreparing && (_isRunning || _elapsedSeconds > 0);
+                            final bool isDone = _elapsedSeconds > 0 && (index < activeIndex || _elapsedSeconds >= totalSeconds);
+                            final Color stepColor = getColorForStep(index);
 
-          const SizedBox(height: 6),
-
-          // SCROLLABLE STEPS LIST (Auto Scroll & Auto Switch, Active step di-highlight coklat elegan)
-          Expanded(
-            child: ListView.builder(
-              controller: _stepScrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-              itemCount: steps.length,
-              itemBuilder: (context, index) {
-                final step = steps[index];
-                final int stepWater = _stepWater(step);
-                final int stepDur = _stepDuration(step);
-                final int startSec = runningTime;
-                runningTime += stepDur;
-                final int endSec = runningTime;
-                runningWater += stepWater;
-                final int cumulativeTarget = runningWater;
-
-                final bool isActive = index == activeIndex && !_isPreparing && (_isRunning || _elapsedSeconds > 0);
-                final bool isDone = _elapsedSeconds > 0 && (index < activeIndex || _elapsedSeconds >= totalSeconds);
-                final Color stepColor = _getColorForStep(index);
-                final rawTitle = step['title']?.toString() ?? 'Step ${index + 1}';
-                final stepTitle = isEn ? CoffeeTranslator.translateStepTitle(rawTitle) : rawTitle;
-                final rawInstruction = step['instruction']?.toString() ?? '';
-                final instruction = isEn ? CoffeeTranslator.translateInstruction(rawInstruction) : rawInstruction;
-
-                return GestureDetector(
-                  onTap: () => _jumpToStep(index),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: isActive ? AppTheme.primaryBrown : AppTheme.surfaceWhite,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isActive ? AppTheme.accentAmber : AppTheme.primaryBrown.withValues(alpha: 0.1),
-                        width: isActive ? 1.8 : 1.0,
-                      ),
-                      boxShadow: isActive
-                          ? [
-                              BoxShadow(
-                                color: AppTheme.primaryBrown.withValues(alpha: 0.28),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ]
-                          : [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.02),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: isDone
-                                    ? Colors.green.shade600
-                                    : (isActive
-                                        ? AppTheme.accentAmber
-                                        : stepColor.withValues(alpha: 0.2)),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: isDone
-                                    ? const Icon(CupertinoIcons.check_mark, color: Colors.white, size: 18)
-                                    : Text(
-                                        '${index + 1}',
-                                        style: TextStyle(
-                                          color: isActive ? Colors.white : stepColor,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    stepTitle,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: isActive ? 15 : 13.5,
-                                      color: isActive ? Colors.white : AppTheme.textDark,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        stepWater > 0 ? CupertinoIcons.drop_fill : CupertinoIcons.timer,
-                                        size: 12,
-                                        color: isActive
-                                            ? AppTheme.accentAmber
-                                            : (stepWater > 0 ? Colors.blueAccent : AppTheme.accentAmber),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Flexible(
-                                        child: Text(
-                                          stepWater > 0
-                                              ? (isEn
-                                                  ? '+${stepWater}g Water (Target: ${cumulativeTarget}g)'
-                                                  : '+${stepWater}g Air (Target: ${cumulativeTarget}g)')
-                                              : (isEn
-                                                  ? 'Immersion / Drawdown (Total: ${cumulativeTarget}g)'
-                                                  : 'Imersi / Drawdown (Total: ${cumulativeTarget}g)'),
-                                          style: TextStyle(
-                                            fontSize: 11.5,
-                                            color: isActive ? Colors.white.withValues(alpha: 0.9) : AppTheme.textMuted,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  _formatTime(stepDur),
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                    color: isActive ? Colors.white : AppTheme.textDark,
-                                  ),
-                                ),
-                                Text(
-                                  '${_formatTime(startSec)}-${_formatTime(endSec)}',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: isActive ? Colors.white70 : AppTheme.textMuted,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                            return BrewStepTile(
+                              index: index,
+                              step: step,
+                              isActive: isActive,
+                              isDone: isDone,
+                              stepWater: stepWater,
+                              stepDur: stepDur,
+                              startSec: startSec,
+                              endSec: endSec,
+                              cumulativeTarget: cumulativeTarget,
+                              stepColor: stepColor,
+                              onTap: () => _jumpToStep(index),
+                              formatTime: _formatTime,
+                              methodFamily: family,
+                            );
+                          },
                         ),
-                        if (instruction.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: isActive
-                                ? const EdgeInsets.symmetric(horizontal: 10, vertical: 6)
-                                : EdgeInsets.zero,
-                            decoration: isActive
-                                ? BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.18),
-                                    borderRadius: BorderRadius.circular(8),
-                                  )
-                                : null,
-                            child: Text(
-                              instruction,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isActive ? Colors.white.withValues(alpha: 0.95) : AppTheme.textMuted,
-                                height: 1.35,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                );
-              },
-            ),
-          ),
-          // BOTTOM CONTROL PANEL WITH QUICK STEP CONTROLS
-          Container(
-            padding: const EdgeInsets.only(top: 10, bottom: 20, left: 20, right: 20),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceWhite,
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, -10)),
-              ],
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                IconButton(
-                  tooltip: isEn ? 'Previous Step' : 'Tahap Sebelumnya',
-                  onPressed: activeIndex > 0 ? () => _jumpToStep(activeIndex - 1) : null,
-                  icon: const Icon(CupertinoIcons.backward_end_fill, color: AppTheme.primaryBrown),
-                ),
-                FloatingActionButton.small(
-                  heroTag: 'reset',
-                  tooltip: isEn ? 'Reset Timer' : 'Reset Timer',
-                  backgroundColor: AppTheme.bgCream,
-                  elevation: 0,
-                  onPressed: _resetTimer,
-                  child: const Icon(CupertinoIcons.refresh, color: AppTheme.primaryBrown, size: 18),
-                ),
-                SizedBox(
-                  width: 68,
-                  height: 68,
-                  child: FloatingActionButton(
-                    heroTag: 'playpause',
-                    backgroundColor: AppTheme.primaryBrown,
-                    elevation: 4,
-                    onPressed: _toggleTimer,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-                    child: Icon(
-                      _isRunning || _isPreparing ? CupertinoIcons.pause_solid : CupertinoIcons.play_arrow_solid,
-                      color: Colors.white,
-                      size: 34,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: _add10SecondsToActiveStep,
-                  style: TextButton.styleFrom(
-                    backgroundColor: AppTheme.bgCream,
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Text(
-                    isEn ? '+10s' : '+10d',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.primaryBrown),
-                  ),
-                ),
-                IconButton(
-                  tooltip: isEn ? 'Next Step' : 'Tahap Berikutnya',
-                  onPressed: activeIndex < steps.length - 1 ? () => _jumpToStep(activeIndex + 1) : null,
-                  icon: const Icon(CupertinoIcons.forward_end_fill, color: AppTheme.primaryBrown),
                 ),
               ],
-            ),
-          ),
-        ],
+            );
+          }
+
+          // Mode Portrait Standar (100% Utuh Seperti Semula)
+          return Column(
+            children: [
+              // Brew Specification Bar (Bean, Ratio, Temp, Grind, Speaker Mute)
+              BrewSpecHeaderBar(recipe: _recipe),
+
+              // Japanese Iced Preparation Guide
+              BrewIcedBanner(
+                iceWeightGrams: iceWeightGrams,
+                totalWaterGrams: totalWaterGrams,
+                waterTempCelsius: waterTempCelsius,
+                isPreparing: _isPreparing,
+                elapsedSeconds: _elapsedSeconds,
+                isEn: isEn,
+              ),
+
+              const SizedBox(height: 6),
+
+              // Circular Timer Display
+              CircularBrewTimer(
+                steps: steps,
+                totalSeconds: totalSeconds,
+                elapsedSeconds: _elapsedSeconds,
+                isPreparing: _isPreparing,
+                prepSeconds: _prepSeconds,
+                activeTargetWater: activeTargetWater,
+                isEndingSoon: _isEndingSoon(),
+                onSkipCountdown: _startMainTimer,
+                formatTime: _formatTime,
+                methodFamily: family,
+              ),
+
+              const SizedBox(height: 10),
+
+              // Live Smart Scale Badge
+              BrewScaleLiveBadge(isEn: isEn),
+
+              const SizedBox(height: 6),
+
+              // Scrollable Steps List
+              Expanded(
+                child: ListView.builder(
+                  controller: _stepScrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                  itemCount: steps.length,
+                  itemBuilder: (context, index) {
+                    final step = steps[index];
+                    final int stepWater = _stepWater(step);
+                    final int stepDur = _stepDuration(step);
+                    final int startSec = runningTime;
+                    runningTime += stepDur;
+                    final int endSec = runningTime;
+                    runningWater += stepWater;
+                    final int cumulativeTarget = runningWater;
+
+                    final bool isActive = index == activeIndex && !_isPreparing && (_isRunning || _elapsedSeconds > 0);
+                    final bool isDone = _elapsedSeconds > 0 && (index < activeIndex || _elapsedSeconds >= totalSeconds);
+                    final Color stepColor = getColorForStep(index);
+
+                    return BrewStepTile(
+                      index: index,
+                      step: step,
+                      isActive: isActive,
+                      isDone: isDone,
+                      stepWater: stepWater,
+                      stepDur: stepDur,
+                      startSec: startSec,
+                      endSec: endSec,
+                      cumulativeTarget: cumulativeTarget,
+                      stepColor: stepColor,
+                      onTap: () => _jumpToStep(index),
+                      formatTime: _formatTime,
+                      methodFamily: family,
+                    );
+                  },
+                ),
+              ),
+
+              // Bottom Control Panel
+              BrewTimerControls(
+                activeIndex: activeIndex,
+                stepsCount: steps.length,
+                isRunning: _isRunning,
+                isPreparing: _isPreparing,
+                onPrevStep: activeIndex > 0 ? () => _jumpToStep(activeIndex - 1) : null,
+                onNextStep: activeIndex < steps.length - 1 ? () => _jumpToStep(activeIndex + 1) : null,
+                onReset: _resetTimer,
+                onToggle: _toggleTimer,
+                onAdd10Sec: _add10SecondsToActiveStep,
+              ),
+            ],
+          );
+        },
       ),
     );
-  }
-}
-
-Color _getColorForStep(int index) {
-  const List<Color> colors = [
-    Colors.blueAccent,
-    Colors.green,
-    Colors.orangeAccent,
-    Colors.pinkAccent,
-    Colors.purpleAccent,
-    Colors.amber,
-    Colors.redAccent,
-  ];
-  return colors[index % colors.length];
-}
-
-class SegmentedTimerPainter extends CustomPainter {
-  final List<dynamic> steps;
-  final num totalSeconds;
-  final num elapsedSeconds;
-
-  SegmentedTimerPainter({required this.steps, required this.totalSeconds, required this.elapsedSeconds});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const double strokeWidth = 18.0;
-    final Rect rect = Rect.fromCircle(
-      center: Offset(size.width / 2, size.height / 2),
-      radius: size.width / 2 - strokeWidth / 2,
-    );
-
-    final Paint trackPaint = Paint()
-      ..color = Colors.grey.withValues(alpha: 0.2)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth;
-    canvas.drawCircle(Offset(size.width / 2, size.height / 2), size.width / 2 - strokeWidth / 2, trackPaint);
-
-    if (totalSeconds <= 0) return;
-
-    double startAngle = -pi / 2;
-    double currentElapsed = elapsedSeconds.toDouble();
-
-    for (int i = 0; i < steps.length; i++) {
-      final double stepSecs = (steps[i]['durationSeconds'] ?? steps[i]['timeSeconds'] ?? 0).toDouble();
-      final double sweepAngle = (stepSecs / totalSeconds) * 2 * pi;
-
-      final Color stepColor = _getColorForStep(i);
-
-      final Paint segmentPaint = Paint()
-        ..color = stepColor.withValues(alpha: 0.2)
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.butt
-        ..strokeWidth = strokeWidth;
-
-      canvas.drawArc(rect, startAngle, max(0.01, sweepAngle - 0.05), false, segmentPaint);
-
-      if (currentElapsed > 0) {
-        final double filledSecs = min(currentElapsed, stepSecs);
-        final double filledSweepAngle = (filledSecs / totalSeconds) * 2 * pi;
-
-        final Paint filledPaint = Paint()
-          ..color = stepColor
-          ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.round
-          ..strokeWidth = strokeWidth + 2;
-
-        canvas.drawArc(rect, startAngle, filledSweepAngle, false, filledPaint);
-        currentElapsed -= filledSecs;
-      }
-
-      startAngle += sweepAngle;
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant SegmentedTimerPainter oldDelegate) {
-    return oldDelegate.elapsedSeconds != elapsedSeconds || oldDelegate.totalSeconds != totalSeconds;
   }
 }

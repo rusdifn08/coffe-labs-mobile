@@ -1,0 +1,513 @@
+Total recipes: 159
+Total unique authors in recipes: 97
+Total profiles in BaristaCatalog: 92
+
+### 1/15 Coffee 🇮🇩 (1 resep)
+  * #212 1/15 Coffee - Signature Golden 1:15 Ratio V60 (Hario V60 Metal/Ceramic 02 - V60 Pour Over)
+
+### Alan Adler 🇺🇸 (1 resep)
+- Negara: Amerika Serikat (us)
+- Spesialisasi: AeroPress Inventor Original Method
+  * #141 AeroPress Inventor Original 80°C Immersion (AeroPress (Resep Orisinal Penemu) - Immersion)
+
+### Alessandro Galtieri (Italia) (1 resep)
+  * #15 Relevansi Kopi Klasik (2019 Juara 3) (Hario V60 - V60 Pour Over)
+
+### Anomali Coffee 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Kopi Asli Indonesia & Papua Wamena Typica
+  * #195 Anomali Coffee - V60 Standar Papua Wamena Typica (Hario V60 Glass 02 - V60 Pour Over)
+
+### Asser Christensen 🇩🇰 (1 resep)
+- Negara: Denmark (dk)
+- Spesialisasi: Hario Switch 50/50 Hybrid & Coffee Tech
+  * #223 Hario Switch 50/50 Hybrid 'Deliciously Simple' (Hario Switch 02/03 - Hybrid Immersion)
+
+### Bavis Kwong 🇭🇰 (1 resep)
+- Negara: Hong Kong (hk)
+- Spesialisasi: Sandwich Dosing V60
+  * #33 Isolasi Debu Sandwich (2026 Juara 3) (V60 - V60 Pour Over)
+
+### Bayu Prawiro 🇮🇩 (4 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Exposure Triangle & Hybrid Switch
+  * #29 Segitiga Eksposur Kamera (2025 Juara 2) (Hario Switch + Drip Assist - Hybrid)
+  * #109 Japanese Iced Hario Switch Flash Immersion (Hario Switch 02 + 100g Es di Server - Japanese Iced)
+  * #110 Kalita Wave 185 Nusantara Sweet Body (Kalita Wave 185 Stainless - Flat Bottom)
+  * #160 V60 Delicate Floral Body - Papua Wamena Kurima (Hario V60 02 - V60 Pour Over)
+
+### Benjamin Prager 🇨🇭 (1 resep)
+- Negara: Swiss (ch)
+- Spesialisasi: Single continuous pour
+  * #3 Penurunan Suhu Body Sutra (2015 Juara 3) (Hario V60 - V60 Pour Over)
+
+### Blue Doors 🇮🇩 (1 resep)
+  * #214 Blue Doors - V60 Ijen Raung Lactic Natural (Surabaya) (Hario V60 Ceramic 02 + Cafec T-90 - V60 Pour Over)
+
+### Carlos Escobar (Kolombia) (1 resep)
+  * #30 Ragi Bioreaktor Agrikultur (2025 Juara 3) (Hario Switch - Hybrid)
+
+### Carlos Medina (Chili) (1 resep)
+  * #22 Simetri dan Repetisi Geometri (2023 Juara 1) (Origami Dripper Air S - Origami)
+
+### Chad Wang 🇹🇼 (3 resep)
+- Negara: Taiwan (tw)
+- Spesialisasi: Center pour & Thermal stability
+  * #6 Ekstraksi Konstan Berbasis Aroma (2016 Juara 3) (Hario V60 - V60 Pour Over)
+  * #7 Transisi Rasa Presisi Suhu (2017 Juara 1) (Hario V60 - V60 Pour Over)
+  * #149 Japanese Iced Center-Pour Aroma Lock (Hario V60 Keramik + 100g Es di Server - Japanese Iced)
+
+### Chandra (Home Brewer) 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: V60 Neo & WBrC Champions Adaptation
+  * #202 Chandra (Home Brewer) - V60 Neo Carlos Medina Adaptation 5x50g (Hario V60 Neo + Cafec Abaca - V60 Pour Over)
+
+### Daiki Hatakeyama 🇯🇵 (2 resep)
+- Negara: Jepang (jp)
+- Spesialisasi: Low-temperature Japanese precision
+  * #17 Pendinginan Kontrol Tanin (2021 Juara 2) (Cafec Flower Dripper - Cone)
+  * #148 Japanese Iced V60 Kyoto Clean Flash Brew (Hario V60 / Cafec Flower + 100g Es - Japanese Iced)
+
+### Djournal Coffee 🇮🇩 (1 resep)
+  * #211 Djournal Coffee - V60 Clean Specialty Sumatra Mandheling (Hario V60 02 - V60 Pour Over)
+
+### Doddy Samsura 🇮🇩 (3 resep)
+  * #161 Doddy Samsura - V60 Natural Process (Edukator Kopi IBC) (Hario V60 Plastic 02 - V60 Pour Over)
+  * #162 Doddy Samsura - V60 Low-Temp Fine-Medium Extraction (Hario V60 02 / Cafec Abaca - V60 Pour Over)
+  * #163 Doddy Samsura - Standar Kurikulum High-Extraction 97°C Rao-Spin (Hario V60 Plastic 02 - V60 Pour Over)
+
+### Dody Samsura 🇮🇩 (2 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: 1st IBC Champion & Kono Drip
+  * #121 Kono Meimon Drip-Drop Syrupy Percolation (Kono Meimon 2-Person Dripper - Cone)
+  * #158 Japanese Iced Stone Fruit - Toraja Sapan Minanga (Hario V60 02 + Es di Server - Japanese Iced)
+
+### Du Jianing 🇨🇳 (1 resep)
+- Negara: China (cn)
+- Spesialisasi: Origami & Double Grinding
+  * #13 Kecepatan Alir Ekstrem (2019 Juara 1) (Origami Dripper - Origami)
+
+### Dustin Wijaya 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Golden Ratio 1:15.5 Anti-Gagal V60
+  * #168 Dustin Wijaya - Golden Ratio Anti-Gagal V60 (Hario V60 Plastic 02 - V60 Pour Over)
+
+### Edrick 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: CT62 Conical & Fast Flow Stone-Fruit
+  * #174 Edrick - CT62 / V60 Fast Drainage Stone-Fruit Sparkle (CT62 Conical / Hario V60 01 - V60 Pour Over)
+
+### Elika Liftee 🇺🇸 (3 resep)
+- Negara: Amerika Serikat (us)
+- Spesialisasi: Melodrip & Stacked Dosing
+  * #18 Pembasmian Channelling (2021 Juara 3) (V60 + Melodrip - V60 Pour Over)
+  * #20 Resep Lapis Susun (Stacked) (2022 Juara 2) (Hario V60 - V60 Pour Over)
+  * #150 Chemex Triple-Fold Clarity Percolation (Chemex 6-Cup + Bonded Paper Filter - Cone)
+
+### Elysia Tan 🇸🇬 (1 resep)
+- Negara: Singapura (sg)
+- Spesialisasi: Fast filter & Tropical clarity
+  * #21 Membangun Rumah Liberica (2022 Juara 3) (Orea V3 + Sibarist - Flat Bottom)
+
+### Emi Fukahori 🇨🇭 (2 resep)
+- Negara: Swiss (ch)
+- Spesialisasi: Hybrid Immersion & Percolation
+  * #10 Dinamika Profil Tanpa Pahit (2018 Juara 1) (GINA - Hybrid)
+  * #147 Hario Switch Full Immersion Steep & Release (Hario Switch / GINA Dripper - Immersion)
+
+### Filosofi Kopi 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Signature Tiwus & Lestari Manual Brew
+  * #208 Filosofi Kopi - V60 Signature Tiwus & Lestari (Hario V60 02 - V60 Pour Over)
+
+### Fugol Coffee Roasters 🇮🇩 (1 resep)
+  * #188 Fugol Coffee - V60 Gunung Halu Pink Banana Anaerobic (Hario V60 Plastic 02 + Cafec Abaca 02 - V60 Pour Over)
+
+### Garam Victor Um (Brasil) (1 resep)
+  * #24 Rapid Chilling Peternakan (2023 Juara 3) (Tornado Duo - Hybrid)
+
+### Giyanti Coffee Roastery 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Toraja Sapan & Preheated Ceramic Thermal Stability
+  * #193 Giyanti Coffee - V60 Toraja Sapan Washed (Preheated Ceramic) (Hario V60 Ceramic 02 - V60 Pour Over)
+
+### Harison Chandra 🇮🇩 (2 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: IBrC Champion & Thermal Control
+  * #120 V60 Thermal Retention 4-Pour (IBrC Champion) (Hario V60 Metal 02 - V60 Pour Over)
+  * #172 Harison Chandra - 5-Pour Rhythmic Percolation (IBrC Champion 2017) (Hario V60 Ceramic 02 - V60 Pour Over)
+
+### Hendri Kurniawan 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Sensory Calibration & Competition Judging
+  * #167 Hendri Kurniawan - Kalibrasi Sensorik Standar Juri V60 (Hario V60 Glass 02 - V60 Pour Over)
+
+### Hiro Lesmana 🇮🇩 (3 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: IBrC Champion & Flat-Bottom Flow
+  * #107 Orea V3 Fast Percolation (IBrC Champion) (Orea V3 + Negotiator Flat Filter - Flat Bottom)
+  * #108 Hario Switch Dual-Temp Immersion-Percolation (Hario Switch 02 - Hybrid)
+  * #155 V60 Floral & Peach - Kamojang Priangan Timur (Hario V60 02 - V60 Pour Over)
+
+### Hungry Bird Coffee 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Coastal Natural V60 & Tropical Fruits
+  * #191 Hungry Bird Coffee - V60 Kintamani Natural (Canggu Bali) (Hario V60 Plastic 02 - V60 Pour Over)
+
+### Instinct Roastery 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Bali Kintamani Terroir V60
+  * #190 Instinct Roastery - V60 Kintamani Ulian Washed (Bali) (Hario V60 02 / Cafec T-90 - V60 Pour Over)
+
+### JPW Indonesia 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Metode 4:6 Kasuya Gayo Wine
+  * #206 JPW Indonesia - Metode 4:6 Kasuya Gayo Wine Coarse (Hario V60 Plastic 02 - V60 Pour Over)
+
+### James Hoffmann 🇬🇧 (6 resep)
+- Negara: Inggris (gb)
+- Spesialisasi: Ultimate V60, French Press & AeroPress
+  * #220 The Ultimate V60 Technique (2-Cup 30g/500g) (Hario V60 Plastic 02 - V60 Pour Over)
+  * #123 The Ultimate V60 Technique (1-Cup 5-Pour) (Hario V60 01 / 02 - V60 Pour Over)
+  * #124 The Ultimate Iced Filter Coffee (Japanese Iced V60) (Hario V60 02 + 120g Es di Server - Japanese Iced)
+  * #125 The Ultimate French Press Technique (Long Immersion) (French Press / Cupping Bowl - Immersion)
+  * #126 The Ultimate AeroPress Technique (Standard Non-Inverted) (AeroPress (Posisi Standar) - Immersion)
+  * #127 Clever Dripper Water-First Immersion (Zero Stalling) (Clever Dripper / Hario Switch - Immersion)
+
+### Jaya Pranata 🇮🇩 (2 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Hybrid Wiggle-Bloom & High Agitation
+  * #165 Jaya Pranata - Hybrid Wiggle-Bloom Hario Switch (Hario Switch 02 - Hybrid Switch)
+  * #166 Jaya Pranata - V60 Wiggle-Agitation Washed Protocol (Hario V60 Ceramic 02 - V60 Pour Over)
+
+### John Christopher 🇮🇩 (3 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: IBrC Champion & Origami Precision
+  * #105 Origami Air S Sweet Balance (IBrC Champion) (Origami Dripper Air S + Wave Filter - Origami)
+  * #106 Japanese Iced Origami Jasmine & Melon (Origami Dripper + Cone Filter + 100g Es - Japanese Iced)
+  * #154 Japanese Iced Crisp Berries - Kerinci Kayu Aro (Hario V60 02 + Es di Server - Japanese Iced)
+
+### John Richard Christopher 🇮🇩 (4 resep)
+  * #196 John Richard Christopher - V60/Tricolate Melodrip Nuguo Geisha (Hario V60 02 / Tricolate + Melodrip - V60 Pour Over)
+  * #197 John Richard Christopher - Zero-Bypass Tricolate 1:18 Aquacode (Tricolate Zero-Bypass + Melodrip - Flat Bottom)
+  * #198 John Richard Christopher - V60 Kamojang Watermelon Smash (Origami Dripper S / Hario V60 02 - Origami)
+  * #199 John Richard Christopher - V60 Kamojang Water Guava Black Honey (Hario V60 Plastic 02 - V60 Pour Over)
+
+### Jonathan Gagné 🇨🇦 (2 resep)
+- Negara: Kanada (ca)
+- Spesialisasi: 10-Minute AeroPress & Brew Physics
+  * #133 Gagné 10-Minute AeroPress Ultra-Long Immersion (AeroPress + Fellow Prismo / Flow Control - Immersion)
+  * #134 Gagné Kalita Wave Pulsed Percolation (Kalita Wave 185 + Mesh Booster - Flat Bottom)
+
+### Jscafejournal x Space 🇮🇩 (1 resep)
+  * #204 Jscafejournal x Space - Iced Switch The Forbidden Flower (Hario Switch 02 - Hybrid Switch)
+
+### Jsmine (@jscafejournal) 🇮🇩 (2 resep)
+  * #200 Jsmine (@jscafejournal) - Japanese Iced V60 5x Pouring (Hario V60 02 Hitam - V60 Pour Over)
+  * #201 Jsmine (@jscafejournal) - Japanese Iced Kalita Hasami 4x Pouring (Kalita Wave Hasami 185 Putih - Flat Bottom)
+
+### Konstantinos Iatridis 🇬🇷 (1 resep)
+- Negara: Yunani (gr)
+- Spesialisasi: Frozen bean grinding
+  * #2 Inovasi Pemecahan Biji Dingin (2015 Juara 2) (Hario V60 - V60 Pour Over)
+
+### Kopi Relo 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Exotic Panama Geisha & Mt. Totumas
+  * #187 Kopi Relo - V60 Karin De La Rosa Mt. Totumas #2504 (Hario V60 Neo / Origami Air - V60 Pour Over)
+
+### Kreator Double Bloom 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Double-Blooming 12.5g Sweet Cup
+  * #185 Kreator Double Bloom - Double-Blooming V60 Clean & Sweet 12.5g (Hario V60 Glass 01/02 / Cafec Abaca - V60 Pour Over)
+
+### Lance Hedrick 🇺🇸 (3 resep)
+- Negara: Amerika Serikat (us)
+- Spesialisasi: 1-2-1 V60 & Double Bloom Physics
+  * #128 Hedrick 1-2-1 V60 High-Clarity Percolation (Hario V60 02 / Origami - V60 Pour Over)
+  * #129 Hedrick Double-Bloom V60 (Ultra High Extraction) (Hario V60 02 - V60 Pour Over)
+  * #130 Hedrick Japanese Iced Pourover Flash Brew (Hario V60 02 + 90g Es di Server - Japanese Iced)
+
+### Madan (Kendari) 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Sulawesi Terroir Extraction & Santino Finalist
+  * #170 Madan (Kendari) - V60 Toraja Sapan & Enrekang (Santino Coffee Master 2026) (Hario V60 Ceramic 02 - V60 Pour Over)
+
+### Mandie (Fugol Coffee) 🇮🇩 (1 resep)
+  * #189 Mandie (Fugol Coffee) - Roaster Calibration V60 Kamojang Washed (Hario V60 Ceramic 02 - V60 Pour Over)
+
+### Martin Wölfl 🇦🇹 (1 resep)
+- Negara: Austria (at)
+- Spesialisasi: Orea V4 & Dispersion Screen
+  * #25 Laboratorium Cepat Orea V4 (2024 Juara 1) (Orea V4 + Melodrip + WDT - Flat Bottom)
+
+### Matt Perger 🇦🇺 (1 resep)
+- Negara: Australia (au)
+- Spesialisasi: Barista Hustle High-Extraction V60
+  * #140 Barista Hustle High-Extraction V60 (12g:200g) (Hario V60 Plastik 01 / 02 - V60 Pour Over)
+
+### Matt Winton 🇨🇭 (2 resep)
+- Negara: Swiss (ch)
+- Spesialisasi: Dual-kettle 5-Pour V60
+  * #16 Seni Modulasi Suhu 5-Pour (2021 Juara 1) (Hario V60 Logam 02 - V60 Pour Over)
+  * #146 Japanese Iced V60 Dual-Kettle Crisp Acidity (Hario V60 Metal + 100g Es di Server - Japanese Iced)
+
+### Medan Specialty Slow Bar 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Lintong Nihuta & Danau Toba Washed
+  * #216 Medan Slow Bar - V60 Lintong Nihuta & Danau Toba Washed (Hario V60 Glass 02 - V60 Pour Over)
+
+### Melvin (Fugol Coffee) 🇮🇩 (3 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Bali Kintamani & Competition Pour
+  * #118 Origami Sensory Bali Kintamani Natural (Origami Keramik S + Cone Filter - Origami)
+  * #119 Japanese Iced V60 Kintamani Berry Bomb (Hario V60 02 + 90g Es di Server - Japanese Iced)
+  * #156 Japanese Iced Lychee Blast - Java Puntang Red Bourbon (Hario V60 02 + Es di Server - Japanese Iced)
+
+### Mikael Jasin 🇮🇩 (3 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: WBC Champion 2024 & Sensory Clarity
+  * #101 V60 Signature Sensory Clarity (WBC Champion Style) (Hario V60 02 + Melodrip - V60 Pour Over)
+  * #102 Japanese Iced V60 Flash Aromatics (Hario V60 02 + 100g Es di Server - Japanese Iced)
+  * #151 V60 Sweet Concentric Extract - Aceh Gayo Bener Meriah (Hario V60 02 - V60 Pour Over)
+
+### Mikaela Wallgren (Finlandia) (1 resep)
+  * #5 Rutinitas Kedai Kopi (2016 Juara 2) (Kalita Wave 155 - Flat Bottom)
+
+### Mirza Luqman 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Osmotic Flow & Washed Nusantara
+  * #116 V60 Osmotic Flow Toraja Sapan (Hario V60 01 / 02 - V60 Pour Over)
+
+### Muhammad Aga 🇮🇩 (3 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: IBC Champion & Daily Manual Brew
+  * #113 Japanese Iced V60 Citrus & Brown Sugar (Hario V60 02 + 90g Es di Server - Japanese Iced)
+  * #114 French Press Clean Silt-Free Immersion (French Press (Metode Skimming) - Immersion)
+  * #153 V60 Bright Acidity - Bali Kintamani Ulian (Hario V60 02 - V60 Pour Over)
+
+### Muhammad Fakhri 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Origami Air S & Temperature Modulation
+  * #164 Muhammad Fakhri - Origami Air S Dual-Temp (IBrC 2023 Finalist) (Origami Air S - Origami)
+
+### Nas Jaafar 🇲🇾 (1 resep)
+- Negara: Malaysia (my)
+- Spesialisasi: Zero-bypass Hybrid Brewer
+  * #31 Dinamika Gesekan & Nol Bypass (2026 Juara 1) (UFO V3 + Switch Base - Hybrid)
+
+### Odd-Steinar Tøllefsen 🇳🇴 (1 resep)
+- Negara: Norwegia (no)
+- Spesialisasi: Natural process clarity
+  * #1 Simplifikasi Kopi Natural Murni (2015 Juara 1) (Hario V60 - V60 Pour Over)
+
+### Ombe Kofie 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Flores Bajawa Gunung Inerie Washed
+  * #217 Ombe Kofie - V60 Flores Bajawa Gunung Inerie Washed (Hario V60 Ceramic 02 - V60 Pour Over)
+
+### Opak Kopi Channel 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Double Immersion Switch & Local Beans
+  * #205 Opak Kopi - Replikasi Komunitas Ryan Wibawa Double Immersion Switch (Hario Switch 02 - Hybrid Switch)
+
+### Otten Coffee Academy 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Standard Barista Education 5x Pouring
+  * #219 Otten Coffee Academy - V60 Edukasi Standar Barista 5x Pouring (Origami Air / Hario V60 02 - V60 Pour Over)
+
+### Our Daily Caffeine x Panna 🇮🇩 (1 resep)
+  * #186 Our Daily Caffeine x Panna - Iced Filter Finca Milan Cultured Wash (Hario V60 01 / Cafec Abaca - V60 Pour Over)
+
+### Patrik Rolf 🇸🇪 (3 resep)
+- Negara: Swedia (se)
+- Spesialisasi: April Brewer & Nordic Light Roast
+  * #14 Penyangraian Spesifik (2019 Juara 2) (April Brewer - Flat Bottom)
+  * #222 April V60 Circle & Center Pour Precision (Hario V60 01/02 - V60 Pour Over)
+  * #144 Japanese Iced April Brewer Swirl & Circle (April Brewer + 90g Es di Server - Japanese Iced)
+
+### Peng Jinyang 🇨🇳 (1 resep)
+- Negara: China (cn)
+- Spesialisasi: Thermal decline profiling
+  * #28 Probe Termal Suhu Transisi (2025 Juara 1) (Solo Dripper - Cone)
+
+### Pepeng (Klinik Kopi) 🇮🇩 (3 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Pure Origin Percolation
+  * #207 Pepeng (Klinik Kopi) - V60 Kopi Asli Tanpa Gula (Nagari Lasi & Sunda Geisha) (Hario V60 Ceramic 02 - V60 Pour Over)
+  * #117 V60 Tenang Tanpa Agitasi (Gaya Klinik Kopi) (Hario V60 02 - V60 Pour Over)
+  * #159 V60 Slow Drip Sweetness - West Java Manglayang (Hario V60 02 - V60 Pour Over)
+
+### Prawiraanga 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Spiral-to-Center Creamy Extraction
+  * #173 Prawiraanga - V60 Spiral-to-Center Creamy Extraction (IBrC Finalist) (Hario V60 Plastic 02 - V60 Pour Over)
+
+### Ray Janson 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Modern Dial-In & Experimental Lots
+  * #169 Ray Janson - Dial-In Modern Origami / Kalita (Low Agitation) (Origami Dripper S / Kalita Wave - Origami)
+
+### Regine Wai Yee Beng 🇲🇾 (1 resep)
+- Negara: Malaysia (my)
+- Spesialisasi: Flat-bottom precision
+  * #11 Presisi Asia Tenggara (2018 Juara 2) (Flat Bed / V60 - Flat Bottom)
+
+### Roy Panggabean (Serkop) 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Micro-Dose 10g Slow Bar Extraction
+  * #184 Roy Panggabean (Serkop) - V60 Micro-Dose 10g Slow Bar (Hario V60 01 - V60 Pour Over)
+
+### Ryan Wibawa 🇮🇩 (4 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Hybrid Switch & Nusantara Blend
+  * #27 Bhinneka Tunggal Ika (2024 Juara 3) (Hario Switch + Drip Assist - Hybrid)
+  * #103 Japanese Iced V60 Nusantara Tropics (Hario V60 02 + 90g Es di Server - Japanese Iced)
+  * #104 V60 Osmotic 4-Pour Gayo Natural (Hario V60 Keramik 02 - V60 Pour Over)
+  * #152 Japanese Flash Brew - West Java Gunung Halu (Hario V60 02 + Es di Server - Japanese Iced)
+
+### Sam Corra 🇦🇺 (1 resep)
+- Negara: Australia (au)
+- Spesialisasi: Carbonic Maceration & Pulse Pour
+  * #8 Ekstraksi Carbonic Maceration (2017 Juara 2) (Hario V60 - V60 Pour Over)
+
+### Samo Smrke x Lance Hedrick 🇨🇭🇺🇸 (1 resep)
+  * #221 Samo Bloom: Warm-Infusion & Dual Kettle V60 (Hario V60 Plastic 02 - V60 Pour Over)
+
+### Savina Giachgia 🇬🇷 (1 resep)
+- Negara: Yunani (gr)
+- Spesialisasi: Osmotic ceramic extraction
+  * #23 Konstruksi Keramik Osmotik (2023 Juara 2) (Modifikasi Kerucut - Cone)
+
+### Scott Rao 🇺🇸 (2 resep)
+- Negara: Amerika Serikat (us)
+- Spesialisasi: Rao Spin V60 & NextLevel Pulsar
+  * #131 Updated Rao Spin V60 Percolation (Hario V60 Plastik 02 - V60 Pour Over)
+  * #132 NextLevel Pulsar Valve Immersion-Percolation (NextLevel Pulsar - Hybrid)
+
+### Seniman Coffee Studio 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Indonesian Origin Exploration & Custom Glass V60
+  * #192 Seniman Coffee Studio - V60 Karo Highlands Washed (Ubud Bali) (Custom Glass Conical V60 - V60 Pour Over)
+
+### Shayneella 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Floral Clarity & Hybrid Brew
+  * #122 Flat Bottom Floral Tea-Like Precision (Timemore B75 / Kalita Wave - Flat Bottom)
+
+### Shih Yuan Hsu 🇹🇼 (2 resep)
+  * #19 Gilingan Pecah & Rentang Kontras (2022 Juara 1) (Orea V3 - Flat Bottom)
+  * #145 Cold Bloom Japanese Iced V60 (Hario V60 / Orea + 90g Es di Server - Japanese Iced)
+
+### Simetri Coffee Roasters 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Origami Aerated Extraction & Honey Lots
+  * #194 Simetri Coffee - V60 Jambi Kerinci Kayu Aro Red Honey (Origami Dripper M - Origami)
+
+### Simon Gautherin 🇦🇺 (1 resep)
+- Negara: Australia (au)
+- Spesialisasi: NextLevel Pulsar Zero-Bypass
+  * #32 Kejernihan Mutlak Tabung (2026 Juara 2) (NextLevel Pulsar - Hybrid)
+
+### Smith Coffee x Harapan Djaya 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Mossto Fermentation & Origami Air
+  * #213 Smith Coffee x Harapan Djaya - V60 Garut Mossto Fermentation (Origami Air S + Cafec Abaca - Origami)
+
+### Smoking Barrels Craft Coffee 🇮🇩 (3 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Carbonic Maceration & Single Origin Precision
+  * #181 Smoking Barrels - V60 Toraja Rantekarua Carbonic Maceration (Hario V60 02 - V60 Pour Over)
+  * #182 Smoking Barrels - V60 Keseimbangan Flores Manggarai Natural (Hario V60 02 - V60 Pour Over)
+  * #183 Smoking Barrels - V60 Gayo Pantan Musara Washed Protocol (Hario V60 02 - V60 Pour Over)
+
+### Space Roastery 🇮🇩 (5 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Micro-Lot Fermentation & Hario Switch
+  * #176 Space Roastery - V60 Strawberry Fields (Devinta & Tim Barista) (Hario V60 Plastic 02 - V60 Pour Over)
+  * #177 Space Roastery - Hario Switch The Forbidden Flower (Hario Switch 02 - Hybrid Switch)
+  * #178 Space Roastery - V60 Harian Ethiopia Yirgacheffe Washed (Hario V60 Ceramic 02 - V60 Pour Over)
+  * #179 Space Roastery - V60 Sweet-Body Banana & White Peach Sorbet (Hario V60 02 / Cafec T-90 - V60 Pour Over)
+  * #180 Space Roastery - V60 Dessert Profile Milkinho / Chocorange (Hario V60 Plastic 02 - V60 Pour Over)
+
+### Stathis Koremtas 🇬🇷 (2 resep)
+- Negara: Yunani (gr)
+- Spesialisasi: Low-agitation heavy body
+  * #9 Konsistensi Heavy Body (2017 Juara 3) (Hario V60 - V60 Pour Over)
+  * #12 Gravitasi Minim Agitasi (2018 Juara 3) (Hario V60 - V60 Pour Over)
+
+### Surabaya Specialty Slow Bar 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Gunung Argopuro Anaerobic Natural
+  * #215 Surabaya Slow Bar - V60 Gunung Argopuro Anaerobic Natural (Hario V60 Plastic 02 + Cafec Abaca - V60 Pour Over)
+
+### TEFC (@tooearlyforcaffeine) 🇮🇩 (1 resep)
+  * #203 TEFC (@tooearlyforcaffeine) - V60 Neo DAK Macaron Advanced Fermentation (Hario V60 Neo + Sibarist - V60 Pour Over)
+
+### Taizo Iwasaki 🇯🇵 (1 resep)
+- Negara: Jepang (jp)
+- Spesialisasi: Cut-off Osmotic Extraction & Kissaten Science
+  * #225 Don't Drip Until The Very Last Drop V60/Origami (Hario V60 Ceramic / Origami - V60 Pour Over)
+
+### Tetangga Roastery 🇮🇩 (1 resep)
+  * #218 Tetangga Roastery - V60 Nusantara Daily Sweet Comfort (Hario Mugen / V60 02 - V60 Pour Over)
+
+### Tetsu Kasuya 🇯🇵 (5 resep)
+- Negara: Jepang (jp)
+- Spesialisasi: Metode 4:6 & Hybrid Switch
+  * #100 Metode Multi-Pour Neo Brew (2026) (Hario V60 / Neo - V60 Pour Over)
+  * #4 Metode 4:6 (2016 Juara 1) (Hario V60 - V60 Pour Over)
+  * #137 Hario Switch 'Devil Recipe' (Hybrid 93°C + 70°C) (Hario Switch 02 - Hybrid)
+  * #138 Metode 4:6 Japanese Iced V60 (On The Rocks) (Hario V60 02 + 120g Es di Server - Japanese Iced)
+  * #139 Single-Pour Sweet V60 (Kasuya 1-Pour) (Hario V60 02 / Kasuya Model - V60 Pour Over)
+
+### Tim Wendelboe 🇳🇴 (2 resep)
+- Negara: Norwegia (no)
+- Spesialisasi: Nordic V60 & AeroPress Immersion
+  * #135 Nordic V60 Pulse & Spoon Stir (Hario V60 02 - V60 Pour Over)
+  * #136 Oslo Everyday AeroPress Immersion (AeroPress (Metode Standar) - Immersion)
+
+### Tuomas Merikanto 🇫🇮 (1 resep)
+- Negara: Finlandia (fi)
+- Spesialisasi: WAC Champion Nordic Immersion
+  * #143 World AeroPress Champion 2021 Nordic Immersion (AeroPress Inverted - Immersion)
+
+### Two Hands Full 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Gunung Puntang Natural & Modern Pour-Over
+  * #209 Two Hands Full - V60 West Java Puntang Natural (Hario V60 Metal/Plastic 02 - V60 Pour Over)
+
+### Wataru Iidaka 🇯🇵 (1 resep)
+- Negara: Jepang (jp)
+- Spesialisasi: Paragon Extract Chilling
+  * #26 Kriogenik Sandwich Dose (2024 Juara 2) (V60 + Paragon - V60 Pour Over)
+
+### Wendelien van Bunnik 🇳🇱 (1 resep)
+- Negara: Belanda (nl)
+- Spesialisasi: World AeroPress Champion Recipe
+  * #142 World AeroPress Champion 2019 Inverted Immersion (AeroPress Inverted (Double Paper) - Immersion)
+
+### Wheel Coffee Roasters 🇮🇩 (1 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: Gunung Malabar Pangalengan Natural
+  * #210 Wheel Coffee - V60 Gunung Malabar Pangalengan Natural (Hario V60 Ceramic 02 - V60 Pour Over)
+
+### Wisnu Aji 🇮🇩 (2 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: AeroPress & Immersion Specialist
+  * #115 Indonesia AeroPress Championship Inverted Recipe (AeroPress (Metode Inverted) - Immersion)
+  * #175 Wisnu Aji - Double-Bloom Sweet-Acidic V60 Calibration (Hario V60 Ceramic 02 - V60 Pour Over)
+
+### Yoshua Tanu 🇮🇩 (4 resep)
+- Negara: Indonesia (id)
+- Spesialisasi: 3x IBC Champion & Nusantara Craft
+  * #111 V60 High-Sweetness Gayo Wine Process (Hario V60 02 - V60 Pour Over)
+  * #112 AeroPress Championship Concentrate & Bypass (AeroPress (Metode Standar + Double Paper) - Immersion)
+  * #157 V60 Sweet Herbals & Lime - Flores Bajawa Wolowio (Hario V60 02 - V60 Pour Over)
+  * #171 Yoshua Tanu - Common Grounds Roastery V60 Standard (Hario V60 Metal 02 - V60 Pour Over)
+
+### Yuma Kawano 🇯🇵 (1 resep)
+- Negara: Jepang (jp)
+- Spesialisasi: Light Up Coffee Tokyo & Modern Japanese V60
+  * #224 Light Up Coffee Tokyo: 3 Teknik Kunci V60 (Hario V60 Plastic 01/02 - V60 Pour Over)
+

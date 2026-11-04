@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../features/settings/widgets/change_password_dialog.dart';
+import '../features/settings/widgets/language_selector_dialog.dart';
 import '../services/app_update_service.dart';
 import '../services/auth_service.dart';
 import '../services/language_service.dart';
@@ -95,305 +97,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  void _showChangePasswordDialog() {
-    if (_currentUser == null) {
-      final isEn = LanguageService.isEnglish;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isEn ? 'Changing password requires an active logged-in account.' : 'Fitur ubah password memerlukan akun login aktif.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    final currentPassCtrl = TextEditingController();
-    final newPassCtrl = TextEditingController();
-    final confirmPassCtrl = TextEditingController();
-    bool obscureCurrent = true;
-    bool obscureNew = true;
-    bool obscureConfirm = true;
-    bool isSubmitting = false;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (dialogCtx, setDialogState) => AlertDialog(
-          backgroundColor: AppTheme.surfaceWhite,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-          title: Row(
-            children: [
-              const Icon(CupertinoIcons.lock_shield_fill, color: AppTheme.primaryBrown, size: 24),
-              const SizedBox(width: 10),
-              Text(LanguageService.isEnglish ? 'Change Password' : 'Ubah Password', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  LanguageService.isEnglish
-                      ? 'Enter your current password and a new password (min. 6 characters).'
-                      : 'Masukkan kata sandi lama dan kata sandi baru minimal 6 karakter.',
-                  style: const TextStyle(fontSize: 12.5, color: AppTheme.textMuted),
-                ),
-                const SizedBox(height: 16),
-
-                // Password Saat Ini
-                TextField(
-                  controller: currentPassCtrl,
-                  obscureText: obscureCurrent,
-                  decoration: InputDecoration(
-                    labelText: LanguageService.isEnglish ? 'Current Password' : 'Password Saat Ini',
-                    filled: true,
-                    fillColor: AppTheme.bgCream.withValues(alpha: 0.5),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    suffixIcon: IconButton(
-                      icon: Icon(obscureCurrent ? CupertinoIcons.eye_slash_fill : CupertinoIcons.eye_fill, size: 18),
-                      onPressed: () => setDialogState(() => obscureCurrent = !obscureCurrent),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Password Baru
-                TextField(
-                  controller: newPassCtrl,
-                  obscureText: obscureNew,
-                  decoration: InputDecoration(
-                    labelText: LanguageService.isEnglish ? 'New Password (min. 6)' : 'Password Baru (min. 6)',
-                    filled: true,
-                    fillColor: AppTheme.bgCream.withValues(alpha: 0.5),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    suffixIcon: IconButton(
-                      icon: Icon(obscureNew ? CupertinoIcons.eye_slash_fill : CupertinoIcons.eye_fill, size: 18),
-                      onPressed: () => setDialogState(() => obscureNew = !obscureNew),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Konfirmasi Password Baru
-                TextField(
-                  controller: confirmPassCtrl,
-                  obscureText: obscureConfirm,
-                  decoration: InputDecoration(
-                    labelText: LanguageService.isEnglish ? 'Confirm New Password' : 'Konfirmasi Password Baru',
-                    filled: true,
-                    fillColor: AppTheme.bgCream.withValues(alpha: 0.5),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    suffixIcon: IconButton(
-                      icon: Icon(obscureConfirm ? CupertinoIcons.eye_slash_fill : CupertinoIcons.eye_fill, size: 18),
-                      onPressed: () => setDialogState(() => obscureConfirm = !obscureConfirm),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: isSubmitting ? null : () => Navigator.pop(ctx),
-              child: Text(LanguageService.isEnglish ? 'Cancel' : 'Batal', style: const TextStyle(color: AppTheme.textMuted)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryBrown,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: isSubmitting
-                  ? null
-                  : () async {
-                      final currentPass = currentPassCtrl.text;
-                      final newPass = newPassCtrl.text;
-                      final confirmPass = confirmPassCtrl.text;
-
-                      if (currentPass.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(LanguageService.isEnglish ? 'Please enter current password.' : 'Masukkan password saat ini.'),
-                            backgroundColor: Colors.redAccent,
-                          ),
-                        );
-                        return;
-                      }
-                      if (newPass.length < 6) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(LanguageService.isEnglish ? 'New password must be at least 6 characters.' : 'Password baru minimal 6 karakter.'),
-                            backgroundColor: Colors.redAccent,
-                          ),
-                        );
-                        return;
-                      }
-                      if (newPass != confirmPass) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(LanguageService.isEnglish ? 'Passwords do not match!' : 'Konfirmasi password tidak cocok!'),
-                            backgroundColor: Colors.redAccent,
-                          ),
-                        );
-                        return;
-                      }
-
-                      setDialogState(() => isSubmitting = true);
-                      final result = await AuthService.changePassword(
-                        currentPassword: currentPass,
-                        newPassword: newPass,
-                      );
-                      setDialogState(() => isSubmitting = false);
-
-                      if (dialogCtx.mounted) {
-                        Navigator.pop(ctx);
-                      }
-
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(result['message'] ?? (LanguageService.isEnglish ? 'Password update status.' : 'Status update password.')),
-                            backgroundColor: result['success'] == true ? Colors.green : Colors.redAccent,
-                          ),
-                        );
-                      }
-                    },
-              child: isSubmitting
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : Text(LanguageService.isEnglish ? 'Save New Password' : 'Simpan Password Baru'),
-            ),
-          ],
-        ),
-      ),
-    ).whenComplete(() {
-      currentPassCtrl.dispose();
-      newPassCtrl.dispose();
-      confirmPassCtrl.dispose();
-    });
-  }
-
-  void _showLanguageDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.surfaceWhite,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        title: const Row(
-          children: [
-            Icon(CupertinoIcons.globe, color: AppTheme.primaryBrown, size: 24),
-            SizedBox(width: 10),
-            Text('Pilih Bahasa / Language', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            InkWell(
-              borderRadius: BorderRadius.circular(14),
-              onTap: () async {
-                await LanguageService.setLanguage('en');
-                setState(() => _selectedLanguage = 'en');
-                if (ctx.mounted) Navigator.pop(ctx);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Language set to English (Default).'), backgroundColor: AppTheme.primaryBrown),
-                  );
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(
-                  color: _selectedLanguage == 'en' ? AppTheme.primaryBrown.withValues(alpha: 0.08) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: _selectedLanguage == 'en' ? AppTheme.primaryBrown : Colors.grey.shade300,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Text('🇬🇧', style: TextStyle(fontSize: 22)),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text('English', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                              SizedBox(width: 6),
-                              Text('(Default)', style: TextStyle(fontSize: 11, color: AppTheme.textMuted, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                          SizedBox(height: 2),
-                          Text('Interface stays in English', style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
-                        ],
-                      ),
-                    ),
-                    if (_selectedLanguage == 'en')
-                      const Icon(CupertinoIcons.checkmark_circle_fill, color: AppTheme.primaryBrown, size: 20)
-                    else
-                      Icon(CupertinoIcons.circle, color: Colors.grey.shade400, size: 20),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            InkWell(
-              borderRadius: BorderRadius.circular(14),
-              onTap: () async {
-                await LanguageService.setLanguage('id');
-                setState(() => _selectedLanguage = 'id');
-                if (ctx.mounted) Navigator.pop(ctx);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Bahasa diubah ke Bahasa Indonesia.'), backgroundColor: AppTheme.primaryBrown),
-                  );
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(
-                  color: _selectedLanguage == 'id' ? AppTheme.primaryBrown.withValues(alpha: 0.08) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: _selectedLanguage == 'id' ? AppTheme.primaryBrown : Colors.grey.shade300,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Text('🇮🇩', style: TextStyle(fontSize: 22)),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Bahasa Indonesia', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                          SizedBox(height: 2),
-                          Text('Antarmuka dalam Bahasa Indonesia', style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
-                        ],
-                      ),
-                    ),
-                    if (_selectedLanguage == 'id')
-                      const Icon(CupertinoIcons.checkmark_circle_fill, color: AppTheme.primaryBrown, size: 20)
-                    else
-                      Icon(CupertinoIcons.circle, color: Colors.grey.shade400, size: 20),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(LanguageService.isEnglish ? 'Close' : 'Tutup', style: const TextStyle(color: AppTheme.primaryBrown)),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final isEn = LanguageService.isEnglish;
@@ -436,7 +139,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: const Icon(CupertinoIcons.camera_fill, color: Colors.white, size: 18),
                       ),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -548,7 +251,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted),
                     ),
                     trailing: const Icon(CupertinoIcons.chevron_forward, size: 18, color: AppTheme.textMuted),
-                    onTap: _showChangePasswordDialog,
+                    onTap: () => ChangePasswordDialog.show(context, _currentUser),
                   ),
                 ],
               ),
@@ -589,7 +292,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       style: const TextStyle(fontSize: 11.5, color: AppTheme.primaryBrown, fontWeight: FontWeight.bold),
                     ),
                     trailing: const Icon(CupertinoIcons.chevron_forward, size: 18, color: AppTheme.textMuted),
-                    onTap: _showLanguageDialog,
+                    onTap: () => LanguageSelectorDialog.show(
+                      context,
+                      selectedLanguage: _selectedLanguage,
+                      onLanguageSelected: (lang) => setState(() => _selectedLanguage = lang),
+                    ),
                   ),
                 ],
               ),
