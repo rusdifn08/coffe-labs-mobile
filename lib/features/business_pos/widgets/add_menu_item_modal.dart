@@ -18,6 +18,7 @@ class AddMenuItemModal extends StatefulWidget {
     if (isWide) {
       showDialog(
         context: context,
+        barrierDismissible: true,
         barrierColor: Colors.black87,
         builder: (ctx) => Dialog(
           backgroundColor: Colors.transparent,
@@ -247,14 +248,10 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
     final formattedPrice = 'Rp ${_priceController.text.replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF141414),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(
-          top: BorderSide(color: Color(0xFFD4AF37), width: 1.2),
-          left: BorderSide(color: Colors.white12),
-          right: BorderSide(color: Colors.white12),
-        ),
+      decoration: BoxDecoration(
+        color: const Color(0xFF141414),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFD4AF37), width: 1.2),
       ),
       child: Column(
         children: [
@@ -315,16 +312,20 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.25)),
                       ),
-                      child: Column(
-                        children: [
-                          SwitchListTile.adaptive(
+                      child: Material(
+                        color: Colors.transparent,
+                        child: Column(
+                          children: [
+                            SwitchListTile.adaptive(
                             contentPadding: EdgeInsets.zero,
                             activeTrackColor: const Color(0xFFD4AF37),
                             title: const Row(
                               children: [
                                 Icon(CupertinoIcons.tv_fill, color: Color(0xFFD4AF37), size: 16),
                                 SizedBox(width: 8),
-                                Text('Tayangkan di Display Pelanggan (AOD)', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                                Expanded(
+                                  child: Text('Tayangkan di Display Pelanggan (AOD)', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                                ),
                               ],
                             ),
                             subtitle: const Text(
@@ -342,7 +343,9 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
                               children: [
                                 Icon(CupertinoIcons.bag_fill, color: Colors.greenAccent, size: 16),
                                 SizedBox(width: 8),
-                                Text('Tersedia untuk Transaksi Kasir (POS)', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                                Expanded(
+                                  child: Text('Tersedia untuk Transaksi Kasir (POS)', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                                ),
                               ],
                             ),
                             subtitle: const Text(
@@ -355,6 +358,7 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
                         ],
                       ),
                     ),
+                  ),
 
                     const SizedBox(height: 18),
 
@@ -463,7 +467,9 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Visual Menu (AOD Pitch-Black)', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12.5, fontWeight: FontWeight.bold)),
+                        const Expanded(
+                          child: Text('Visual Menu (AOD Pitch-Black)', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12.5, fontWeight: FontWeight.bold)),
+                        ),
                         TextButton.icon(
                           onPressed: _pickImage,
                           style: TextButton.styleFrom(foregroundColor: const Color(0xFFD4AF37)),

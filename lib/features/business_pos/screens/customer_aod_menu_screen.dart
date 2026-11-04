@@ -376,22 +376,23 @@ class _AodMenuCard extends StatelessWidget {
             ),
           ),
 
-          // Detail Info (45% Height)
+          // Detail Info (45% Height - Centered Card Design)
           Expanded(
             flex: 45,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
                         item.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Color(0xFFEAEAEA),
                           fontWeight: FontWeight.bold,
@@ -401,9 +402,10 @@ class _AodMenuCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        item.description,
+                        item.description.isNotEmpty ? item.description : 'Artisan Crafted Beverage',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Color(0xFF8E8E8E),
                           fontSize: 11,
@@ -412,19 +414,21 @@ class _AodMenuCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
                         item.formattedPrice,
+                        textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Color(0xFFD4AF37), // Warm Gold Price
                           fontWeight: FontWeight.w900,
-                          fontSize: 14,
+                          fontSize: 14.5,
                         ),
                       ),
+                      const SizedBox(height: 4),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
                           color: const Color(0xFF141414),
                           borderRadius: BorderRadius.circular(6),
@@ -432,10 +436,12 @@ class _AodMenuCard extends StatelessWidget {
                         ),
                         child: Text(
                           item.category.toUpperCase(),
+                          textAlign: TextAlign.center,
                           style: const TextStyle(
-                            color: Color(0xFF7A7A7A),
+                            color: Color(0xFF8E8E8E),
                             fontSize: 9,
                             fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ),

@@ -557,16 +557,22 @@ class _BusinessCashierScreenState extends ConsumerState<BusinessCashierScreen> {
                               ),
                             ),
                             const SizedBox(height: 6),
-                            Text(
-                              item.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                            Center(
+                              child: Text(
+                                item.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
                             ),
                             const SizedBox(height: 2),
-                            Text(
-                              item.formattedPrice,
-                              style: const TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.w800, fontSize: 12),
+                            Center(
+                              child: Text(
+                                item.formattedPrice,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.w800, fontSize: 12),
+                              ),
                             ),
                           ],
                         ),

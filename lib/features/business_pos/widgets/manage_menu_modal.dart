@@ -23,6 +23,7 @@ class ManageMenuModal extends StatefulWidget {
     if (isWide) {
       showDialog(
         context: context,
+        barrierDismissible: true,
         barrierColor: Colors.black87,
         builder: (ctx) => Dialog(
           backgroundColor: Colors.transparent,
@@ -138,14 +139,10 @@ class _ManageMenuModalState extends State<ManageMenuModal> {
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.88,
-      decoration: const BoxDecoration(
-        color: Color(0xFF141414),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(
-          top: BorderSide(color: Color(0xFFD4AF37), width: 1.2),
-          left: BorderSide(color: Colors.white12),
-          right: BorderSide(color: Colors.white12),
-        ),
+      decoration: BoxDecoration(
+        color: const Color(0xFF141414),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFD4AF37), width: 1.2),
       ),
       child: Column(
         children: [

@@ -59,14 +59,10 @@ class _PosDiscountModalState extends State<PosDiscountModal> {
 
     return Container(
       padding: EdgeInsets.fromLTRB(20, 16, 20, 20 + bottomInset),
-      decoration: const BoxDecoration(
-        color: Color(0xFF161616),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(
-          top: BorderSide(color: Color(0xFFD4AF37), width: 1.2),
-          left: BorderSide(color: Colors.white12),
-          right: BorderSide(color: Colors.white12),
-        ),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161616),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFD4AF37), width: 1.2),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
