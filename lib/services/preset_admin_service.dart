@@ -34,9 +34,11 @@ class PresetAdminService {
       final user = AuthUser(
         id: 'business_demo_user',
         username: 'bisnis123',
-        fullName: 'Coffee Labs Barista Business',
+        fullName: 'Coffee Labs Business Demo',
         role: 'user',
         status: 'approved',
+        tier: 'business',
+        subscriptionPlanId: 'plan_business',
         avatarUrl: 'assets/images/characters/avatar_2.png',
         createdAt: DateTime.now().toIso8601String(),
       );

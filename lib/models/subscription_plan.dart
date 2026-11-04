@@ -103,10 +103,16 @@ class SubscriptionPlan {
   }
 
   static SubscriptionPlan fromString(String? key) {
-    if (key == 'business' || key == 'plan_coffe_labs_business') {
+    if (key == null || key.isEmpty) return trial;
+    final normalized = key.toLowerCase().trim();
+    if (normalized == 'business' ||
+        normalized == 'plan_business' ||
+        normalized == 'plan_coffe_labs_business') {
       return business;
     }
-    if (key == 'pro' || key == 'plan_coffe_labs_pro') {
+    if (normalized == 'pro' ||
+        normalized == 'plan_pro' ||
+        normalized == 'plan_coffe_labs_pro') {
       return pro;
     }
     return trial;

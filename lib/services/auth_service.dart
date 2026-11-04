@@ -10,6 +10,7 @@ import 'subscription_service.dart';
 import 'admin_user_service.dart';
 import 'preset_admin_service.dart';
 import '../models/admin_user_stats.dart';
+import '../models/subscription_plan.dart';
 
 class AuthUser {
   final String id;
@@ -17,6 +18,8 @@ class AuthUser {
   final String fullName;
   final String role;
   final String status;
+  final String tier;
+  final String? subscriptionPlanId;
   final String avatarUrl;
   final String? createdAt;
 
@@ -26,17 +29,34 @@ class AuthUser {
     required this.fullName,
     required this.role,
     required this.status,
+    this.tier = 'trial',
+    this.subscriptionPlanId,
     required this.avatarUrl,
     this.createdAt,
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
+    final username = json['username']?.toString() ?? '';
+    final rawTier = (json['tier']?.toString() ?? '').toLowerCase().trim();
+    final inferredTier = rawTier.isNotEmpty
+        ? rawTier
+        : (username.toLowerCase() == 'bisnis123' ? 'business' : 'trial');
+    final rawPlanId = json['subscription_plan_id']?.toString() ??
+        json['subscriptionPlanId']?.toString();
+    final inferredPlanId = rawPlanId != null && rawPlanId.isNotEmpty
+        ? rawPlanId
+        : (inferredTier == 'business'
+            ? 'plan_business'
+            : (inferredTier == 'pro' ? 'plan_pro' : 'plan_trial'));
+
     return AuthUser(
       id: json['id']?.toString() ?? '',
-      username: json['username']?.toString() ?? '',
+      username: username,
       fullName: json['full_name']?.toString() ?? json['fullName']?.toString() ?? 'Barista',
       role: json['role']?.toString() ?? 'user',
       status: json['status']?.toString() ?? 'pending',
+      tier: inferredTier,
+      subscriptionPlanId: inferredPlanId,
       avatarUrl: json['avatar_url']?.toString() ?? json['avatarUrl']?.toString() ?? 'assets/images/characters/avatar_1.png',
       createdAt: json['created_at']?.toString(),
     );
@@ -48,12 +68,16 @@ class AuthUser {
     'full_name': fullName,
     'role': role,
     'status': status,
+    'tier': tier,
+    'subscription_plan_id': subscriptionPlanId,
     'avatar_url': avatarUrl,
     'created_at': createdAt,
   };
 
   bool get isAdmin => role == 'admin';
   bool get isApproved => status == 'approved';
+  bool get isBusiness => tier.toLowerCase() == 'business' || username.toLowerCase() == 'bisnis123';
+  bool get isPro => tier.toLowerCase() == 'pro' || isBusiness;
 }
 
 class AuthResult {
@@ -294,13 +318,36 @@ class AuthService {
         final user = AuthUser.fromJson(payload['user'] as Map<String, dynamic>);
 
         final prefs = await SharedPreferences.getInstance();
-        final isPro = await SubscriptionService.isProOrBusiness();
+
+        // Auto-sinkronisasi subscription tier ke SubscriptionService
+        if (user.isBusiness) {
+          await SubscriptionService.activatePlan(
+            SubscriptionPlan.business,
+            paymentMethod: 'Business Commercial License',
+          );
+          await TrialService.setTrialMode(false);
+        } else if (user.isPro) {
+          await SubscriptionService.activatePlan(
+            SubscriptionPlan.pro,
+            paymentMethod: 'Pro Lifetime License',
+          );
+          await TrialService.setTrialMode(false);
+        } else if (user.isAdmin) {
+          await SubscriptionService.activatePlan(
+            SubscriptionPlan.business,
+            paymentMethod: 'Administrator License',
+          );
+          await TrialService.setTrialMode(false);
+        } else {
+          final isPro = await SubscriptionService.isProOrBusiness();
+          await TrialService.setTrialMode(!isPro);
+        }
+
         await Future.wait([
           prefs.setString(_tokenKey, token),
           prefs.setString(_userKey, json.encode(user.toJson())),
           ProfileService.setUserName(user.fullName),
           if (user.avatarUrl.isNotEmpty) ProfileService.setUserImagePath(user.avatarUrl),
-          TrialService.setTrialMode(!(user.isAdmin || isPro)),
         ]);
 
         changeNotifier.value++;

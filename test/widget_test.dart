@@ -12,6 +12,7 @@ import 'package:coffee_hub_mobile/data/roastery_catalog.dart';
 import 'package:coffee_hub_mobile/data/brew_visual_catalog.dart';
 import 'package:coffee_hub_mobile/models/social_coffee.dart';
 import 'package:coffee_hub_mobile/services/social_service.dart';
+import 'package:coffee_hub_mobile/models/subscription_plan.dart';
 
 void main() {
   testWidgets('CoffeeHubApp launches SplashScreen and navigates', (WidgetTester tester) async {
@@ -151,6 +152,31 @@ void main() {
 
     expect(pendingUser.isAdmin, isFalse);
     expect(pendingUser.isApproved, isFalse);
+    expect(pendingUser.isBusiness, isFalse);
+
+    // Verifikasi akun bisnis123 & RBAC Business Tier
+    final businessUser = AuthUser.fromJson({
+      'id': 'uuid-biz-1',
+      'username': 'bisnis123',
+      'full_name': 'Coffee Labs Business Demo',
+      'role': 'user',
+      'status': 'approved',
+      'tier': 'business',
+      'subscription_plan_id': 'plan_business',
+    });
+
+    expect(businessUser.isAdmin, isFalse);
+    expect(businessUser.isApproved, isTrue);
+    expect(businessUser.isBusiness, isTrue);
+    expect(businessUser.isPro, isTrue);
+
+    // Verifikasi mapping SubscriptionPlan multi-format
+    expect(SubscriptionPlan.fromString('plan_business').tier, equals(SubscriptionTier.business));
+    expect(SubscriptionPlan.fromString('business').tier, equals(SubscriptionTier.business));
+    expect(SubscriptionPlan.fromString('plan_coffe_labs_business').tier, equals(SubscriptionTier.business));
+    expect(SubscriptionPlan.fromString('plan_pro').tier, equals(SubscriptionTier.pro));
+    expect(SubscriptionPlan.fromString('pro').tier, equals(SubscriptionTier.pro));
+    expect(SubscriptionPlan.fromString('plan_trial').tier, equals(SubscriptionTier.trial));
   });
 
   test('FeedbackItem and Category model parsing', () {
