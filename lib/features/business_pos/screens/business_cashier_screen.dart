@@ -5,6 +5,8 @@ import '../../../models/business_pos_models.dart';
 import '../../../providers/pos_cart_provider.dart';
 import '../../../providers/workspace_mode_provider.dart';
 import '../../../services/business_pos_api_service.dart';
+import '../widgets/add_menu_item_modal.dart';
+import '../widgets/manage_menu_modal.dart';
 import '../widgets/menu_grid_configurator_modal.dart';
 import 'customer_aod_menu_screen.dart';
 
@@ -50,6 +52,14 @@ class _BusinessCashierScreenState extends ConsumerState<BusinessCashierScreen> {
         onConfigUpdated: _loadData,
       ),
     );
+  }
+
+  void _openAddMenuModal() {
+    AddMenuItemModal.show(context, onMenuAdded: _loadData);
+  }
+
+  void _openManageMenuModal() {
+    ManageMenuModal.show(context, menuItems: _menuItems, onMenuChanged: _loadData);
   }
 
   void _launchCustomerAod() {
@@ -154,6 +164,16 @@ class _BusinessCashierScreenState extends ConsumerState<BusinessCashierScreen> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(CupertinoIcons.plus_circle_fill, color: Color(0xFFD4AF37)),
+            tooltip: 'Tambah Menu Display & Kasir',
+            onPressed: _openAddMenuModal,
+          ),
+          IconButton(
+            icon: const Icon(CupertinoIcons.square_grid_2x2_fill, color: Colors.white70),
+            tooltip: 'Kelola Katalog Menu',
+            onPressed: _openManageMenuModal,
+          ),
+          IconButton(
             icon: const Icon(CupertinoIcons.slider_horizontal_3, color: Color(0xFFD4AF37)),
             tooltip: 'Konfigurasi Grid AOD',
             onPressed: _openGridConfigModal,
@@ -209,6 +229,86 @@ class _BusinessCashierScreenState extends ConsumerState<BusinessCashierScreen> {
 
     return Column(
       children: [
+        // Barista Quick Action Strip
+        Container(
+          margin: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF161616),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white12),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFD4AF37),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${_menuItems.length} Menu Aktif',
+                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(width: 6),
+              const Text(
+                '• PIN Kiosk: 1234',
+                style: TextStyle(color: Colors.white38, fontSize: 11),
+              ),
+              const Spacer(),
+              InkWell(
+                onTap: _openAddMenuModal,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD4AF37),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(CupertinoIcons.plus, size: 13, color: Colors.black),
+                      SizedBox(width: 4),
+                      Text(
+                        'Tambah Menu',
+                        style: TextStyle(color: Colors.black, fontSize: 11.5, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              InkWell(
+                onTap: _openManageMenuModal,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF242424),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.white12),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(CupertinoIcons.square_grid_2x2, size: 13, color: Color(0xFFD4AF37)),
+                      SizedBox(width: 4),
+                      Text(
+                        'Kelola',
+                        style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
         // Category Filter Horizontal List
         Container(
           height: 48,
@@ -239,7 +339,7 @@ class _BusinessCashierScreenState extends ConsumerState<BusinessCashierScreen> {
             padding: const EdgeInsets.all(16),
             gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent: 180,
-              mainAxisExtent: 190,
+              mainAxisExtent: 195,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
             ),
@@ -249,6 +349,37 @@ class _BusinessCashierScreenState extends ConsumerState<BusinessCashierScreen> {
               return InkWell(
                 onTap: () {
                   ref.read(posCartProvider.notifier).addItem(item);
+                },
+                onLongPress: () {
+                  // Quick options on long press
+                  showModalBottomSheet(
+                    context: context,
+                    backgroundColor: const Color(0xFF181818),
+                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                    builder: (sheetCtx) => SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(item.name, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                            Text(item.formattedPrice, style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 13, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 14),
+                            ListTile(
+                              leading: const Icon(CupertinoIcons.trash, color: Colors.redAccent),
+                              title: const Text('Hapus Menu Ini', style: TextStyle(color: Colors.redAccent)),
+                              onTap: () async {
+                                Navigator.pop(sheetCtx);
+                                await BusinessPosApiService.deleteMenuItem(item.id);
+                                _loadData();
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
                 },
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
@@ -263,13 +394,20 @@ class _BusinessCashierScreenState extends ConsumerState<BusinessCashierScreen> {
                     children: [
                       Expanded(
                         child: Center(
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.black,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.network(
+                              item.assetUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.black,
+                                ),
+                                padding: const EdgeInsets.all(8),
+                                child: const Icon(Icons.local_cafe, color: Color(0xFFD4AF37), size: 36),
+                              ),
                             ),
-                            padding: const EdgeInsets.all(8),
-                            child: const Icon(Icons.local_cafe, color: Color(0xFFD4AF37), size: 36),
                           ),
                         ),
                       ),

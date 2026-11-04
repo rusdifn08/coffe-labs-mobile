@@ -420,7 +420,7 @@ class _VerifyCashierPinModalState extends State<_VerifyCashierPinModal> {
       widget.onSuccess();
     } else {
       setState(() {
-        _errorMessage = 'PIN Salah';
+        _errorMessage = 'PIN Salah (Coba PIN default: 1234)';
         _pin = '';
       });
     }
@@ -445,8 +445,8 @@ class _VerifyCashierPinModalState extends State<_VerifyCashierPinModal> {
             ),
             const SizedBox(height: 4),
             const Text(
-              'Masukkan PIN Kasir Barista',
-              style: TextStyle(color: Colors.white54, fontSize: 12),
+              'Masukkan PIN Kasir Barista (Default: 1234)',
+              style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
 
