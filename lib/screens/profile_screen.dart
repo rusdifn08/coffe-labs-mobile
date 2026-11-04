@@ -10,6 +10,7 @@ import '../features/profile/widgets/profile_menu_section.dart';
 import '../features/profile/widgets/profile_subscription_card.dart';
 import '../features/profile/widgets/profile_trial_card.dart';
 import '../features/profile/widgets/user_profile_header_card.dart';
+import '../features/business_pos/widgets/business_suite_launcher_card.dart';
 import '../models/subscription_plan.dart';
 import '../services/auth_service.dart';
 import '../services/feedback_service.dart';
@@ -251,6 +252,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   ),
                                   const SizedBox(height: 12),
                                 ],
+                                BusinessSuiteLauncherCard(
+                                  isBusiness: isAdmin ||
+                                      _currentPlan.tier == SubscriptionTier.business,
+                                ),
+                                const SizedBox(height: 12),
                                 ProfileMenuSection(
                                   onOpenSettings: _loadProfileData,
                                 ),
@@ -328,6 +334,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           const ProfileTrialCard(),
                           const SizedBox(height: 12),
                         ],
+
+                        // Mode Kasir & Display (Eksklusif Business)
+                        BusinessSuiteLauncherCard(
+                          isBusiness: isAdmin ||
+                              _currentPlan.tier == SubscriptionTier.business,
+                        ),
+                        const SizedBox(height: 12),
 
                         // Menu Section
                         ProfileMenuSection(

@@ -2,22 +2,65 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../features/gamification/models/coffee_level.dart';
 import '../features/gamification/services/gamification_service.dart';
+import '../models/subscription_plan.dart';
 import 'auth_service.dart';
 import 'profile_service.dart';
+import 'subscription_service.dart';
 import 'trial_service.dart';
 
 /// Service untuk menyediakan preset akun demo admin1 s/d admin10
-/// guna menguji visual border profil gamifikasi di setiap tingkatan level 1-10.
+/// serta akun pengujian bisnis123 untuk mencoba Mode Kasir & Always-On Display.
 class PresetAdminService {
   PresetAdminService._();
 
   static const String _tokenKey = 'coffeehub_auth_jwt_token';
   static const String _userKey = 'coffeehub_auth_user_json';
 
-  /// Cek dan proses login instan jika username & password adalah admin1..admin10
+  /// Cek dan proses login instan jika username & password adalah admin1..admin10 atau bisnis123
   static Future<AuthResult?> tryLogin(String username, String password) async {
     final cleanUsername = username.trim().toLowerCase();
     final cleanPassword = password.trim();
+
+    // Dukungan akun bisnis123 untuk mencoba Mode Kasir & Display
+    if (cleanUsername == 'bisnis123') {
+      if (cleanPassword != 'bisnis123') {
+        return const AuthResult(
+          success: false,
+          message: 'Password untuk akun demo bisnis123 adalah bisnis123.',
+          status: 'error',
+        );
+      }
+
+      final user = AuthUser(
+        id: 'business_demo_user',
+        username: 'bisnis123',
+        fullName: 'Coffee Labs Barista Business',
+        role: 'user',
+        status: 'approved',
+        avatarUrl: 'assets/images/characters/avatar_2.png',
+        createdAt: DateTime.now().toIso8601String(),
+      );
+
+      final token = 'demo_business_jwt_token_2026';
+      final prefs = await SharedPreferences.getInstance();
+
+      await Future.wait([
+        prefs.setString(_tokenKey, token),
+        prefs.setString(_userKey, json.encode(user.toJson())),
+        ProfileService.setUserName(user.fullName),
+        ProfileService.setUserImagePath('assets/images/characters/avatar_2.png'),
+        TrialService.setTrialMode(false),
+        SubscriptionService.activatePlan(SubscriptionPlan.business, paymentMethod: 'Business Demo License'),
+      ]);
+
+      AuthService.changeNotifier.value++;
+
+      return AuthResult.success(
+        token,
+        user,
+        'Selamat datang! Akun Business aktif. Mode Kasir (POS) & AMOLED AOD siap digunakan.',
+      );
+    }
 
     final match = RegExp(r'^admin([1-9]|10)$').firstMatch(cleanUsername);
     if (match == null) return null;

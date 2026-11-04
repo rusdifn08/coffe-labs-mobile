@@ -1,0 +1,4 @@
+storePassword=coffeelabs2026
+keyPassword=coffeelabs2026
+keyAlias=upload
+storeFile=upload-keystore.jks

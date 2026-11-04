@@ -114,16 +114,31 @@ class AuthService {
 
   static final ValueNotifier<int> changeNotifier = ValueNotifier<int>(0);
   static final http.Client _httpClient = http.Client();
+  static Timer? _keepAliveTimer;
 
   /// Melakukan ping senyap ke backend di background saat app mulai
-  /// untuk mengantisipasi cold-start Render free tier & pre-warm koneksi TLS Keep-Alive
+  /// dan menjadwalkan heartbeat otomatis setiap 10 menit agar server Render tidak sleep
   static void warmUpBackend() {
+    _sendHeartbeat();
+    // Jangan jadwalkan periodic timer saat test runner berjalan
+    if (Platform.environment.containsKey('FLUTTER_TEST')) {
+      return;
+    }
+    _keepAliveTimer?.cancel();
+    _keepAliveTimer = Timer.periodic(const Duration(minutes: 10), (_) {
+      _sendHeartbeat();
+    });
+  }
+
+  static void _sendHeartbeat() {
     getBaseUrl().then((url) {
       _httpClient
           .get(Uri.parse('$url/api/health'), headers: {'Connection': 'keep-alive'})
           .timeout(const Duration(seconds: 30))
-          .then((_) {
-        debugPrint('☕ Backend warmup ping sukses: $url');
+          .then((res) {
+        if (res.statusCode == 200) {
+          debugPrint('☕ Backend heartbeat sukses ($url) - Render awake');
+        }
       }).catchError((_) {});
     }).catchError((_) {});
   }

@@ -8,6 +8,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_blue_plus_winrt
   flutter_tts
   rive_native
+  screen_brightness_windows
   url_launcher_windows
 )
 
