@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../features/bean_scanner/widgets/home_header_scanner_button.dart';
 import '../features/gamification/models/coffee_level.dart';
 import '../features/gamification/services/gamification_service.dart';
 import '../features/gamification/widgets/gamified_avatar.dart';
@@ -122,8 +121,6 @@ class HomeHeaderProfileRow extends StatelessWidget {
                       tooltip: 'Favorit',
                     ),
                   ),
-                  const SizedBox(width: 6),
-                  const HomeHeaderScannerButton(compact: true),
                 ],
               ),
               const SizedBox(height: 3),

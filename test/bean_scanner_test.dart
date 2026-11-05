@@ -7,6 +7,7 @@ import 'package:coffee_hub_mobile/features/bean_scanner/controllers/selected_bre
 import 'package:coffee_hub_mobile/features/bean_scanner/models/bean_scan_state.dart';
 import 'package:coffee_hub_mobile/features/bean_scanner/models/resolved_coffee_bean.dart';
 import 'package:coffee_hub_mobile/features/bean_scanner/widgets/home_header_scanner_button.dart';
+import 'package:coffee_hub_mobile/features/bean_scanner/widgets/home_floating_scanner_fab.dart';
 
 void main() {
   group('ResolvedCoffeeBean Model & Logic Tests', () {
@@ -154,6 +155,21 @@ void main() {
 
       expect(find.text('Scan Kemasan Kopi (AI Vision)'), findsOneWidget);
       expect(find.text('AI OCR'), findsOneWidget);
+    });
+
+    testWidgets('renders HomeFloatingScannerFab floating camera button in bottom corner', (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              floatingActionButton: HomeFloatingScannerFab(animate: false),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byIcon(Icons.center_focus_strong_rounded), findsOneWidget);
+      expect(find.byType(HomeFloatingScannerFab), findsOneWidget);
     });
   });
 }
