@@ -67,11 +67,15 @@ class BeanVisionScannerService {
 
         fullText = recognizedText.text;
 
-        // Ambil estimasi tinggi gambar dari bounding box terendah atau default
+        // Ambil estimasi dimensi gambar dari bounding box terluar
         double maxBottom = 1.0;
+        double maxRight = 1.0;
         for (final block in recognizedText.blocks) {
           if (block.boundingBox.bottom > maxBottom) {
             maxBottom = block.boundingBox.bottom;
+          }
+          if (block.boundingBox.right > maxRight) {
+            maxRight = block.boundingBox.right;
           }
         }
 
@@ -79,11 +83,15 @@ class BeanVisionScannerService {
           final box = block.boundingBox;
           final normHeight = (box.height / maxBottom).clamp(0.01, 1.0);
           final normTop = (box.top / maxBottom).clamp(0.0, 1.0);
+          final normWidth = (box.width / maxRight).clamp(0.01, 1.0);
+          final normLeft = (box.left / maxRight).clamp(0.0, 1.0);
 
           blocksDto.add({
             'text': block.text,
             'normalized_height': normHeight,
             'top_y': normTop,
+            'left_x': normLeft,
+            'normalized_width': normWidth,
             'confidence': 0.95,
           });
         }

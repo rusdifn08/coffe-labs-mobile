@@ -1,3 +1,105 @@
+import 'package:flutter/material.dart';
+
+enum BlockRole {
+  roastery,
+  originOrTitle,
+  process,
+  tastingNote,
+  variety,
+  altitude,
+  ignoredNoise,
+}
+
+extension BlockRoleX on BlockRole {
+  String get badgeLabel {
+    switch (this) {
+      case BlockRole.roastery:
+        return '🏪 Roastery';
+      case BlockRole.originOrTitle:
+        return '⛰️ Origin / Kopi';
+      case BlockRole.process:
+        return '🍷 Proses';
+      case BlockRole.tastingNote:
+        return '✨ Tasting Note';
+      case BlockRole.variety:
+        return '🌱 Varietas';
+      case BlockRole.altitude:
+        return '📐 Altitude';
+      case BlockRole.ignoredNoise:
+        return 'Noise Diabaikan';
+    }
+  }
+
+  Color get color {
+    switch (this) {
+      case BlockRole.roastery:
+        return const Color(0xFFD4AF37); // Gold
+      case BlockRole.originOrTitle:
+        return const Color(0xFF4E8752); // Emerald Sage
+      case BlockRole.process:
+        return const Color(0xFF9E2A3B); // Wine Burgundy
+      case BlockRole.tastingNote:
+        return const Color(0xFF3B82A6); // Sky Blue
+      case BlockRole.variety:
+        return const Color(0xFF2E7D32); // Forest Green
+      case BlockRole.altitude:
+        return const Color(0xFF5C6BC0); // Indigo
+      case BlockRole.ignoredNoise:
+        return const Color(0xFF757575); // Grey
+    }
+  }
+}
+
+class ClassifiedOcrBlock {
+  final String text;
+  final BlockRole role;
+  final double topY;
+  final double leftX;
+  final double normalizedWidth;
+  final double normalizedHeight;
+  final double confidence;
+
+  const ClassifiedOcrBlock({
+    required this.text,
+    required this.role,
+    this.topY = 0.0,
+    this.leftX = 0.0,
+    this.normalizedWidth = 0.0,
+    this.normalizedHeight = 0.0,
+    this.confidence = 0.95,
+  });
+
+  factory ClassifiedOcrBlock.fromJson(Map<String, dynamic> json) {
+    final roleStr = json['role']?.toString().toLowerCase() ?? '';
+    final role = BlockRole.values.firstWhere(
+      (r) => r.name.toLowerCase() == roleStr || roleStr.contains(r.name.toLowerCase()),
+      orElse: () => BlockRole.tastingNote,
+    );
+
+    return ClassifiedOcrBlock(
+      text: json['text']?.toString() ?? '',
+      role: role,
+      topY: (json['top_y'] as num?)?.toDouble() ?? 0.0,
+      leftX: (json['left_x'] as num?)?.toDouble() ?? 0.0,
+      normalizedWidth: (json['normalized_width'] as num?)?.toDouble() ?? 0.0,
+      normalizedHeight: (json['normalized_height'] as num?)?.toDouble() ?? 0.0,
+      confidence: (json['confidence'] as num?)?.toDouble() ?? 0.95,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'text': text,
+      'role': role.name,
+      'top_y': topY,
+      'left_x': leftX,
+      'normalized_width': normalizedWidth,
+      'normalized_height': normalizedHeight,
+      'confidence': confidence,
+    };
+  }
+}
+
 class RecommendedRecipeSummary {
   final String slug;
   final String name;
@@ -49,6 +151,10 @@ class ResolvedCoffeeBean {
   final int recommendedWaterTempC;
   final List<RecommendedRecipeSummary> recommendedRecipes;
   final String? localCroppedImagePath;
+  final String notesSource; // 'OCR_EXPLICIT' vs 'AI_SOMMELIER_INFERRED'
+  final bool isAiInferredAltitude;
+  final bool isAiInferredVariety;
+  final List<ClassifiedOcrBlock> classifiedBlocks;
 
   const ResolvedCoffeeBean({
     this.beanId,
@@ -65,6 +171,10 @@ class ResolvedCoffeeBean {
     required this.recommendedWaterTempC,
     required this.recommendedRecipes,
     this.localCroppedImagePath,
+    this.notesSource = 'AI_SOMMELIER_INFERRED',
+    this.isAiInferredAltitude = false,
+    this.isAiInferredVariety = false,
+    this.classifiedBlocks = const [],
   });
 
   ResolvedCoffeeBean copyWith({
@@ -82,6 +192,10 @@ class ResolvedCoffeeBean {
     int? recommendedWaterTempC,
     List<RecommendedRecipeSummary>? recommendedRecipes,
     String? localCroppedImagePath,
+    String? notesSource,
+    bool? isAiInferredAltitude,
+    bool? isAiInferredVariety,
+    List<ClassifiedOcrBlock>? classifiedBlocks,
   }) {
     return ResolvedCoffeeBean(
       beanId: beanId ?? this.beanId,
@@ -98,12 +212,19 @@ class ResolvedCoffeeBean {
       recommendedWaterTempC: recommendedWaterTempC ?? this.recommendedWaterTempC,
       recommendedRecipes: recommendedRecipes ?? this.recommendedRecipes,
       localCroppedImagePath: localCroppedImagePath ?? this.localCroppedImagePath,
+      notesSource: notesSource ?? this.notesSource,
+      isAiInferredAltitude: isAiInferredAltitude ?? this.isAiInferredAltitude,
+      isAiInferredVariety: isAiInferredVariety ?? this.isAiInferredVariety,
+      classifiedBlocks: classifiedBlocks ?? this.classifiedBlocks,
     );
   }
 
   factory ResolvedCoffeeBean.fromJson(Map<String, dynamic> json, {String? localImagePath}) {
     final recipesRaw = json['recommended_recipes'] as List? ?? [];
     final recipes = recipesRaw.map((r) => RecommendedRecipeSummary.fromJson(r as Map<String, dynamic>)).toList();
+
+    final blocksRaw = json['classified_blocks'] as List? ?? [];
+    final blocks = blocksRaw.map((b) => ClassifiedOcrBlock.fromJson(b as Map<String, dynamic>)).toList();
 
     return ResolvedCoffeeBean(
       beanId: json['bean_id']?.toString(),
@@ -120,6 +241,10 @@ class ResolvedCoffeeBean {
       recommendedWaterTempC: (json['recommended_water_temp_c'] as num?)?.toInt() ?? 92,
       recommendedRecipes: recipes,
       localCroppedImagePath: localImagePath,
+      notesSource: json['notes_source']?.toString() ?? 'AI_SOMMELIER_INFERRED',
+      isAiInferredAltitude: json['is_ai_inferred_altitude'] == true,
+      isAiInferredVariety: json['is_ai_inferred_variety'] == true,
+      classifiedBlocks: blocks,
     );
   }
 
@@ -139,6 +264,10 @@ class ResolvedCoffeeBean {
       'recommended_water_temp_c': recommendedWaterTempC,
       'recommended_recipes': recommendedRecipes.map((r) => r.toJson()).toList(),
       'local_cropped_image_path': localCroppedImagePath,
+      'notes_source': notesSource,
+      'is_ai_inferred_altitude': isAiInferredAltitude,
+      'is_ai_inferred_variety': isAiInferredVariety,
+      'classified_blocks': classifiedBlocks.map((b) => b.toJson()).toList(),
     };
   }
 }

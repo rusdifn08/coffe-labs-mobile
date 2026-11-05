@@ -11,6 +11,7 @@ import '../controllers/bean_scanner_controller.dart';
 import '../controllers/selected_brew_bean_controller.dart';
 import '../models/bean_scan_state.dart';
 import '../models/resolved_coffee_bean.dart';
+import 'scanned_bag_bounding_box_overlay.dart';
 
 class SmartBeanCameraPopupModal extends ConsumerStatefulWidget {
   const SmartBeanCameraPopupModal({super.key});
@@ -398,7 +399,15 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top Summary Banner with Thumbnail & Verification Badge
+          // 1. Interactive Visual Bounding-Box Plotting Overlay
+          ScannedBagBoundingBoxOverlay(
+            imageFile: imageFile,
+            blocks: bean.classifiedBlocks,
+            height: 230,
+          ),
+          const SizedBox(height: 14),
+
+          // 2. Top Summary Banner with Verification & Sommelier Badges
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -406,115 +415,188 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
               borderRadius: BorderRadius.circular(18),
               border: Border.all(color: const Color(0xFF5C3A21), width: 1.2),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.file(
-                    imageFile,
-                    width: 72,
-                    height: 88,
-                    fit: BoxFit.cover,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: bean.isCatalogVerified
+                                ? const Color(0xFF1B5E20).withValues(alpha: 0.35)
+                                : const Color(0xFFD4AF37).withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: bean.isCatalogVerified ? Colors.greenAccent : const Color(0xFFD4AF37),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Text(
+                            bean.isCatalogVerified
+                                ? '✓ Katalog Terverifikasi'
+                                : (bean.notesSource == 'AI_SOMMELIER_INFERRED'
+                                    ? '✨ Cognitive AI Sommelier'
+                                    : '✨ OCR Smart Extract'),
+                            style: TextStyle(
+                              color: bean.isCatalogVerified ? Colors.greenAccent : const Color(0xFFD4AF37),
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${bean.confidenceScore.toStringAsFixed(0)}% Match',
+                          style: const TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.black45,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.white12),
+                      ),
+                      child: Text(
+                        bean.isCatalogVerified ? 'Database' : 'Smart AI Inference',
+                        style: const TextStyle(color: Colors.white60, fontSize: 8.5),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: bean.isCatalogVerified
-                                  ? const Color(0xFF1B5E20).withValues(alpha: 0.35)
-                                  : const Color(0xFFD4AF37).withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                color: bean.isCatalogVerified ? Colors.greenAccent : const Color(0xFFD4AF37),
-                                width: 0.8,
-                              ),
-                            ),
-                            child: Text(
-                              bean.isCatalogVerified ? '✓ Katalog Terverifikasi' : '✨ AI Smart Extract',
-                              style: TextStyle(
-                                color: bean.isCatalogVerified ? Colors.greenAccent : const Color(0xFFD4AF37),
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '${bean.confidenceScore.toStringAsFixed(0)}% Match',
-                            style: const TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold),
-                          ),
-                        ],
+                const SizedBox(height: 8),
+                Text(
+                  bean.beanName,
+                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Text(
+                      bean.roasteryName,
+                      style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 12.5, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(3),
                       ),
-                      const SizedBox(height: 5),
-                      Text(
-                        bean.beanName,
-                        style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      child: const Text(
+                        'Roastery',
+                        style: TextStyle(color: Color(0xFFD4AF37), fontSize: 8.5, fontWeight: FontWeight.w600),
                       ),
-                      Text(
-                        bean.roasteryName,
-                        style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 12, fontWeight: FontWeight.w600),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${bean.origin} • ${bean.altitudeMasl ?? "1500 MDPL"}',
-                        style: const TextStyle(color: Colors.white60, fontSize: 11),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${bean.origin} • ${bean.altitudeMasl ?? "1500 MDPL"}',
+                  style: const TextStyle(color: Colors.white70, fontSize: 11.5),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
           // Varietas & Proses Badges
           Row(
             children: [
               Expanded(
-                child: _buildParameterTile('Varietas', bean.variety, CupertinoIcons.leaf_arrow_circlepath),
+                child: _buildParameterTile(
+                  'Varietas',
+                  bean.variety,
+                  CupertinoIcons.leaf_arrow_circlepath,
+                  isInferred: bean.isAiInferredVariety,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _buildParameterTile('Proses Pascapanen', bean.process, CupertinoIcons.drop_fill),
+                child: _buildParameterTile(
+                  'Proses Pascapanen',
+                  bean.process,
+                  CupertinoIcons.drop_fill,
+                  accentColor: const Color(0xFF9E2A3B),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _buildParameterTile(
+                  'Altitude / Ketinggian',
+                  bean.altitudeMasl ?? '1400 - 1800 MDPL',
+                  Icons.landscape_rounded,
+                  isInferred: bean.isAiInferredAltitude,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildParameterTile(
+                  'Suhu Seduh Disarankan',
+                  '${bean.recommendedWaterTempC}°C',
+                  CupertinoIcons.thermometer,
+                  accentColor: const Color(0xFFD4AF37),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 14),
 
-          // Tasting Notes Chips
-          const Text(
-            'Tasting Notes (Sentuh untuk menghapus/sesuaikan):',
-            style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+          // Tasting Notes Chips & AI Sommelier explanation
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                bean.notesSource == 'AI_SOMMELIER_INFERRED'
+                    ? '✨ Tasting Notes (AI Sommelier ${bean.process}):'
+                    : 'Tasting Notes (Terbaca di Kemasan):',
+                style: const TextStyle(color: Colors.white70, fontSize: 11.5, fontWeight: FontWeight.w600),
+              ),
+              Text(
+                '${bean.tastingNotes.length} notes',
+                style: const TextStyle(color: Colors.white38, fontSize: 10),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: bean.tastingNotes.map((note) {
-              return Chip(
-                backgroundColor: const Color(0xFF26211D),
-                side: const BorderSide(color: Color(0xFF5C3A21)),
-                label: Text(note, style: const TextStyle(color: Color(0xFFF9F5EE), fontSize: 11.5)),
-                deleteIcon: const Icon(Icons.close, size: 14, color: Colors.white38),
-                onDeleted: () {
-                  final updatedNotes = List<String>.from(bean.tastingNotes)..remove(note);
-                  ref.read(beanScannerControllerProvider.notifier).updateResolvedBean(
-                        bean.copyWith(tastingNotes: updatedNotes),
-                      );
-                },
-              );
-            }).toList(),
+            children: [
+              ...bean.tastingNotes.map((note) {
+                return Chip(
+                  backgroundColor: const Color(0xFF26211D),
+                  side: const BorderSide(color: Color(0xFF5C3A21)),
+                  label: Text(note, style: const TextStyle(color: Color(0xFFF9F5EE), fontSize: 11.5)),
+                  deleteIcon: const Icon(Icons.close, size: 14, color: Colors.white38),
+                  onDeleted: () {
+                    final updatedNotes = List<String>.from(bean.tastingNotes)..remove(note);
+                    ref.read(beanScannerControllerProvider.notifier).updateResolvedBean(
+                          bean.copyWith(tastingNotes: updatedNotes),
+                        );
+                  },
+                );
+              }),
+              ActionChip(
+                backgroundColor: const Color(0xFF1E1A17),
+                side: const BorderSide(color: Color(0xFFD4AF37), width: 0.8),
+                avatar: const Icon(Icons.add, size: 14, color: Color(0xFFD4AF37)),
+                label: const Text(
+                  '+ Tambah Note',
+                  style: TextStyle(color: Color(0xFFD4AF37), fontSize: 11.5, fontWeight: FontWeight.bold),
+                ),
+                onPressed: () => _showAddNoteDialog(bean),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
 
@@ -594,9 +676,9 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   icon: const Icon(Icons.coffee, size: 18),
-                  label: const Text(
-                    'Next: Pilih Resep Seduh →',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                  label: Text(
+                    'Next: Resep Seduh (${bean.recommendedWaterTempC}°C) →',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                 ),
               ),
@@ -607,7 +689,48 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
     );
   }
 
-  Widget _buildParameterTile(String title, String value, IconData icon) {
+  void _showAddNoteDialog(ResolvedCoffeeBean bean) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1C1916),
+        title: const Text('Tambah Tasting Note', style: TextStyle(color: Colors.white, fontSize: 14)),
+        content: TextField(
+          controller: controller,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: 'Contoh: Jasmine, Blueberry, Honey',
+            hintStyle: TextStyle(color: Colors.white38, fontSize: 12),
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal', style: TextStyle(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD4AF37), foregroundColor: Colors.black),
+            onPressed: () {
+              final text = controller.text.trim();
+              if (text.isNotEmpty) {
+                final updated = List<String>.from(bean.tastingNotes)..add(text);
+                ref.read(beanScannerControllerProvider.notifier).updateResolvedBean(
+                      bean.copyWith(tastingNotes: updated),
+                    );
+              }
+              Navigator.pop(ctx);
+            },
+            child: const Text('Tambah'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildParameterTile(String title, String value, IconData icon, {bool isInferred = false, Color? accentColor}) {
+    final effectiveColor = accentColor ?? const Color(0xFFD4AF37);
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -617,13 +740,31 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
       ),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFFD4AF37), size: 16),
+          Icon(icon, color: effectiveColor, size: 16),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(color: Colors.white38, fontSize: 10)),
+                Row(
+                  children: [
+                    Text(title, style: const TextStyle(color: Colors.white38, fontSize: 10)),
+                    if (isInferred) ...[
+                      const SizedBox(width: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD4AF37).withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: const Text(
+                          '✨ AI Sommelier',
+                          style: TextStyle(color: Color(0xFFD4AF37), fontSize: 7.5, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
                 Text(
                   value,
                   style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),

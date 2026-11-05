@@ -6,10 +6,265 @@ import 'package:coffee_hub_mobile/features/bean_scanner/controllers/bean_scanner
 import 'package:coffee_hub_mobile/features/bean_scanner/controllers/selected_brew_bean_controller.dart';
 import 'package:coffee_hub_mobile/features/bean_scanner/models/bean_scan_state.dart';
 import 'package:coffee_hub_mobile/features/bean_scanner/models/resolved_coffee_bean.dart';
+import 'package:coffee_hub_mobile/features/bean_scanner/services/cognitive_bean_analyzer.dart';
 import 'package:coffee_hub_mobile/features/bean_scanner/widgets/home_header_scanner_button.dart';
 import 'package:coffee_hub_mobile/features/bean_scanner/widgets/home_floating_scanner_fab.dart';
+import 'package:coffee_hub_mobile/features/bean_scanner/widgets/scanned_bag_bounding_box_overlay.dart';
 
 void main() {
+  group('CognitiveBeanAnalyzer Smart AI Tests', () {
+    test('BAK COFFEE BEAN - MALABAR WINE (Human-like reasoning & AI Sommelier inference)', () {
+      const rawText = '''
+BAK COFFEE BEAN
+MALABAR
+WINE
+FRESH BEAN
+BETTER BREW
+ROASTING DATE
+''';
+
+      final blocks = [
+        {
+          'text': 'BAK COFFEE BEAN',
+          'normalized_height': 0.05,
+          'top_y': 0.36,
+          'left_x': 0.20,
+          'normalized_width': 0.60,
+        },
+        {
+          'text': 'MALABAR',
+          'normalized_height': 0.14,
+          'top_y': 0.44,
+          'left_x': 0.25,
+          'normalized_width': 0.50,
+        },
+        {
+          'text': 'WINE',
+          'normalized_height': 0.08,
+          'top_y': 0.52,
+          'left_x': 0.35,
+          'normalized_width': 0.30,
+        },
+        {
+          'text': 'FRESH BEAN',
+          'normalized_height': 0.03,
+          'top_y': 0.78,
+          'left_x': 0.15,
+          'normalized_width': 0.30,
+        },
+        {
+          'text': 'BETTER BREW',
+          'normalized_height': 0.03,
+          'top_y': 0.82,
+          'left_x': 0.15,
+          'normalized_width': 0.30,
+        },
+        {
+          'text': 'ROASTING DATE',
+          'normalized_height': 0.03,
+          'top_y': 0.88,
+          'left_x': 0.15,
+          'normalized_width': 0.35,
+        },
+      ];
+
+      final result = CognitiveBeanAnalyzer.analyze(
+        rawFullText: rawText,
+        blocksDto: blocks,
+      );
+
+      expect(result.roasteryName, 'Bak Coffee Bean');
+      expect(result.beanName, 'Malabar Wine');
+      expect(result.origin, contains('Malabar'));
+      expect(result.process, 'Wine Process');
+      expect(result.notesSource, 'AI_SOMMELIER_INFERRED');
+      expect(result.isAiInferredAltitude, isTrue);
+      expect(result.isAiInferredVariety, isTrue);
+
+      // AI Sommelier inferred notes for Wine Process
+      expect(result.tastingNotes, contains('Winey'));
+      expect(result.tastingNotes, contains('Red Grape'));
+      expect(result.tastingNotes, contains('Strawberry'));
+      expect(result.tastingNotes, contains('Blackcurrant'));
+      expect(result.tastingNotes, contains('Dark Cocoa'));
+
+      // Recommended temperature for Wine process
+      expect(result.recommendedWaterTempC, 89);
+      expect(result.classifiedBlocks.length, 6);
+    });
+
+    test('KOPI GUNUNG HALU (Checkbox detection & Natural process)', () {
+      const rawText = '''
+KOPI GUNUNG HALU
+FRESH BEAN BETTER BREW
+DARI GUNUNG, UNTUK CITA RASA TERBAIK
+ROASTING DATE 26/10
+PROSES
+[x] NATURAL
+[ ] WASHED
+[ ] WINE
+100% ARABICA PREMIUM QUALITY
+''';
+
+      final blocks = [
+        {
+          'text': 'KOPI GUNUNG HALU',
+          'normalized_height': 0.12,
+          'top_y': 0.35,
+          'left_x': 0.2,
+          'normalized_width': 0.6,
+        },
+        {
+          'text': '[x] NATURAL',
+          'normalized_height': 0.04,
+          'top_y': 0.70,
+          'left_x': 0.5,
+          'normalized_width': 0.25,
+        },
+        {
+          'text': '[ ] WASHED',
+          'normalized_height': 0.04,
+          'top_y': 0.75,
+          'left_x': 0.5,
+          'normalized_width': 0.25,
+        },
+        {
+          'text': '[ ] WINE',
+          'normalized_height': 0.04,
+          'top_y': 0.80,
+          'left_x': 0.5,
+          'normalized_width': 0.25,
+        },
+      ];
+
+      final result = CognitiveBeanAnalyzer.analyze(
+        rawFullText: rawText,
+        blocksDto: blocks,
+      );
+
+      expect(result.process, 'Natural');
+      expect(result.origin, anyOf(contains('Halu'), contains('Malabar')));
+      expect(result.tastingNotes, contains('Blueberry'));
+      expect(result.recommendedWaterTempC, 90);
+    });
+
+    test('Otten COFFEE - WAMENA BPIRI washed (Explicit notes & altitude extraction)', () {
+      const rawText = '''
+Otten COFFEE
+WAMENA BPIRI washed
+Palm Sugar • Red Fruit • Chestnut
+Region: Distrik Bpiri, Jayawijaya/Wamena, Papua
+Altitude: 2068 Masl
+200g
+''';
+
+      final blocks = [
+        {
+          'text': 'Otten COFFEE',
+          'normalized_height': 0.10,
+          'top_y': 0.25,
+          'left_x': 0.2,
+          'normalized_width': 0.6,
+        },
+        {
+          'text': 'WAMENA BPIRI washed',
+          'normalized_height': 0.08,
+          'top_y': 0.55,
+          'left_x': 0.2,
+          'normalized_width': 0.6,
+        },
+        {
+          'text': 'Palm Sugar • Red Fruit • Chestnut',
+          'normalized_height': 0.04,
+          'top_y': 0.65,
+          'left_x': 0.2,
+          'normalized_width': 0.6,
+        },
+        {
+          'text': 'Altitude: 2068 Masl',
+          'normalized_height': 0.03,
+          'top_y': 0.75,
+          'left_x': 0.2,
+          'normalized_width': 0.4,
+        },
+      ];
+
+      final result = CognitiveBeanAnalyzer.analyze(
+        rawFullText: rawText,
+        blocksDto: blocks,
+      );
+
+      expect(result.roasteryName, 'Otten Coffee');
+      expect(result.process, 'Full Washed');
+      expect(result.notesSource, 'OCR_EXPLICIT');
+      expect(result.isAiInferredAltitude, isFalse);
+      expect(result.altitudeMasl, '2068 MASL');
+      expect(
+        result.tastingNotes,
+        anyOf(contains('Brown Sugar'), contains('Red Fruit'), contains('Chestnut')),
+      );
+    });
+
+    test('Fuzzy typo-tolerant flavor matching', () {
+      const typos = 'bluberry, starberry, jasmin, tea';
+      final matched = CognitiveBeanAnalyzer.matchTastingNotes(typos);
+
+      expect(matched, contains('Blueberry'));
+      expect(matched, contains('Strawberry'));
+      expect(matched, contains('Jasmine'));
+      expect(matched, contains('Black Tea'));
+    });
+  });
+
+  group('ScannedBagBoundingBoxOverlay Widget Tests', () {
+    testWidgets('renders bounding boxes overlay cleanly', (tester) async {
+      final dummyFile = File('dummy_scan.jpg');
+      const blocks = [
+        ClassifiedOcrBlock(
+          text: 'BAK COFFEE BEAN',
+          role: BlockRole.roastery,
+          topY: 0.1,
+          leftX: 0.2,
+          normalizedWidth: 0.6,
+          normalizedHeight: 0.08,
+        ),
+        ClassifiedOcrBlock(
+          text: 'MALABAR',
+          role: BlockRole.originOrTitle,
+          topY: 0.3,
+          leftX: 0.2,
+          normalizedWidth: 0.6,
+          normalizedHeight: 0.12,
+        ),
+        ClassifiedOcrBlock(
+          text: 'WINE',
+          role: BlockRole.process,
+          topY: 0.5,
+          leftX: 0.3,
+          normalizedWidth: 0.4,
+          normalizedHeight: 0.08,
+        ),
+      ];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ScannedBagBoundingBoxOverlay(
+              imageFile: dummyFile,
+              blocks: blocks,
+              height: 250,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(ScannedBagBoundingBoxOverlay), findsOneWidget);
+      expect(find.text('Roastery'), findsOneWidget);
+      expect(find.text('Origin'), findsOneWidget);
+      expect(find.text('Proses'), findsOneWidget);
+    });
+  });
+
   group('ResolvedCoffeeBean Model & Logic Tests', () {
     test('JSON serialization & deserialization handles verified catalog and fallback data cleanly', () {
       final json = {
