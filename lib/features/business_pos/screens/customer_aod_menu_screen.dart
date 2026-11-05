@@ -1,20 +1,22 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../../../models/business_pos_models.dart';
 import '../../../providers/aod_display_engine_provider.dart';
 import '../../../providers/workspace_mode_provider.dart';
 import '../../../services/business_pos_api_service.dart';
+import '../widgets/business_menu_asset_image.dart';
 import 'oled_diagnostic_screen.dart';
 
 class CustomerAodMenuScreen extends ConsumerStatefulWidget {
   final BusinessStoreConfig config;
+  final List<BusinessMenuItem>? initialMenuItems;
 
   const CustomerAodMenuScreen({
     super.key,
     required this.config,
+    this.initialMenuItems,
   });
 
   @override
@@ -24,13 +26,24 @@ class CustomerAodMenuScreen extends ConsumerStatefulWidget {
 class _CustomerAodMenuScreenState extends ConsumerState<CustomerAodMenuScreen> {
   List<BusinessMenuItem> _menuItems = [];
   bool _isLoading = true;
+  int _currentPage = 0;
+  Timer? _carouselTimer;
   late final PageController _pageController;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+
+    if (widget.initialMenuItems != null && widget.initialMenuItems!.isNotEmpty) {
+      _menuItems = widget.initialMenuItems!
+          .where((item) => item.showInAod && item.isAvailable)
+          .toList();
+      _isLoading = false;
+    }
+
     _loadMenu();
+    _startAutoCarouselTimer();
 
     // Aktifkan Hardware Kiosk & Auto Dimming Engine
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -42,8 +55,34 @@ class _CustomerAodMenuScreenState extends ConsumerState<CustomerAodMenuScreen> {
     });
   }
 
+  void _startAutoCarouselTimer() {
+    _carouselTimer?.cancel();
+    _carouselTimer = Timer.periodic(const Duration(seconds: 12), (timer) {
+      if (!mounted) return;
+      final columns = widget.config.aodGridColumns.clamp(1, 8);
+      final rows = widget.config.aodGridRows.clamp(1, 6);
+      final itemsPerPage = columns * rows;
+      if (_menuItems.isEmpty) return;
+      final totalPages = (_menuItems.length / itemsPerPage).ceil();
+
+      if (totalPages > 1 && _pageController.hasClients) {
+        final nextPage = (_currentPage + 1) % totalPages;
+        _pageController.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOutCubic,
+        );
+      }
+    });
+  }
+
+  void _restartAutoCarouselTimer() {
+    _startAutoCarouselTimer();
+  }
+
   @override
   void dispose() {
+    _carouselTimer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
@@ -90,6 +129,7 @@ class _CustomerAodMenuScreenState extends ConsumerState<CustomerAodMenuScreen> {
         backgroundColor: Colors.black, // #000000 True Pitch-Black OLED
         body: Listener(
           onPointerDown: (_) {
+            _restartAutoCarouselTimer();
             ref.read(aodDisplayEngineProvider.notifier).onUserInteraction(
                   activeBrightness: widget.config.aodActiveBrightness,
                   idleBrightness: widget.config.aodIdleBrightness,
@@ -166,33 +206,71 @@ class _CustomerAodMenuScreenState extends ConsumerState<CustomerAodMenuScreen> {
                                       builder: (context, constraints) {
                                         final totalPages = (_menuItems.length / itemsPerPage).ceil();
 
-                                        return PageView.builder(
-                                          controller: _pageController,
-                                          itemCount: totalPages,
-                                          itemBuilder: (ctx, pageIndex) {
-                                            final startIndex = pageIndex * itemsPerPage;
-                                            final endIndex = (startIndex + itemsPerPage).clamp(0, _menuItems.length);
-                                            final pageItems = _menuItems.sublist(startIndex, endIndex);
+                                        return Column(
+                                          children: [
+                                            Expanded(
+                                              child: PageView.builder(
+                                                controller: _pageController,
+                                                itemCount: totalPages,
+                                                onPageChanged: (page) => setState(() => _currentPage = page),
+                                                itemBuilder: (ctx, pageIndex) {
+                                                  final startIndex = pageIndex * itemsPerPage;
+                                                  final endIndex = (startIndex + itemsPerPage).clamp(0, _menuItems.length);
+                                                  final pageItems = _menuItems.sublist(startIndex, endIndex);
 
-                                            final cardWidth = (constraints.maxWidth - ((columns - 1) * 12)) / columns;
-                                            final cardHeight = (constraints.maxHeight - ((rows - 1) * 12)) / rows;
+                                                  final cardWidth = (constraints.maxWidth - ((columns - 1) * 12)) / columns;
+                                                  final availableHeight = constraints.maxHeight - (totalPages > 1 ? 24 : 0);
+                                                  final cardHeight = (availableHeight - ((rows - 1) * 12)) / rows;
 
-                                            return Wrap(
-                                              spacing: 12,
-                                              runSpacing: 12,
-                                              children: pageItems.map((item) {
-                                                return SizedBox(
-                                                  width: cardWidth,
-                                                  height: cardHeight,
-                                                  child: _AodMenuCard(
-                                                    item: item,
-                                                    borderColor: widget.config.aodCardBorderColor,
-                                                    accentColor: widget.config.aodAccentColor,
+                                                  return Wrap(
+                                                    spacing: 12,
+                                                    runSpacing: 12,
+                                                    children: pageItems.map((item) {
+                                                      return SizedBox(
+                                                        width: cardWidth,
+                                                        height: cardHeight,
+                                                        child: _AodMenuCard(
+                                                          item: item,
+                                                          borderColor: widget.config.aodCardBorderColor,
+                                                          accentColor: widget.config.aodAccentColor,
+                                                        ),
+                                                      );
+                                                    }).toList(),
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                            if (totalPages > 1) ...[
+                                              const SizedBox(height: 6),
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  Text(
+                                                    'HALAMAN ${_currentPage + 1}/$totalPages  ',
+                                                    style: const TextStyle(
+                                                      color: Colors.white38,
+                                                      fontSize: 10,
+                                                      fontWeight: FontWeight.bold,
+                                                      letterSpacing: 1.0,
+                                                    ),
                                                   ),
-                                                );
-                                              }).toList(),
-                                            );
-                                          },
+                                                  ...List.generate(totalPages, (index) {
+                                                    final isCurrent = index == _currentPage;
+                                                    return AnimatedContainer(
+                                                      duration: const Duration(milliseconds: 300),
+                                                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                                                      width: isCurrent ? 18 : 6,
+                                                      height: 5,
+                                                      decoration: BoxDecoration(
+                                                        color: isCurrent ? const Color(0xFFD4AF37) : Colors.white24,
+                                                        borderRadius: BorderRadius.circular(3),
+                                                      ),
+                                                    );
+                                                  }),
+                                                ],
+                                              ),
+                                            ],
+                                          ],
                                         );
                                       },
                                     ),
@@ -356,22 +434,13 @@ class _AodMenuCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Center(
-                child: item.assetFormat == 'SVG'
-                    ? SvgPicture.network(
-                        item.assetUrl,
-                        fit: BoxFit.contain,
-                        placeholderBuilder: (context) => const CupertinoActivityIndicator(color: Colors.white24),
-                      )
-                    : CachedNetworkImage(
-                        imageUrl: item.assetUrl,
-                        fit: BoxFit.contain,
-                        placeholder: (context, url) => const CupertinoActivityIndicator(color: Colors.white24),
-                        errorWidget: (context, url, error) => const Icon(
-                          Icons.local_cafe,
-                          color: Color(0xFFD4AF37),
-                          size: 40,
-                        ),
-                      ),
+                child: BusinessMenuAssetImage(
+                  assetUrl: item.assetUrl,
+                  assetFormat: item.assetFormat,
+                  fit: BoxFit.contain,
+                  fallbackIconColor: const Color(0xFFD4AF37),
+                  fallbackIconSize: 42,
+                ),
               ),
             ),
           ),

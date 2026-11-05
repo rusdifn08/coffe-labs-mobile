@@ -8,6 +8,7 @@ import 'auth_service.dart';
 
 class BusinessPosApiService {
   static const String _localCustomMenuKey = 'coffe_labs_business_custom_menu_items_json';
+  static const String _localDeletedMenuIdsKey = 'coffe_labs_business_deleted_menu_ids';
 
   static Future<Map<String, String>> _headers() async {
     final token = await AuthService.getToken();
@@ -15,6 +16,26 @@ class BusinessPosApiService {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer ${token ?? ''}',
     };
+  }
+
+  static Future<Set<String>> loadDeletedMenuIds() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList(_localDeletedMenuIdsKey);
+      return list?.toSet() ?? <String>{};
+    } catch (e) {
+      debugPrint('Error reading deleted menu ids: $e');
+      return <String>{};
+    }
+  }
+
+  static Future<void> _saveDeletedMenuIds(Set<String> ids) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(_localDeletedMenuIdsKey, ids.toList());
+    } catch (e) {
+      debugPrint('Error saving deleted menu ids: $e');
+    }
   }
 
   static Future<BusinessStoreConfig?> fetchStoreConfig() async {
@@ -71,32 +92,39 @@ class BusinessPosApiService {
     }
 
     final localCustom = await loadLocalMenuItems();
-    if (serverItems.isNotEmpty) {
-      // Gabungkan item unik dari lokal jika ada yang baru ditambahkan
-      final Map<String, BusinessMenuItem> merged = {};
-      for (final s in serverItems) {
-        merged[s.id] = s;
+    final deletedIds = await loadDeletedMenuIds();
+
+    // 1. Mulai dari menu fallback artisan barista
+    final Map<String, BusinessMenuItem> merged = {};
+    for (final baseItem in _getFallbackMenuItems()) {
+      if (!deletedIds.contains(baseItem.id)) {
+        merged[baseItem.id] = baseItem;
       }
-      for (final l in localCustom) {
-        merged[l.id] = l;
-      }
-      return merged.values.toList();
     }
 
-    if (localCustom.isNotEmpty) {
-      // Gabungkan fallback bawaan dengan custom lokal
-      final base = _getFallbackMenuItems();
-      final Map<String, BusinessMenuItem> merged = {};
-      for (final b in base) {
-        merged[b.id] = b;
+    // 2. Gabungkan katalog menu dari database PostgreSQL server
+    for (final serverItem in serverItems) {
+      if (!deletedIds.contains(serverItem.id)) {
+        merged[serverItem.id] = serverItem;
       }
-      for (final l in localCustom) {
-        merged[l.id] = l;
-      }
-      return merged.values.toList();
     }
 
-    return _getFallbackMenuItems();
+    // 3. Terapkan custom & offline edits dari local storage
+    for (final localItem in localCustom) {
+      if (!deletedIds.contains(localItem.id)) {
+        merged[localItem.id] = localItem;
+      }
+    }
+
+    final result = merged.values.toList();
+    // Urutkan berdasarkan displayOrder, lalu nama menu
+    result.sort((a, b) {
+      final cmp = a.displayOrder.compareTo(b.displayOrder);
+      if (cmp != 0) return cmp;
+      return a.name.compareTo(b.name);
+    });
+
+    return result;
   }
 
   static Future<List<BusinessMenuItem>> loadLocalMenuItems() async {
@@ -124,6 +152,9 @@ class BusinessPosApiService {
   }
 
   static Future<BusinessMenuItem?> createMenuItem(Map<String, dynamic> payload) async {
+    final bool desiredShowInAod = payload['show_in_aod'] as bool? ?? true;
+    final bool desiredShowInPos = payload['show_in_pos'] as bool? ?? true;
+
     BusinessMenuItem? created;
     try {
       final baseUrl = await AuthService.getBaseUrl();
@@ -142,8 +173,8 @@ class BusinessPosApiService {
       debugPrint('Error creating menu item on server: $e');
     }
 
-    // Failsafe auto-cache lokal agar menu langsung instan muncul di POS & AOD
-    final item = created ??
+    // Failsafe auto-cache lokal: selalu hormati showInAod dan showInPos dari input pengguna
+    final BusinessMenuItem item = (created ??
         BusinessMenuItem(
           id: 'menu_${DateTime.now().millisecondsSinceEpoch}',
           storeId: 'active_store',
@@ -158,7 +189,18 @@ class BusinessPosApiService {
           hasVerifiedTransparency: true,
           displayOrder: (payload['display_order'] as num?)?.toInt() ?? 99,
           isAvailable: payload['is_available'] as bool? ?? true,
+          showInAod: desiredShowInAod,
+          showInPos: desiredShowInPos,
+        )).copyWith(
+          showInAod: desiredShowInAod,
+          showInPos: desiredShowInPos,
         );
+
+    // Hapus dari deletedIds jika sebelumnya ada ID yang sama
+    final deletedIds = await loadDeletedMenuIds();
+    if (deletedIds.remove(item.id)) {
+      await _saveDeletedMenuIds(deletedIds);
+    }
 
     final currentLocal = await loadLocalMenuItems();
     currentLocal.removeWhere((existing) => existing.id == item.id);
@@ -176,6 +218,11 @@ class BusinessPosApiService {
     } catch (e) {
       debugPrint('Error deleting menu item on server: $e');
     }
+
+    // Tandai id terhapus secara permanen di cache lokal
+    final deletedIds = await loadDeletedMenuIds();
+    deletedIds.add(id);
+    await _saveDeletedMenuIds(deletedIds);
 
     final currentLocal = await loadLocalMenuItems();
     currentLocal.removeWhere((i) => i.id == id);
@@ -202,15 +249,48 @@ class BusinessPosApiService {
       final old = currentLocal[index];
       currentLocal[index] = old.copyWith(
         name: payload['name']?.toString() ?? old.name,
+        description: payload['description']?.toString() ?? old.description,
         priceCents: (payload['price_cents'] as num?)?.toInt() ?? old.priceCents,
         category: payload['category']?.toString() ?? old.category,
-        showInAod: payload['show_in_aod'] as bool? ?? old.showInAod,
-        showInPos: payload['show_in_pos'] as bool? ?? old.showInPos,
-        isAvailable: payload['is_available'] as bool? ?? old.isAvailable,
+        assetUrl: payload['asset_url']?.toString() ?? old.assetUrl,
+        assetFormat: payload['asset_format']?.toString() ?? old.assetFormat,
+        showInAod: payload.containsKey('show_in_aod') ? (payload['show_in_aod'] as bool?) : old.showInAod,
+        showInPos: payload.containsKey('show_in_pos') ? (payload['show_in_pos'] as bool?) : old.showInPos,
+        isAvailable: payload.containsKey('is_available') ? (payload['is_available'] as bool?) : old.isAvailable,
         displayOrder: (payload['display_order'] as num?)?.toInt() ?? old.displayOrder,
       );
-      await _saveLocalMenuItems(currentLocal);
+    } else {
+      // Jika item adalah fallback default yang belum disimpan di localCustom
+      final fallbackList = _getFallbackMenuItems();
+      final baseItem = fallbackList.firstWhere(
+        (b) => b.id == id,
+        orElse: () => BusinessMenuItem(
+          id: id,
+          storeId: 'active_store',
+          name: payload['name']?.toString() ?? 'Menu Item',
+          description: payload['description']?.toString() ?? '',
+          category: payload['category']?.toString() ?? 'Signature Coffee',
+          priceCents: (payload['price_cents'] as num?)?.toInt() ?? 35000,
+          currency: payload['currency']?.toString() ?? 'IDR',
+          assetUrl: payload['asset_url']?.toString() ?? '',
+          assetFormat: payload['asset_format']?.toString() ?? 'PNG',
+        ),
+      );
+      final updated = baseItem.copyWith(
+        name: payload['name']?.toString() ?? baseItem.name,
+        description: payload['description']?.toString() ?? baseItem.description,
+        priceCents: (payload['price_cents'] as num?)?.toInt() ?? baseItem.priceCents,
+        category: payload['category']?.toString() ?? baseItem.category,
+        assetUrl: payload['asset_url']?.toString() ?? baseItem.assetUrl,
+        assetFormat: payload['asset_format']?.toString() ?? baseItem.assetFormat,
+        showInAod: payload.containsKey('show_in_aod') ? (payload['show_in_aod'] as bool?) : baseItem.showInAod,
+        showInPos: payload.containsKey('show_in_pos') ? (payload['show_in_pos'] as bool?) : baseItem.showInPos,
+        isAvailable: payload.containsKey('is_available') ? (payload['is_available'] as bool?) : baseItem.isAvailable,
+        displayOrder: (payload['display_order'] as num?)?.toInt() ?? baseItem.displayOrder,
+      );
+      currentLocal.add(updated);
     }
+    await _saveLocalMenuItems(currentLocal);
     return true;
   }
 

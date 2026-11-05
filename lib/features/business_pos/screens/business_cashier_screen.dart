@@ -13,6 +13,7 @@ import '../widgets/menu_grid_configurator_modal.dart';
 import '../widgets/oled_compatibility_dialog.dart';
 import '../widgets/pos_discount_modal.dart';
 import '../widgets/receipt_preview_modal.dart';
+import '../widgets/business_menu_asset_image.dart';
 import 'customer_aod_menu_screen.dart';
 import 'oled_diagnostic_screen.dart';
 import 'shift_summary_screen.dart';
@@ -122,7 +123,7 @@ class _BusinessCashierScreenState extends ConsumerState<BusinessCashierScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => CustomerAodMenuScreen(config: _config),
+            builder: (_) => CustomerAodMenuScreen(config: _config, initialMenuItems: _menuItems),
           ),
         );
       },
@@ -541,17 +542,11 @@ class _BusinessCashierScreenState extends ConsumerState<BusinessCashierScreen> {
                               child: Center(
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
-                                  child: Image.network(
-                                    item.assetUrl,
+                                  child: BusinessMenuAssetImage(
+                                    assetUrl: item.assetUrl,
+                                    assetFormat: item.assetFormat,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) => Container(
-                                      decoration: const BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: Colors.black,
-                                      ),
-                                      padding: const EdgeInsets.all(8),
-                                      child: const Icon(Icons.local_cafe, color: Color(0xFFD4AF37), size: 36),
-                                    ),
+                                    fallbackIconSize: 36,
                                   ),
                                 ),
                               ),

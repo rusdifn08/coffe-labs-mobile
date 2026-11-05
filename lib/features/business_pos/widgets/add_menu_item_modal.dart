@@ -2,8 +2,10 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../services/business_pos_api_service.dart';
 import '../../../services/menu_asset_inspector_service.dart';
+import 'business_menu_asset_image.dart';
 
 class AddMenuItemModal extends StatefulWidget {
   final VoidCallback onMenuAdded;
@@ -153,10 +155,20 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
         return;
       }
 
+      // Simpan file permanen ke internal storage aplikasi agar tidak hilang saat cache OS dibersihkan
+      final appDir = await getApplicationDocumentsDirectory();
+      final menuImagesDir = Directory('${appDir.path}/coffee_menu_assets');
+      if (!menuImagesDir.existsSync()) {
+        menuImagesDir.createSync(recursive: true);
+      }
+      final fileExt = picked.path.contains('.') ? picked.path.split('.').last : 'png';
+      final persistentFileName = 'menu_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+      final persistentFile = await file.copy('${menuImagesDir.path}/$persistentFileName');
+
       setState(() {
-        _pickedFile = file;
+        _pickedFile = persistentFile;
         _isCustomUpload = true;
-        _selectedAssetUrl = file.path;
+        _selectedAssetUrl = persistentFile.path;
         _assetFormat = result.format;
         _uploadIsValid = true;
         _isSaving = false;
@@ -568,12 +580,12 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12),
-                            child: Image.network(
-                              _selectedAssetUrl,
+                            child: BusinessMenuAssetImage(
+                              assetUrl: _selectedAssetUrl,
+                              assetFormat: _assetFormat,
                               width: 80,
                               height: 80,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => const Icon(Icons.local_cafe, color: Color(0xFFD4AF37), size: 40),
                             ),
                           ),
                           const SizedBox(width: 14),

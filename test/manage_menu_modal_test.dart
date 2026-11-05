@@ -38,7 +38,8 @@ void main() {
     );
 
     await tester.tap(find.text('Open Manage'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Kelola Katalog & Display AOD'), findsOneWidget);
     expect(find.text('Single Origin Filter'), findsOneWidget);
@@ -61,7 +62,8 @@ void main() {
     );
 
     await tester.tap(find.text('Open Add'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Tambah Menu Baru (POS & AOD)'), findsOneWidget);
   });

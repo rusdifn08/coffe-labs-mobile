@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../models/business_pos_models.dart';
 import '../../../services/business_pos_api_service.dart';
 import 'add_menu_item_modal.dart';
+import 'business_menu_asset_image.dart';
 
 class ManageMenuModal extends StatefulWidget {
   final List<BusinessMenuItem> menuItems;
@@ -78,7 +79,25 @@ class _ManageMenuModalState extends State<ManageMenuModal> {
     });
 
     // Simpan perubahan ke backend & local cache
-    await BusinessPosApiService.createMenuItem(updated.toJson());
+    await BusinessPosApiService.updateMenuItem(item.id, {
+      'show_in_aod': updated.showInAod,
+    });
+    widget.onMenuChanged();
+  }
+
+  Future<void> _togglePosDisplay(BusinessMenuItem item) async {
+    final updated = item.copyWith(showInPos: !item.showInPos);
+    setState(() {
+      final index = _items.indexWhere((i) => i.id == item.id);
+      if (index != -1) {
+        _items[index] = updated;
+      }
+    });
+
+    // Simpan perubahan ke backend & local cache
+    await BusinessPosApiService.updateMenuItem(item.id, {
+      'show_in_pos': updated.showInPos,
+    });
     widget.onMenuChanged();
   }
 
@@ -260,14 +279,11 @@ class _ManageMenuModalState extends State<ManageMenuModal> {
                                 width: 50,
                                 height: 50,
                                 color: Colors.black,
-                                child: Image.network(
-                                  item.assetUrl,
+                                child: BusinessMenuAssetImage(
+                                  assetUrl: item.assetUrl,
+                                  assetFormat: item.assetFormat,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => const Icon(
-                                    Icons.local_cafe,
-                                    color: Color(0xFFD4AF37),
-                                    size: 24,
-                                  ),
+                                  fallbackIconSize: 24,
                                 ),
                               ),
                             ),
@@ -306,9 +322,13 @@ class _ManageMenuModalState extends State<ManageMenuModal> {
                                         ),
                                       ),
                                       const SizedBox(width: 8),
-                                      Text(
-                                        '• ${item.category}',
-                                        style: const TextStyle(color: Colors.white38, fontSize: 11),
+                                      Expanded(
+                                        child: Text(
+                                          '• ${item.category}',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(color: Colors.white38, fontSize: 11),
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -316,22 +336,54 @@ class _ManageMenuModalState extends State<ManageMenuModal> {
                               ),
                             ),
 
-                            // AOD Display Toggle Button
-                            Column(
+                            // Dual Toggles: AOD & POS Kasir
+                            Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                CupertinoSwitch(
-                                  value: item.showInAod,
-                                  activeTrackColor: const Color(0xFFD4AF37),
-                                  onChanged: (_) => _toggleAodDisplay(item),
+                                // Kasir Toggle
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Transform.scale(
+                                      scale: 0.85,
+                                      child: CupertinoSwitch(
+                                        value: item.showInPos,
+                                        activeTrackColor: Colors.amber,
+                                        onChanged: (_) => _togglePosDisplay(item),
+                                      ),
+                                    ),
+                                    Text(
+                                      item.showInPos ? 'KASIR ON' : 'KASIR OFF',
+                                      style: TextStyle(
+                                        color: item.showInPos ? Colors.amber : Colors.white30,
+                                        fontSize: 8.0,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                Text(
-                                  item.showInAod ? 'AOD AKTIF' : 'KASIR SAJA',
-                                  style: TextStyle(
-                                    color: item.showInAod ? const Color(0xFFD4AF37) : Colors.white38,
-                                    fontSize: 8.5,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                const SizedBox(width: 6),
+                                // AOD Display Toggle
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Transform.scale(
+                                      scale: 0.85,
+                                      child: CupertinoSwitch(
+                                        value: item.showInAod,
+                                        activeTrackColor: const Color(0xFFD4AF37),
+                                        onChanged: (_) => _toggleAodDisplay(item),
+                                      ),
+                                    ),
+                                    Text(
+                                      item.showInAod ? 'AOD ON' : 'AOD OFF',
+                                      style: TextStyle(
+                                        color: item.showInAod ? const Color(0xFFD4AF37) : Colors.white30,
+                                        fontSize: 8.0,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
