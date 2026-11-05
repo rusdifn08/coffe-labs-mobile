@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/business_pos_models.dart';
 import '../../../providers/workspace_mode_provider.dart';
+import '../../../services/app_update_service.dart';
 import '../../../services/business_pos_api_service.dart';
 import '../../../theme/business_theme.dart';
 import '../services/thermal_receipt_service.dart';
@@ -204,6 +205,10 @@ class _BusinessSettingsScreenState
 
                   // 5. Shift & Cashier Audit
                   _buildShiftAuditCard(),
+                  const SizedBox(height: 20),
+
+                  // 6. OTA & System Updates
+                  _buildOtaUpdateCard(),
                   const SizedBox(height: 36),
                 ],
               ),
@@ -705,6 +710,103 @@ class _BusinessSettingsScreenState
                   style: TextStyle(color: BusinessTheme.textMuted, fontSize: 11)),
               trailing: const Icon(CupertinoIcons.chevron_right, color: Colors.white38, size: 16),
               onTap: _openShiftSummary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOtaUpdateCard() {
+    return Container(
+      decoration: BusinessTheme.cardDecoration(),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(CupertinoIcons.arrow_2_circlepath,
+                      color: BusinessTheme.goldAccent, size: 16),
+                  SizedBox(width: 8),
+                  Text(
+                    'SISTEM PEMBARUAN & OTA',
+                    style: TextStyle(
+                      color: BusinessTheme.goldAccent,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFF10B981)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(CupertinoIcons.checkmark_seal_fill, color: Color(0xFF10B981), size: 12),
+                    SizedBox(width: 4),
+                    Text(
+                      'OTA AKTIF',
+                      style: TextStyle(
+                        color: Color(0xFF10B981),
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _buildInfoRow(
+            label: 'Versi Aplikasi POS',
+            value: 'v2.0.0 (Build #2)',
+            icon: CupertinoIcons.info_circle_fill,
+            valueColor: Colors.white,
+          ),
+          const SizedBox(height: 8),
+          _buildInfoRow(
+            label: 'Mesin Distribusi Update',
+            value: 'Shorebird 2.x & Version Gatekeeper',
+            icon: CupertinoIcons.bolt_fill,
+            valueColor: BusinessTheme.goldAccent,
+          ),
+          const SizedBox(height: 8),
+          _buildInfoRow(
+            label: 'Mode Update Kiosk',
+            value: 'Silent Background & Force OTA',
+            icon: CupertinoIcons.device_laptop,
+            valueColor: Colors.white70,
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                AppUpdateService.checkForUpdate(context: context, isManual: true);
+              },
+              icon: const Icon(CupertinoIcons.arrow_clockwise, size: 16),
+              label: const Text(
+                'Periksa Pembaruan Sistem (OTA)',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: BusinessTheme.goldAccent,
+                side: const BorderSide(color: BusinessTheme.goldAccent),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
             ),
           ),
         ],

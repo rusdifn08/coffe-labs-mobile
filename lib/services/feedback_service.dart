@@ -59,7 +59,7 @@ class FeedbackService {
         'description': description.trim(),
         'rating': rating,
         'guest_name': guestName,
-        'app_version': '1.0.0',
+        'app_version': '2.0.0',
         'device_info': devicePlatform,
       });
 

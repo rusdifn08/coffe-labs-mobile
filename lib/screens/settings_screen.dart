@@ -423,7 +423,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 24),
             const Text(
-              'Coffee Labs v1.0.0\nPowered by Rust Axum & Shorebird Engine',
+              'Coffee Labs v2.0.0\nPowered by Rust Axum & Shorebird Engine',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 11, color: AppTheme.textMuted, height: 1.4),
             ),

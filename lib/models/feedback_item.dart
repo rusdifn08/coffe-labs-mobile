@@ -145,7 +145,7 @@ class FeedbackItem {
       title: json['title']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
       rating: (json['rating'] as num?)?.toInt() ?? 5,
-      appVersion: json['app_version']?.toString() ?? '1.0.0',
+      appVersion: json['app_version']?.toString() ?? '2.0.0',
       deviceInfo: json['device_info']?.toString() ?? 'Mobile',
       status: json['status']?.toString() ?? 'pending',
       adminNotes: json['admin_notes']?.toString(),

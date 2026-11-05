@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/business_pos_models.dart';
 import '../../../providers/workspace_mode_provider.dart';
+import '../../../services/app_update_service.dart';
 import '../../../services/audio_service.dart';
 import '../../../services/business_pos_api_service.dart';
 import '../../../theme/business_theme.dart';
@@ -36,6 +37,9 @@ class _BusinessMainLayoutState extends ConsumerState<BusinessMainLayout> {
     super.initState();
     _currentIndex = widget.initialTabIndex.clamp(0, 4);
     _loadConfig();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AppUpdateService.checkForUpdate(context: context, isManual: false);
+    });
   }
 
   Future<void> _loadConfig() async {

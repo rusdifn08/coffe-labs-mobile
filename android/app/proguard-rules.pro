@@ -24,3 +24,23 @@
 # Rive native & other plugins
 -dontwarn app.rive.runtime.kotlin.**
 -keep class app.rive.runtime.kotlin.** { *; }
+
+# Shorebird & OTA Engine
+-keep class dev.shorebird.** { *; }
+-dontwarn dev.shorebird.**
+
+# Audio Engines
+-dontwarn com.ryanheise.just_audio.**
+-keep class com.ryanheise.just_audio.** { *; }
+-dontwarn xyz.luan.audioplayers.**
+-keep class xyz.luan.audioplayers.** { *; }
+
+# Bluetooth Low Energy & Thermal Printing
+-dontwarn com.boskokg.flutter_blue_plus.**
+-keep class com.boskokg.flutter_blue_plus.** { *; }
+-dontwarn net.nfet.flutter.printing.**
+-keep class net.nfet.flutter.printing.** { *; }
+
+# AndroidX & Coroutines
+-dontwarn kotlinx.coroutines.**
+-keep class kotlinx.coroutines.** { *; }
