@@ -46,10 +46,28 @@ android {
                 storePassword = keystoreProperties.getProperty("storePassword")
             } else {
                 val debugConfig = signingConfigs.getByName("debug")
-                keyAlias = debugConfig.keyAlias
-                keyPassword = debugConfig.keyPassword
-                storeFile = debugConfig.storeFile
-                storePassword = debugConfig.storePassword
+                val defaultDebug = file("${System.getProperty("user.home")}/.android/debug.keystore")
+                val configDebug = file("${System.getProperty("user.home")}/.config/.android/debug.keystore")
+                when {
+                    defaultDebug.exists() -> {
+                        keyAlias = debugConfig.keyAlias
+                        keyPassword = debugConfig.keyPassword
+                        storeFile = defaultDebug
+                        storePassword = debugConfig.storePassword
+                    }
+                    configDebug.exists() -> {
+                        keyAlias = debugConfig.keyAlias
+                        keyPassword = debugConfig.keyPassword
+                        storeFile = configDebug
+                        storePassword = debugConfig.storePassword
+                    }
+                    else -> {
+                        keyAlias = debugConfig.keyAlias
+                        keyPassword = debugConfig.keyPassword
+                        storeFile = debugConfig.storeFile
+                        storePassword = debugConfig.storePassword
+                    }
+                }
             }
         }
     }

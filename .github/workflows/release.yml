@@ -35,6 +35,12 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Setup Android Debug/CI Keystore
+        run: |
+          mkdir -p ~/.android ~/.config/.android
+          keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=CoffeeLabs,O=CoffeeLabs,C=ID"
+          cp ~/.android/debug.keystore ~/.config/.android/debug.keystore
+
       - name: Install Dependencies
         run: flutter pub get
 
@@ -76,8 +82,12 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Install Dependencies
-        run: flutter pub get
+      - name: Install Dependencies & CocoaPods
+        run: |
+          flutter pub get
+          cd ios
+          pod install --repo-update
+          cd ..
 
       - name: Build iOS Release (No Code Signing)
         run: flutter build ios --release --no-codesign
@@ -104,15 +114,18 @@ jobs:
   publish-github-release:
     name: Publish GitHub Release (Direct Download)
     needs: [build-android, build-ios]
+    if: always() && (needs.build-android.result == 'success' || needs.build-ios.result == 'success')
     runs-on: ubuntu-latest
     steps:
       - name: Download Android APK Assets
+        if: needs.build-android.result == 'success'
         uses: actions/download-artifact@v4
         with:
           name: android-release-assets
           path: release-files
 
       - name: Download iOS IPA Asset
+        if: needs.build-ios.result == 'success'
         uses: actions/download-artifact@v4
         with:
           name: ios-release-assets
@@ -143,17 +156,12 @@ jobs:
             Unduh file aplikasi secara langsung tanpa kompresi `.zip`:
             
             ### 📱 Android (.apk):
-            - **`CoffeeLabs-arm64-v8a.apk`** *(Direkomendasikan - Ukuran Terkompresi Lebih Hemat untuk Smartphone Modern)*
+            - **`CoffeeLabs-arm64-v8a.apk`** *(Direkomendasikan - Ukuran Terkompresi ~80MB Lebih Hemat untuk Smartphone Modern)*
             - **`CoffeeLabs-Universal.apk`** *(Universal - Kompatibel dengan Semua Arsitektur Android)*
             - **`CoffeeLabs-armeabi-v7a.apk`** *(Perangkat Android 32-bit)*
             
             ### 🍏 iOS (.ipa):
             - **`CoffeeLabs-iOS-Release.ipa`** *(Langsung format `.ipa` terkompresi untuk sideloading via AltStore, Sideloadly, TrollStore, atau Scarlet)*
-          files: |
-            release-files/CoffeeLabs-arm64-v8a.apk
-            release-files/CoffeeLabs-Universal.apk
-            release-files/CoffeeLabs-armeabi-v7a.apk
-            release-files/CoffeeLabs-x86_64.apk
-            release-files/CoffeeLabs-iOS-Release.ipa
+          files: release-files/*.*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
