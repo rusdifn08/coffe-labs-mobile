@@ -213,10 +213,16 @@ class RecipeSanitizer {
 
     if (isEspresso) {
       // 1. Base Coffee Dose
+      final cleanBean = beanName.trim();
+      final beanDisplay = cleanBean.isNotEmpty
+          ? (cleanBean.startsWith('(') && cleanBean.endsWith(')')
+              ? 'Biji Kopi Sangrai $cleanBean'
+              : 'Biji Kopi Sangrai ($cleanBean)')
+          : 'Biji Kopi Espresso Blend';
       list.add({
-        'name': 'Biji Kopi Sangrai ($beanName)',
+        'name': beanDisplay,
         'amount': '${coffeeWeightGrams}g (Grind Fine)',
-        'role': 'Espresso Base (Dose)',
+        'role': 'Espresso Base',
         'icon': 'coffee_beans',
       });
 
@@ -603,7 +609,7 @@ class RecipeSanitizer {
       } else {
         // Pure Espresso / Ristretto / Lungo / Doppio
         list.add({
-          'name': 'Hasil Ekstraksi Espresso 9-Bar (Yield)',
+          'name': 'Hasil Ekstraksi Espresso 9-Bar',
           'amount': '~${totalWaterWeightGrams > 0 ? totalWaterWeightGrams : (coffeeWeightGrams * 2).round()} ml',
           'role': 'Liquid Crema Yield',
           'icon': 'water',

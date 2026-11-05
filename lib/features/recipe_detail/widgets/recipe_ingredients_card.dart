@@ -145,119 +145,80 @@ class RecipeIngredientsCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
 
-          // Ingredient Cards (Two-tier stacked layout: zero text cramping or character wrapping)
+          // Ingredient Cards: Tata letak compact & proporsional (Full width name, tanpa badge kanan yang menyempitkan)
           ...items.map((item) {
             final Map<String, dynamic> ing = item is Map
                 ? Map<String, dynamic>.from(item)
-                : {'name': item.toString(), 'amount': '', 'role': 'Bahan', 'icon': 'coffee_beans'};
+                : {'name': item.toString(), 'amount': '', 'icon': 'coffee_beans'};
 
             final name = ing['name']?.toString() ?? 'Bahan';
             final amount = ing['amount']?.toString() ?? '';
-            final role = ing['role']?.toString() ?? 'Komposisi';
             final iconKey = ing['icon']?.toString() ?? 'coffee_beans';
 
             final iconData = _getIconForRole(iconKey);
             final roleColor = _getColorForRole(iconKey);
 
             return Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: AppTheme.bgCream.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(14),
+                color: AppTheme.bgCream.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppTheme.primaryBrown.withValues(alpha: 0.08)),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Top Row: Icon + Full-Width Name + Role Badge
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: roleColor.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(iconData, size: 17, color: roleColor),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: roleColor.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(iconData, size: 18, color: roleColor),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
                           name,
                           style: const TextStyle(
-                            fontSize: 13.5,
+                            fontSize: 13,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.textDark,
                             height: 1.25,
                           ),
                         ),
-                      ),
-                      if (role.isNotEmpty) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: roleColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: roleColor.withValues(alpha: 0.2)),
-                          ),
-                          child: Text(
-                            role,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: roleColor,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-
-                  // Bottom Tier: Full-Width Takaran Formula Box
-                  if (amount.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AppTheme.surfaceWhite,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppTheme.primaryBrown.withValues(alpha: 0.1)),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            CupertinoIcons.slider_horizontal_below_rectangle,
-                            size: 13,
-                            color: AppTheme.primaryBrown,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            isEn ? 'Measurement: ' : 'Takaran: ',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: AppTheme.textMuted,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              amount,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.primaryBrown,
+                        if (amount.isNotEmpty) ...[
+                          const SizedBox(height: 3),
+                          Row(
+                            children: [
+                              Icon(
+                                CupertinoIcons.slider_horizontal_below_rectangle,
+                                size: 11,
+                                color: AppTheme.primaryBrown.withValues(alpha: 0.8),
                               ),
-                            ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  '${isEn ? "Measurement: " : "Takaran: "}$amount',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.primaryBrown.withValues(alpha: 0.9),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ],
               ),
             );
