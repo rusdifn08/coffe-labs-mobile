@@ -100,6 +100,35 @@ void main() {
       expect(header, equals('%PDF-'));
     });
 
+    test('Recipe steps parse waterAddedGrams and display title properly without 0g', () {
+      final recipeWithSeedFormat = {
+        'id': 'seed-recipe-2',
+        'title': 'Inovasi Pemecahan Biji Dingin',
+        'author': 'Konstantinos Iatridis',
+        'method': 'Hario V60',
+        'coffeeWeightGrams': 20,
+        'totalWaterWeightGrams': 300,
+        'grindSize': 'Coarse',
+        'waterTempCelsius': 92,
+        'steps': [
+          {'stepOrder': 1, 'title': 'Blooming', 'durationSeconds': 30, 'waterAddedGrams': 60},
+          {'stepOrder': 2, 'title': 'Main Pour', 'durationSeconds': 150, 'waterAddedGrams': 240},
+        ],
+      };
+
+      final text = ReceiptPrintService.generateThermalReceiptText(recipeWithSeedFormat);
+
+      // Verify that water grams are accurately parsed from waterAddedGrams (not 0g)
+      expect(text, contains('+60g - Total 60g'));
+      expect(text, contains('+240g - Total 300g'));
+      expect(text, isNot(contains('Total 0 g')));
+      expect(text, isNot(contains('Total 0g')));
+
+      // Verify step process names are rendered
+      expect(text, contains('Blooming'));
+      expect(text, contains('Main Pour'));
+    });
+
     test('ReceiptSettings model copyWith works properly', () {
       const initial = ReceiptSettings.defaultSettings;
       final updated = initial.copyWith(

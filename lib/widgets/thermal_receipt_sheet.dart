@@ -302,62 +302,95 @@ class _ThermalReceiptSheetState extends State<ThermalReceiptSheet> {
           ),
           const SizedBox(height: 14),
 
-          // 4 Action Buttons Grid (Salin, Gambar, PDF, Print Bluetooth)
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  // 1. Ekspor Gambar (PNG)
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
+          // 4 Action Buttons dalam 1 Baris Tunggal (Icon-Only saat Portrait)
+          () {
+            final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait ||
+                MediaQuery.of(context).size.width < 500;
+
+            return Row(
+              children: [
+                // 1. Ekspor Gambar (PNG)
+                Expanded(
+                  child: Tooltip(
+                    message: isEn ? 'Export Image' : 'Ekspor Gambar PNG',
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF4EDE4),
                         foregroundColor: AppTheme.primaryBrown,
-                        side: BorderSide(color: AppTheme.primaryBrown.withValues(alpha: 0.4)),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          side: BorderSide(color: AppTheme.primaryBrown.withValues(alpha: 0.3)),
+                        ),
                       ),
                       onPressed: _isExporting ? null : _handleExportImage,
-                      icon: const Icon(CupertinoIcons.photo_fill_on_rectangle_fill, size: 15),
-                      label: Text(
-                        isEn ? 'Export Image' : 'Ekspor Gambar',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5),
-                      ),
+                      child: isPortrait
+                          ? const Icon(CupertinoIcons.photo_fill_on_rectangle_fill, size: 20)
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(CupertinoIcons.photo_fill_on_rectangle_fill, size: 16),
+                                const SizedBox(width: 6),
+                                Text(
+                                  isEn ? 'Export Image' : 'Ekspor Gambar',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                              ],
+                            ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                ),
+                const SizedBox(width: 8),
 
-                  // 2. Ekspor PDF Mini
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
+                // 2. Ekspor PDF Mini
+                Expanded(
+                  child: Tooltip(
+                    message: isEn ? 'Export PDF' : 'Ekspor PDF Mini',
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFE8F5E9),
                         foregroundColor: Colors.teal.shade800,
-                        side: BorderSide(color: Colors.teal.shade400),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          side: BorderSide(color: Colors.teal.shade300),
+                        ),
                       ),
                       onPressed: _isExporting ? null : _handleExportPdf,
-                      icon: const Icon(CupertinoIcons.doc_fill, size: 15),
-                      label: Text(
-                        isEn ? 'Export PDF' : 'Ekspor PDF',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5),
-                      ),
+                      child: isPortrait
+                          ? const Icon(CupertinoIcons.doc_fill, size: 20)
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(CupertinoIcons.doc_fill, size: 16),
+                                const SizedBox(width: 6),
+                                Text(
+                                  isEn ? 'Export PDF' : 'Ekspor PDF',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                              ],
+                            ),
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
+                ),
+                const SizedBox(width: 8),
 
-              Row(
-                children: [
-                  // 3. Salin Struk Teks
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.grey.shade800,
-                        side: BorderSide(color: Colors.grey.shade400),
-                        padding: const EdgeInsets.symmetric(vertical: 11),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                // 3. Salin Struk Teks
+                Expanded(
+                  child: Tooltip(
+                    message: isEn ? 'Copy Text' : 'Salin Teks Struk',
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFECEFF1),
+                        foregroundColor: Colors.blueGrey.shade800,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          side: BorderSide(color: Colors.blueGrey.shade300),
+                        ),
                       ),
                       onPressed: () async {
                         await ReceiptPrintService.copyReceiptToClipboard(
@@ -375,25 +408,37 @@ class _ThermalReceiptSheetState extends State<ThermalReceiptSheet> {
                           );
                         }
                       },
-                      icon: const Icon(CupertinoIcons.doc_on_clipboard, size: 15),
-                      label: Text(
-                        isEn ? 'Copy Text' : 'Salin Teks',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                      ),
+                      child: isPortrait
+                          ? const Icon(CupertinoIcons.doc_on_clipboard_fill, size: 20)
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(CupertinoIcons.doc_on_clipboard_fill, size: 16),
+                                const SizedBox(width: 6),
+                                Text(
+                                  isEn ? 'Copy Text' : 'Salin Teks',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                              ],
+                            ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                ),
+                const SizedBox(width: 8),
 
-                  // 4. Print via Bluetooth Thermal Printer
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton.icon(
+                // 4. Print via Bluetooth Thermal Printer
+                Expanded(
+                  child: Tooltip(
+                    message: isEn ? 'Print Bluetooth' : 'Print via Bluetooth',
+                    child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryBrown,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 11),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 1,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                       onPressed: () async {
                         await ReceiptPrintService.launchThermalPrintIntent(
@@ -411,17 +456,25 @@ class _ThermalReceiptSheetState extends State<ThermalReceiptSheet> {
                           );
                         }
                       },
-                      icon: const Icon(CupertinoIcons.printer_fill, size: 15),
-                      label: Text(
-                        isEn ? 'Print Bluetooth' : 'Print Bluetooth',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                      ),
+                      child: isPortrait
+                          ? const Icon(CupertinoIcons.printer_fill, size: 20)
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(CupertinoIcons.printer_fill, size: 16),
+                                const SizedBox(width: 6),
+                                Text(
+                                  isEn ? 'Print' : 'Print Bluetooth',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                              ],
+                            ),
                     ),
                   ),
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            );
+          }(),
         ],
       ),
     );
@@ -446,7 +499,6 @@ class _ThermalReceiptSheetState extends State<ThermalReceiptSheet> {
     final now = DateTime.now();
     final dateStr =
         '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-    final steps = widget.recipe['steps'] as List<dynamic>? ?? [];
 
     return Container(
       width: double.infinity,
@@ -563,7 +615,7 @@ class _ThermalReceiptSheetState extends State<ThermalReceiptSheet> {
                   _buildDashedLine(),
                   const SizedBox(height: 8),
 
-                  // TAHAPAN TUANGAN (Tanpa tanda kurung)
+                  // TAHAPAN TUANGAN (Tanpa tanda kurung, menampilkan nama step dan gramasi)
                   const Text(
                     'TAHAPAN TUANGAN:',
                     style: TextStyle(
@@ -573,49 +625,78 @@ class _ThermalReceiptSheetState extends State<ThermalReceiptSheet> {
                       color: Color(0xFF222222),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  if (steps.isNotEmpty) ...[
-                    ...() {
-                      int accWater = 0;
-                      int accTime = 0;
-                      final List<Widget> widgets = [];
-                      for (int i = 0; i < steps.length; i++) {
-                        final step = steps[i];
-                        final dur = step['durationSeconds'] ?? 30;
-                        final water = step['waterWeightGrams'] ?? 0;
-                        accWater += (water as num).toInt();
-                        final startSec = accTime;
-                        accTime += (dur as num).toInt();
-                        final endSec = accTime;
-                        final sFmt =
-                            '${(startSec ~/ 60).toString().padLeft(2, '0')}:${(startSec % 60).toString().padLeft(2, '0')}';
-                        final eFmt =
-                            '${(endSec ~/ 60).toString().padLeft(2, '0')}:${(endSec % 60).toString().padLeft(2, '0')}';
-                        final label = water > 0
-                            ? '+$water g - Total $accWater g'
-                            : 'Drawdown - Total $accWater g';
-                        widgets.add(
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 1.5),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('  ${i + 1}. $sFmt-$eFmt',
-                                    style: const TextStyle(fontFamily: 'monospace', fontSize: 10.5, color: Color(0xFF333333))),
-                                Text(label,
+                  const SizedBox(height: 5),
+                  ...() {
+                    final parsedSteps = ReceiptPrintService.parseRecipeSteps(
+                      widget.recipe['steps'],
+                      totalWater: (waterWeight as num).toInt(),
+                      coffeeWeight: (coffeeWeight as num).toInt(),
+                    );
+                    int accWater = 0;
+                    int accTime = 0;
+                    final List<Widget> widgets = [];
+                    for (int i = 0; i < parsedSteps.length; i++) {
+                      final step = parsedSteps[i];
+                      final dur = step['durationSeconds'] as int;
+                      final water = step['water'] as int;
+                      final stepTitle = step['title'] as String;
+                      accWater += water;
+                      final startSec = accTime;
+                      accTime += dur;
+                      final endSec = accTime;
+                      final sFmt =
+                          '${(startSec ~/ 60).toString().padLeft(2, '0')}:${(startSec % 60).toString().padLeft(2, '0')}';
+                      final eFmt =
+                          '${(endSec ~/ 60).toString().padLeft(2, '0')}:${(endSec % 60).toString().padLeft(2, '0')}';
+
+                      widgets.add(
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2.5),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    '  ${i + 1}. $sFmt - $eFmt',
                                     style: const TextStyle(
-                                        fontFamily: 'monospace', fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF222222))),
-                              ],
-                            ),
+                                      fontFamily: 'monospace',
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF1F1F1F),
+                                    ),
+                                  ),
+                                  Text(
+                                    water > 0 ? '+$water g - Total $accWater g' : 'Drawdown - Total $accWater g',
+                                    style: const TextStyle(
+                                      fontFamily: 'monospace',
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF1F1F1F),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 18, top: 1),
+                                child: Text(
+                                  stepTitle,
+                                  style: TextStyle(
+                                    fontFamily: 'monospace',
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.brown.shade800,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        );
-                      }
-                      return widgets;
-                    }(),
-                  ] else ...[
-                    const Text('  1. Tuang air perlahan & stabil',
-                        style: TextStyle(fontFamily: 'monospace', fontSize: 10.5, color: Color(0xFF444444))),
-                  ],
+                        ),
+                      );
+                    }
+                    return widgets;
+                  }(),
                   const SizedBox(height: 8),
                   _buildDashedLine(),
                   const SizedBox(height: 8),

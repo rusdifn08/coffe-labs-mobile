@@ -29,6 +29,74 @@ class ReceiptPrintService {
     return '#CLB-$dayStr-$code';
   }
 
+  /// Parsing langkah-langkah tuangan resep secara akurat
+  /// Mendukung format waterAddedGrams, waterWeightGrams, waterGrams, dll.
+  static List<Map<String, dynamic>> parseRecipeSteps(
+    dynamic rawSteps, {
+    int totalWater = 225,
+    int coffeeWeight = 15,
+  }) {
+    List<dynamic> list = [];
+    if (rawSteps is List) {
+      list = rawSteps;
+    } else if (rawSteps is String && rawSteps.trim().startsWith('[')) {
+      try {
+        list = json.decode(rawSteps) as List<dynamic>;
+      } catch (_) {}
+    }
+
+    final parsed = <Map<String, dynamic>>[];
+    int sumWater = 0;
+
+    for (int i = 0; i < list.length; i++) {
+      final item = list[i];
+      if (item is Map) {
+        final dur = (item['durationSeconds'] ?? item['duration'] ?? item['time'] ?? 30) as num;
+        final w = (item['waterAddedGrams'] ??
+            item['waterWeightGrams'] ??
+            item['waterGrams'] ??
+            item['water'] ??
+            0) as num;
+        final rawTitle = (item['title'] ?? item['name'] ?? item['stepTitle'] ?? '').toString().trim();
+        final title = rawTitle.isNotEmpty ? rawTitle : (i == 0 ? 'Blooming' : 'Tuang ${i + 1}');
+        sumWater += w.toInt();
+        parsed.add({
+          'title': title,
+          'durationSeconds': dur.toInt(),
+          'water': w.toInt(),
+        });
+      }
+    }
+
+    if (parsed.isEmpty) {
+      final bloomWater = (coffeeWeight * 3).clamp(30, 60);
+      final mainPour = totalWater > bloomWater ? totalWater - bloomWater : totalWater;
+      return [
+        {'title': 'Blooming', 'durationSeconds': 45, 'water': bloomWater},
+        {'title': 'Main Pour', 'durationSeconds': 105, 'water': mainPour},
+      ];
+    }
+
+    // Jika semua step bernilai 0g namun totalWater > 0, hitung otomatis pembagian rasio tuangan
+    if (sumWater == 0 && totalWater > 0) {
+      final bloomWater = (coffeeWeight * 3).clamp(30, (totalWater * 0.35).toInt());
+      parsed[0]['water'] = bloomWater;
+      if (parsed.length > 1) {
+        final remaining = totalWater - bloomWater;
+        final perPour = remaining ~/ (parsed.length - 1);
+        for (int i = 1; i < parsed.length; i++) {
+          parsed[i]['water'] = (i == parsed.length - 1)
+              ? (remaining - perPour * (parsed.length - 2))
+              : perPour;
+        }
+      } else {
+        parsed[0]['water'] = totalWater;
+      }
+    }
+
+    return parsed;
+  }
+
   /// Menghasilkan format teks struk kasir profesional (58mm / 32 kolom karakter)
   /// Bebas dari seluruh tanda kurung (...) dan memiliki header proporsional
   static String generateThermalReceiptText(
@@ -55,8 +123,6 @@ class ReceiptPrintService {
     final dateStr =
         '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
     final sessionCode = generateSessionCode(recipe);
-
-    final steps = recipe['steps'] as List<dynamic>? ?? [];
 
     const int colWidth = 32;
     final buffer = StringBuffer();
@@ -93,33 +159,32 @@ class ReceiptPrintService {
     buffer.writeln('  Suhu Air     : $waterTemp°C');
     buffer.writeln('-' * colWidth);
 
-    // 4. TAHAPAN TUANGAN (Tanpa tanda kurung)
+    // 4. TAHAPAN TUANGAN (Tanpa tanda kurung, menampilkan nama step dan gramasi)
     buffer.writeln('TAHAPAN TUANGAN:');
-    if (steps.isNotEmpty) {
-      int accumulatedWater = 0;
-      int accumulatedTime = 0;
-      for (int i = 0; i < steps.length; i++) {
-        final step = steps[i];
-        final dur = step['durationSeconds'] ?? 30;
-        final water = step['waterWeightGrams'] ?? 0;
-        accumulatedWater += (water as num).toInt();
-        final startSec = accumulatedTime;
-        accumulatedTime += (dur as num).toInt();
-        final endSec = accumulatedTime;
+    final parsedSteps = parseRecipeSteps(
+      recipe['steps'],
+      totalWater: (waterWeight as num).toInt(),
+      coffeeWeight: (coffeeWeight as num).toInt(),
+    );
+    int accumulatedWater = 0;
+    int accumulatedTime = 0;
+    for (int i = 0; i < parsedSteps.length; i++) {
+      final step = parsedSteps[i];
+      final dur = step['durationSeconds'] as int;
+      final water = step['water'] as int;
+      final stepTitle = step['title'] as String;
+      accumulatedWater += water;
+      final startSec = accumulatedTime;
+      accumulatedTime += dur;
+      final endSec = accumulatedTime;
 
-        final startFormatted =
-            '${(startSec ~/ 60).toString().padLeft(2, '0')}:${(startSec % 60).toString().padLeft(2, '0')}';
-        final endFormatted =
-            '${(endSec ~/ 60).toString().padLeft(2, '0')}:${(endSec % 60).toString().padLeft(2, '0')}';
+      final startFormatted =
+          '${(startSec ~/ 60).toString().padLeft(2, '0')}:${(startSec % 60).toString().padLeft(2, '0')}';
+      final endFormatted =
+          '${(endSec ~/ 60).toString().padLeft(2, '0')}:${(endSec % 60).toString().padLeft(2, '0')}';
 
-        if (water > 0) {
-          buffer.writeln('  ${i + 1}. $startFormatted-$endFormatted | +${water}g - Total ${accumulatedWater}g');
-        } else {
-          buffer.writeln('  ${i + 1}. $startFormatted-$endFormatted | Drawdown - Total ${accumulatedWater}g');
-        }
-      }
-    } else {
-      buffer.writeln('  1. Tuang air perlahan & stabil');
+      buffer.writeln('  ${i + 1}. $startFormatted-$endFormatted : +${water}g - Total ${accumulatedWater}g');
+      buffer.writeln('     $stepTitle');
     }
     buffer.writeln('-' * colWidth);
 
@@ -198,7 +263,6 @@ class ReceiptPrintService {
     final dateStr =
         '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
     final sessionCode = generateSessionCode(recipe);
-    final steps = recipe['steps'] as List<dynamic>? ?? [];
 
     final rollFormat = PdfPageFormat(
       58 * PdfPageFormat.mm,
@@ -286,48 +350,59 @@ class ReceiptPrintService {
                 'TAHAPAN TUANGAN:',
                 style: pw.TextStyle(font: pw.Font.courierBold(), fontSize: 8),
               ),
-              if (steps.isNotEmpty) ...[
-                ...() {
-                  int accWater = 0;
-                  int accTime = 0;
-                  final List<pw.Widget> stepWidgets = [];
-                  for (int i = 0; i < steps.length; i++) {
-                    final step = steps[i];
-                    final dur = step['durationSeconds'] ?? 30;
-                    final water = step['waterWeightGrams'] ?? 0;
-                    accWater += (water as num).toInt();
-                    final startSec = accTime;
-                    accTime += (dur as num).toInt();
-                    final endSec = accTime;
-                    final sFmt =
-                        '${(startSec ~/ 60).toString().padLeft(2, '0')}:${(startSec % 60).toString().padLeft(2, '0')}';
-                    final eFmt =
-                        '${(endSec ~/ 60).toString().padLeft(2, '0')}:${(endSec % 60).toString().padLeft(2, '0')}';
+              ...() {
+                final parsedSteps = parseRecipeSteps(
+                  recipe['steps'],
+                  totalWater: (waterWeight as num).toInt(),
+                  coffeeWeight: (coffeeWeight as num).toInt(),
+                );
+                int accWater = 0;
+                int accTime = 0;
+                final List<pw.Widget> stepWidgets = [];
+                for (int i = 0; i < parsedSteps.length; i++) {
+                  final step = parsedSteps[i];
+                  final dur = step['durationSeconds'] as int;
+                  final water = step['water'] as int;
+                  final stepTitle = step['title'] as String;
+                  accWater += water;
+                  final startSec = accTime;
+                  accTime += dur;
+                  final endSec = accTime;
+                  final sFmt =
+                      '${(startSec ~/ 60).toString().padLeft(2, '0')}:${(startSec % 60).toString().padLeft(2, '0')}';
+                  final eFmt =
+                      '${(endSec ~/ 60).toString().padLeft(2, '0')}:${(endSec % 60).toString().padLeft(2, '0')}';
 
-                    final label = water > 0
-                        ? '+$water g - Tot $accWater g'
-                        : 'Drawdown - Tot $accWater g';
-                    stepWidgets.add(
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.symmetric(vertical: 0.5),
-                        child: pw.Row(
-                          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                          children: [
-                            pw.Text('  ${i + 1}. $sFmt-$eFmt',
-                                style: pw.TextStyle(font: pw.Font.courier(), fontSize: 7)),
-                            pw.Text(label,
-                                style: pw.TextStyle(font: pw.Font.courier(), fontSize: 7)),
-                          ],
-                        ),
+                  final label = water > 0
+                      ? '+$water g - Tot $accWater g'
+                      : 'Drawdown - Tot $accWater g';
+                  stepWidgets.add(
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(vertical: 0.5),
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Row(
+                            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                            children: [
+                              pw.Text('  ${i + 1}. $sFmt-$eFmt',
+                                  style: pw.TextStyle(font: pw.Font.courierBold(), fontSize: 7)),
+                              pw.Text(label,
+                                  style: pw.TextStyle(font: pw.Font.courier(), fontSize: 7)),
+                            ],
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.only(left: 10),
+                            child: pw.Text(stepTitle,
+                                style: pw.TextStyle(font: pw.Font.courier(), fontSize: 6.5)),
+                          ),
+                        ],
                       ),
-                    );
-                  }
-                  return stepWidgets;
-                }(),
-              ] else ...[
-                pw.Text('  1. Tuang air perlahan & stabil',
-                    style: pw.TextStyle(font: pw.Font.courier(), fontSize: 7)),
-              ],
+                    ),
+                  );
+                }
+                return stepWidgets;
+              }(),
               pw.SizedBox(height: 3),
               pw.Text(
                 '------------------------------',
