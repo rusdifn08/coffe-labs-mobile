@@ -43,8 +43,6 @@ class RecipeFeedGridCard extends StatelessWidget {
     String authorName = BaristaUtils.cleanName(rawAuthor);
     String countryCode = BaristaUtils.countryCode(rawAuthor);
     String category = recipe['category'] as String;
-    String rawDescription = recipe['description'] as String;
-    String description = isEn ? CoffeeTranslator.translatePhilosophy(rawDescription) : rawDescription;
     String shortGrind = BaristaUtils.shortGrindLabel(recipe['grindSize']?.toString());
     num coffeeWeight = (recipe['coffeeWeightGrams'] as num?) ?? 15;
     num totalWater = (recipe['totalWaterWeightGrams'] as num?) ?? 225;
@@ -95,6 +93,7 @@ class RecipeFeedGridCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header Row: Avatar + Takaran Dosis & Air
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -206,159 +205,160 @@ class RecipeFeedGridCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
+
+              // Baris 1: Nama Brewer (1 Baris Konsisten)
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: isLocked ? onTrialLocked : onBaristaTap,
+                child: SizedBox(
+                  height: 16,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          authorName,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11.5,
+                            color: isLocked ? Colors.grey.shade700 : AppTheme.textDark,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (countryCode.isNotEmpty) ...[
+                        const SizedBox(width: 4),
+                        Flag.fromString(countryCode, height: 10, width: 14),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+
+              // Baris 2: Nama Resep (2 Baris Tetap Presisi, Jika 1 Baris Teks Berada di Tengah)
+              Container(
+                height: 36,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontSize: 13,
+                        height: 1.25,
+                        fontWeight: FontWeight.bold,
+                        color: isLocked ? Colors.grey.shade800 : null,
+                      ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(height: 4),
+
+              // Baris 3: Tasting Notes & Pour Counter (1 Baris)
+              SizedBox(
+                height: 22,
                 child: Row(
+                  children: [
+                    if (noteVisuals.isNotEmpty) ...[
+                      ...noteVisuals.take(2).map((nv) {
+                        return Container(
+                          margin: const EdgeInsets.only(right: 4),
+                          padding: const EdgeInsets.all(3.5),
+                          decoration: BoxDecoration(
+                            color: isLocked
+                                ? Colors.grey.shade300
+                                : nv.color.withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isLocked
+                                  ? Colors.grey.shade400
+                                  : nv.color.withValues(alpha: 0.25),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Text(nv.emoji, style: const TextStyle(fontSize: 10)),
+                        );
+                      }),
+                    ],
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isLocked
+                            ? Colors.grey.shade300
+                            : AppTheme.primaryBrown.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '${pourCount}x Pour',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: isLocked ? Colors.grey.shade700 : AppTheme.primaryBrown,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const Spacer(),
+
+              // Baris 4: Jenis Metode dan Ukuran Gilingan (1 Baris)
+              SizedBox(
+                height: 16,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
                       child: Text(
-                        authorName,
+                        category
+                            .replaceAll('V60 Pour Over', 'V60')
+                            .replaceAll('Japanese Iced', 'Japanese'),
                         style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                          color: isLocked ? Colors.grey.shade700 : AppTheme.textDark,
+                          color: isLocked ? Colors.grey.shade600 : AppTheme.textMuted,
+                          fontSize: 10,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (countryCode.isNotEmpty) ...[
-                      const SizedBox(width: 4),
-                      Flag.fromString(countryCode, height: 10, width: 14),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 4),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontSize: 13.5,
-                            height: 1.2,
-                            color: isLocked ? Colors.grey.shade800 : null,
-                          ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Wrap(
-                        spacing: 4,
-                        runSpacing: 4,
-                        crossAxisAlignment: WrapCrossAlignment.center,
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (noteVisuals.isNotEmpty) ...[
-                            ...noteVisuals.take(2).map((nv) {
-                              return Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: isLocked
-                                      ? Colors.grey.shade300
-                                      : nv.color.withValues(alpha: 0.12),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: isLocked
-                                        ? Colors.grey.shade400
-                                        : nv.color.withValues(alpha: 0.25),
-                                    width: 0.8,
-                                  ),
-                                ),
-                                child: Text(nv.emoji, style: const TextStyle(fontSize: 11)),
-                              );
-                            }),
-                          ],
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: isLocked
-                                  ? Colors.grey.shade300
-                                  : AppTheme.primaryBrown.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
+                          Icon(
+                            CupertinoIcons.circle_grid_hex,
+                            size: 10,
+                            color: isLocked ? Colors.grey.shade600 : AppTheme.primaryBrown,
+                          ),
+                          const SizedBox(width: 3),
+                          Flexible(
                             child: Text(
-                              '${pourCount}x Pour',
+                              shortGrind,
                               style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
                                 color: isLocked ? Colors.grey.shade700 : AppTheme.primaryBrown,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    if (description.isNotEmpty) ...[
-                      const SizedBox(height: 3),
-                      Text(
-                        description,
-                        style: TextStyle(
-                          fontSize: 9.5,
-                          color: isLocked ? Colors.grey.shade600 : AppTheme.textMuted,
-                          height: 1.2,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
                   ],
                 ),
               ),
-              const SizedBox(height: 4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Text(
-                      category
-                          .replaceAll('V60 Pour Over', 'V60')
-                          .replaceAll('Japanese Iced', 'Japanese'),
-                      style: TextStyle(
-                        color: isLocked ? Colors.grey.shade600 : AppTheme.textMuted,
-                        fontSize: 10,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          CupertinoIcons.circle_grid_hex,
-                          size: 10,
-                          color: isLocked ? Colors.grey.shade600 : AppTheme.primaryBrown,
-                        ),
-                        const SizedBox(width: 3),
-                        Flexible(
-                          child: Text(
-                            shortGrind,
-                            style: TextStyle(
-                              color: isLocked ? Colors.grey.shade700 : AppTheme.primaryBrown,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
+
+              // Baris 5: Tombol Brew
               SizedBox(
                 width: double.infinity,
+                height: 30,
                 child: ElevatedButton.icon(
                   onPressed: isLocked
                       ? onTrialLocked
@@ -377,12 +377,13 @@ class RecipeFeedGridCard extends StatelessWidget {
                   ),
                   label: Text(
                     isLocked ? (isEn ? 'Locked' : 'Terkunci') : 'Brew',
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isLocked ? Colors.grey.shade600 : AppTheme.primaryBrown,
-                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    padding: EdgeInsets.zero,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    elevation: 0,
                   ),
                 ),
               ),

@@ -101,30 +101,24 @@ class RecipeIngredientsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
+          // Header Row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Icon(
-                      isEspresso ? CupertinoIcons.square_list_fill : Icons.restaurant_menu_rounded,
-                      size: 20,
-                      color: isEspresso ? Colors.amber[800] : AppTheme.primaryBrown,
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        isEn ? 'Ingredients & Composition' : 'Komposisi & Bahan Baku',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 16),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
+              Row(
+                children: [
+                  Icon(
+                    isEspresso ? CupertinoIcons.square_list_fill : Icons.restaurant_menu_rounded,
+                    size: 20,
+                    color: isEspresso ? Colors.amber[800] : AppTheme.primaryBrown,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isEn ? 'Ingredients & Formula' : 'Komposisi & Bahan',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 16),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
@@ -132,7 +126,7 @@ class RecipeIngredientsCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  isEn ? '${items.length} Ingredients' : '${items.length} Bahan',
+                  isEn ? '${items.length} Items' : '${items.length} Bahan',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -142,16 +136,16 @@ class RecipeIngredientsCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
             isEn
-                ? 'Precise measurements and specialty barista formula for authentic taste balance.'
-                : 'Takaran presisi formula barista specialty untuk keseimbangan citarasa asli.',
+                ? 'Specialty barista recipe measurements for authentic taste balance.'
+                : 'Formula takaran presisi barista specialty untuk keseimbangan citarasa asli.',
             style: const TextStyle(fontSize: 12, color: AppTheme.textMuted, height: 1.4),
           ),
           const SizedBox(height: 14),
 
-          // Ingredient Tiles
+          // Ingredient Cards (Two-tier stacked layout: zero text cramping or character wrapping)
           ...items.map((item) {
             final Map<String, dynamic> ing = item is Map
                 ? Map<String, dynamic>.from(item)
@@ -166,43 +160,49 @@ class RecipeIngredientsCard extends StatelessWidget {
             final roleColor = _getColorForRole(iconKey);
 
             return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppTheme.bgCream.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.primaryBrown.withValues(alpha: 0.06)),
+                color: AppTheme.bgCream.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppTheme.primaryBrown.withValues(alpha: 0.08)),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: roleColor.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(iconData, size: 18, color: roleColor),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
+                  // Top Row: Icon + Full-Width Name + Role Badge
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: roleColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(iconData, size: 17, color: roleColor),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
                           name,
                           style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.bold,
                             color: AppTheme.textDark,
+                            height: 1.25,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                      ),
+                      if (role.isNotEmpty) ...[
+                        const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: roleColor.withValues(alpha: 0.08),
+                            color: roleColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: roleColor.withValues(alpha: 0.2)),
                           ),
                           child: Text(
                             role,
@@ -214,26 +214,50 @@ class RecipeIngredientsCard extends StatelessWidget {
                           ),
                         ),
                       ],
-                    ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  if (amount.isNotEmpty)
+
+                  // Bottom Tier: Full-Width Takaran Formula Box
+                  if (amount.isNotEmpty) ...[
+                    const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: AppTheme.surfaceWhite,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: AppTheme.primaryBrown.withValues(alpha: 0.1)),
                       ),
-                      child: Text(
-                        amount,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryBrown,
-                        ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            CupertinoIcons.slider_horizontal_below_rectangle,
+                            size: 13,
+                            color: AppTheme.primaryBrown,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            isEn ? 'Measurement: ' : 'Takaran: ',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppTheme.textMuted,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              amount,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.primaryBrown,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                  ],
                 ],
               ),
             );
@@ -241,7 +265,7 @@ class RecipeIngredientsCard extends StatelessWidget {
 
           // Barista Specs Footer Pill
           if (isEspresso) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(

@@ -739,7 +739,7 @@ class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
         padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: 260,
-          mainAxisExtent: 242,
+          mainAxisExtent: 208,
           crossAxisSpacing: 14,
           mainAxisSpacing: 14,
         ),

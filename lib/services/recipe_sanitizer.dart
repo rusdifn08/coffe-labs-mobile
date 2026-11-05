@@ -399,6 +399,142 @@ class RecipeSanitizer {
           'role': 'Dairy / Microfoam Sutra',
           'icon': 'milk',
         });
+      } else if (combined.contains('avocatto') || combined.contains('alpukat') || combined.contains('avocado')) {
+        list.add({
+          'name': 'Jus Alpukat Mentega Kental Segar',
+          'amount': '100–120 ml (Creamy Alpukat Base)',
+          'role': 'Alpukat Mentega Puree',
+          'icon': 'citrus',
+        });
+        list.add({
+          'name': 'Es Krim Cokelat / Vanila Madagaskar',
+          'amount': '1 Scoop (~60g Beku)',
+          'role': 'Ice Cream Topping',
+          'icon': 'icecream',
+        });
+        list.add({
+          'name': 'Hasil Ekstraksi Double Espresso Panas',
+          'amount': '36–40 ml (Tuang Sesaat Disajikan)',
+          'role': 'Hot Espresso Pour',
+          'icon': 'water',
+        });
+        list.add({
+          'name': 'Saus Cokelat / Ganache Leleh',
+          'amount': '15 ml (Garnish Drizzle)',
+          'role': 'Chocolate Drizzle',
+          'icon': 'chocolate',
+        });
+      } else if (combined.contains('roegal') || combined.contains('regal')) {
+        list.add({
+          'name': 'Sirup Rum Halal / Gula Aren',
+          'amount': '20 ml (Aroma Rum Legit)',
+          'role': 'Flavoring Syrup',
+          'icon': 'syrup',
+        });
+        list.add({
+          'name': 'Fresh Milk Dingin Pasteurisasi',
+          'amount': '120–140 ml (4°C)',
+          'role': 'Chilled Fresh Milk',
+          'icon': 'milk',
+        });
+        list.add({
+          'name': 'Hasil Ekstraksi Espresso 9-Bar',
+          'amount': '30–36 ml',
+          'role': 'Espresso Core',
+          'icon': 'water',
+        });
+        list.add({
+          'name': 'Biskuit Marie Regal Renyah',
+          'amount': '3 Keping (Topping Atas)',
+          'role': 'Biscuit Topping',
+          'icon': 'topping',
+        });
+      } else if (combined.contains('butterscotch') || combined.contains('sea salt')) {
+        list.add({
+          'name': 'Sirup Butterscotch Gurih Legit',
+          'amount': '20 ml',
+          'role': 'Butterscotch Base',
+          'icon': 'syrup',
+        });
+        list.add({
+          'name': 'Fresh Milk Dingin Pasteurisasi',
+          'amount': '120–140 ml (4°C)',
+          'role': 'Chilled Fresh Milk',
+          'icon': 'milk',
+        });
+        list.add({
+          'name': 'Hasil Ekstraksi Double Ristretto',
+          'amount': '30–35 ml (Aroma Harum Pekat)',
+          'role': 'Dense Ristretto Core',
+          'icon': 'water',
+        });
+        list.add({
+          'name': 'Sea Salt Cream Foam Dingin',
+          'amount': '30–40 ml (Lapisan Busa Gurih)',
+          'role': 'Salty Foam Topping',
+          'icon': 'topping',
+        });
+      } else if (combined.contains('pandan') || combined.contains('klepon')) {
+        list.add({
+          'name': 'Sirup Pandan Asli / Gula Jawa Kental',
+          'amount': '20–25 ml',
+          'role': 'Pandan & Palm Sugar',
+          'icon': 'syrup',
+        });
+        list.add({
+          'name': 'Fresh Milk Dingin / Steamed 62°C',
+          'amount': '130–150 ml',
+          'role': 'Dairy Base',
+          'icon': 'milk',
+        });
+        list.add({
+          'name': 'Hasil Ekstraksi Double Espresso',
+          'amount': '36–40 ml',
+          'role': 'Espresso Core',
+          'icon': 'water',
+        });
+      } else if (combined.contains('oat')) {
+        list.add({
+          'name': 'Oat Milk Barista Edition (Plant-Based)',
+          'amount': '140–160 ml (Tekstur Tebal Gurih)',
+          'role': 'Plant-Based Milk',
+          'icon': 'milk',
+        });
+        list.add({
+          'name': 'Hasil Ekstraksi Double Espresso',
+          'amount': '36–40 ml (Ekstraksi 9-Bar)',
+          'role': 'Espresso Core',
+          'icon': 'water',
+        });
+      } else if (combined.contains('gula aren') ||
+          combined.contains('aren') ||
+          combined.contains('kopi susu') ||
+          combined.contains('janji jiwa') ||
+          combined.contains('kenangan')) {
+        list.add({
+          'name': 'Gula Aren Organik Cair Asli',
+          'amount': '20–25 ml (Kekentalan Sedang)',
+          'role': 'Pemanis Alami Aren',
+          'icon': 'syrup',
+        });
+        list.add({
+          'name': 'Susu Kental Manis / Evaporasi',
+          'amount': '10–15 ml (Enhancer Gurih)',
+          'role': 'Creaminess Enhancer',
+          'icon': 'syrup',
+        });
+        list.add({
+          'name': 'Fresh Milk Dingin (4°C)',
+          'amount': '100–120 ml',
+          'role': 'Fresh Milk Base',
+          'icon': 'milk',
+        });
+        list.add({
+          'name': 'Hasil Ekstraksi Double Espresso Mantap',
+          'amount': '36–40 ml (Karakter Bold Pekat)',
+          'role': 'Espresso Liquid Core',
+          'icon': 'water',
+        });
       } else if (combined.contains('affogato')) {
         list.add({
           'name': 'Gelato / Es Krim Vanila Madagaskar',
