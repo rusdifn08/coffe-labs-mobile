@@ -1,3 +1,4 @@
+import '../services/recipe_sanitizer.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../services/language_service.dart';
@@ -668,7 +669,13 @@ class _ThermalReceiptSheetState extends State<ThermalReceiptSheet> {
                                     ),
                                   ),
                                   Text(
-                                    water > 0 ? '+$water g - Total $accWater g' : 'Drawdown - Total $accWater g',
+                                    (RecipeSanitizer.isEspressoBased(
+                                            method: widget.recipe['method']?.toString(),
+                                            category: widget.recipe['category']?.toString(),
+                                            title: widget.recipe['title']?.toString(),
+                                          )
+                                        ? (dur > 0 ? '~${dur}s' : 'Step')
+                                        : (water > 0 ? '+$water g - Total $accWater g' : 'Fase Kontak - $accWater g')),
                                     style: const TextStyle(
                                       fontFamily: 'monospace',
                                       fontSize: 11,

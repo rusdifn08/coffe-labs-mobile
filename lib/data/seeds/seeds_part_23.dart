@@ -21,7 +21,16 @@ List<Map<String, dynamic>> getSeedsPart23(String now) => [
     "description": "Double ristretto 34g dipadukan 120 ml steamed milk dengan tekstur velvety microfoam sangat tipis (~0.3 cm) dalam cangkir tulip keramik 155 ml.",
     "isCustom": false,
     "createdAt": now,
-    "steps": [{"stepOrder": 1, "title": "Ekstraksi Double Ristretto 34g", "durationSeconds": 22, "waterAddedGrams": 34}, {"stepOrder": 2, "title": "Steam Susu Velvet 60°C", "durationSeconds": 16, "waterAddedGrams": 120}, {"stepOrder": 3, "title": "Pouring Rata Mengkilap", "durationSeconds": 7, "waterAddedGrams": 0}]
+    "ingredients": [
+      {"name": "Biji Kopi Colombia Huila", "amount": "18g", "role": "Espresso Base", "icon": "coffee_beans"},
+      {"name": "Double Ristretto Shot", "amount": "34 ml", "role": "Sweet Core", "icon": "water"},
+      {"name": "Fresh Milk Steamed Velvet", "amount": "120 ml (60°C)", "role": "Microfoam Sutra", "icon": "milk"}
+    ],
+    "steps": [
+      {"stepOrder": 1, "title": "Ekstraksi Double Ristretto 34g", "durationSeconds": 22, "waterAddedGrams": 34, "instruction": "Tarik 34g double ristretto pekat langsung ke cangkir keramik flat white 155 ml."},
+      {"stepOrder": 2, "title": "Steam Susu Velvet 60°C", "durationSeconds": 16, "waterAddedGrams": 120, "instruction": "Steam susu dingin dengan aerasi minimal untuk menghasilkan mikrobusa sangat tipis (velvet microfoam) bersuhu 60°C."},
+      {"stepOrder": 3, "title": "Pouring Rata Mengkilap", "durationSeconds": 7, "waterAddedGrams": 0, "instruction": "Tuang susu secara konsisten agar menyatu rata dengan ristretto hingga membentuk permukaan putih mengkilap dengan ring crema tipis di tepinya."}
+    ]
   },
   {
     "id": 512,
@@ -43,7 +52,16 @@ List<Map<String, dynamic>> getSeedsPart23(String now) => [
     "description": "Minuman barista roaster untuk mencicipi profil kopi dengan susu. Single ristretto 18 ml dipadukan 75 ml steamed milk halus dalam gelas piccolo mini 95 ml.",
     "isCustom": false,
     "createdAt": now,
-    "steps": [{"stepOrder": 1, "title": "Ekstraksi Ristretto Intens 18g", "durationSeconds": 20, "waterAddedGrams": 18}, {"stepOrder": 2, "title": "Steam Susu Porsi Kecil 75ml", "durationSeconds": 14, "waterAddedGrams": 77}, {"stepOrder": 3, "title": "Pouring Mini Tulip Art", "durationSeconds": 6, "waterAddedGrams": 0}]
+    "ingredients": [
+      {"name": "Biji Kopi Geisha Washed", "amount": "18g", "role": "Espresso Base", "icon": "coffee_beans"},
+      {"name": "Single Ristretto Shot", "amount": "18 ml", "role": "Intense Core", "icon": "water"},
+      {"name": "Fresh Milk Steamed", "amount": "75 ml (60°C)", "role": "Silky Dairy", "icon": "milk"}
+    ],
+    "steps": [
+      {"stepOrder": 1, "title": "Ekstraksi Ristretto Intens 18g", "durationSeconds": 20, "waterAddedGrams": 18, "instruction": "Ekstraksi 18g ristretto aromatik pekat langsung ke gelas kaca piccolo 95ml."},
+      {"stepOrder": 2, "title": "Steam Susu Porsi Kecil 75ml", "durationSeconds": 14, "waterAddedGrams": 77, "instruction": "Steam 75ml susu di jug kecil hingga mikrobusa halus terbentuk pada suhu 60°C."},
+      {"stepOrder": 3, "title": "Pouring Mini Tulip Art", "durationSeconds": 6, "waterAddedGrams": 0, "instruction": "Tuang susu perlahan dan lukis pola mini tulip cantik di atas crema yang sempit."}
+    ]
   },
   {
     "id": 513,
@@ -65,7 +83,15 @@ List<Map<String, dynamic>> getSeedsPart23(String now) => [
     "description": "Rasio potong 1:1 khas Spanyol. Double espresso 40 ml dipotong tepat dengan 40 ml steamed milk hangat minim buih, menyajikan rasa kopi intens yang lembut di tenggorokan.",
     "isCustom": false,
     "createdAt": now,
-    "steps": [{"stepOrder": 1, "title": "Ekstraksi Double Espresso 40ml", "durationSeconds": 26, "waterAddedGrams": 40}, {"stepOrder": 2, "title": "Steam Susu Hangat Tanpa Busa 55°C", "durationSeconds": 12, "waterAddedGrams": 40}]
+    "ingredients": [
+      {"name": "Biji Kopi Spanish Roast Blend", "amount": "19g", "role": "Espresso Base", "icon": "coffee_beans"},
+      {"name": "Double Espresso Shot", "amount": "40 ml", "role": "Espresso Core", "icon": "water"},
+      {"name": "Warm Steamed Milk (Rasio 1:1)", "amount": "40 ml (55°C)", "role": "Low Foam Dairy", "icon": "milk"}
+    ],
+    "steps": [
+      {"stepOrder": 1, "title": "Ekstraksi Double Espresso 40ml", "durationSeconds": 26, "waterAddedGrams": 40, "instruction": "Tarik 40ml double shot espresso ke gelas kaca pendek berdinding tebal."},
+      {"stepOrder": 2, "title": "Steam Susu Hangat Tanpa Busa 55°C", "durationSeconds": 12, "waterAddedGrams": 40, "instruction": "Hangatkan 40ml susu dengan steam wand minim aerasi (tanpa busa tebal) hingga suhu 55°C, lalu tuang memotong espresso dengan rasio 1:1."}
+    ]
   },
   {
     "id": 514,
@@ -87,7 +113,16 @@ List<Map<String, dynamic>> getSeedsPart23(String now) => [
     "description": "Ikonik Blue Bottle San Francisco. Double espresso 40 ml dan 60 ml steamed milk bertemperatur siap minum (55°C) disajikan dalam gelas kaca bersegi Libbey Gibraltar 133 ml.",
     "isCustom": false,
     "createdAt": now,
-    "steps": [{"stepOrder": 1, "title": "Ekstraksi Double Espresso ke Gelas Gibraltar", "durationSeconds": 25, "waterAddedGrams": 40}, {"stepOrder": 2, "title": "Steam Susu Lembut Suhu Minum 55°C", "durationSeconds": 12, "waterAddedGrams": 60}, {"stepOrder": 3, "title": "Tuang Membentuk Micro Heart", "durationSeconds": 5, "waterAddedGrams": 0}]
+    "ingredients": [
+      {"name": "Biji Kopi Hayes Valley Blend", "amount": "19g", "role": "Espresso Base", "icon": "coffee_beans"},
+      {"name": "Double Espresso Shot", "amount": "40 ml", "role": "Espresso Core", "icon": "water"},
+      {"name": "Steamed Milk Suhu Minum", "amount": "60 ml (55°C)", "role": "Silky Dairy", "icon": "milk"}
+    ],
+    "steps": [
+      {"stepOrder": 1, "title": "Ekstraksi Double Espresso ke Gelas Gibraltar", "durationSeconds": 25, "waterAddedGrams": 40, "instruction": "Tarik 40ml double espresso langsung ke gelas kaca bersegi Libbey Gibraltar 133 ml."},
+      {"stepOrder": 2, "title": "Steam Susu Lembut Suhu Minum 55°C", "durationSeconds": 12, "waterAddedGrams": 60, "instruction": "Steam 60ml susu dengan pusaran halus hingga suhu hangat minum 55°C."},
+      {"stepOrder": 3, "title": "Tuang Membentuk Micro Heart", "durationSeconds": 5, "waterAddedGrams": 0, "instruction": "Tuang susu perlahan dan bentuk motif micro heart di tengah crema gelas Gibraltar."}
+    ]
   },
   {
     "id": 515,
@@ -109,7 +144,18 @@ List<Map<String, dynamic>> getSeedsPart23(String now) => [
     "description": "Double espresso 40 ml dilelehkan bersama 28g saus dark chocolate ganache murni, dipadukan 150 ml steamed milk dan taburan bubuk kakao Valrhona di atas foam.",
     "isCustom": false,
     "createdAt": now,
-    "steps": [{"stepOrder": 1, "title": "Tuang Ganache Cokelat ke Gelas", "durationSeconds": 5, "waterAddedGrams": 28}, {"stepOrder": 2, "title": "Ekstraksi Espresso Panas Melelehkan Cokelat", "durationSeconds": 25, "waterAddedGrams": 40}, {"stepOrder": 3, "title": "Tuang Steamed Milk & Cocoa Dusting", "durationSeconds": 20, "waterAddedGrams": 150}]
+    "ingredients": [
+      {"name": "Biji Kopi Dark Chocolate Blend", "amount": "18g", "role": "Espresso Base", "icon": "coffee_beans"},
+      {"name": "Saus Ganache Dark Chocolate 70%", "amount": "28g (Dasar Gelas)", "role": "Saus Cokelat Murni", "icon": "chocolate"},
+      {"name": "Double Shot Espresso Panas", "amount": "40 ml", "role": "Espresso Core", "icon": "water"},
+      {"name": "Fresh Milk Steamed", "amount": "150 ml (65°C)", "role": "Dairy / Steamed Milk", "icon": "milk"},
+      {"name": "Bubuk Kakao Murni Valrhona", "amount": "Secukupnya (Dusting)", "role": "Topping & Garnish", "icon": "topping"}
+    ],
+    "steps": [
+      {"stepOrder": 1, "title": "Tuang Ganache Cokelat ke Gelas", "durationSeconds": 5, "waterAddedGrams": 28, "instruction": "Tuang 28g saus dark chocolate ganache murni ke dasar cangkir saji."},
+      {"stepOrder": 2, "title": "Ekstraksi Espresso Panas Melelehkan Cokelat", "durationSeconds": 25, "waterAddedGrams": 40, "instruction": "Tarik 40ml double espresso panas langsung ke atas cokelat dan aduk hingga ganache meleleh sempurna."},
+      {"stepOrder": 3, "title": "Tuang Steamed Milk & Cocoa Dusting", "durationSeconds": 20, "waterAddedGrams": 150, "instruction": "Tuang 150ml steamed milk hangat (65°C) membentuk lapisan creamy, lalu beri taburan bubuk kakao di atas permukaan busa."}
+    ]
   },
   {
     "id": 516,
@@ -131,7 +177,16 @@ List<Map<String, dynamic>> getSeedsPart23(String now) => [
     "description": "Varian latte gaya Amerika ultra creamy. Double espresso dipadukan 150 ml half-and-half (50% fresh milk + 50% light cream) yang di-steam menghasilkan tekstur seperti custard sutra.",
     "isCustom": false,
     "createdAt": now,
-    "steps": [{"stepOrder": 1, "title": "Ekstraksi Double Espresso 40ml", "durationSeconds": 25, "waterAddedGrams": 40}, {"stepOrder": 2, "title": "Steam Campuran Half-and-Half 62°C", "durationSeconds": 18, "waterAddedGrams": 150}, {"stepOrder": 3, "title": "Tuang Menghasilkan Tekstur Custard", "durationSeconds": 5, "waterAddedGrams": 0}]
+    "ingredients": [
+      {"name": "Biji Kopi Rich Caramel Blend", "amount": "18g", "role": "Espresso Base", "icon": "coffee_beans"},
+      {"name": "Double Shot Espresso", "amount": "40 ml", "role": "Espresso Core", "icon": "water"},
+      {"name": "Half-and-Half (Milk & Light Cream)", "amount": "150 ml (Steamed 62°C)", "role": "Custard Cream Base", "icon": "milk"}
+    ],
+    "steps": [
+      {"stepOrder": 1, "title": "Ekstraksi Double Espresso 40ml", "durationSeconds": 25, "waterAddedGrams": 40, "instruction": "Tarik 40ml double espresso pekat ke cangkir keramik hangat."},
+      {"stepOrder": 2, "title": "Steam Campuran Half-and-Half 62°C", "durationSeconds": 18, "waterAddedGrams": 150, "instruction": "Steam campuran 50% susu dan 50% krim dengan aerasi halus hingga suhu 62°C menghasilkan konsistensi custard kental."},
+      {"stepOrder": 3, "title": "Tuang Menghasilkan Tekstur Custard", "durationSeconds": 5, "waterAddedGrams": 0, "instruction": "Tuang perlahan ke dalam espresso untuk menghasilkan sensasi rasa manis creamy yang mewah."}
+    ]
   },
   {
     "id": 517,
@@ -153,7 +208,16 @@ List<Map<String, dynamic>> getSeedsPart23(String now) => [
     "description": "Pencuci mulut legendaris Italia. 2 scoop (80g) gelato vanila fior di latte beku ditenggelamkan (affogato) dengan double shot espresso panas 40 ml yang baru saja diekstraksi.",
     "isCustom": false,
     "createdAt": now,
-    "steps": [{"stepOrder": 1, "title": "Scoop Gelato Vanila Beku ke Gelas", "durationSeconds": 8, "waterAddedGrams": 80}, {"stepOrder": 2, "title": "Ekstraksi Double Espresso Terpisah", "durationSeconds": 24, "waterAddedGrams": 40}, {"stepOrder": 3, "title": "Siramkan Espresso Panas di Depan Meja", "durationSeconds": 3, "waterAddedGrams": 0}]
+    "ingredients": [
+      {"name": "Biji Kopi Italian Dark Roast", "amount": "19g", "role": "Espresso Base", "icon": "coffee_beans"},
+      {"name": "Gelato Vanila Madagaskar Beku", "amount": "2 Scoop (80g)", "role": "Gelato Fior di Latte", "icon": "icecream"},
+      {"name": "Double Shot Espresso Segar Panas", "amount": "40 ml", "role": "Hot Espresso Pour", "icon": "water"}
+    ],
+    "steps": [
+      {"stepOrder": 1, "title": "Scoop Gelato Vanila Beku ke Gelas", "durationSeconds": 8, "waterAddedGrams": 80, "instruction": "Sendokkan 2 scoop gelato vanila beku berkualitas ke tengah mangkuk kaca saji."},
+      {"stepOrder": 2, "title": "Ekstraksi Double Espresso Terpisah", "durationSeconds": 24, "waterAddedGrams": 40, "instruction": "Ekstraksi 40ml double espresso panas ke dalam pitcher kecil khusus."},
+      {"stepOrder": 3, "title": "Siramkan Espresso Panas di Depan Meja", "durationSeconds": 3, "waterAddedGrams": 0, "instruction": "Siramkan espresso panas langsung di atas kubah gelato vanila di hadapan penikmat kopi untuk perpaduan kontras panas-dingin yang memikat."}
+    ]
   },
   {
     "id": 518,
@@ -175,7 +239,15 @@ List<Map<String, dynamic>> getSeedsPart23(String now) => [
     "description": "Double espresso panas 40 ml yang diberi mahkota topping 25g whipped cream dingin kental tanpa gula di atasnya. Diminum langsung menembus dinginnya krim ke cairan kopi panas.",
     "isCustom": false,
     "createdAt": now,
-    "steps": [{"stepOrder": 1, "title": "Ekstraksi Double Espresso Panas", "durationSeconds": 25, "waterAddedGrams": 40}, {"stepOrder": 2, "title": "Piping Whipped Cream Dingin di Atas Crema", "durationSeconds": 7, "waterAddedGrams": 25}]
+    "ingredients": [
+      {"name": "Biji Kopi Sweet Roasted Arabica", "amount": "18g", "role": "Espresso Base", "icon": "coffee_beans"},
+      {"name": "Double Shot Espresso Panas", "amount": "40 ml", "role": "Espresso Core", "icon": "water"},
+      {"name": "Fresh Whipped Cream Dingin", "amount": "25g (Piping Lembut)", "role": "Topping Mahkota Krim", "icon": "topping"}
+    ],
+    "steps": [
+      {"stepOrder": 1, "title": "Ekstraksi Double Espresso Panas", "durationSeconds": 25, "waterAddedGrams": 40, "instruction": "Tarik 40ml double espresso panas dengan crema tebal ke cangkir demitasse."},
+      {"stepOrder": 2, "title": "Piping Whipped Cream Dingin di Atas Crema", "durationSeconds": 7, "waterAddedGrams": 25, "instruction": "Pipa atau sendokkan 25g krim kocok dingin segar tepat di atas lapisan crema membentuk mahkota putih megah."}
+    ]
   },
   {
     "id": 519,
@@ -197,7 +269,15 @@ List<Map<String, dynamic>> getSeedsPart23(String now) => [
     "description": "Gaya klasik kota Roma. Single shot espresso 30 ml yang disajikan dengan kulit lemon segar digosokkan pada bibir cangkir untuk melepaskan minyak atsiri sitrus aromatik.",
     "isCustom": false,
     "createdAt": now,
-    "steps": [{"stepOrder": 1, "title": "Gosokkan Kulit Lemon di Bibir Cangkir", "durationSeconds": 5, "waterAddedGrams": 2}, {"stepOrder": 2, "title": "Ekstraksi Espresso Shot Langsung ke Cangkir", "durationSeconds": 23, "waterAddedGrams": 30}]
+    "ingredients": [
+      {"name": "Biji Kopi Ethiopia Sidama Washed", "amount": "18g", "role": "Espresso Base", "icon": "coffee_beans"},
+      {"name": "Hasil Ekstraksi Espresso Shot", "amount": "30 ml", "role": "Espresso Core", "icon": "water"},
+      {"name": "Irisan Kulit Lemon Segar (Twist)", "amount": "1 Buah (Minyak Atsiri)", "role": "Citrus Aromatik", "icon": "citrus"}
+    ],
+    "steps": [
+      {"stepOrder": 1, "title": "Gosokkan Kulit Lemon di Bibir Cangkir", "durationSeconds": 5, "waterAddedGrams": 2, "instruction": "Pilin dan gosokkan irisan kulit lemon segar di sekeliling bibir cangkir cangkir demitasse untuk mengeluarkan minyak aromatik."},
+      {"stepOrder": 2, "title": "Ekstraksi Espresso Shot Langsung ke Cangkir", "durationSeconds": 23, "waterAddedGrams": 30, "instruction": "Tarik 30ml espresso langsung ke cangkir dan selipkan irisan kulit lemon di samping piring saji."}
+    ]
   },
   {
     "id": 520,
@@ -219,6 +299,14 @@ List<Map<String, dynamic>> getSeedsPart23(String now) => [
     "description": "Espresso yang 'dikoreksi' (corretto) dengan tambahan 12-15 ml minuman keras aromatik seperti Grappa, Sambuca, atau Brandy, menjadi tradisi digestif setelah santap malam.",
     "isCustom": false,
     "createdAt": now,
-    "steps": [{"stepOrder": 1, "title": "Ekstraksi Single Espresso 30ml", "durationSeconds": 25, "waterAddedGrams": 30}, {"stepOrder": 2, "title": "Tuang Grappa / Sambuca Aromatik", "durationSeconds": 5, "waterAddedGrams": 15}]
+    "ingredients": [
+      {"name": "Biji Kopi Bold Blend", "amount": "18g", "role": "Espresso Base", "icon": "coffee_beans"},
+      {"name": "Single Shot Espresso", "amount": "30 ml", "role": "Espresso Core", "icon": "water"},
+      {"name": "Grappa / Sambuca Aromatik", "amount": "15 ml", "role": "Liqueur Correction", "icon": "syrup"}
+    ],
+    "steps": [
+      {"stepOrder": 1, "title": "Ekstraksi Single Espresso 30ml", "durationSeconds": 25, "waterAddedGrams": 30, "instruction": "Tarik 30ml espresso hangat dengan crema keemasan ke dalam cangkir."},
+      {"stepOrder": 2, "title": "Tuang Grappa / Sambuca Aromatik", "durationSeconds": 5, "waterAddedGrams": 15, "instruction": "Tambahkan 15ml Grappa atau Sambuca aromatik langsung ke espresso hangat dan aduk perlahan."}
+    ]
   },
 ];

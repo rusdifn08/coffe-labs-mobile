@@ -1,3 +1,4 @@
+import 'recipe_sanitizer.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -110,6 +111,7 @@ class ReceiptPrintService {
         ? s.baristaName
         : (recipe['author']?.toString() ?? 'Coffee Labs Barista');
     final method = recipe['method']?.toString() ?? 'V60 Pour Over';
+    final category = recipe['category']?.toString() ?? '';
     final coffeeWeight = recipe['coffeeWeightGrams'] ?? 15;
     final waterWeight = recipe['totalWaterWeightGrams'] ?? 225;
     final iceWeight = recipe['iceWeightGrams'] ?? 0;
@@ -159,8 +161,32 @@ class ReceiptPrintService {
     buffer.writeln('  Suhu Air     : $waterTemp°C');
     buffer.writeln('-' * colWidth);
 
-    // 4. TAHAPAN TUANGAN (Tanpa tanda kurung, menampilkan nama step dan gramasi)
-    buffer.writeln('TAHAPAN TUANGAN:');
+    final isEspresso = RecipeSanitizer.isEspressoBased(
+      method: method,
+      category: category,
+      title: recipe['title']?.toString(),
+    );
+
+    // 4. KOMPOSISI & BAHAN
+    final ingredients = recipe['ingredients'];
+    if (ingredients is List && ingredients.isNotEmpty) {
+      buffer.writeln('KOMPOSISI & BAHAN:');
+      for (final item in ingredients) {
+        if (item is Map) {
+          final name = (item['name'] ?? '').toString().replaceAll('(', '').replaceAll(')', '');
+          final amount = (item['amount'] ?? '').toString().replaceAll('(', '').replaceAll(')', '');
+          if (amount.isNotEmpty) {
+            buffer.writeln('  • $name - $amount');
+          } else {
+            buffer.writeln('  • $name');
+          }
+        }
+      }
+      buffer.writeln('-' * colWidth);
+    }
+
+    // 5. TAHAPAN EKSEKUSI
+    buffer.writeln(isEspresso ? 'TAHAPAN BARISTA:' : 'TAHAPAN TUANGAN:');
     final parsedSteps = parseRecipeSteps(
       recipe['steps'],
       totalWater: (waterWeight as num).toInt(),
@@ -172,7 +198,7 @@ class ReceiptPrintService {
       final step = parsedSteps[i];
       final dur = step['durationSeconds'] as int;
       final water = step['water'] as int;
-      final stepTitle = step['title'] as String;
+      final stepTitle = (step['title'] as String).replaceAll('(', '').replaceAll(')', '');
       accumulatedWater += water;
       final startSec = accumulatedTime;
       accumulatedTime += dur;
@@ -183,8 +209,13 @@ class ReceiptPrintService {
       final endFormatted =
           '${(endSec ~/ 60).toString().padLeft(2, '0')}:${(endSec % 60).toString().padLeft(2, '0')}';
 
-      buffer.writeln('  ${i + 1}. $startFormatted-$endFormatted : +${water}g - Total ${accumulatedWater}g');
-      buffer.writeln('     $stepTitle');
+      if (isEspresso) {
+        final durLabel = dur > 0 ? '~${dur}s' : 'Barista Step';
+        buffer.writeln('  ${i + 1}. $stepTitle - $durLabel');
+      } else {
+        buffer.writeln('  ${i + 1}. $startFormatted-$endFormatted : +${water}g - Total ${accumulatedWater}g');
+        buffer.writeln('     $stepTitle');
+      }
     }
     buffer.writeln('-' * colWidth);
 
@@ -250,6 +281,12 @@ class ReceiptPrintService {
         ? s.baristaName
         : (recipe['author']?.toString() ?? 'Coffee Labs Barista');
     final method = recipe['method']?.toString() ?? 'V60 Pour Over';
+    final category = recipe['category']?.toString() ?? '';
+    final isEspresso = RecipeSanitizer.isEspressoBased(
+      method: method,
+      category: category,
+      title: recipe['title']?.toString(),
+    );
     final coffeeWeight = recipe['coffeeWeightGrams'] ?? 15;
     final waterWeight = recipe['totalWaterWeightGrams'] ?? 225;
     final iceWeight = recipe['iceWeightGrams'] ?? 0;
@@ -345,12 +382,17 @@ class ReceiptPrintService {
               ),
               pw.SizedBox(height: 3),
 
-              // TAHAPAN TUANGAN
+              // TAHAPAN TUANGAN / BARISTA
               pw.Text(
-                'TAHAPAN TUANGAN:',
+                isEspresso ? 'TAHAPAN BARISTA:' : 'TAHAPAN SEDUH:',
                 style: pw.TextStyle(font: pw.Font.courierBold(), fontSize: 8),
               ),
               ...() {
+                final isEspresso = RecipeSanitizer.isEspressoBased(
+                  method: method,
+                  category: category,
+                  title: recipe['title']?.toString(),
+                );
                 final parsedSteps = parseRecipeSteps(
                   recipe['steps'],
                   totalWater: (waterWeight as num).toInt(),
@@ -373,9 +415,9 @@ class ReceiptPrintService {
                   final eFmt =
                       '${(endSec ~/ 60).toString().padLeft(2, '0')}:${(endSec % 60).toString().padLeft(2, '0')}';
 
-                  final label = water > 0
-                      ? '+$water g - Tot $accWater g'
-                      : 'Drawdown - Tot $accWater g';
+                  final label = isEspresso
+                      ? (dur > 0 ? '~${dur}s' : 'Step')
+                      : (water > 0 ? '+$water g - Tot $accWater g' : 'Fase Kontak - $accWater g');
                   stepWidgets.add(
                     pw.Padding(
                       padding: const pw.EdgeInsets.symmetric(vertical: 0.5),

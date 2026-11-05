@@ -415,6 +415,9 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                     formatTime: _formatTime,
                     method: method,
                     category: category,
+                    title: title,
+                    ingredients: scaledRecipe['ingredients'] as List?,
+                    coffeeWeight: _scaledCoffeeGrams,
                   ),
 
                   const SizedBox(height: 110),

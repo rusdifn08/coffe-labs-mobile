@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 enum BrewMethodFamily {
   pourOver('Manual Pour Over', CupertinoIcons.drop_fill, Colors.blueAccent),
   mokaPot('Stovetop Moka Pot', CupertinoIcons.flame_fill, Colors.deepOrange),
-  espresso('Espresso Machine', CupertinoIcons.bolt_fill, Colors.amber),
+  espresso('Espresso Barista', CupertinoIcons.bolt_fill, Colors.amber),
   syphon('Syphon / Vacuum Pot', CupertinoIcons.tornado, Colors.purple),
   coldBrew('Cold Brew & Cold Drip', CupertinoIcons.snow, Colors.cyan),
   turkish('Turkish / Cezve Ibrik', CupertinoIcons.flame, Colors.brown),
@@ -22,11 +22,12 @@ enum BrewMethodFamily {
 }
 
 class BrewMethodHelper {
-  /// Mendeteksi keluarga metode seduh dari string metode atau kategori.
-  static BrewMethodFamily detectFamily({String? method, String? category}) {
+  /// Mendeteksi keluarga metode seduh dari string metode, kategori, atau judul resep.
+  static BrewMethodFamily detectFamily({String? method, String? category, String? title}) {
     final m = (method ?? '').toLowerCase();
     final c = (category ?? '').toLowerCase();
-    final combined = '$m $c';
+    final t = (title ?? '').toLowerCase();
+    final combined = '$m $c $t';
 
     if (combined.contains('moka') || combined.contains('bialetti') || combined.contains('stovetop')) {
       return BrewMethodFamily.mokaPot;
@@ -46,7 +47,32 @@ class BrewMethodHelper {
     if (combined.contains('aeropress')) {
       return BrewMethodFamily.aeropress;
     }
-    if (combined.contains('espresso') || combined.contains('flair') || combined.contains('picopresso') || combined.contains('rok')) {
+    if (combined.contains('espresso') ||
+        combined.contains('flair') ||
+        combined.contains('picopresso') ||
+        combined.contains('rok') ||
+        combined.contains('lever') ||
+        combined.contains('cappuccino') ||
+        combined.contains('latte') ||
+        combined.contains('flat white') ||
+        combined.contains('cortado') ||
+        combined.contains('macchiato') ||
+        combined.contains('americano') ||
+        combined.contains('long black') ||
+        combined.contains('affogato') ||
+        combined.contains('mocha') ||
+        combined.contains('mocaccino') ||
+        combined.contains('piccolo') ||
+        combined.contains('con panna') ||
+        combined.contains('dirty coffee') ||
+        combined.contains('breve') ||
+        combined.contains('romano') ||
+        combined.contains('corretto') ||
+        combined.contains('shaken espresso') ||
+        combined.contains('dalgona') ||
+        combined.contains('marocchino') ||
+        combined.contains('freddo') ||
+        combined.contains('gibraltar')) {
       return BrewMethodFamily.espresso;
     }
     if (combined.contains('french press') || combined.contains('cupping') || combined.contains('plunger')) {
@@ -86,8 +112,8 @@ class BrewMethodHelper {
         return isEnglish ? 'Moka Chamber Preparation' : 'Persiapan Corong & Rapatkan Teko';
 
       case BrewMethodFamily.espresso:
-        if (t.contains('dose') || t.contains('dosing') || t.contains('wdt') || t.contains('distribus')) {
-          return isEnglish ? 'Puck Prep: WDT Needle Distribution 🪄' : 'Puck Prep: Distribusi Jarum WDT 🪄';
+        if (t.contains('dose') || t.contains('dosing') || t.contains('wdt') || t.contains('distribus') || t.contains('puck') || t.contains('grind') || t.contains('giling')) {
+          return isEnglish ? 'Puck Prep: WDT Distribution 🪄' : 'Puck Prep: Distribusi Jarum WDT 🪄';
         }
         if (t.contains('tamp') || t.contains('level')) {
           return isEnglish ? 'Precision Level Tamp (15–20 kg) 🔨' : 'Tamping Rata Presisi (15–20 kg) 🔨';
@@ -95,17 +121,29 @@ class BrewMethodHelper {
         if (t.contains('pre-infusion') || t.contains('infusi')) {
           return isEnglish ? 'Low Pressure Pre-Infusion (2–3 Bar) 💧' : 'Pre-Infusion Tekanan Rendah (2–3 Bar) 💧';
         }
-        if (t.contains('ekstraksi') || t.contains('tarik') || t.contains('shot') || t.contains('pull') || t.contains('yield')) {
+        if (t.contains('ekstraksi') || t.contains('tarik') || t.contains('shot') || t.contains('pull') || t.contains('yield') || t.contains('9 bar')) {
           final yieldG = stepWater > 0 ? stepWater : cumulativeTarget;
           return isEnglish ? 'Full 9-Bar Pump Extraction · Yield: ~${yieldG}g ⚡' : 'Ekstraksi 9-Bar Penuh · Target Yield: ~${yieldG}g ⚡';
         }
-        if (t.contains('steam') || t.contains('susu') || t.contains('milk')) {
+        if (t.contains('steam') || t.contains('susu') || t.contains('milk') || t.contains('busa')) {
           return isEnglish ? 'Microfoam Milk Steaming (60–65°C) 🥛' : 'Steaming Susu Microfoam Mengkilap (60–65°C) 🥛';
         }
-        if (t.contains('tuang') || t.contains('art') || t.contains('pour') || t.contains('shaker') || t.contains('sirup')) {
-          return isEnglish ? 'Latte Art & Final Beverage Presentation 🎨' : 'Pouring Latte Art & Penyajian Menu 🎨';
+        if (t.contains('ganache') || t.contains('cokelat') || t.contains('chocolate') || t.contains('sirup') || t.contains('syrup') || t.contains('kental manis') || t.contains('caramel') || t.contains('saus')) {
+          return isEnglish ? 'Flavored Base Prep & Dissolve 🍫' : 'Persiapan Bahan Dasar & Pelelehan 🍫';
         }
-        return isEnglish ? 'Espresso Step' : 'Tahapan Espresso';
+        if (t.contains('es') || t.contains('ice') || t.contains('batu')) {
+          return isEnglish ? 'Crystal Ice Chilling 🧊' : 'Penambahan Es Batu Kristal 🧊';
+        }
+        if (t.contains('gelato') || t.contains('es krim') || t.contains('scoop')) {
+          return isEnglish ? 'Artisanal Gelato Scoop Base 🍨' : 'Penyajian Gelato Vanila Beku 🍨';
+        }
+        if (t.contains('shake') || t.contains('kocok')) {
+          return isEnglish ? 'Hard Shaker Emulsion 🫨' : 'Hard Shake Pembentukan Busa Dingin 🫨';
+        }
+        if (t.contains('tuang') || t.contains('art') || t.contains('pour') || t.contains('shaker') || t.contains('latte art') || t.contains('dome') || t.contains('finish') || t.contains('siram')) {
+          return isEnglish ? 'Latte Art & Beverage Presentation 🎨' : 'Pouring Latte Art & Penyajian Menu 🎨';
+        }
+        return isEnglish ? 'Espresso Barista Step' : 'Tahapan Barista Espresso';
 
       case BrewMethodFamily.syphon:
         if (t.contains('isi') || t.contains('bawah') || t.contains('boiler')) {
@@ -253,7 +291,7 @@ class BrewMethodHelper {
             : 'Rapatkan chamber atas menggunakan kain lap pelindung karena boiler bawah sangat panas.';
 
       case BrewMethodFamily.espresso:
-        if (t.contains('wdt') || t.contains('dose') || t.contains('distribus')) {
+        if (t.contains('wdt') || t.contains('dose') || t.contains('distribus') || t.contains('puck') || t.contains('grind') || t.contains('giling')) {
           return isEnglish
               ? 'Dose ground coffee and use WDT needle tool to break clumps for zero channeling.'
               : 'Gunakan jarum WDT untuk memecah gumpalan bubuk halus secara merata agar tidak terjadi channeling.';
@@ -268,19 +306,39 @@ class BrewMethodHelper {
               ? 'Saturate the puck at gentle 2-3 bar low pressure to prevent cracks.'
               : 'Alirkan air tekanan rendah 2-3 bar untuk membasahi puck secara merata sebelum pompa penuh.';
         }
-        if (t.contains('ekstraksi') || t.contains('shot') || t.contains('tarik')) {
+        if (t.contains('ekstraksi') || t.contains('shot') || t.contains('tarik') || t.contains('pull') || t.contains('9 bar')) {
           return isEnglish
               ? 'Full 9 bar extraction. Stream should flow like warm honey with thick hazelnut crema.'
               : 'Ekstraksi pompa 9 bar penuh. Cairan mengalir halus seperti ekor tikus dengan crema hazelnut tebal.';
         }
-        if (t.contains('steam') || t.contains('susu')) {
+        if (t.contains('steam') || t.contains('susu') || t.contains('milk') || t.contains('busa')) {
           return isEnglish
               ? 'Submerge steam wand tip, stretch milk with gentle hiss to 37°C, then whirlpool to 60-65°C.'
               : 'Masukkan ujung steam wand, buat desisan halus hingga 37°C lalu pusar melingkar hingga 60-65°C glossy.';
         }
+        if (t.contains('ganache') || t.contains('cokelat') || t.contains('chocolate') || t.contains('sirup') || t.contains('syrup') || t.contains('kental manis') || t.contains('caramel') || t.contains('saus')) {
+          return isEnglish
+              ? 'Dissolve flavoring base or chocolate sauce in cup before pulling hot espresso.'
+              : 'Larutkan bahan perisa atau lelehkan saus cokelat di cangkir sebelum atau sesudah espresso.';
+        }
+        if (t.contains('es') || t.contains('ice') || t.contains('batu')) {
+          return isEnglish
+              ? 'Fill serving glass with clean crystal ice cubes to rapidly chill beverage.'
+              : 'Isi gelas saji dengan es batu kristal bersih untuk mendinginkan minuman seketika.';
+        }
+        if (t.contains('gelato') || t.contains('es krim') || t.contains('scoop')) {
+          return isEnglish
+              ? 'Place 1 large scoop of artisanal vanilla gelato in center of glass, ready for hot espresso.'
+              : 'Tempatkan 1 scoop besar gelato vanila beku di tengah gelas saji sebelum disiram espresso panas.';
+        }
+        if (t.contains('shake') || t.contains('kocok')) {
+          return isEnglish
+              ? 'Vigorously shake espresso, ice, and sweetener for 10-12s to form cold creamy foam.'
+              : 'Kocok kuat espresso, es batu, dan pemanis dalam shaker selama 10-12s hingga berbusa dingin pekat.';
+        }
         return isEnglish
-            ? 'Pour textured microfoam gently into espresso to integrate sweet layers.'
-            : 'Tuang susu steamed lembut menembus crema espresso untuk menyatukan lapisan rasa manis.';
+            ? 'Pour textured microfoam gently into espresso to integrate sweet layers and finish presentation.'
+            : 'Tuang susu steamed lembut menembus crema espresso untuk menyatukan lapisan rasa manis dan latte art.';
 
       case BrewMethodFamily.syphon:
         return isEnglish

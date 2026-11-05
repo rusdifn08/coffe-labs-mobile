@@ -21,6 +21,7 @@ import '../features/brew/timer/widgets/brew_iced_banner.dart';
 import '../features/brew/timer/widgets/brew_scale_live_badge.dart';
 import '../features/brew/tts/brewing_tts_service.dart';
 import '../features/gamification/services/gamification_service.dart';
+import '../features/brew/timer/widgets/barista_espresso_cockpit.dart';
 
 class BrewTimerScreen extends StatefulWidget {
   final dynamic recipeData;
@@ -38,6 +39,7 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
   int _prepSeconds = 5; // 5s lead time for T-5 vocal announcement and countdown
   bool _isRunning = false;
   bool _isPreparing = false;
+  bool _useBaristaCockpit = true;
   final ScrollController _stepScrollController = ScrollController();
   int _lastScrolledStepIndex = -1;
 
@@ -374,6 +376,7 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
     final family = BrewMethodHelper.detectFamily(
       method: _recipe['method']?.toString(),
       category: _recipe['category']?.toString(),
+      title: _recipe['title']?.toString(),
     );
     int runningWater = 0;
     int runningTime = 0;
@@ -384,6 +387,14 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
         title: Text(displayTitle, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
         centerTitle: true,
         actions: [
+          if (family == BrewMethodFamily.espresso)
+            IconButton(
+              tooltip: _useBaristaCockpit
+                  ? (isEn ? 'Switch to Continuous Stopwatch' : 'Beralih ke Stopwatch Standar')
+                  : (isEn ? 'Switch to Barista Workflow' : 'Beralih ke Alur Barista'),
+              icon: Icon(_useBaristaCockpit ? CupertinoIcons.stopwatch : CupertinoIcons.square_list),
+              onPressed: () => setState(() => _useBaristaCockpit = !_useBaristaCockpit),
+            ),
           IconButton(
             tooltip: isEn ? 'Print Bluetooth Receipt' : 'Print Struk Resep Bluetooth',
             icon: const Icon(CupertinoIcons.printer_fill, size: 20),
@@ -396,7 +407,16 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
           ),
         ],
       ),
-      body: LayoutBuilder(
+      body: (family == BrewMethodFamily.espresso && _useBaristaCockpit)
+          ? BaristaEspressoCockpit(
+              recipe: _recipe,
+              steps: steps,
+              onFinishBrew: _promptJournal,
+              onPrintReceipt: () => ThermalReceiptSheet.show(context, _recipe),
+              onShowDoctor: _showDialInDoctorSheet,
+              isEn: isEn,
+            )
+          : LayoutBuilder(
         builder: (context, constraints) {
           final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
 

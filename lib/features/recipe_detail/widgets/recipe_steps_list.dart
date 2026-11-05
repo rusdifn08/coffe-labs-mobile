@@ -4,6 +4,7 @@ import '../../../../theme/app_theme.dart';
 import '../../../../services/language_service.dart';
 import '../../../../services/coffee_translator.dart';
 import '../../brew/timer/utils/brew_method_helper.dart';
+import 'recipe_ingredients_card.dart';
 
 class RecipeStepsList extends StatelessWidget {
   final List<dynamic> steps;
@@ -13,6 +14,9 @@ class RecipeStepsList extends StatelessWidget {
   final String Function(int) formatTime;
   final String? method;
   final String? category;
+  final String? title;
+  final List<dynamic>? ingredients;
+  final num? coffeeWeight;
 
   const RecipeStepsList({
     super.key,
@@ -23,12 +27,21 @@ class RecipeStepsList extends StatelessWidget {
     required this.formatTime,
     this.method,
     this.category,
+    this.title,
+    this.ingredients,
+    this.coffeeWeight,
   });
 
   @override
   Widget build(BuildContext context) {
     final isEn = LanguageService.isEnglish;
-    final family = BrewMethodHelper.detectFamily(method: method, category: category);
+    final family = BrewMethodHelper.detectFamily(
+      method: method,
+      category: category,
+      title: title,
+    );
+    final isEspresso = family == BrewMethodFamily.espresso;
+
     int cumulativeWater = 0;
     int cumulativeTime = 0;
 
@@ -45,34 +58,60 @@ class RecipeStepsList extends StatelessWidget {
           CoffeeTranslator.translatePhilosophy(description),
           style: const TextStyle(color: AppTheme.textDark, height: 1.6, fontSize: 14),
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 24),
 
-        // Pour Steps Header
+        // Komposisi & Bahan Baku Card (Ingredients)
+        RecipeIngredientsCard(
+          ingredients: ingredients,
+          family: family,
+          coffeeWeight: coffeeWeight ?? 18,
+          totalWater: totalWater,
+          iceWeight: iceWeight,
+          title: title ?? '',
+        ),
+
+        // Brewing / Barista Steps Header (Safe Row without pixel overflow)
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Icon(family.icon, size: 20, color: family.primaryColor),
-                const SizedBox(width: 8),
-                Text(isEn ? 'Brewing Steps' : 'Tahapan Seduh', style: Theme.of(context).textTheme.titleLarge),
-              ],
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: family.primaryColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
+            Expanded(
+              child: Row(
+                children: [
+                  Icon(family.icon, size: 20, color: family.primaryColor),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      isEn
+                          ? (isEspresso ? 'Barista Workflow' : 'Brewing Steps')
+                          : (isEspresso ? 'Tahapan Barista' : 'Tahapan Seduh'),
+                      style: Theme.of(context).textTheme.titleLarge,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-              child: Text(
-                isEn ? '${steps.length} Steps · ${family.label}' : '${steps.length} Tahap · ${family.label}',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: family.primaryColor),
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: family.primaryColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  isEn ? '${steps.length} Steps · ${family.label}' : '${steps.length} Tahap · ${family.label}',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: family.primaryColor),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        if (iceWeight > 0)
+
+        if (iceWeight > 0 && !isEspresso)
           Container(
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(14),
@@ -96,6 +135,7 @@ class RecipeStepsList extends StatelessWidget {
               ],
             ),
           ),
+
         ...steps.asMap().entries.map((entry) {
           final int idx = entry.key;
           final Map<String, dynamic> s = Map<String, dynamic>.from(entry.value as Map);
@@ -185,14 +225,16 @@ class RecipeStepsList extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppTheme.bgCream,
+                        color: isEspresso ? Colors.amber.withValues(alpha: 0.15) : AppTheme.bgCream,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        '${formatTime(startSec)}-${formatTime(endSec)}',
-                        style: const TextStyle(
+                        isEspresso
+                            ? (duration > 0 ? '~${duration}s' : 'Step ${idx + 1}')
+                            : '${formatTime(startSec)}-${formatTime(endSec)}',
+                        style: TextStyle(
                           fontSize: 10.5,
-                          color: AppTheme.textMuted,
+                          color: isEspresso ? Colors.amber[900] : AppTheme.textMuted,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -203,7 +245,7 @@ class RecipeStepsList extends StatelessWidget {
                   const SizedBox(height: 10),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
                       color: AppTheme.bgCream.withValues(alpha: 0.7),
                       borderRadius: BorderRadius.circular(10),
@@ -211,7 +253,7 @@ class RecipeStepsList extends StatelessWidget {
                     ),
                     child: Text(
                       effectiveInstruction,
-                      style: const TextStyle(fontSize: 12, color: AppTheme.textDark, height: 1.45),
+                      style: const TextStyle(fontSize: 12.5, color: AppTheme.textDark, height: 1.45),
                     ),
                   ),
                 ],
