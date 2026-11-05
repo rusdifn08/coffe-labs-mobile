@@ -294,7 +294,8 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                   // Author Info
                   GestureDetector(
                     onTap: () {
-                      final heroTag = 'detail_${BaristaUtils.slugFromAuthor(rawAuthor)}';
+                      final recipeId = widget.recipeData['id']?.toString() ?? 'recipe';
+                      final heroTag = 'detail_${BaristaUtils.slugFromAuthor(rawAuthor)}_$recipeId';
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -319,7 +320,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                           BaristaAvatar(
                             imageUrl: authorAvatarUrl,
                             radius: 24,
-                            heroTag: 'detail_${BaristaUtils.slugFromAuthor(rawAuthor)}',
+                            heroTag: 'detail_${BaristaUtils.slugFromAuthor(rawAuthor)}_${widget.recipeData['id'] ?? "recipe"}',
                           ),
                           const SizedBox(width: 12),
                           Expanded(

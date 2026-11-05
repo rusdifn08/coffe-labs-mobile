@@ -161,6 +161,7 @@ class _SocialCoffeeScreenState extends State<SocialCoffeeScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'social_coffee_fab',
         backgroundColor: AppTheme.primaryBrown,
         foregroundColor: Colors.white,
         elevation: 4,

@@ -218,7 +218,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
                         itemBuilder: (context, index) {
                           final b = displayedBaristas[index];
                           final brewCount = (b['userBrewCount'] as num?)?.toInt() ?? 0;
-                          final heroTag = 'home_barista_${BaristaUtils.slugFromAuthor(b['author'] as String)}';
+                          final heroTag = 'home_barista_${BaristaUtils.slugFromAuthor(b['author'] as String)}_$index';
                           return GestureDetector(
                             onTap: () {
                               context.push(

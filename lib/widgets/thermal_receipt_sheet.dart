@@ -523,7 +523,7 @@ class _ThermalReceiptSheetState extends State<ThermalReceiptSheet> {
             key: _receiptBoundaryKey,
             child: Container(
               color: const Color(0xFFFAFAF7),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -663,24 +663,29 @@ class _ThermalReceiptSheetState extends State<ThermalReceiptSheet> {
                                     '  ${i + 1}. $sFmt - $eFmt',
                                     style: const TextStyle(
                                       fontFamily: 'monospace',
-                                      fontSize: 11,
+                                      fontSize: 10,
                                       fontWeight: FontWeight.bold,
                                       color: Color(0xFF1F1F1F),
                                     ),
                                   ),
-                                  Text(
-                                    (RecipeSanitizer.isEspressoBased(
-                                            method: widget.recipe['method']?.toString(),
-                                            category: widget.recipe['category']?.toString(),
-                                            title: widget.recipe['title']?.toString(),
-                                          )
-                                        ? (dur > 0 ? '~${dur}s' : 'Step')
-                                        : (water > 0 ? '+$water g - Total $accWater g' : 'Fase Kontak - $accWater g')),
-                                    style: const TextStyle(
-                                      fontFamily: 'monospace',
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF1F1F1F),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      (RecipeSanitizer.isEspressoBased(
+                                              method: widget.recipe['method']?.toString(),
+                                              category: widget.recipe['category']?.toString(),
+                                              title: widget.recipe['title']?.toString(),
+                                            )
+                                          ? (dur > 0 ? '~${dur}s' : 'Step')
+                                          : (water > 0 ? '+$water g - Total $accWater g' : 'Fase Kontak - $accWater g')),
+                                      textAlign: TextAlign.right,
+                                      style: const TextStyle(
+                                        fontFamily: 'monospace',
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF1F1F1F),
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                 ],
