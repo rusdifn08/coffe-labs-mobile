@@ -14,6 +14,8 @@ import '../widgets/oled_compatibility_dialog.dart';
 import '../widgets/pos_discount_modal.dart';
 import '../widgets/receipt_preview_modal.dart';
 import '../widgets/business_menu_asset_image.dart';
+import '../widgets/business_svg_icons.dart';
+import '../../../theme/business_theme.dart';
 import 'customer_aod_menu_screen.dart';
 import 'oled_diagnostic_screen.dart';
 import 'shift_summary_screen.dart';
@@ -211,24 +213,15 @@ class _BusinessCashierScreenState extends ConsumerState<BusinessCashierScreen> {
     final isTabletOrWide = screenWidth >= 750;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF101010),
+      backgroundColor: BusinessTheme.bgDark,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF181818),
+        backgroundColor: BusinessTheme.bgSurface,
         elevation: 0,
         leading: widget.isEmbeddedInTab
             ? Container(
                 margin: const EdgeInsets.only(left: 12),
                 alignment: Alignment.center,
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFFD4AF37), width: 1.0),
-                  ),
-                  child: const Icon(CupertinoIcons.cart_fill, color: Color(0xFFD4AF37), size: 16),
-                ),
+                child: BusinessSvgIcon.cafeEmblem(logoType: _config.logoIconType, size: 30),
               )
             : IconButton(
                 icon: const Icon(CupertinoIcons.back, color: Colors.white),

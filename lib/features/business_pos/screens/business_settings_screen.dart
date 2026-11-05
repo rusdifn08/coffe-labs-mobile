@@ -7,6 +7,7 @@ import '../../../services/business_pos_api_service.dart';
 import '../../../theme/business_theme.dart';
 import '../services/thermal_receipt_service.dart';
 import '../widgets/add_menu_item_modal.dart';
+import '../widgets/business_svg_icons.dart';
 import '../widgets/manage_menu_modal.dart';
 import '../widgets/receipt_preview_modal.dart';
 import 'shift_summary_screen.dart';
@@ -319,22 +320,61 @@ class _BusinessSettingsScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'PROFIL OUTLET & LISENSI',
-            style: TextStyle(
-              color: BusinessTheme.goldAccent,
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.8,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'PROFIL OUTLET & LISENSI',
+                style: TextStyle(
+                  color: BusinessTheme.goldAccent,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.8,
+                ),
+              ),
+              InkWell(
+                onTap: _showEditStoreDialog,
+                borderRadius: BorderRadius.circular(6),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  child: Row(
+                    children: [
+                      Icon(CupertinoIcons.pencil, color: BusinessTheme.goldAccent, size: 12),
+                      SizedBox(width: 4),
+                      Text(
+                        'Ubah Profil & Logo',
+                        style: TextStyle(color: BusinessTheme.goldAccent, fontSize: 11.5, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          _buildInfoRow(
-            label: 'Nama Bar & Kafe',
-            value: _config.storeName,
-            icon: CupertinoIcons.building_2_fill,
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              BusinessSvgIcon.cafeEmblem(logoType: _config.logoIconType, size: 40),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _config.storeName,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _config.storeTagline,
+                      style: const TextStyle(color: BusinessTheme.textMuted, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const Divider(height: 18, color: BusinessTheme.borderSubtle),
+          const Divider(height: 20, color: BusinessTheme.borderSubtle),
           _buildInfoRow(
             label: 'Alamat Struk',
             value: 'Coffee Labs Bar Counter • Specialty Espresso',
@@ -348,6 +388,149 @@ class _BusinessSettingsScreenState
             valueColor: BusinessTheme.goldAccent,
           ),
         ],
+      ),
+    );
+  }
+
+  void _showEditStoreDialog() {
+    final nameController = TextEditingController(text: _config.storeName);
+    final taglineController = TextEditingController(text: _config.storeTagline);
+    String selectedLogo = _config.logoIconType;
+
+    final logoOptions = [
+      {'type': 'flame_bean', 'label': 'Roast Flame & Bean'},
+      {'type': 'royal_portafilter', 'label': 'Royal Portafilter'},
+      {'type': 'v60_dripper', 'label': 'V60 Origami Cone'},
+      {'type': 'botanical_leaf', 'label': 'Arabica Branch'},
+      {'type': 'geometric_cup', 'label': 'Modern Hexagon'},
+      {'type': 'steaming_pitcher', 'label': 'Latte Pitcher'},
+    ];
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: BusinessTheme.cardElevated,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+          title: const Text(
+            'Ubah Identitas Kafe / Resto',
+            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'NAMA KAFE / RESTO',
+                  style: TextStyle(color: BusinessTheme.goldAccent, fontSize: 10.5, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: nameController,
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'Contoh: Kopi Kenangan Bar, Specialty Brew...',
+                    hintStyle: const TextStyle(color: Colors.white38, fontSize: 13),
+                    filled: true,
+                    fillColor: BusinessTheme.bgSurface,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  'DESKRIPSI / SLOGAN KAFE',
+                  style: TextStyle(color: BusinessTheme.goldAccent, fontSize: 10.5, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: taglineController,
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  decoration: InputDecoration(
+                    hintText: 'Contoh: Specialty Coffee Bar & Artisan Bakery',
+                    hintStyle: const TextStyle(color: Colors.white38, fontSize: 12),
+                    filled: true,
+                    fillColor: BusinessTheme.bgSurface,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'PILIH LOGO EMBLEM KAFE',
+                  style: TextStyle(color: BusinessTheme.goldAccent, fontSize: 10.5, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: logoOptions.map((opt) {
+                    final type = opt['type']!;
+                    final isSelected = selectedLogo == type;
+                    return InkWell(
+                      onTap: () => setDialogState(() => selectedLogo = type),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected ? BusinessTheme.goldAccent.withValues(alpha: 0.18) : BusinessTheme.bgSurface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected ? BusinessTheme.goldAccent : BusinessTheme.borderSubtle,
+                            width: isSelected ? 1.5 : 1.0,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            BusinessSvgIcon.cafeEmblem(logoType: type, size: 26),
+                            const SizedBox(width: 8),
+                            Text(
+                              opt['label']!,
+                              style: TextStyle(
+                                color: isSelected ? BusinessTheme.goldAccent : BusinessTheme.textLight,
+                                fontSize: 11,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Batal', style: TextStyle(color: Colors.white60)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final newName = nameController.text.trim();
+                final newTagline = taglineController.text.trim();
+                if (newName.isNotEmpty) {
+                  Navigator.pop(ctx);
+                  final updated = await BusinessPosApiService.updateStoreConfig({
+                    'store_name': newName,
+                    'store_tagline': newTagline.isNotEmpty ? newTagline : _config.storeTagline,
+                    'logo_icon_type': selectedLogo,
+                  });
+                  if (mounted && updated != null) {
+                    setState(() => _config = updated);
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: BusinessTheme.goldAccent,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Simpan Perubahan', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
       ),
     );
   }

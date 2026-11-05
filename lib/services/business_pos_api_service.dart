@@ -9,6 +9,7 @@ import 'auth_service.dart';
 class BusinessPosApiService {
   static const String _localCustomMenuKey = 'coffe_labs_business_custom_menu_items_json';
   static const String _localDeletedMenuIdsKey = 'coffe_labs_business_deleted_menu_ids';
+  static const String _storeConfigPrefsKey = 'coffe_labs_business_store_config_json_v1';
 
   static Future<Map<String, String>> _headers() async {
     final token = await AuthService.getToken();
@@ -46,15 +47,58 @@ class BusinessPosApiService {
 
       if (res.statusCode == 200) {
         final data = json.decode(res.body)['data'];
-        return BusinessStoreConfig.fromJson(data);
+        final conf = BusinessStoreConfig.fromJson(data);
+        await _saveLocalStoreConfig(conf);
+        return conf;
       }
     } catch (e) {
       debugPrint('Error fetching store config: $e');
     }
+
+    // Fallback to local persisted config
+    final local = await loadLocalStoreConfig();
+    return local ?? BusinessStoreConfig.defaultBarConfig();
+  }
+
+  static Future<BusinessStoreConfig?> loadLocalStoreConfig() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_storeConfigPrefsKey);
+      if (raw != null && raw.isNotEmpty) {
+        return BusinessStoreConfig.fromJson(json.decode(raw));
+      }
+    } catch (e) {
+      debugPrint('Error loading local store config: $e');
+    }
     return null;
   }
 
+  static Future<void> _saveLocalStoreConfig(BusinessStoreConfig config) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_storeConfigPrefsKey, json.encode(config.toJson()));
+    } catch (e) {
+      debugPrint('Error saving local store config: $e');
+    }
+  }
+
   static Future<BusinessStoreConfig?> updateStoreConfig(Map<String, dynamic> payload) async {
+    // 1. Update local config first
+    final current = await loadLocalStoreConfig() ?? BusinessStoreConfig.defaultBarConfig();
+    final updated = current.copyWith(
+      storeName: payload['store_name']?.toString() ?? current.storeName,
+      storeTagline: payload['store_tagline']?.toString() ?? current.storeTagline,
+      logoIconType: payload['logo_icon_type']?.toString() ?? current.logoIconType,
+      aodGridColumns: (payload['aod_grid_columns'] as num?)?.toInt() ?? current.aodGridColumns,
+      aodGridRows: (payload['aod_grid_rows'] as num?)?.toInt() ?? current.aodGridRows,
+      aodCardBorderColor: payload['aod_card_border_color']?.toString() ?? current.aodCardBorderColor,
+      aodAccentColor: payload['aod_accent_color']?.toString() ?? current.aodAccentColor,
+      aodIdleBrightness: (payload['aod_idle_brightness'] as num?)?.toDouble() ?? current.aodIdleBrightness,
+      aodActiveBrightness: (payload['aod_active_brightness'] as num?)?.toDouble() ?? current.aodActiveBrightness,
+      pixelShiftEnabled: payload.containsKey('pixel_shift_enabled') ? (payload['pixel_shift_enabled'] as bool?) : current.pixelShiftEnabled,
+    );
+    await _saveLocalStoreConfig(updated);
+
     try {
       final baseUrl = await AuthService.getBaseUrl();
       final uri = Uri.parse('$baseUrl/api/v1/business/config');
@@ -66,12 +110,14 @@ class BusinessPosApiService {
 
       if (res.statusCode == 200) {
         final data = json.decode(res.body)['data'];
-        return BusinessStoreConfig.fromJson(data);
+        final serverConf = BusinessStoreConfig.fromJson(data);
+        await _saveLocalStoreConfig(serverConf);
+        return serverConf;
       }
     } catch (e) {
-      debugPrint('Error updating store config: $e');
+      debugPrint('Error updating store config on server: $e');
     }
-    return null;
+    return updated;
   }
 
   static Future<List<BusinessMenuItem>> fetchMenuList() async {

@@ -5,8 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/business_pos_models.dart';
 import '../../../providers/workspace_mode_provider.dart';
 import '../../../services/audio_service.dart';
+import '../../../services/business_pos_api_service.dart';
 import '../../../theme/business_theme.dart';
 import '../../../widgets/notched_nav_bar_painter.dart';
+import '../widgets/business_svg_icons.dart';
 import 'business_cashier_screen.dart';
 import 'business_dashboard_home_screen.dart';
 import 'business_display_hub_screen.dart';
@@ -27,11 +29,20 @@ class BusinessMainLayout extends ConsumerStatefulWidget {
 
 class _BusinessMainLayoutState extends ConsumerState<BusinessMainLayout> {
   late int _currentIndex;
+  BusinessStoreConfig _config = BusinessStoreConfig.defaultBarConfig();
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialTabIndex.clamp(0, 4);
+    _loadConfig();
+  }
+
+  Future<void> _loadConfig() async {
+    final conf = await BusinessPosApiService.fetchStoreConfig();
+    if (mounted && conf != null) {
+      setState(() => _config = conf);
+    }
   }
 
   void _onTabSelected(int index) {
@@ -108,29 +119,15 @@ class _BusinessMainLayoutState extends ConsumerState<BusinessMainLayout> {
         child: Column(
           children: [
             const SizedBox(height: 12),
-            // Coffee Labs Business Gold Emblem
+            // Customizable Cafe Logo Emblem
             Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFD4AF37), Color(0xFF8A6C1C)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: BusinessTheme.goldAccent.withValues(alpha: 0.25),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              child: BusinessSvgIcon.cafeEmblem(
+                logoType: _config.logoIconType,
+                size: 42,
               ),
-              alignment: Alignment.center,
-              child: const Icon(CupertinoIcons.flame_fill, size: 22, color: Colors.black),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
             // Side Nav Items: Home & Kasir
             _buildLandscapeRailItem(0, CupertinoIcons.home, CupertinoIcons.house_fill, 'Home'),

@@ -9,6 +9,8 @@ class BusinessStoreConfig {
   final String id;
   final String ownerUserId;
   final String storeName;
+  final String storeTagline;
+  final String logoIconType; // 'flame_bean', 'royal_portafilter', 'v60_dripper', 'botanical_leaf', 'geometric_cup', 'steaming_pitcher'
   final int aodGridColumns;
   final int aodGridRows;
   final String aodCardBorderColor;
@@ -21,6 +23,8 @@ class BusinessStoreConfig {
     required this.id,
     required this.ownerUserId,
     required this.storeName,
+    this.storeTagline = 'Dashboard Performa & Operasional Kedai',
+    this.logoIconType = 'flame_bean',
     this.aodGridColumns = 3,
     this.aodGridRows = 2,
     this.aodCardBorderColor = '#262626',
@@ -34,7 +38,9 @@ class BusinessStoreConfig {
     return BusinessStoreConfig(
       id: json['id']?.toString() ?? '',
       ownerUserId: json['owner_user_id']?.toString() ?? '',
-      storeName: json['store_name']?.toString() ?? 'Coffee Labs Bar',
+      storeName: json['store_name']?.toString() ?? 'Coffee Labs Bar & Roastery',
+      storeTagline: json['store_tagline']?.toString() ?? 'Dashboard Performa & Operasional Kedai',
+      logoIconType: json['logo_icon_type']?.toString() ?? 'flame_bean',
       aodGridColumns: (json['aod_grid_columns'] as num?)?.toInt() ?? 3,
       aodGridRows: (json['aod_grid_rows'] as num?)?.toInt() ?? 2,
       aodCardBorderColor: json['aod_card_border_color']?.toString() ?? '#262626',
@@ -50,6 +56,8 @@ class BusinessStoreConfig {
       'id': id,
       'owner_user_id': ownerUserId,
       'store_name': storeName,
+      'store_tagline': storeTagline,
+      'logo_icon_type': logoIconType,
       'aod_grid_columns': aodGridColumns,
       'aod_grid_rows': aodGridRows,
       'aod_card_border_color': aodCardBorderColor,
@@ -62,6 +70,8 @@ class BusinessStoreConfig {
 
   BusinessStoreConfig copyWith({
     String? storeName,
+    String? storeTagline,
+    String? logoIconType,
     int? aodGridColumns,
     int? aodGridRows,
     String? aodCardBorderColor,
@@ -74,6 +84,8 @@ class BusinessStoreConfig {
       id: id,
       ownerUserId: ownerUserId,
       storeName: storeName ?? this.storeName,
+      storeTagline: storeTagline ?? this.storeTagline,
+      logoIconType: logoIconType ?? this.logoIconType,
       aodGridColumns: aodGridColumns ?? this.aodGridColumns,
       aodGridRows: aodGridRows ?? this.aodGridRows,
       aodCardBorderColor: aodCardBorderColor ?? this.aodCardBorderColor,
@@ -89,6 +101,8 @@ class BusinessStoreConfig {
       id: 'default',
       ownerUserId: '',
       storeName: 'Coffee Labs Bar & Roastery',
+      storeTagline: 'Dashboard Performa & Operasional Kedai',
+      logoIconType: 'flame_bean',
       aodGridColumns: 3,
       aodGridRows: 2,
     );
