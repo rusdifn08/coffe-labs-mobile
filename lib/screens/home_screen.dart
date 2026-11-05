@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../core/router/app_router.dart';
+import '../features/bean_scanner/widgets/home_header_scanner_button.dart';
 import '../features/brew/controllers/brew_history_controller.dart';
 import '../features/gamification/models/coffee_level.dart';
 import '../features/gamification/services/gamification_service.dart';
@@ -186,6 +187,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 16),
+
+                  // Smart Coffee Bag Scanner Action Button (AI Vision + Spatial OCR)
+                  const HomeHeaderScannerButton(),
+                  const SizedBox(height: 18),
 
                   // Quick Access Section (Social, Marketplace, Beans Radar)
                   HomeQuickAccessSection(isEn: isEn),

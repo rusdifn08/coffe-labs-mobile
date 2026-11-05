@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../core/router/app_router.dart';
+import '../features/bean_scanner/controllers/selected_brew_bean_controller.dart';
+import '../features/bean_scanner/models/resolved_coffee_bean.dart';
 import '../features/recipes/controllers/recipe_list_controller.dart';
 import '../services/api_service.dart';
 import '../services/trial_service.dart';
@@ -363,6 +365,22 @@ class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
             break;
         }
 
+        final scannedBean = ref.watch(selectedBrewBeanProvider);
+        if (scannedBean != null && scannedBean.recommendedRecipes.isNotEmpty) {
+          final targetSlugs = scannedBean.recommendedRecipes.map((r) => r.slug.toLowerCase()).toSet();
+          filteredRecipes.sort((a, b) {
+            final titleA = (a['title'] ?? '').toString().toLowerCase();
+            final titleB = (b['title'] ?? '').toString().toLowerCase();
+            final isMatchA = targetSlugs.any((s) => titleA.contains(s.replaceAll('-', ' '))) ||
+                (scannedBean.process.toLowerCase().contains('natural') && titleA.contains('natural'));
+            final isMatchB = targetSlugs.any((s) => titleB.contains(s.replaceAll('-', ' '))) ||
+                (scannedBean.process.toLowerCase().contains('natural') && titleB.contains('natural'));
+            if (isMatchA && !isMatchB) return -1;
+            if (!isMatchA && isMatchB) return 1;
+            return 0;
+          });
+        }
+
         final showBackButton = Navigator.canPop(context) || _selectedMethodFilter != 'All';
 
         return PopScope(
@@ -494,6 +512,7 @@ class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
                               onRemoveOriginFilter: () => setState(() => _selectedOriginFilter = LanguageService.isEnglish ? 'All' : 'Semua'),
                               onResetAll: _resetAllFilters,
                             ),
+                            if (scannedBean != null) _buildScannedBeanBanner(scannedBean),
                             if (_selectedMethodFilter != 'All') _buildMethodFilterBanner(isEn),
                             const SizedBox(height: 4),
                             Expanded(
@@ -555,6 +574,7 @@ class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
                       onRemoveOriginFilter: () => setState(() => _selectedOriginFilter = LanguageService.isEnglish ? 'All' : 'Semua'),
                       onResetAll: _resetAllFilters,
                     ),
+                    if (scannedBean != null) _buildScannedBeanBanner(scannedBean),
                     if (_selectedMethodFilter != 'All') _buildMethodFilterBanner(isEn),
                     const SizedBox(height: 4),
                     Expanded(
@@ -612,6 +632,76 @@ class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
           GestureDetector(
             onTap: _clearMethodFilterOnly,
             child: const Icon(CupertinoIcons.xmark_circle_fill, size: 16, color: AppTheme.primaryBrown),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScannedBeanBanner(ResolvedCoffeeBean bean) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF261D16),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFD4AF37), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF5C3A21).withValues(alpha: 0.25),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: const Color(0xFFD4AF37).withValues(alpha: 0.18),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.center_focus_strong_rounded, color: Color(0xFFD4AF37), size: 18),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      '⭐ BIJI TERDETEKSI: ',
+                      style: TextStyle(color: Color(0xFFD4AF37), fontSize: 10.5, fontWeight: FontWeight.w900),
+                    ),
+                    Expanded(
+                      child: Text(
+                        '${bean.roasteryName} - ${bean.beanName}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Proses: ${bean.process} • Varietas: ${bean.variety} • Target Suhu: ${bean.recommendedWaterTempC}°C',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white70, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+          IconButton(
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            icon: const Icon(CupertinoIcons.xmark_circle_fill, size: 18, color: Colors.white38),
+            onPressed: () => ref.read(selectedBrewBeanProvider.notifier).clear(),
+            tooltip: 'Hapus filter biji',
           ),
         ],
       ),
