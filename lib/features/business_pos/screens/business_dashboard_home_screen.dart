@@ -264,7 +264,7 @@ class _BusinessDashboardHomeScreenState
                   final canFitSinglePage = isLandscapeOrWide && availableHeight >= 500;
 
                   if (canFitSinglePage) {
-                    // Responsive Full-Height Dashboard for Tablet / Landscape (Zero empty void at the bottom)
+                    // Responsive Full-Height Dashboard for Tablet / Landscape (All Cards Responsive with Min-Height)
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                       child: Column(
@@ -272,25 +272,41 @@ class _BusinessDashboardHomeScreenState
                         children: [
                           // 1. Top Header: Store Info with customizable Logo/Name & Switcher Pill
                           _buildHeader(),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
 
                           // 2. Alert Low Stock Banner (Compact inline)
                           if (lowStockCount > 0) ...[
                             _buildLowStockWarning(lowStockCount),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 6),
                           ],
 
                           // 3. Omset, Transaksi, Cup Penjualan & Rata-rata DI DALAM 1 BARIS (Responsive)
-                          _buildUnifiedKpiRow(true),
+                          Expanded(
+                            flex: 12,
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(minHeight: 80),
+                              child: _buildUnifiedKpiRow(true, isExpanded: true),
+                            ),
+                          ),
                           const SizedBox(height: 8),
 
-                          // 4. Aksi Cepat Operasional (1 Baris di Landscape)
-                          _buildQuickActions(true),
+                          // 4. Aksi Cepat Operasional (1 Baris di Landscape, Responsive)
+                          Expanded(
+                            flex: 9,
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(minHeight: 58),
+                              child: _buildQuickActions(true, isExpanded: true),
+                            ),
+                          ),
                           const SizedBox(height: 8),
 
                           // 5. Executive 2-Column Command Center (Responsive full height)
                           Expanded(
-                            child: _buildLandscapeExecutiveColumns(brewCapacity, isExpanded: true),
+                            flex: 29,
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(minHeight: 200),
+                              child: _buildLandscapeExecutiveColumns(brewCapacity, isExpanded: true),
+                            ),
                           ),
                         ],
                       ),
@@ -501,16 +517,17 @@ class _BusinessDashboardHomeScreenState
   }
 
   /// 4 KPI Metrics: Omset, Transaksi, Cup, Rata-rata DI DALAM 1 BARIS (Responsive)
-  Widget _buildUnifiedKpiRow(bool isWide) {
+  Widget _buildUnifiedKpiRow(bool isWide, {bool isExpanded = false}) {
     if (isWide) {
       return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // 1. Omset Card
           Expanded(
             flex: 3,
-            child: _buildOmsetKpiCard(),
+            child: _buildOmsetKpiCard(isExpanded: isExpanded),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
 
           // 2. Transaksi Card
           Expanded(
@@ -519,10 +536,11 @@ class _BusinessDashboardHomeScreenState
               title: 'Transaksi',
               value: '48 Order',
               sub: '100% lunas',
-              iconWidget: BusinessSvgIcon.transactions(size: 26),
+              iconBuilder: (size) => BusinessSvgIcon.transactions(size: size),
+              isExpanded: isExpanded,
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
 
           // 3. Cup Penjualan Card
           Expanded(
@@ -531,10 +549,11 @@ class _BusinessDashboardHomeScreenState
               title: 'Cup Kopi',
               value: '62 Cup',
               sub: 'Terjual hari ini',
-              iconWidget: BusinessSvgIcon.cupsSold(size: 26),
+              iconBuilder: (size) => BusinessSvgIcon.cupsSold(size: size),
+              isExpanded: isExpanded,
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
 
           // 4. Rata-rata Order Card
           Expanded(
@@ -543,7 +562,8 @@ class _BusinessDashboardHomeScreenState
               title: 'Rata-rata',
               value: 'Rp 38.4k',
               sub: 'Per pelanggan',
-              iconWidget: BusinessSvgIcon.averageOrder(size: 26),
+              iconBuilder: (size) => BusinessSvgIcon.averageOrder(size: size),
+              isExpanded: isExpanded,
             ),
           ),
         ],
@@ -562,7 +582,7 @@ class _BusinessDashboardHomeScreenState
                 title: 'Transaksi',
                 value: '48 Order',
                 sub: '100% lunas',
-                iconWidget: BusinessSvgIcon.transactions(size: 24),
+                iconBuilder: (size) => BusinessSvgIcon.transactions(size: size),
               ),
             ),
             const SizedBox(width: 8),
@@ -571,7 +591,7 @@ class _BusinessDashboardHomeScreenState
                 title: 'Cup Kopi',
                 value: '62 Cup',
                 sub: 'Terjual hari ini',
-                iconWidget: BusinessSvgIcon.cupsSold(size: 24),
+                iconBuilder: (size) => BusinessSvgIcon.cupsSold(size: size),
               ),
             ),
             const SizedBox(width: 8),
@@ -580,7 +600,7 @@ class _BusinessDashboardHomeScreenState
                 title: 'Rata-rata',
                 value: 'Rp 38.4k',
                 sub: 'Per order',
-                iconWidget: BusinessSvgIcon.averageOrder(size: 24),
+                iconBuilder: (size) => BusinessSvgIcon.averageOrder(size: size),
               ),
             ),
           ],
@@ -589,70 +609,100 @@ class _BusinessDashboardHomeScreenState
     );
   }
 
-  Widget _buildOmsetKpiCard() {
+  Widget _buildOmsetKpiCard({bool isExpanded = false}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BusinessTheme.cardDecoration(hasGoldGlow: true),
-      child: Row(
-        children: [
-          BusinessSvgIcon.omset(size: 34),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: LayoutBuilder(
+        builder: (ctx, constraints) {
+          final isTaller = constraints.maxHeight >= 95;
+          final double iconSize = isTaller ? 38.0 : 30.0;
+          final double valueFontSize = isTaller ? 20.0 : 17.0;
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              BusinessSvgIcon.omset(size: iconSize),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Flexible(
-                      child: Text(
-                        'OMSET HARI INI',
-                        style: TextStyle(
-                          color: BusinessTheme.goldAccent,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.8,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Flexible(
+                          child: Text(
+                            'OMSET HARI INI',
+                            style: TextStyle(
+                              color: BusinessTheme.goldAccent,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.8,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        overflow: TextOverflow.ellipsis,
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: BusinessTheme.statusSuccess.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            '+18.4%',
+                            style: TextStyle(
+                              color: BusinessTheme.statusSuccess,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Rp 1.845.000',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: valueFontSize,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.3,
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                      decoration: BoxDecoration(
-                        color: BusinessTheme.statusSuccess.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text(
-                        '+18.4%',
-                        style: TextStyle(
-                          color: BusinessTheme.statusSuccess,
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.bold,
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            '48 transaksi kasir lunas',
+                            style: TextStyle(color: BusinessTheme.textMuted, fontSize: 10),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
+                        if (isTaller) ...[
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: BusinessTheme.goldAccent.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'Target 92%',
+                              style: TextStyle(color: BusinessTheme.goldAccent, fontSize: 8.5, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
-                const Text(
-                  'Rp 1.845.000',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const Text(
-                  '48 transaksi kasir lunas',
-                  style: TextStyle(color: BusinessTheme.textMuted, fontSize: 10),
-                ),
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -661,80 +711,96 @@ class _BusinessDashboardHomeScreenState
     required String title,
     required String value,
     required String sub,
-    required Widget iconWidget,
+    Widget? iconWidget,
+    Widget Function(double size)? iconBuilder,
+    bool isExpanded = false,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BusinessTheme.cardDecoration(),
-      child: Row(
-        children: [
-          iconWidget,
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: BusinessTheme.textMuted,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+      child: LayoutBuilder(
+        builder: (ctx, constraints) {
+          final isTaller = constraints.maxHeight >= 95;
+          final double iconSize = isTaller ? 28.0 : 22.0;
+          final double valueFontSize = isTaller ? 16.0 : 13.5;
+          final icon = iconBuilder != null ? iconBuilder(iconSize) : (iconWidget ?? const SizedBox());
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              icon,
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: BusinessTheme.textMuted,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      value,
+                      style: TextStyle(
+                        color: BusinessTheme.textLight,
+                        fontSize: valueFontSize,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      sub,
+                      style: TextStyle(
+                        color: isTaller ? BusinessTheme.goldAccent : BusinessTheme.textSecondary,
+                        fontSize: 9.5,
+                        fontWeight: isTaller ? FontWeight.w500 : FontWeight.normal,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 1),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    color: BusinessTheme.textLight,
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  sub,
-                  style: const TextStyle(color: BusinessTheme.textMutedDark, fontSize: 9.5),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
   /// 4 Aksi Cepat: 1 Baris di Landscape, 2x2 di Portrait
-  Widget _buildQuickActions(bool isWide) {
+  Widget _buildQuickActions(bool isWide, {bool isExpanded = false}) {
     final actions = [
       {
         'title': 'POS Kasir',
         'sub': 'Catat & cetak pesanan',
-        'icon': BusinessSvgIcon.posCashier(size: 28),
+        'iconBuilder': (double size) => BusinessSvgIcon.posCashier(size: size),
         'tab': 1,
       },
       {
         'title': 'Display Kiosk',
         'sub': 'AMOLED AOD showcase',
-        'icon': BusinessSvgIcon.displayKiosk(size: 28),
+        'iconBuilder': (double size) => BusinessSvgIcon.displayKiosk(size: size),
         'tab': 2,
       },
       {
         'title': 'Stock Opname',
         'sub': 'Inventaris bahan baku',
-        'icon': BusinessSvgIcon.stockOpname(size: 28),
+        'iconBuilder': (double size) => BusinessSvgIcon.stockOpname(size: size),
         'tab': 3,
       },
       {
         'title': 'Rekap Shift',
         'sub': 'Laporan shift kasir',
-        'icon': BusinessSvgIcon.shiftReport(size: 28),
+        'iconBuilder': (double size) => BusinessSvgIcon.shiftReport(size: size),
         'action': _openShiftSummaryModal,
       },
     ];
@@ -742,12 +808,13 @@ class _BusinessDashboardHomeScreenState
     if (isWide) {
       // 1 BARIS PENUH DI MODE LANSKAP!
       return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: actions.map((act) {
           final isLast = actions.indexOf(act) == actions.length - 1;
           return Expanded(
             child: Padding(
-              padding: EdgeInsets.only(right: isLast ? 0 : 10.0),
-              child: _buildActionCardItem(act),
+              padding: EdgeInsets.only(right: isLast ? 0 : 8.0),
+              child: _buildActionCardItem(act, isExpanded: isExpanded),
             ),
           );
         }).toList(),
@@ -760,7 +827,7 @@ class _BusinessDashboardHomeScreenState
         Row(
           children: [
             Expanded(child: _buildActionCardItem(actions[0])),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Expanded(child: _buildActionCardItem(actions[1])),
           ],
         ),
@@ -768,7 +835,7 @@ class _BusinessDashboardHomeScreenState
         Row(
           children: [
             Expanded(child: _buildActionCardItem(actions[2])),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Expanded(child: _buildActionCardItem(actions[3])),
           ],
         ),
@@ -776,7 +843,9 @@ class _BusinessDashboardHomeScreenState
     );
   }
 
-  Widget _buildActionCardItem(Map<String, dynamic> act) {
+  Widget _buildActionCardItem(Map<String, dynamic> act, {bool isExpanded = false}) {
+    final iconBuilder = act['iconBuilder'] as Widget Function(double size);
+
     return InkWell(
       onTap: () {
         if (act.containsKey('tab')) {
@@ -787,39 +856,63 @@ class _BusinessDashboardHomeScreenState
       },
       borderRadius: BorderRadius.circular(14),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BusinessTheme.cardDecoration(),
-        child: Row(
-          children: [
-            act['icon'] as Widget,
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    act['title'] as String,
-                    style: const TextStyle(
-                      color: BusinessTheme.textLight,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12.5,
-                    ),
+        child: LayoutBuilder(
+          builder: (ctx, constraints) {
+            final isTaller = constraints.maxHeight >= 70;
+            final iconSize = isTaller ? 24.0 : 20.0;
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(isTaller ? 7 : 5),
+                  decoration: BoxDecoration(
+                    color: BusinessTheme.bgSurface,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: BusinessTheme.borderSubtle, width: 0.8),
                   ),
-                  const SizedBox(height: 1),
-                  Text(
-                    act['sub'] as String,
-                    style: const TextStyle(
-                      color: BusinessTheme.textMuted,
-                      fontSize: 10,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: iconBuilder(iconSize),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        act['title'] as String,
+                        style: TextStyle(
+                          color: BusinessTheme.textLight,
+                          fontWeight: FontWeight.bold,
+                          fontSize: isTaller ? 12.5 : 11.5,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        act['sub'] as String,
+                        style: TextStyle(
+                          color: BusinessTheme.textMuted,
+                          fontSize: isTaller ? 10 : 9,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          ],
+                ),
+                if (isTaller)
+                  const Icon(
+                    CupertinoIcons.chevron_forward,
+                    color: BusinessTheme.textMuted,
+                    size: 13,
+                  ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -837,15 +930,25 @@ class _BusinessDashboardHomeScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildCapacityBanner(brewCapacity),
-                const SizedBox(height: 10),
                 Expanded(
-                  child: _buildPeakHoursSection(isExpanded: true),
+                  flex: 2,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 48),
+                    child: _buildCapacityBanner(brewCapacity, isExpanded: true),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  flex: 7,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 140),
+                    child: _buildPeakHoursSection(isExpanded: true),
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
 
           // Right Column: Top Menu Terlaris & Hardware Status (Full Height)
           Expanded(
@@ -855,12 +958,18 @@ class _BusinessDashboardHomeScreenState
               children: [
                 Expanded(
                   flex: 5,
-                  child: _buildTopSellingSection(isExpanded: true, limit: 3),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 95),
+                    child: _buildTopSellingSection(isExpanded: true),
+                  ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 Expanded(
-                  flex: 4,
-                  child: _buildOperationalStatusCard(isExpanded: true),
+                  flex: 5,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 95),
+                    child: _buildOperationalStatusCard(isExpanded: true),
+                  ),
                 ),
               ],
             ),
@@ -912,107 +1021,270 @@ class _BusinessDashboardHomeScreenState
     );
   }
 
-  Widget _buildCapacityBanner(int capacity) {
+  Widget _buildCapacityBanner(int capacity, {bool isExpanded = false}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: BusinessTheme.cardBg,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: BusinessTheme.borderSubtle, width: 1.0),
       ),
-      child: Row(
-        children: [
-          BusinessSvgIcon.brewCapacity(size: 24),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Estimasi Kapasitas Seduh Hari Ini',
-                  style: TextStyle(
-                    color: BusinessTheme.textLight,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  'Stok aman untuk ~$capacity cangkir specialty sebelum restock.',
-                  style: const TextStyle(
-                    color: BusinessTheme.textSecondary,
-                    fontSize: 10.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+      child: LayoutBuilder(
+        builder: (ctx, constraints) {
+          final isTaller = constraints.maxHeight >= 60;
 
-  Widget _buildPeakHoursSection({bool isExpanded = false, double height = 65}) {
-    final hours = [
-      {'time': '07:00', 'ratio': 0.25, 'label': ''},
-      {'time': '08:00', 'ratio': 0.90, 'label': 'PEAK'},
-      {'time': '10:00', 'ratio': 0.45, 'label': ''},
-      {'time': '12:00', 'ratio': 0.70, 'label': 'LUNCH'},
-      {'time': '14:00', 'ratio': 0.50, 'label': ''},
-      {'time': '17:00', 'ratio': 0.65, 'label': ''},
-      {'time': '19:00', 'ratio': 0.95, 'label': 'PEAK'},
-      {'time': '21:00', 'ratio': 0.35, 'label': ''},
-    ];
-
-    Widget buildBars(double maxBarHeight) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: hours.map((h) {
-          final ratio = h['ratio'] as double;
-          final isPeak = ratio >= 0.85;
-          final barHeight = (ratio * maxBarHeight).clamp(10.0, maxBarHeight);
-
-          return Column(
-            mainAxisSize: MainAxisSize.min,
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if (isPeak)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 2),
-                  padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: BusinessTheme.goldAccent,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                  child: const Text(
-                    'PEAK',
-                    style: TextStyle(color: Colors.black, fontSize: 7, fontWeight: FontWeight.w900),
-                  ),
-                )
-              else
-                const SizedBox(height: 12),
-              Container(
-                width: 18,
-                height: barHeight,
-                decoration: BoxDecoration(
-                  color: isPeak
-                      ? BusinessTheme.goldAccent
-                      : BusinessTheme.goldAccent.withValues(alpha: 0.28),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                h['time'] as String,
-                style: TextStyle(
-                  color: isPeak ? BusinessTheme.goldAccent : BusinessTheme.textMuted,
-                  fontSize: 8.5,
-                  fontWeight: isPeak ? FontWeight.bold : FontWeight.normal,
+              BusinessSvgIcon.brewCapacity(size: isTaller ? 26 : 22),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Flexible(
+                          child: Text(
+                            'Estimasi Kapasitas Seduh Hari Ini',
+                            style: TextStyle(
+                              color: BusinessTheme.textLight,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: BusinessTheme.goldAccent.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '~$capacity Cup',
+                            style: const TextStyle(
+                              color: BusinessTheme.goldAccent,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Stok aman untuk ~$capacity cangkir specialty sebelum restock.',
+                      style: const TextStyle(
+                        color: BusinessTheme.textSecondary,
+                        fontSize: 10,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (isTaller) ...[
+                      const SizedBox(height: 4),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(3),
+                        child: LinearProgressIndicator(
+                          value: (capacity / 300.0).clamp(0.1, 1.0),
+                          minHeight: 3.5,
+                          backgroundColor: BusinessTheme.borderSubtle,
+                          color: BusinessTheme.goldAccent,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ],
           );
-        }).toList(),
+        },
+      ),
+    );
+  }
+
+  Widget _buildPeakHoursSection({bool isExpanded = false, double height = 120}) {
+    final hours = [
+      {'time': '07:00', 'ratio': 0.28, 'cup': '12', 'label': ''},
+      {'time': '08:00', 'ratio': 0.90, 'cup': '42', 'label': 'PEAK'},
+      {'time': '10:00', 'ratio': 0.45, 'cup': '21', 'label': ''},
+      {'time': '12:00', 'ratio': 0.70, 'cup': '33', 'label': 'LUNCH'},
+      {'time': '14:00', 'ratio': 0.50, 'cup': '24', 'label': ''},
+      {'time': '17:00', 'ratio': 0.65, 'cup': '31', 'label': ''},
+      {'time': '19:00', 'ratio': 0.95, 'cup': '45', 'label': 'PEAK'},
+      {'time': '21:00', 'ratio': 0.35, 'cup': '16', 'label': ''},
+    ];
+
+    Widget buildChartContent(double totalHeight, double totalWidth) {
+      final barWidth = (totalWidth / hours.length * 0.42).clamp(16.0, 32.0);
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 1. Bars & Badges Row (Expanded with background guidelines)
+          Expanded(
+            child: Stack(
+              children: [
+                // Horizontal reference grid lines
+                Positioned.fill(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Divider(
+                        height: 1,
+                        thickness: 0.6,
+                        color: BusinessTheme.borderSubtle.withValues(alpha: 0.35),
+                      ),
+                      Divider(
+                        height: 1,
+                        thickness: 0.6,
+                        color: BusinessTheme.borderSubtle.withValues(alpha: 0.2),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Bars Row: each hour is an Expanded column that distributes width evenly across the card
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: hours.map((h) {
+                    final ratio = h['ratio'] as double;
+                    final isPeak = ratio >= 0.85;
+                    final isLunch = h['label'] == 'LUNCH';
+
+                    return Expanded(
+                      child: LayoutBuilder(
+                        builder: (ctx, barColConstraints) {
+                          final maxColH = barColConstraints.maxHeight;
+                          final maxBarH = (maxColH - 24.0).clamp(10.0, 240.0);
+                          final barHeight = (ratio * maxBarH).clamp(8.0, maxBarH);
+
+                          return Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              // Badge / Cup count above bar
+                              if (isPeak)
+                                Container(
+                                  margin: const EdgeInsets.only(bottom: 3),
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                  decoration: BoxDecoration(
+                                    color: BusinessTheme.goldAccent,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text(
+                                    'PEAK',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 7.5,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                )
+                              else if (isLunch)
+                                Container(
+                                  margin: const EdgeInsets.only(bottom: 3),
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                                  decoration: BoxDecoration(
+                                    color: BusinessTheme.bgSurface,
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(color: BusinessTheme.borderSubtle, width: 0.8),
+                                  ),
+                                  child: const Text(
+                                    'LUNCH',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 7,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                )
+                              else
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 3),
+                                  child: Text(
+                                    '${h['cup']}',
+                                    style: TextStyle(
+                                      color: BusinessTheme.textMuted.withValues(alpha: 0.9),
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+
+                              // The Bar itself with gradient and rounded cap
+                              Container(
+                                width: barWidth,
+                                height: barHeight,
+                                decoration: BoxDecoration(
+                                  gradient: isPeak
+                                      ? const LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            BusinessTheme.goldAccent,
+                                            Color(0xFFC98C22),
+                                          ],
+                                        )
+                                      : null,
+                                  color: isPeak
+                                      ? null
+                                      : isLunch
+                                          ? BusinessTheme.goldAccent.withValues(alpha: 0.60)
+                                          : BusinessTheme.goldAccent.withValues(alpha: 0.28),
+                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
+                                  boxShadow: isPeak
+                                      ? [
+                                          BoxShadow(
+                                            color: BusinessTheme.goldAccent.withValues(alpha: 0.25),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, -1),
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+
+          // 2. Baseline Divider
+          Container(
+            height: 1,
+            color: BusinessTheme.borderSubtle.withValues(alpha: 0.8),
+          ),
+          const SizedBox(height: 5),
+
+          // 3. Time Labels Row (each in an Expanded cell with textAlign: TextAlign.center)
+          Row(
+            children: hours.map((h) {
+              final ratio = h['ratio'] as double;
+              final isPeak = ratio >= 0.85;
+
+              return Expanded(
+                child: Text(
+                  h['time'] as String,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: isPeak ? BusinessTheme.goldAccent : BusinessTheme.textMuted,
+                    fontSize: 10,
+                    fontWeight: isPeak ? FontWeight.w800 : FontWeight.w500,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       );
     }
 
@@ -1022,10 +1294,10 @@ class _BusinessDashboardHomeScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Flexible(
+              const Flexible(
                 child: Text(
                   'ANALISIS JAM SIBUK (PEAK HOURS)',
                   style: TextStyle(
@@ -1037,94 +1309,178 @@ class _BusinessDashboardHomeScreenState
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              SizedBox(width: 8),
-              Flexible(
-                child: Text(
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: BusinessTheme.bgSurface,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: BusinessTheme.borderSubtle, width: 0.8),
+                ),
+                child: const Text(
                   'Pagi & Malam',
-                  style: TextStyle(color: BusinessTheme.textMuted, fontSize: 10),
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.end,
+                  style: TextStyle(color: BusinessTheme.goldAccent, fontSize: 9.5, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           if (isExpanded)
             Expanded(
               child: LayoutBuilder(
                 builder: (ctx, constraints) {
-                  final availableBarH = constraints.maxHeight - 34;
-                  final maxH = (availableBarH > 15.0 ? availableBarH : 15.0).clamp(15.0, 350.0).toDouble();
-                  return Align(
-                    alignment: Alignment.bottomCenter,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.bottomCenter,
-                      child: buildBars(maxH),
-                    ),
-                  );
+                  return buildChartContent(constraints.maxHeight, constraints.maxWidth);
                 },
               ),
             )
           else
-            buildBars(height),
+            SizedBox(
+              height: height,
+              child: LayoutBuilder(
+                builder: (ctx, constraints) {
+                  return buildChartContent(height, constraints.maxWidth);
+                },
+              ),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildTopSellingSection({bool isExpanded = false, int limit = 4}) {
-    final topItems = [
-      {'name': 'Geisha Panama Pour Over', 'sold': '18 cup', 'rev': 'Rp 630k'},
-      {'name': 'Iced Oat Flat White (Oatside)', 'sold': '15 cup', 'rev': 'Rp 720k'},
-      {'name': 'Single Origin Filter V60 Ethiopia', 'sold': '11 cup', 'rev': 'Rp 462k'},
-      {'name': 'Cappuccino Double Ristretto', 'sold': '9 cup', 'rev': 'Rp 225k'},
-    ].take(limit).toList();
+  Widget _buildTopSellingSection({bool isExpanded = false, int? limit}) {
+    final allTopItems = [
+      {
+        'name': 'Geisha Panama Pour Over',
+        'sub': 'Filter • Gesha Specialty',
+        'sold': '18 cup',
+        'rev': 'Rp 630k',
+        'pct': 0.29,
+      },
+      {
+        'name': 'Iced Oat Flat White (Oatside)',
+        'sub': 'Espresso • Oatside',
+        'sold': '15 cup',
+        'rev': 'Rp 720k',
+        'pct': 0.24,
+      },
+      {
+        'name': 'Single Origin Filter V60 Ethiopia',
+        'sub': 'Manual Brew • Floral Jasmine',
+        'sold': '11 cup',
+        'rev': 'Rp 462k',
+        'pct': 0.18,
+      },
+      {
+        'name': 'Cappuccino Double Ristretto',
+        'sub': 'Espresso • Fresh Milk',
+        'sold': '9 cup',
+        'rev': 'Rp 225k',
+        'pct': 0.15,
+      },
+      {
+        'name': 'Cold Drip Reserve 12-Hour',
+        'sub': 'Slow Cold Drip',
+        'sold': '7 cup',
+        'rev': 'Rp 315k',
+        'pct': 0.11,
+      },
+    ];
 
-    Widget buildItemRow(int idx, Map<String, String> item) {
+    Widget buildItemRow(int idx, Map<String, dynamic> item, bool showSubtitle, bool showProgress) {
+      final isTop = idx <= 2;
+      final pct = item['pct'] as double;
+
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3.0),
-        child: Row(
+        padding: const EdgeInsets.symmetric(vertical: 2.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              width: 18,
-              height: 18,
-              decoration: BoxDecoration(
-                color: idx <= 2
-                    ? BusinessTheme.goldAccent.withValues(alpha: 0.22)
-                    : BusinessTheme.borderSubtle,
-                shape: BoxShape.circle,
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                '$idx',
-                style: TextStyle(
-                  color: idx <= 2 ? BusinessTheme.goldAccent : BusinessTheme.textMuted,
-                  fontSize: 9.5,
-                  fontWeight: FontWeight.bold,
+            Row(
+              children: [
+                Container(
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    color: isTop
+                        ? BusinessTheme.goldAccent.withValues(alpha: 0.22)
+                        : BusinessTheme.borderSubtle,
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '$idx',
+                    style: TextStyle(
+                      color: isTop ? BusinessTheme.goldAccent : BusinessTheme.textMuted,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        item['name'] as String,
+                        style: const TextStyle(
+                          color: BusinessTheme.textLight,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (showSubtitle)
+                        Text(
+                          item['sub'] as String,
+                          style: const TextStyle(
+                            color: BusinessTheme.textMuted,
+                            fontSize: 9,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      item['sold'] as String,
+                      style: const TextStyle(
+                        color: BusinessTheme.goldAccent,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (showSubtitle)
+                      Text(
+                        item['rev'] as String,
+                        style: const TextStyle(
+                          color: BusinessTheme.textMuted,
+                          fontSize: 9,
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+            if (showProgress) ...[
+              const SizedBox(height: 2),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: LinearProgressIndicator(
+                  value: pct,
+                  minHeight: 2.0,
+                  backgroundColor: BusinessTheme.borderSubtle.withValues(alpha: 0.4),
+                  color: isTop ? BusinessTheme.goldAccent : BusinessTheme.textMuted,
                 ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                item['name']!,
-                style: const TextStyle(
-                  color: BusinessTheme.textLight,
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w500,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Text(
-              item['sold']!,
-              style: const TextStyle(
-                color: BusinessTheme.goldAccent,
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            ],
           ],
         ),
       );
@@ -1160,6 +1516,30 @@ class _BusinessDashboardHomeScreenState
             Expanded(
               child: LayoutBuilder(
                 builder: (ctx, constraints) {
+                  final int count;
+                  final bool showSubtitle;
+                  final bool showProgress;
+
+                  if (limit != null) {
+                    count = limit;
+                    showSubtitle = false;
+                    showProgress = false;
+                  } else if (constraints.maxHeight >= 180) {
+                    count = 5;
+                    showSubtitle = true;
+                    showProgress = true;
+                  } else if (constraints.maxHeight >= 135) {
+                    count = 4;
+                    showSubtitle = true;
+                    showProgress = false;
+                  } else {
+                    count = 3;
+                    showSubtitle = false;
+                    showProgress = false;
+                  }
+
+                  final itemsToShow = allTopItems.take(count).toList();
+
                   return Center(
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
@@ -1172,10 +1552,10 @@ class _BusinessDashboardHomeScreenState
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           mainAxisSize: MainAxisSize.min,
-                          children: topItems
+                          children: itemsToShow
                               .asMap()
                               .entries
-                              .map((e) => buildItemRow(e.key + 1, e.value))
+                              .map((e) => buildItemRow(e.key + 1, e.value, showSubtitle, showProgress))
                               .toList(),
                         ),
                       ),
@@ -1186,7 +1566,13 @@ class _BusinessDashboardHomeScreenState
             )
           else
             Column(
-              children: topItems.asMap().entries.map((e) => buildItemRow(e.key + 1, e.value)).toList(),
+              children: allTopItems
+                  .take(limit ?? 3)
+                  .toList()
+                  .asMap()
+                  .entries
+                  .map((e) => buildItemRow(e.key + 1, e.value, false, false))
+                  .toList(),
             ),
         ],
       ),
@@ -1194,28 +1580,111 @@ class _BusinessDashboardHomeScreenState
   }
 
   Widget _buildOperationalStatusCard({bool isExpanded = false}) {
-    final statusList = [
-      _buildStatusRow(
-        label: 'Barista Bertugas',
-        status: 'Labs Business Demo',
-        icon: CupertinoIcons.person_crop_circle_badge_checkmark,
-        isOnline: true,
-      ),
-      const Divider(height: 10, color: BusinessTheme.borderSubtle),
-      _buildStatusRow(
-        label: 'Printer Thermal',
-        status: 'Bluetooth 58mm Siap',
-        icon: CupertinoIcons.printer,
-        isOnline: true,
-      ),
-      const Divider(height: 10, color: BusinessTheme.borderSubtle),
-      _buildStatusRow(
-        label: 'Mesin Espresso',
-        status: '9.2 Bar • 93.5°C Stabil',
-        icon: CupertinoIcons.gauge,
-        isOnline: true,
-      ),
+    final allStatusList = [
+      {
+        'label': 'Barista Bertugas',
+        'status': 'Labs Business Demo',
+        'sub': 'Shift Aktif • Kasir Siap',
+        'icon': CupertinoIcons.person_crop_circle_badge_checkmark,
+        'isOnline': true,
+      },
+      {
+        'label': 'Printer Thermal',
+        'status': 'Bluetooth 58mm Siap',
+        'sub': 'Paper Roll 85% • Siap Cetak',
+        'icon': CupertinoIcons.printer,
+        'isOnline': true,
+      },
+      {
+        'label': 'Mesin Espresso',
+        'status': '9.2 Bar • 93.5°C Stabil',
+        'sub': 'Boiler Ready • PID Calibrated',
+        'icon': CupertinoIcons.gauge,
+        'isOnline': true,
+      },
+      {
+        'label': 'Kiosk Display AOD',
+        'status': 'Mode Menu Interaktif',
+        'sub': 'Sync PIN 1234 • 60 FPS',
+        'icon': CupertinoIcons.tv,
+        'isOnline': true,
+      },
+      {
+        'label': 'Cloud Sync & POS DB',
+        'status': '0 Pending Transaksi',
+        'sub': 'SQLite WAL Offline-First',
+        'icon': CupertinoIcons.cloud_upload,
+        'isOnline': true,
+      },
     ];
+
+    Widget buildStatusItem(Map<String, dynamic> item, bool showSubtitle) {
+      final isOnline = item['isOnline'] as bool;
+
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2.0),
+        child: Row(
+          children: [
+            Icon(
+              item['icon'] as IconData,
+              color: BusinessTheme.goldAccent,
+              size: 14,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    item['label'] as String,
+                    style: const TextStyle(
+                      color: BusinessTheme.textLight,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (showSubtitle)
+                    Text(
+                      item['sub'] as String,
+                      style: const TextStyle(
+                        color: BusinessTheme.textMuted,
+                        fontSize: 9,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: isOnline ? BusinessTheme.statusSuccess : BusinessTheme.statusWarning,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  item['status'] as String,
+                  style: TextStyle(
+                    color: isOnline ? Colors.white : BusinessTheme.textMuted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -1237,6 +1706,22 @@ class _BusinessDashboardHomeScreenState
             Expanded(
               child: LayoutBuilder(
                 builder: (ctx, constraints) {
+                  final int count;
+                  final bool showSubtitle;
+
+                  if (constraints.maxHeight >= 180) {
+                    count = 5;
+                    showSubtitle = true;
+                  } else if (constraints.maxHeight >= 135) {
+                    count = 4;
+                    showSubtitle = true;
+                  } else {
+                    count = 3;
+                    showSubtitle = false;
+                  }
+
+                  final itemsToShow = allStatusList.take(count).toList();
+
                   return Center(
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
@@ -1249,7 +1734,9 @@ class _BusinessDashboardHomeScreenState
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           mainAxisSize: MainAxisSize.min,
-                          children: statusList,
+                          children: itemsToShow
+                              .map((item) => buildStatusItem(item, showSubtitle))
+                              .toList(),
                         ),
                       ),
                     ),
@@ -1258,49 +1745,14 @@ class _BusinessDashboardHomeScreenState
               ),
             )
           else
-            Column(children: statusList),
+            Column(
+              children: allStatusList
+                  .take(3)
+                  .map((item) => buildStatusItem(item, false))
+                  .toList(),
+            ),
         ],
       ),
-    );
-  }
-
-  Widget _buildStatusRow({
-    required String label,
-    required String status,
-    required IconData icon,
-    required bool isOnline,
-  }) {
-    return Row(
-      children: [
-        Icon(icon, color: BusinessTheme.textMuted, size: 14),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: BusinessTheme.textMuted,
-              fontSize: 11,
-            ),
-          ),
-        ),
-        Container(
-          width: 7,
-          height: 7,
-          decoration: BoxDecoration(
-            color: isOnline ? BusinessTheme.statusSuccess : BusinessTheme.statusDanger,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 5),
-        Text(
-          status,
-          style: const TextStyle(
-            color: BusinessTheme.textLight,
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
     );
   }
 }
