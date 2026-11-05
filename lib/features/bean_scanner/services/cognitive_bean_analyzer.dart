@@ -487,7 +487,7 @@ class CognitiveBeanAnalyzer {
     for (final noise in _noisePhrases) {
       final pos = base.toLowerCase().indexOf(noise);
       if (pos != -1) {
-        base = (base.substring(0, pos) + ' ' + base.substring(pos + noise.length)).trim();
+        base = '${base.substring(0, pos)} ${base.substring(pos + noise.length)}'.trim();
       }
     }
     if (base.isEmpty) {

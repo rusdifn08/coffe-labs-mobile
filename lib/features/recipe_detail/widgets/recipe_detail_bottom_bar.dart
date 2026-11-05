@@ -60,7 +60,7 @@ class RecipeDetailBottomBar extends StatelessWidget {
               ],
             ),
             child: IconButton(
-              tooltip: isEn ? 'Print Recipe Receipt' : 'Print Struk Resep (Bluetooth)',
+              tooltip: isEn ? 'Print Recipe Receipt' : 'Print Struk Resep Bluetooth',
               icon: const Icon(CupertinoIcons.printer_fill, color: AppTheme.primaryBrown, size: 20),
               onPressed: () => ThermalReceiptSheet.show(context, scaledRecipe),
             ),

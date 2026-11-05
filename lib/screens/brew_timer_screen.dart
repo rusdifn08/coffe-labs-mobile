@@ -385,7 +385,7 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            tooltip: isEn ? 'Print Bluetooth Receipt' : 'Print Struk Resep (Bluetooth)',
+            tooltip: isEn ? 'Print Bluetooth Receipt' : 'Print Struk Resep Bluetooth',
             icon: const Icon(CupertinoIcons.printer_fill, size: 20),
             onPressed: () => ThermalReceiptSheet.show(context, _recipe),
           ),

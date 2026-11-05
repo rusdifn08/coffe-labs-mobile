@@ -7,6 +7,7 @@ import '../services/auth_service.dart';
 import '../services/language_service.dart';
 import '../services/profile_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/receipt_customization_sheet.dart';
 import 'feedback_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -297,6 +298,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       selectedLanguage: _selectedLanguage,
                       onLanguageSelected: (lang) => setState(() => _selectedLanguage = lang),
                     ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // KUSTOMISASI STRUK KASIR & TOKO
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceWhite,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isEn ? 'Receipt & Store Branding' : 'Kustomisasi Struk Kasir & Toko',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
+                  ),
+                  const SizedBox(height: 10),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(CupertinoIcons.printer_fill, color: Colors.deepOrange, size: 22),
+                    ),
+                    title: Text(
+                      isEn ? 'Customize Receipt Header' : 'Header Struk Kasir',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    subtitle: Text(
+                      isEn
+                          ? 'Set store name, slogan, icon, barista & social handle'
+                          : 'Ubah nama kedai, slogan, ikon, barista & catatan kaki',
+                      style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted),
+                    ),
+                    trailing: const Icon(CupertinoIcons.chevron_forward, size: 18, color: AppTheme.textMuted),
+                    onTap: () => ReceiptCustomizationSheet.show(context),
                   ),
                 ],
               ),

@@ -118,7 +118,7 @@ class RecipeDetailAppBar extends StatelessWidget {
             ),
             child: IconButton(
               padding: EdgeInsets.zero,
-              tooltip: 'Print Struk Resep (Bluetooth Kasir)',
+              tooltip: 'Print Struk Resep Bluetooth Kasir',
               icon: const Icon(CupertinoIcons.printer_fill, color: Colors.white, size: 18),
               onPressed: () => ThermalReceiptSheet.show(context, scaledRecipe),
             ),

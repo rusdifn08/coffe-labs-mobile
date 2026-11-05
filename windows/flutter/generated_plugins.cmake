@@ -7,8 +7,10 @@ list(APPEND FLUTTER_PLUGIN_LIST
   file_selector_windows
   flutter_blue_plus_winrt
   flutter_tts
+  printing
   rive_native
   screen_brightness_windows
+  share_plus
   url_launcher_windows
 )
 
