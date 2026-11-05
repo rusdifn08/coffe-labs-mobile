@@ -245,7 +245,8 @@ class _BusinessDashboardHomeScreenState
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
-    final isWide = mediaQuery.size.width >= 900;
+    final isLandscapeOrWide =
+        mediaQuery.size.width >= 800 || mediaQuery.orientation == Orientation.landscape;
 
     final lowStockCount = BusinessStockService.getLowStockAlertCount(_stockItems);
     final brewCapacity = BusinessStockService.calculateTotalBrewCapacity(_stockItems);
@@ -257,44 +258,76 @@ class _BusinessDashboardHomeScreenState
               child: CircularProgressIndicator(color: BusinessTheme.goldAccent),
             )
           : SafeArea(
-              child: RefreshIndicator(
-                color: BusinessTheme.goldAccent,
-                backgroundColor: BusinessTheme.cardBg,
-                onRefresh: _loadDashboardData,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 1. Top Header: Store Info with customizable Logo/Name & Switcher Pill
-                      _buildHeader(),
-                      const SizedBox(height: 10),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final availableHeight = constraints.maxHeight;
+                  final canFitSinglePage = isLandscapeOrWide && availableHeight >= 500;
 
-                      // 2. Alert Low Stock Banner (Compact inline)
-                      if (lowStockCount > 0) ...[
-                        _buildLowStockWarning(lowStockCount),
-                        const SizedBox(height: 10),
-                      ],
+                  if (canFitSinglePage) {
+                    // Responsive Full-Height Dashboard for Tablet / Landscape (Zero empty void at the bottom)
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // 1. Top Header: Store Info with customizable Logo/Name & Switcher Pill
+                          _buildHeader(),
+                          const SizedBox(height: 8),
 
-                      // 3. Omset, Transaksi, Cup Penjualan & Rata-rata DI DALAM 1 BARIS (Responsive)
-                      _buildUnifiedKpiRow(isWide),
-                      const SizedBox(height: 12),
+                          // 2. Alert Low Stock Banner (Compact inline)
+                          if (lowStockCount > 0) ...[
+                            _buildLowStockWarning(lowStockCount),
+                            const SizedBox(height: 8),
+                          ],
 
-                      // 4. Aksi Cepat Operasional (1 Baris di Landscape, 2x2 di Portrait)
-                      _buildQuickActions(isWide),
-                      const SizedBox(height: 12),
+                          // 3. Omset, Transaksi, Cup Penjualan & Rata-rata DI DALAM 1 BARIS (Responsive)
+                          _buildUnifiedKpiRow(true),
+                          const SizedBox(height: 8),
 
-                      // 5. Executive 2-Column Command Center (Estimasi, Peak Hours | Top Selling, Status)
-                      if (isWide)
-                        _buildLandscapeExecutiveColumns(brewCapacity)
-                      else
-                        _buildPortraitSequentialContent(brewCapacity),
+                          // 4. Aksi Cepat Operasional (1 Baris di Landscape)
+                          _buildQuickActions(true),
+                          const SizedBox(height: 8),
 
-                      const SizedBox(height: 20),
-                    ],
-                  ),
-                ),
+                          // 5. Executive 2-Column Command Center (Responsive full height)
+                          Expanded(
+                            child: _buildLandscapeExecutiveColumns(brewCapacity, isExpanded: true),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  // Scrollable Fallback for Portrait / very compact heights
+                  return RefreshIndicator(
+                    color: BusinessTheme.goldAccent,
+                    backgroundColor: BusinessTheme.cardBg,
+                    onRefresh: _loadDashboardData,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildHeader(),
+                          const SizedBox(height: 10),
+                          if (lowStockCount > 0) ...[
+                            _buildLowStockWarning(lowStockCount),
+                            const SizedBox(height: 10),
+                          ],
+                          _buildUnifiedKpiRow(isLandscapeOrWide),
+                          const SizedBox(height: 12),
+                          _buildQuickActions(isLandscapeOrWide),
+                          const SizedBox(height: 12),
+                          if (isLandscapeOrWide)
+                            _buildLandscapeExecutiveColumns(brewCapacity, isExpanded: false)
+                          else
+                            _buildPortraitSequentialContent(brewCapacity),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
     );
@@ -792,12 +825,53 @@ class _BusinessDashboardHomeScreenState
     );
   }
 
-  /// Mode Lanskap: 2 Kolom Ringkasan dalam 1 Layar
-  Widget _buildLandscapeExecutiveColumns(int brewCapacity) {
+  /// Mode Lanskap: 2 Kolom Ringkasan dalam 1 Layar (Responsive Height)
+  Widget _buildLandscapeExecutiveColumns(int brewCapacity, {bool isExpanded = false}) {
+    if (isExpanded) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Left Column: Estimasi Kapasitas & Peak Hours (Full Height)
+          Expanded(
+            flex: 5,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildCapacityBanner(brewCapacity),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: _buildPeakHoursSection(isExpanded: true),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          // Right Column: Top Menu Terlaris & Hardware Status (Full Height)
+          Expanded(
+            flex: 5,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  flex: 5,
+                  child: _buildTopSellingSection(isExpanded: true, limit: 3),
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  flex: 4,
+                  child: _buildOperationalStatusCard(isExpanded: true),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Left Column: Estimasi Kapasitas & Peak Hours
         Expanded(
           flex: 5,
           child: Column(
@@ -809,8 +883,6 @@ class _BusinessDashboardHomeScreenState
           ),
         ),
         const SizedBox(width: 12),
-
-        // Right Column: Top Menu Terlaris & Hardware Status
         Expanded(
           flex: 5,
           child: Column(
@@ -880,7 +952,7 @@ class _BusinessDashboardHomeScreenState
     );
   }
 
-  Widget _buildPeakHoursSection({double height = 65}) {
+  Widget _buildPeakHoursSection({bool isExpanded = false, double height = 65}) {
     final hours = [
       {'time': '07:00', 'ratio': 0.25, 'label': ''},
       {'time': '08:00', 'ratio': 0.90, 'label': 'PEAK'},
@@ -892,11 +964,63 @@ class _BusinessDashboardHomeScreenState
       {'time': '21:00', 'ratio': 0.35, 'label': ''},
     ];
 
+    Widget buildBars(double maxBarHeight) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: hours.map((h) {
+          final ratio = h['ratio'] as double;
+          final isPeak = ratio >= 0.85;
+          final barHeight = (ratio * maxBarHeight).clamp(10.0, maxBarHeight);
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isPeak)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: BusinessTheme.goldAccent,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: const Text(
+                    'PEAK',
+                    style: TextStyle(color: Colors.black, fontSize: 7, fontWeight: FontWeight.w900),
+                  ),
+                )
+              else
+                const SizedBox(height: 12),
+              Container(
+                width: 18,
+                height: barHeight,
+                decoration: BoxDecoration(
+                  color: isPeak
+                      ? BusinessTheme.goldAccent
+                      : BusinessTheme.goldAccent.withValues(alpha: 0.28),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                h['time'] as String,
+                style: TextStyle(
+                  color: isPeak ? BusinessTheme.goldAccent : BusinessTheme.textMuted,
+                  fontSize: 8.5,
+                  fontWeight: isPeak ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ],
+          );
+        }).toList(),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BusinessTheme.cardDecoration(),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -924,62 +1048,32 @@ class _BusinessDashboardHomeScreenState
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: hours.map((h) {
-              final ratio = h['ratio'] as double;
-              final isPeak = ratio >= 0.85;
-              final barHeight = ratio * height;
-
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (isPeak)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 2),
-                      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: BusinessTheme.goldAccent,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                      child: const Text(
-                        'PEAK',
-                        style: TextStyle(color: Colors.black, fontSize: 7, fontWeight: FontWeight.w900),
-                      ),
-                    )
-                  else
-                    const SizedBox(height: 12),
-                  Container(
-                    width: 18,
-                    height: barHeight,
-                    decoration: BoxDecoration(
-                      color: isPeak
-                          ? BusinessTheme.goldAccent
-                          : BusinessTheme.goldAccent.withValues(alpha: 0.28),
-                      borderRadius: BorderRadius.circular(4),
+          const SizedBox(height: 8),
+          if (isExpanded)
+            Expanded(
+              child: LayoutBuilder(
+                builder: (ctx, constraints) {
+                  final availableBarH = constraints.maxHeight - 34;
+                  final maxH = (availableBarH > 15.0 ? availableBarH : 15.0).clamp(15.0, 350.0).toDouble();
+                  return Align(
+                    alignment: Alignment.bottomCenter,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.bottomCenter,
+                      child: buildBars(maxH),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    h['time'] as String,
-                    style: TextStyle(
-                      color: isPeak ? BusinessTheme.goldAccent : BusinessTheme.textMuted,
-                      fontSize: 8.5,
-                      fontWeight: isPeak ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  ),
-                ],
-              );
-            }).toList(),
-          ),
+                  );
+                },
+              ),
+            )
+          else
+            buildBars(height),
         ],
       ),
     );
   }
 
-  Widget _buildTopSellingSection({int limit = 3}) {
+  Widget _buildTopSellingSection({bool isExpanded = false, int limit = 4}) {
     final topItems = [
       {'name': 'Geisha Panama Pour Over', 'sold': '18 cup', 'rev': 'Rp 630k'},
       {'name': 'Iced Oat Flat White (Oatside)', 'sold': '15 cup', 'rev': 'Rp 720k'},
@@ -987,11 +1081,60 @@ class _BusinessDashboardHomeScreenState
       {'name': 'Cappuccino Double Ristretto', 'sold': '9 cup', 'rev': 'Rp 225k'},
     ].take(limit).toList();
 
+    Widget buildItemRow(int idx, Map<String, String> item) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3.0),
+        child: Row(
+          children: [
+            Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(
+                color: idx <= 2
+                    ? BusinessTheme.goldAccent.withValues(alpha: 0.22)
+                    : BusinessTheme.borderSubtle,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                '$idx',
+                style: TextStyle(
+                  color: idx <= 2 ? BusinessTheme.goldAccent : BusinessTheme.textMuted,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                item['name']!,
+                style: const TextStyle(
+                  color: BusinessTheme.textLight,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Text(
+              item['sold']!,
+              style: const TextStyle(
+                color: BusinessTheme.goldAccent,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BusinessTheme.cardDecoration(),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1012,68 +1155,73 @@ class _BusinessDashboardHomeScreenState
               Text('Terjual', style: TextStyle(color: BusinessTheme.textMuted, fontSize: 10)),
             ],
           ),
-          const SizedBox(height: 8),
-          ...topItems.asMap().entries.map((entry) {
-            final idx = entry.key + 1;
-            final item = entry.value;
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4.0),
-              child: Row(
-                children: [
-                  Container(
-                    width: 18,
-                    height: 18,
-                    decoration: BoxDecoration(
-                      color: idx <= 2
-                          ? BusinessTheme.goldAccent.withValues(alpha: 0.22)
-                          : BusinessTheme.borderSubtle,
-                      shape: BoxShape.circle,
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      '$idx',
-                      style: TextStyle(
-                        color: idx <= 2 ? BusinessTheme.goldAccent : BusinessTheme.textMuted,
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.bold,
+          const SizedBox(height: 6),
+          if (isExpanded)
+            Expanded(
+              child: LayoutBuilder(
+                builder: (ctx, constraints) {
+                  return Center(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minWidth: constraints.maxWidth,
+                          maxWidth: constraints.maxWidth,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          mainAxisSize: MainAxisSize.min,
+                          children: topItems
+                              .asMap()
+                              .entries
+                              .map((e) => buildItemRow(e.key + 1, e.value))
+                              .toList(),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      item['name']!,
-                      style: const TextStyle(
-                        color: BusinessTheme.textLight,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Text(
-                    item['sold']!,
-                    style: const TextStyle(
-                      color: BusinessTheme.goldAccent,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+                  );
+                },
               ),
-            );
-          }),
+            )
+          else
+            Column(
+              children: topItems.asMap().entries.map((e) => buildItemRow(e.key + 1, e.value)).toList(),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildOperationalStatusCard() {
+  Widget _buildOperationalStatusCard({bool isExpanded = false}) {
+    final statusList = [
+      _buildStatusRow(
+        label: 'Barista Bertugas',
+        status: 'Labs Business Demo',
+        icon: CupertinoIcons.person_crop_circle_badge_checkmark,
+        isOnline: true,
+      ),
+      const Divider(height: 10, color: BusinessTheme.borderSubtle),
+      _buildStatusRow(
+        label: 'Printer Thermal',
+        status: 'Bluetooth 58mm Siap',
+        icon: CupertinoIcons.printer,
+        isOnline: true,
+      ),
+      const Divider(height: 10, color: BusinessTheme.borderSubtle),
+      _buildStatusRow(
+        label: 'Mesin Espresso',
+        status: '9.2 Bar • 93.5°C Stabil',
+        icon: CupertinoIcons.gauge,
+        isOnline: true,
+      ),
+    ];
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BusinessTheme.cardDecoration(),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text(
             'STATUS OPERASIONAL BAR',
@@ -1084,27 +1232,33 @@ class _BusinessDashboardHomeScreenState
               letterSpacing: 0.8,
             ),
           ),
-          const SizedBox(height: 8),
-          _buildStatusRow(
-            label: 'Barista Bertugas',
-            status: 'Labs Business Demo',
-            icon: CupertinoIcons.person_crop_circle_badge_checkmark,
-            isOnline: true,
-          ),
-          const Divider(height: 12, color: BusinessTheme.borderSubtle),
-          _buildStatusRow(
-            label: 'Printer Thermal',
-            status: 'Bluetooth 58mm Siap',
-            icon: CupertinoIcons.printer,
-            isOnline: true,
-          ),
-          const Divider(height: 12, color: BusinessTheme.borderSubtle),
-          _buildStatusRow(
-            label: 'Mesin Espresso',
-            status: '9.2 Bar • 93.5°C Stabil',
-            icon: CupertinoIcons.gauge,
-            isOnline: true,
-          ),
+          const SizedBox(height: 6),
+          if (isExpanded)
+            Expanded(
+              child: LayoutBuilder(
+                builder: (ctx, constraints) {
+                  return Center(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minWidth: constraints.maxWidth,
+                          maxWidth: constraints.maxWidth,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          mainAxisSize: MainAxisSize.min,
+                          children: statusList,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            )
+          else
+            Column(children: statusList),
         ],
       ),
     );

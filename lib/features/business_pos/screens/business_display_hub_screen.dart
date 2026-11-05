@@ -8,7 +8,7 @@ import '../../../theme/business_theme.dart';
 import '../widgets/business_menu_asset_image.dart';
 import '../widgets/menu_grid_configurator_modal.dart';
 import '../widgets/oled_compatibility_dialog.dart';
-import 'customer_aod_menu_screen.dart';
+import '../widgets/kiosk_setup_checklist_modal.dart';
 import 'oled_diagnostic_screen.dart';
 
 class BusinessDisplayHubScreen extends ConsumerStatefulWidget {
@@ -51,14 +51,10 @@ class _BusinessDisplayHubScreenState
         ref
             .read(workspaceModeProvider.notifier)
             .forceSetMode(WorkspaceMode.customerAodDisplay);
-        Navigator.push(
+        KioskSetupChecklistModal.show(
           context,
-          MaterialPageRoute(
-            builder: (_) => CustomerAodMenuScreen(
-              config: _config,
-              initialMenuItems: _menuItems,
-            ),
-          ),
+          config: _config,
+          menuItems: _menuItems,
         );
       },
       onOpenDiagnostic: () {

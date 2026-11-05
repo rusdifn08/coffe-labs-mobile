@@ -22,6 +22,9 @@ import '../../screens/social_coffee_screen.dart';
 import '../../screens/splash_screen.dart';
 import '../../services/auth_service.dart';
 import '../../services/trial_service.dart';
+import '../../features/business_pos/screens/aod_kiosk_showcase_route_wrapper.dart';
+import '../../models/business_pos_models.dart';
+import '../services/kiosk_engine_service.dart';
 
 part 'app_router.g.dart';
 
@@ -45,6 +48,7 @@ class AppRoutes {
   static const String adminApproval = '/admin/approval';
   static const String adminFeedback = '/admin/feedback';
   static const String adminVersion = '/admin/version';
+  static const String aodShowcase = '/business/aod-showcase';
 }
 
 /// Listenable bridge yang memicu evaluasi ulang Route Guard pada GoRouter
@@ -82,6 +86,17 @@ GoRouter appRouter(Ref ref) {
     refreshListenable: refreshNotifier,
     redirect: (BuildContext context, GoRouterState state) async {
       final path = state.matchedLocation;
+
+      // Kiosk Route Guard: Jangan cegat bila sedang dalam AOD Showcase
+      if (path == AppRoutes.aodShowcase) {
+        return null;
+      }
+
+      // Kiosk Direct Cold-Boot Check: Jika tablet baru reboot saat Kiosk Mode aktif
+      final kioskBoot = await KioskEngineService.getKioskBootState();
+      if ((kioskBoot.bootIntoAodKiosk || kioskBoot.isLocked) && path != AppRoutes.aodShowcase) {
+        return AppRoutes.aodShowcase;
+      }
 
       // Biarkan halaman Splash menjalankan animasi pembuka & pengecekan sesi awal
       if (path == AppRoutes.splash) {
@@ -215,6 +230,21 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: AppRoutes.adminVersion,
         builder: (context, state) => const AdminVersionScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.aodShowcase,
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: AodKioskShowcaseRouteWrapper(
+              passedConfig: extra?['config'] as BusinessStoreConfig?,
+              passedMenuItems: extra?['menuItems'] as List<BusinessMenuItem>?,
+            ),
+            transitionsBuilder: (context, anim, secondaryAnim, child) =>
+                FadeTransition(opacity: anim, child: child),
+          );
+        },
       ),
     ],
   );

@@ -11,12 +11,12 @@ import '../widgets/add_menu_item_modal.dart';
 import '../widgets/manage_menu_modal.dart';
 import '../widgets/menu_grid_configurator_modal.dart';
 import '../widgets/oled_compatibility_dialog.dart';
+import '../widgets/kiosk_setup_checklist_modal.dart';
 import '../widgets/pos_discount_modal.dart';
 import '../widgets/receipt_preview_modal.dart';
 import '../widgets/business_menu_asset_image.dart';
 import '../widgets/business_svg_icons.dart';
 import '../../../theme/business_theme.dart';
-import 'customer_aod_menu_screen.dart';
 import 'oled_diagnostic_screen.dart';
 import 'shift_summary_screen.dart';
 
@@ -123,11 +123,10 @@ class _BusinessCashierScreenState extends ConsumerState<BusinessCashierScreen> {
       context,
       onProceed: () {
         ref.read(workspaceModeProvider.notifier).forceSetMode(WorkspaceMode.customerAodDisplay);
-        Navigator.push(
+        KioskSetupChecklistModal.show(
           context,
-          MaterialPageRoute(
-            builder: (_) => CustomerAodMenuScreen(config: _config, initialMenuItems: _menuItems),
-          ),
+          config: _config,
+          menuItems: _menuItems,
         );
       },
       onOpenDiagnostic: _openOledDiagnostics,

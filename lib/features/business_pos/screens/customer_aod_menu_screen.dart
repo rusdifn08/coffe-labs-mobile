@@ -6,6 +6,7 @@ import '../../../models/business_pos_models.dart';
 import '../../../providers/aod_display_engine_provider.dart';
 import '../../../providers/workspace_mode_provider.dart';
 import '../../../services/business_pos_api_service.dart';
+import '../presentation/controllers/aod_kiosk_controller.dart';
 import '../widgets/business_menu_asset_image.dart';
 import 'oled_diagnostic_screen.dart';
 
@@ -105,7 +106,8 @@ class _CustomerAodMenuScreenState extends ConsumerState<CustomerAodMenuScreen> {
       builder: (ctx) => _VerifyCashierPinModal(
         onSuccess: () async {
           Navigator.pop(ctx);
-          // Matikan AOD engine & kembalikan ke Mode Kasir
+          // Matikan Hardware Kiosk & AOD engine & kembalikan ke Mode Kasir
+          await ref.read(aodKioskControllerProvider.notifier).unlockKiosk('1234');
           await ref.read(aodDisplayEngineProvider.notifier).deactivateEngine();
           if (mounted) {
             ref.read(workspaceModeProvider.notifier).forceSetMode(WorkspaceMode.businessCashier);
@@ -119,6 +121,11 @@ class _CustomerAodMenuScreenState extends ConsumerState<CustomerAodMenuScreen> {
   @override
   Widget build(BuildContext context) {
     final aodState = ref.watch(aodDisplayEngineProvider);
+    final kioskState = ref.watch(aodKioskControllerProvider);
+    final effectiveOffset = kioskState.isKioskLocked
+        ? kioskState.pixelShiftOffset
+        : aodState.pixelShiftOffset;
+
     final columns = widget.config.aodGridColumns.clamp(1, 8);
     final rows = widget.config.aodGridRows.clamp(1, 6);
     final itemsPerPage = columns * rows;
@@ -134,12 +141,16 @@ class _CustomerAodMenuScreenState extends ConsumerState<CustomerAodMenuScreen> {
                   activeBrightness: widget.config.aodActiveBrightness,
                   idleBrightness: widget.config.aodIdleBrightness,
                 );
+            ref.read(aodKioskControllerProvider.notifier).onUserInteraction(
+                  activeBrightness: widget.config.aodActiveBrightness,
+                  idleBrightness: widget.config.aodIdleBrightness,
+                );
           },
           child: Stack(
             children: [
               // 1. Matriks Grid Menu dengan OLED Pixel-Shifting (Anti Burn-In)
               Transform.translate(
-                offset: aodState.pixelShiftOffset,
+                offset: effectiveOffset,
                 child: SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -281,25 +292,24 @@ class _CustomerAodMenuScreenState extends ConsumerState<CustomerAodMenuScreen> {
                 ),
               ),
 
-              // 2. Hidden Cashier Exit Lock Icon (Pojok Kanan Atas)
+              // 2. Hidden Cashier Exit Lock Icon (Pojok Kanan Atas: 60x60dp invisible target, onLongPress only)
               Positioned(
-                top: 10,
-                right: 12,
+                top: 0,
+                right: 0,
                 child: SafeArea(
                   child: GestureDetector(
-                    onTap: _showPinDialog,
+                    behavior: HitTestBehavior.opaque,
                     onLongPress: _showPinDialog,
                     child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: const BoxDecoration(
-                        color: Colors.transparent,
-                        shape: BoxShape.circle,
-                      ),
+                      width: 60,
+                      height: 60,
+                      alignment: Alignment.topRight,
+                      padding: const EdgeInsets.all(12),
+                      color: Colors.transparent, // Tak kasat mata oleh pelanggan
                       child: const Icon(
                         CupertinoIcons.lock_shield,
-                        color: Color(0x33FFFFFF), // Nyaris transparan agar tidak menarik perhatian pelanggan
-                        size: 20,
+                        color: Color(0x18FFFFFF), // Nyaris transparan (< 10% opacity)
+                        size: 16,
                       ),
                     ),
                   ),
@@ -526,22 +536,22 @@ class _AodMenuCard extends StatelessWidget {
   }
 }
 
-class _VerifyCashierPinModal extends StatefulWidget {
+class _VerifyCashierPinModal extends ConsumerStatefulWidget {
   final VoidCallback onSuccess;
 
   const _VerifyCashierPinModal({required this.onSuccess});
 
   @override
-  State<_VerifyCashierPinModal> createState() => _VerifyCashierPinModalState();
+  ConsumerState<_VerifyCashierPinModal> createState() => _VerifyCashierPinModalState();
 }
 
-class _VerifyCashierPinModalState extends State<_VerifyCashierPinModal> {
+class _VerifyCashierPinModalState extends ConsumerState<_VerifyCashierPinModal> {
   String _pin = '';
   bool _isChecking = false;
   String? _errorMessage;
 
   void _onDigit(String d) {
-    if (_pin.length < 6) {
+    if (_pin.length < 8) {
       setState(() {
         _pin += d;
         _errorMessage = null;
@@ -563,13 +573,31 @@ class _VerifyCashierPinModalState extends State<_VerifyCashierPinModal> {
 
   Future<void> _verifyPin() async {
     setState(() => _isChecking = true);
-    final ok = await BusinessPosApiService.verifyCashierPin(_pin);
-    setState(() => _isChecking = false);
 
+    // 1. Coba verifikasi offline native via KioskDirectBootStore (Argon2 / SHA-256)
+    final unlocked = await ref.read(aodKioskControllerProvider.notifier).unlockKiosk(_pin);
+    if (unlocked) {
+      if (mounted) {
+        setState(() => _isChecking = false);
+        widget.onSuccess();
+      }
+      return;
+    }
+
+    // 2. Fallback verifikasi online ke backend jika koneksi tersedia
+    final ok = await BusinessPosApiService.verifyCashierPin(_pin);
     if (ok) {
-      widget.onSuccess();
-    } else {
+      await ref.read(aodKioskControllerProvider.notifier).unlockKiosk(_pin);
+      if (mounted) {
+        setState(() => _isChecking = false);
+        widget.onSuccess();
+      }
+      return;
+    }
+
+    if (mounted) {
       setState(() {
+        _isChecking = false;
         _errorMessage = 'PIN Salah (Coba PIN default: 1234)';
         _pin = '';
       });
