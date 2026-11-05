@@ -1,8 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../screens/business_cashier_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../models/business_pos_models.dart';
+import '../../../providers/workspace_mode_provider.dart';
+import '../screens/business_main_layout.dart';
 
-class BusinessSuiteLauncherCard extends StatelessWidget {
+class BusinessSuiteLauncherCard extends ConsumerWidget {
   final bool isBusiness;
 
   const BusinessSuiteLauncherCard({
@@ -10,11 +13,12 @@ class BusinessSuiteLauncherCard extends StatelessWidget {
     required this.isBusiness,
   });
 
-  void _handleTap(BuildContext context) {
+  void _handleTap(BuildContext context, WidgetRef ref) {
     if (isBusiness) {
+      ref.read(workspaceModeProvider.notifier).forceSetMode(WorkspaceMode.business);
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const BusinessCashierScreen()),
+        MaterialPageRoute(builder: (_) => const BusinessMainLayout()),
       );
     } else {
       _showUpgradeModal(context);
@@ -77,7 +81,7 @@ class BusinessSuiteLauncherCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -101,7 +105,7 @@ class BusinessSuiteLauncherCard extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => _handleTap(context),
+          onTap: () => _handleTap(context, ref),
           borderRadius: BorderRadius.circular(20),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -132,7 +136,7 @@ class BusinessSuiteLauncherCard extends StatelessWidget {
                       Row(
                         children: [
                           const Text(
-                            'Mode Kasir & Display',
+                            'Mode Business',
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -161,8 +165,8 @@ class BusinessSuiteLauncherCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         isBusiness
-                            ? 'Buka Kasir POS & Kiosk AMOLED AOD Menu Showcase'
-                            : 'Eksklusif Business Suite: POS bar & Always-On Display',
+                            ? 'Dashboard Kafe, Kasir POS, Display AOD & Stock Opname'
+                            : 'Eksklusif Business: Dashboard, Kasir, Display & Stock',
                         style: const TextStyle(
                           color: Color(0xFFB0B0B0),
                           fontSize: 11.5,

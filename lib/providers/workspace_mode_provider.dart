@@ -37,6 +37,14 @@ class WorkspaceModeController extends Notifier<WorkspaceMode> {
     state = mode;
   }
 
+  void switchToPersonal() {
+    state = WorkspaceMode.personalBrewer;
+  }
+
+  void switchToBusiness() {
+    state = WorkspaceMode.business;
+  }
+
   static Future<bool> _checkBusinessTierAccess() async {
     try {
       final user = await AuthService.getCurrentUser();

@@ -19,7 +19,8 @@ import 'oled_diagnostic_screen.dart';
 import 'shift_summary_screen.dart';
 
 class BusinessCashierScreen extends ConsumerStatefulWidget {
-  const BusinessCashierScreen({super.key});
+  final bool isEmbeddedInTab;
+  const BusinessCashierScreen({super.key, this.isEmbeddedInTab = false});
 
   @override
   ConsumerState<BusinessCashierScreen> createState() => _BusinessCashierScreenState();
@@ -214,13 +215,28 @@ class _BusinessCashierScreenState extends ConsumerState<BusinessCashierScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF181818),
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(CupertinoIcons.back, color: Colors.white),
-          onPressed: () {
-            ref.read(workspaceModeProvider.notifier).forceSetMode(WorkspaceMode.personalBrewer);
-            Navigator.pop(context);
-          },
-        ),
+        leading: widget.isEmbeddedInTab
+            ? Container(
+                margin: const EdgeInsets.only(left: 12),
+                alignment: Alignment.center,
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFFD4AF37), width: 1.0),
+                  ),
+                  child: const Icon(CupertinoIcons.cart_fill, color: Color(0xFFD4AF37), size: 16),
+                ),
+              )
+            : IconButton(
+                icon: const Icon(CupertinoIcons.back, color: Colors.white),
+                onPressed: () {
+                  ref.read(workspaceModeProvider.notifier).forceSetMode(WorkspaceMode.personalBrewer);
+                  Navigator.pop(context);
+                },
+              ),
         title: Row(
           children: [
             Container(

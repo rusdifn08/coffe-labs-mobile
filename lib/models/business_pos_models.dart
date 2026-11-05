@@ -1,5 +1,6 @@
 enum WorkspaceMode {
   personalBrewer,
+  business,
   businessCashier,
   customerAodDisplay,
 }

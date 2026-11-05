@@ -356,7 +356,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           const SizedBox(height: 12),
                         ],
 
-                        // Mode Kasir & Display (Eksklusif Business)
+                        // Mode Business (Eksklusif Business)
                         BusinessSuiteLauncherCard(
                           isBusiness: isAdmin ||
                               _currentPlan.tier == SubscriptionTier.business,
