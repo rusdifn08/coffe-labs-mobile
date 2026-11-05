@@ -553,7 +553,9 @@ class _BusinessCashierScreenState extends ConsumerState<BusinessCashierScreen> {
                                   child: BusinessMenuAssetImage(
                                     assetUrl: item.assetUrl,
                                     assetFormat: item.assetFormat,
-                                    fit: BoxFit.cover,
+                                    fit: (item.hasVerifiedTransparency || item.assetUrl.startsWith('data:image/'))
+                                        ? BoxFit.contain
+                                        : BoxFit.cover,
                                     fallbackIconSize: 36,
                                   ),
                                 ),

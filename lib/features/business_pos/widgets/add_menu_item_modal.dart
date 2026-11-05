@@ -585,7 +585,9 @@ class _AddMenuItemModalState extends State<AddMenuItemModal> {
                               assetFormat: _assetFormat,
                               width: 80,
                               height: 80,
-                              fit: BoxFit.cover,
+                              fit: (_isCustomUpload || _selectedAssetUrl.startsWith('data:image/'))
+                                  ? BoxFit.contain
+                                  : BoxFit.cover,
                             ),
                           ),
                           const SizedBox(width: 14),
