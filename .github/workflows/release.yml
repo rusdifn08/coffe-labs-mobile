@@ -45,18 +45,22 @@ jobs:
         run: flutter pub get
 
       - name: Build Compressed Split-per-ABI APKs
-        run: flutter build apk --release --split-per-abi
-
-      - name: Build Universal Release APK
-        run: flutter build apk --release
-
-      - name: Prepare Direct Download APK Assets
         run: |
+          flutter build apk --release --split-per-abi
           mkdir -p dist-android
           cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk dist-android/CoffeeLabs-arm64-v8a.apk
           cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk dist-android/CoffeeLabs-armeabi-v7a.apk
           cp build/app/outputs/flutter-apk/app-x86_64-release.apk dist-android/CoffeeLabs-x86_64.apk
+
+      - name: Build Universal Release APK
+        run: |
+          flutter build apk --release
+          mkdir -p dist-android
           cp build/app/outputs/flutter-apk/app-release.apk dist-android/CoffeeLabs-Universal.apk
+
+      - name: Verify Direct Download APK Assets
+        run: |
+          ls -lh dist-android/
 
       - name: Upload Android Release Assets
         uses: actions/upload-artifact@v4
@@ -138,7 +142,7 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             TAG="${GITHUB_REF#refs/tags/}"
           else
-            TAG="v2.0.0-$(date +'%Y%m%d-%H%M')"
+            TAG="v2.1.0-$(date +'%Y%m%d-%H%M')"
           fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "title=Coffee Labs App Release $TAG" >> $GITHUB_OUTPUT
@@ -151,7 +155,7 @@ jobs:
           draft: false
           prerelease: false
           body: |
-            ## ☕ Coffee Labs Mobile Release
+            ## ☕ Coffee Labs Mobile Release v2.1.0
             
             Unduh file aplikasi secara langsung tanpa kompresi `.zip`:
             
@@ -159,9 +163,18 @@ jobs:
             - **`CoffeeLabs-arm64-v8a.apk`** *(Direkomendasikan - Ukuran Terkompresi ~80MB Lebih Hemat untuk Smartphone Modern)*
             - **`CoffeeLabs-Universal.apk`** *(Universal - Kompatibel dengan Semua Arsitektur Android)*
             - **`CoffeeLabs-armeabi-v7a.apk`** *(Perangkat Android 32-bit)*
+            - **`CoffeeLabs-x86_64.apk`** *(Emulator Android & Perangkat x86_64)*
             
             ### 🍏 iOS (.ipa):
-            - **`CoffeeLabs-iOS-Release.ipa`** *(Langsung format `.ipa` terkompresi untuk sideloading via AltStore, Sideloadly, TrollStore, atau Scarlet)*
+            - **`CoffeeLabs-iOS-Release.ipa`** *(Format `.ipa` terkompresi untuk sideloading via AltStore, Sideloadly, TrollStore, atau Scarlet)*
+
+            ### ✨ Apa yang Baru di v2.1.0:
+            - 🔬 **Lab Ekstraksi & AI**: Pengelompokan baru yang intuitif untuk Smart Brew AI, Studio AI, Dial-In Assistant, Matriks Grinder, Kalkulator 4:6, dan Ekstraksi TDS & Golden Cup.
+            - 🧠 **Studio Pelatihan AI (On-Device Few-Shot Transfer Learning)**: Latih model AI mengenali kemasan kopi baru dengan alur foto terpandu (Depan, Kiri, Kanan).
+            - ⛰️ **Precision MDPL Stepper**: Pengaturan elevasi praktis `+50` / `-50` MDPL (default: 1200 - 1600 MDPL).
+            - 🎨 **Bespoke Vector SVG Icons**: Ikon vektor presisi kustom untuk setiap alat ekstraksi kopi.
+            - 🚀 **Fluid Portal Login Animation**: Transisi login mulus dengan auto-retry untuk serverless database Neon.
+            - 📐 **Zero Layout Overflow**: Desain card yang responsif dan bebas overflow di semua resolusi layar.
           files: release-files/*.*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
