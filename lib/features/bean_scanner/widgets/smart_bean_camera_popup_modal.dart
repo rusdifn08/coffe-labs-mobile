@@ -457,23 +457,31 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                           decoration: BoxDecoration(
-                            color: bean.isCatalogVerified
-                                ? const Color(0xFF1B5E20).withValues(alpha: 0.35)
-                                : const Color(0xFFD4AF37).withValues(alpha: 0.2),
+                            color: bean.notesSource == 'ON_DEVICE_AI_FEW_SHOT_MODEL'
+                                ? const Color(0xFF00B0FF).withValues(alpha: 0.25)
+                                : (bean.isCatalogVerified
+                                    ? const Color(0xFF1B5E20).withValues(alpha: 0.35)
+                                    : const Color(0xFFD4AF37).withValues(alpha: 0.2)),
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(
-                              color: bean.isCatalogVerified ? Colors.greenAccent : const Color(0xFFD4AF37),
+                              color: bean.notesSource == 'ON_DEVICE_AI_FEW_SHOT_MODEL'
+                                  ? const Color(0xFF00E5FF)
+                                  : (bean.isCatalogVerified ? Colors.greenAccent : const Color(0xFFD4AF37)),
                               width: 0.8,
                             ),
                           ),
                           child: Text(
-                            bean.isCatalogVerified
-                                ? '✓ Katalog Terverifikasi'
-                                : (bean.notesSource == 'AI_SOMMELIER_INFERRED'
-                                    ? '✨ Cognitive AI Sommelier'
-                                    : '✨ OCR Smart Extract'),
+                            bean.notesSource == 'ON_DEVICE_AI_FEW_SHOT_MODEL'
+                                ? '🎯 Trained AI Model Match (${bean.confidenceScore.toStringAsFixed(0)}%)'
+                                : (bean.isCatalogVerified
+                                    ? '✓ Katalog Terverifikasi'
+                                    : (bean.notesSource == 'AI_SOMMELIER_INFERRED'
+                                        ? '✨ Cognitive AI Sommelier'
+                                        : '✨ OCR Smart Extract')),
                             style: TextStyle(
-                              color: bean.isCatalogVerified ? Colors.greenAccent : const Color(0xFFD4AF37),
+                              color: bean.notesSource == 'ON_DEVICE_AI_FEW_SHOT_MODEL'
+                                  ? const Color(0xFF00E5FF)
+                                  : (bean.isCatalogVerified ? Colors.greenAccent : const Color(0xFFD4AF37)),
                               fontSize: 9.5,
                               fontWeight: FontWeight.bold,
                             ),
@@ -494,7 +502,9 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
                         border: Border.all(color: Colors.white12),
                       ),
                       child: Text(
-                        bean.isCatalogVerified ? 'Database' : 'Smart AI Inference',
+                        bean.notesSource == 'ON_DEVICE_AI_FEW_SHOT_MODEL'
+                            ? 'On-Device AI'
+                            : (bean.isCatalogVerified ? 'Database' : 'Smart AI Inference'),
                         style: const TextStyle(color: Colors.white60, fontSize: 8.5),
                       ),
                     ),

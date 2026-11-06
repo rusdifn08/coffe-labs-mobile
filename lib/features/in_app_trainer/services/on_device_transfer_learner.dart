@@ -1,16 +1,16 @@
-import 'dart:io';
+import 'dart:isolate';
 import 'dart:math' as math;
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart';
-import 'package:image/image.dart' as img;
 import 'package:ml_linalg/vector.dart';
+import '../../bean_scanner/services/cognitive_bean_analyzer.dart';
 import '../domain/trained_coffee_class_model.dart';
 import 'augmentation_pipeline_isolate.dart';
+import 'visual_bag_embedder.dart';
 
 /// Hasil pelatihan transfer learning On-Device
 class TransferLearningTrainingResult {
   final String classSlug;
-  final List<double> weightsVector960;
+  final List<double> weightsVector;
   final List<List<double>> subCentroids;
   final double cosineThreshold;
   final double validationAccuracy;
@@ -19,7 +19,7 @@ class TransferLearningTrainingResult {
 
   const TransferLearningTrainingResult({
     required this.classSlug,
-    required this.weightsVector960,
+    required this.weightsVector,
     required this.subCentroids,
     required this.cosineThreshold,
     required this.validationAccuracy,
@@ -44,10 +44,13 @@ class TrainingTelemetry {
 }
 
 /// Engine On-Device Transfer Learning:
-/// 1. Ekstraksi Vektor Fitur MobileNetV3 (dimensi D = 960).
+/// 1. Embedding visual 512-D deterministik (VisualBagEmbedder, dihitung di isolate augmentasi).
 /// 2. Pelatihan Cosine-Margin Classifier Head dengan AdamW Optimizer selama 60 Epochs.
 class OnDeviceTransferLearner {
-  static const int featureDim = 960;
+  static const int featureDim = VisualBagEmbedder.dim;
+
+  /// Stage 0 scanner: cosine visual minimum untuk dianggap kemasan yang sama.
+  static const double visualMatchThreshold = 0.80;
 
   /// Melatih Head Adaptif untuk Kelas Kopi Baru menggunakan 45 sampel hasil augmentasi.
   static Future<TransferLearningTrainingResult> trainNewClass({
@@ -58,12 +61,13 @@ class OnDeviceTransferLearner {
   }) async {
     final stopwatch = Stopwatch()..start();
 
-    // 1. Ekstraksi Fitur L2-Normalized (45 citra -> [45 x 960] matriks fitur)
+    // 1. Embedding L2-normalized (45 citra -> [45 x 512]) sudah dihitung di isolate augmentasi
     final embeddings = <Vector>[];
     final sampleMapByAngle = <String, List<Vector>>{};
 
     for (final sample in augmentedSamples) {
-      final vec = extractFeaturesFromTensor(sample.normalizedFloats);
+      if (sample.embedding.length != featureDim) continue;
+      final vec = Vector.fromList(sample.embedding);
       embeddings.add(vec);
 
       sampleMapByAngle.putIfAbsent(sample.sampleId, () => []).add(vec);
@@ -81,11 +85,14 @@ class OnDeviceTransferLearner {
       subCentroids.add(angleCentroid.toList());
     }
 
+    // Sub-centroid ekstra: prototipe rata-rata seluruh augmentasi (dipakai saat matching)
+    subCentroids.insert(0, meanVec.toList());
+
     // 3. Bank Sampel Negatif (Model yang sudah pernah dilatih sebelumnya + synthetic negatives)
     final negativeVectors = <Vector>[];
     for (final m in existingModels) {
-      if (m.classSlug != classSlug && m.weightsVector960.length == featureDim) {
-        negativeVectors.add(Vector.fromList(m.weightsVector960));
+      if (m.classSlug != classSlug && m.weightsVector.length == featureDim) {
+        negativeVectors.add(Vector.fromList(m.weightsVector));
       }
     }
     // Tambahkan synthetic orthogonal negatives agar margin terkalibrasi meskipun ini kelas pertama
@@ -190,154 +197,97 @@ class OnDeviceTransferLearner {
 
     return TransferLearningTrainingResult(
       classSlug: classSlug,
-      weightsVector960: wData.toList(),
+      weightsVector: wData.toList(),
       subCentroids: subCentroids,
       cosineThreshold: calculatedThreshold,
-      validationAccuracy: math.max(0.965, finalAcc),
+      validationAccuracy: finalAcc,
       epochsRun: totalEpochs,
       elapsed: stopwatch.elapsed,
     );
   }
 
-  /// Ekstraksi Vektor Fitur MobileNetV3 (960 dimensi) dari citra 224x224.
-  static Vector extractFeaturesFromTensor(Float32List normFloats) {
-    // Proyeksi multi-skala berkecepatan tinggi SIMD:
-    // Menghasilkan representasi 960 dimensi L2-normalized yang deterministik.
-    final out = Float32List(featureDim);
-    const int spatialBlocks = 8; // Grid 8x8
-    const int blockSize = 224 ~/ spatialBlocks; // 28x28 pixel per block
-
-    int outIdx = 0;
-    // 1. Ekstraksi spatial color & gradient moments (64 blok x 12 fitur = 768 dimensi)
-    for (int by = 0; by < spatialBlocks; by++) {
-      for (int bx = 0; bx < spatialBlocks; bx++) {
-        double rMean = 0, gMean = 0, bMean = 0;
-        double gradX = 0, gradY = 0;
-        int count = 0;
-
-        for (int y = by * blockSize; y < (by + 1) * blockSize; y += 4) {
-          for (int x = bx * blockSize; x < (bx + 1) * blockSize; x += 4) {
-            final pIdx = (y * 224 + x) * 3;
-            if (pIdx + 2 < normFloats.length) {
-              final r = normFloats[pIdx];
-              final g = normFloats[pIdx + 1];
-              final b = normFloats[pIdx + 2];
-              rMean += r;
-              gMean += g;
-              bMean += b;
-              count++;
-
-              if (x + 4 < 224 && y + 4 < 224) {
-                final rightR = normFloats[((y * 224) + x + 4) * 3];
-                final downR = normFloats[(((y + 4) * 224) + x) * 3];
-                gradX += (rightR - r).abs();
-                gradY += (downR - r).abs();
-              }
-            }
-          }
-        }
-
-        if (count > 0) {
-          rMean /= count;
-          gMean /= count;
-          bMean /= count;
-          gradX /= count;
-          gradY /= count;
-        }
-
-        if (outIdx + 7 < 768) {
-          out[outIdx++] = rMean;
-          out[outIdx++] = gMean;
-          out[outIdx++] = bMean;
-          out[outIdx++] = (rMean - gMean); // Color contrast channel
-          out[outIdx++] = (rMean + gMean - 2 * bMean); // Yellow-blue channel
-          out[outIdx++] = gradX;
-          out[outIdx++] = gradY;
-          out[outIdx++] = (gradX + gradY);
-        }
-      }
+  /// Token OCR khas kemasan (tanpa kata generik) untuk sidik jari teks model terlatih.
+  static List<String> ocrSignatureTokens(String text) {
+    final seen = <String>{};
+    for (final raw in text.toLowerCase().split(RegExp(r'[^a-z0-9]+'))) {
+      if (raw.length < 3 || RegExp(r'^\d+$').hasMatch(raw) || _ocrStopTokens.contains(raw)) continue;
+      seen.add(raw);
+      if (seen.length >= 24) break;
     }
-
-    // 2. Global Fourier & Center Texture Descriptor (sisa 192 dimensi = 960 total)
-    while (outIdx < featureDim) {
-      final step = outIdx % 32;
-      double sum = 0.0;
-      for (int i = step * 100; i < normFloats.length; i += 320) {
-        sum += normFloats[i];
-      }
-      out[outIdx++] = (sum / 500.0);
-    }
-
-    _l2NormalizeArray(out);
-    return Vector.fromList(out);
+    return seen.toList();
   }
 
-  /// Ekstraksi fitur langsung dari file foto crop kemasan kopi.
-  static Vector extractFeaturesFromFile(File imageFile) {
-    final bytes = imageFile.readAsBytesSync();
-    final decoded = img.decodeImage(bytes);
-    if (decoded == null) {
-      return Vector.fromList(Float32List(featureDim));
+  /// Fraksi token model yang ditemukan (fuzzy, toleran typo OCR) di teks hasil scan.
+  static ({double score, int matched}) ocrOverlap(List<String> modelTokens, String scanText) {
+    if (modelTokens.isEmpty) return (score: 0.0, matched: 0);
+    final scanTokens = ocrSignatureTokens(scanText);
+    int matched = 0;
+    for (final t in modelTokens) {
+      if (scanTokens.any((s) => s == t || CognitiveBeanAnalyzer.jaroWinkler(s, t) >= 0.9)) matched++;
     }
-    final resized = img.copyResize(decoded, width: 224, height: 224);
-    final floats = Float32List(224 * 224 * 3);
-    int idx = 0;
-    const mean = [0.485, 0.456, 0.406];
-    const std = [0.229, 0.224, 0.225];
-
-    for (int y = 0; y < 224; y++) {
-      for (int x = 0; x < 224; x++) {
-        final p = resized.getPixel(x, y);
-        floats[idx++] = ((p.r / 255.0) - mean[0]) / std[0];
-        floats[idx++] = ((p.g / 255.0) - mean[1]) / std[1];
-        floats[idx++] = ((p.b / 255.0) - mean[2]) / std[2];
-      }
-    }
-
-    return extractFeaturesFromTensor(floats);
+    return (score: matched / modelTokens.length, matched: matched);
   }
 
-  /// Evaluasi kecocokan gambar kamera terhadap seluruh model lokal yang telah dilatih
-  static TrainedCoffeeMatch? matchImage({
-    required File croppedImage,
+  /// STAGE 0: cocokkan foto scan (beberapa crop) + teks OCR ke seluruh model lokal.
+  /// Embedding dihitung di background isolate agar decode foto 12MP tidak membuat UI patah.
+  static Future<TrainedCoffeeMatch?> matchImage({
+    required List<String> imagePaths,
     required List<TrainedCoffeeClassModel> models,
-  }) {
+    String ocrText = '',
+  }) async {
     if (models.isEmpty) return null;
+    final queries = await Isolate.run(
+      () => imagePaths.map(VisualBagEmbedder.embedFile).whereType<Float32List>().toList(),
+    );
+    return matchEmbeddings(queries: queries, models: models, ocrText: ocrText);
+  }
 
-    final queryZ = extractFeaturesFromFile(croppedImage);
-    TrainedCoffeeMatch? bestMatch;
-    double highestScore = -1.0;
-
+  /// Logika skor Stage 0 (dipisah agar bisa diuji tanpa file/isolate).
+  static TrainedCoffeeMatch? matchEmbeddings({
+    required List<Float32List> queries,
+    required List<TrainedCoffeeClassModel> models,
+    String ocrText = '',
+  }) {
+    TrainedCoffeeMatch? best;
     for (final model in models) {
-      if (model.weightsVector960.length != featureDim) continue;
-
-      final w = Vector.fromList(model.weightsVector960);
-      final primaryScore = w.dot(queryZ);
-
-      // Cek juga kecocokan terhadap sub-centroids (sudut pandang berbeda)
-      double maxSubScore = -1.0;
-      for (final sub in model.subCentroids) {
-        if (sub.length == featureDim) {
-          final subVec = Vector.fromList(sub);
-          final s = subVec.dot(queryZ);
-          if (s > maxSubScore) maxSubScore = s;
+      double visual = -1.0;
+      final prototypes = [model.weightsVector, ...model.subCentroids];
+      for (final q in queries) {
+        for (final p in prototypes) {
+          if (p.length != q.length) continue; // model lama (960-D) dilewati, perlu dilatih ulang
+          visual = math.max(visual, VisualBagEmbedder.cosine(p, q));
         }
       }
 
-      final combinedScore = math.max(primaryScore, maxSubScore);
+      final ocr = ocrOverlap(model.ocrSignatureTokens, ocrText);
+      final isMatch = visual >= visualMatchThreshold ||
+          (ocr.score >= 0.5 && ocr.matched >= 2 && visual >= 0.60) ||
+          (ocr.score >= 0.75 && ocr.matched >= 2);
+      final fused = math.max(visual, ocr.score);
 
-      if (combinedScore > highestScore) {
-        highestScore = combinedScore;
-        bestMatch = TrainedCoffeeMatch(
-          model: model,
-          similarityScore: combinedScore,
-          isAboveThreshold: combinedScore >= model.cosineThreshold,
-        );
+      final candidate = TrainedCoffeeMatch(
+        model: model,
+        similarityScore: fused,
+        visualScore: visual,
+        ocrScore: ocr.score,
+        isAboveThreshold: isMatch,
+      );
+      if (best == null ||
+          (candidate.isAboveThreshold && !best.isAboveThreshold) ||
+          (candidate.isAboveThreshold == best.isAboveThreshold && fused > best.similarityScore)) {
+        best = candidate;
       }
     }
-
-    return bestMatch;
+    return best;
   }
+
+  static const Set<String> _ocrStopTokens = {
+    'kopi', 'coffee', 'bean', 'beans', 'roastery', 'roasters', 'roaster', 'roasted', 'roast',
+    'roasting', 'arabica', 'arabika', 'robusta', 'fresh', 'better', 'brew', 'date', 'net',
+    'netto', 'weight', 'gram', 'grams', 'the', 'and', 'for', 'dari', 'untuk', 'dan', 'yang',
+    'premium', 'quality', 'specialty', 'single', 'origin', 'whole', 'biji', 'bubuk', 'halal',
+    'best', 'before', 'exp', 'process', 'proses', 'indonesia', 'pirt', 'berat', 'bersih',
+  };
 
   // --- Helper Matematika Tensor ---
 
@@ -386,15 +336,19 @@ class OnDeviceTransferLearner {
   }
 }
 
-/// Hasil evaluasi inferensi cepat transfer learning
+/// Hasil evaluasi Stage 0 (visual + OCR) terhadap model terlatih
 class TrainedCoffeeMatch {
   final TrainedCoffeeClassModel model;
-  final double similarityScore;
+  final double similarityScore; // max(visual, ocr)
+  final double visualScore;
+  final double ocrScore;
   final bool isAboveThreshold;
 
   const TrainedCoffeeMatch({
     required this.model,
     required this.similarityScore,
+    this.visualScore = 0.0,
+    this.ocrScore = 0.0,
     required this.isAboveThreshold,
   });
 }

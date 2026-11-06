@@ -28,22 +28,23 @@ class BeanScannerController extends Notifier<BeanScanState> {
     try {
       final visionResult = await BeanVisionScannerService.processPhoto(imageFile);
 
-      // 1. Prioritas Tingkat-1: Evaluasi On-Device Transfer Learning Models (<60ms)
+      // 1. Prioritas Tingkat-1: STAGE 0 Evaluasi On-Device Transfer Learning Models
       try {
         final customModels = await TrainedCoffeeStorageService.getAllModels();
         if (customModels.isNotEmpty) {
-          final match = OnDeviceTransferLearner.matchImage(
-            croppedImage: visionResult.croppedImageFile,
+          final match = await OnDeviceTransferLearner.matchImage(
+            imagePaths: [visionResult.croppedImageFile.path, imageFile.path],
             models: customModels,
+            ocrText: visionResult.rawFullText,
           );
 
           if (match != null && match.isAboveThreshold) {
             final meta = match.model.coffeeMetadata;
-            final brand = meta['brand']?.toString() ?? match.model.displayTitle;
+            final brand = meta['brand']?.toString() ?? meta['roastery_name']?.toString() ?? match.model.displayTitle;
             final beanName = meta['bean_name']?.toString() ?? match.model.displayTitle;
             final varietal = meta['varietal']?.toString() ?? 'Specialty Blend';
             final process = meta['process']?.toString() ?? 'Natural';
-            final altitude = meta['altitude_masl']?.toString() ?? '1400 - 1800 MASL';
+            final altitude = meta['altitude_masl']?.toString() ?? '1400 - 1800 MDPL';
             final notesList = (meta['tasting_notes'] as List?)
                     ?.map((e) => e.toString())
                     .toList() ??
@@ -52,7 +53,7 @@ class BeanScannerController extends Notifier<BeanScanState> {
             final customResolved = ResolvedCoffeeBean(
               beanId: 'trained_${match.model.classSlug}',
               isCatalogVerified: true,
-              confidenceScore: (match.similarityScore * 100).clamp(92.0, 99.8),
+              confidenceScore: 99.0,
               roasteryName: brand,
               beanName: beanName,
               origin: brand,

@@ -382,6 +382,112 @@ Altitude: 2068 Masl
     });
   });
 
+  group('Diagnostic Bug Fix Tests (Bugs 1, 2, 3)', () {
+    test('Bug 2 & 3: KOPI GUNUNG HALU categorizes origin properly and ignores slogan', () {
+      const rawText = '''
+KOPI GUNUNG HALU
+FRESH BEAN BETTER BREW
+DARI GUNUNG, UNTUK CITA RASA TERBAIK
+PROSES
+[x] NATURAL
+[ ] WASHED
+[ ] WINE
+100% ARABICA PREMIUM QUALITY
+''';
+
+      final blocks = [
+        {
+          'text': 'KOPI GUNUNG HALU',
+          'normalized_height': 0.12,
+          'top_y': 0.35,
+          'left_x': 0.2,
+          'normalized_width': 0.6,
+        },
+        {
+          'text': 'FRESH BEAN BETTER BREW',
+          'normalized_height': 0.04,
+          'top_y': 0.48,
+          'left_x': 0.2,
+          'normalized_width': 0.6,
+        },
+        {
+          'text': 'Dart Gunung, Untuk Citai Terbaik Wine', // OCR Typo Slogan
+          'normalized_height': 0.10,
+          'top_y': 0.55,
+          'left_x': 0.2,
+          'normalized_width': 0.6,
+        },
+        {
+          'text': '[x] NATURAL',
+          'normalized_height': 0.04,
+          'top_y': 0.70,
+          'left_x': 0.5,
+          'normalized_width': 0.25,
+        },
+        {
+          'text': '[ ] WASHED',
+          'normalized_height': 0.04,
+          'top_y': 0.75,
+          'left_x': 0.5,
+          'normalized_width': 0.25,
+        },
+      ];
+
+      final result = CognitiveBeanAnalyzer.analyze(
+        rawFullText: rawText,
+        blocksDto: blocks,
+      );
+
+      // Slogan is NOT the bean name! Origin is used!
+      expect(result.beanName, equals('Gunung Halu Natural'));
+      expect(result.origin, contains('Halu'));
+
+      // Block roles: KOPI GUNUNG HALU must be Origin (NOT Roastery!)
+      final originBlock = result.classifiedBlocks.firstWhere((b) => b.text == 'KOPI GUNUNG HALU');
+      expect(originBlock.role, equals(BlockRole.originOrTitle));
+
+      // Slogans & boilerplate must be ignoredNoise (NOT tastingNote!)
+      final sloganBlock = result.classifiedBlocks.firstWhere((b) => b.text.contains('Gunung, Untuk Citai'));
+      expect(sloganBlock.role, equals(BlockRole.ignoredNoise));
+
+      final freshBeanBlock = result.classifiedBlocks.firstWhere((b) => b.text == 'FRESH BEAN BETTER BREW');
+      expect(freshBeanBlock.role, equals(BlockRole.ignoredNoise));
+    });
+
+    test('Bug 2: Unrecognized arbitrary text NEVER defaults to tastingNote', () {
+      const rawText = 'BAK COFFEE BEAN MALABAR WINE BOTTLE LABEL 500ML';
+      final blocks = [
+        {
+          'text': 'MALABAR',
+          'normalized_height': 0.10,
+          'top_y': 0.40,
+          'left_x': 0.2,
+          'normalized_width': 0.6,
+        },
+        {
+          'text': 'BOTTLE LABEL 500ML',
+          'normalized_height': 0.04,
+          'top_y': 0.85,
+          'left_x': 0.2,
+          'normalized_width': 0.5,
+        },
+      ];
+
+      final result = CognitiveBeanAnalyzer.analyze(
+        rawFullText: rawText,
+        blocksDto: blocks,
+      );
+
+      // MALABAR is origin
+      final malabarBlock = result.classifiedBlocks.firstWhere((b) => b.text == 'MALABAR');
+      expect(malabarBlock.role, equals(BlockRole.originOrTitle));
+
+      // BOTTLE LABEL 500ML is ignored noise, NOT a tasting note
+      final bottleBlock = result.classifiedBlocks.firstWhere((b) => b.text == 'BOTTLE LABEL 500ML');
+      expect(bottleBlock.role, equals(BlockRole.ignoredNoise));
+    });
+  });
+
   group('HomeHeaderScannerButton Widget Tests', () {
     testWidgets('renders compact button without crashing', (tester) async {
       await tester.pumpWidget(

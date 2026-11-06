@@ -247,14 +247,18 @@ class InAppTrainerController extends Notifier<InAppTrainerState> {
 
       // 4. Buat Model & Simpan ke Storage Lokal + Cloud
       final displayTitle = '${state.draft.roasteryBrand} - ${state.draft.beanName}';
+      final ocrTokens = OnDeviceTransferLearner.ocrSignatureTokens(
+        '${state.draft.roasteryBrand} ${state.draft.beanName} ${state.draft.varietal} ${state.draft.process} ${state.draft.tastingNotes.join(" ")}',
+      );
       final model = TrainedCoffeeClassModel(
         classSlug: slug,
         displayTitle: displayTitle,
-        weightsVector960: trainingResult.weightsVector960,
+        weightsVector: trainingResult.weightsVector,
         subCentroids: trainingResult.subCentroids,
         cosineThreshold: trainingResult.cosineThreshold,
         augmentedSampleCount: augmentedTensors.length,
         validationAccuracy: trainingResult.validationAccuracy,
+        ocrSignatureTokens: ocrTokens,
         coffeeMetadata: {
           'brand': state.draft.roasteryBrand,
           'roastery_name': state.draft.roasteryBrand,

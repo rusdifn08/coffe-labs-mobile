@@ -5,20 +5,19 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import '../domain/annotated_training_sample.dart';
+import 'visual_bag_embedder.dart';
 
-/// Item citra hasil augmentasi siap pakai untuk ekstraksi fitur MobileNetV3.
+/// Item citra hasil augmentasi beserta embedding visual 512-D (dihitung di isolate).
 class AugmentedImageTensor {
   final String sampleId;
   final String transformName;
-  final img.Image image224;
-  final Float32List normalizedFloats; // 224 * 224 * 3 (ImageNet Normalized)
+  final Float32List embedding; // VisualBagEmbedder.dim, L2-normalized
   final Uint8List previewJpegBytes; // Thumbnail untuk UI progress feed
 
   const AugmentedImageTensor({
     required this.sampleId,
     required this.transformName,
-    required this.image224,
-    required this.normalizedFloats,
+    required this.embedding,
     required this.previewJpegBytes,
   });
 }
@@ -57,36 +56,33 @@ class AugmentationPipelineIsolate {
       );
     }).toList();
 
-    // Jalankan dalam Isolate.run agar UI tetap 120 FPS tanpa lag
-    final rawResults = await Isolate.run(() {
-      return _executeIsolateWork(sampleDataList);
-    });
-
+    // Satu Isolate.run per foto: UI tetap mulus dan progres dilaporkan per batch nyata.
+    final expectedTotal = sampleDataList.length * transformsPerSample;
     final results = <AugmentedImageTensor>[];
-    for (int i = 0; i < rawResults.length; i++) {
-      final r = rawResults[i];
-      final decoded = img.decodeImage(r.jpegBytes);
-      if (decoded != null) {
-        final tensor = AugmentedImageTensor(
+    for (final dto in sampleDataList) {
+      final batch = await Isolate.run(() => _executeIsolateWork([dto]));
+      for (final r in batch) {
+        results.add(AugmentedImageTensor(
           sampleId: r.sampleId,
           transformName: r.transformName,
-          image224: decoded,
-          normalizedFloats: r.normalizedFloats,
+          embedding: r.embedding,
           previewJpegBytes: r.jpegBytes,
-        );
-        results.add(tensor);
-
+        ));
+      }
+      if (batch.isNotEmpty) {
         onProgress?.call(AugmentationTelemetry(
-          current: i + 1,
-          total: rawResults.length,
-          currentTransform: r.transformName,
-          latestPreviewBytes: r.jpegBytes,
+          current: results.length,
+          total: expectedTotal,
+          currentTransform: '${batch.last.transformName} (foto ${dto.id})',
+          latestPreviewBytes: batch.last.jpegBytes,
         ));
       }
     }
 
     return results;
   }
+
+  static const int transformsPerSample = 15;
 
   static List<_RawIsolateResult> _executeIsolateWork(List<_SampleInputDto> samples) {
     final outputList = <_RawIsolateResult>[];
@@ -96,8 +92,10 @@ class AugmentationPipelineIsolate {
       if (!file.existsSync()) continue;
 
       final fullBytes = file.readAsBytesSync();
-      final fullImage = img.decodeImage(fullBytes);
-      if (fullImage == null) continue;
+      final decodedImage = img.decodeImage(fullBytes);
+      if (decodedImage == null) continue;
+      // Bounding box dinormalisasi terhadap foto tegak (EXIF), sama seperti scanner.
+      final fullImage = img.bakeOrientation(decodedImage);
 
       // 1. Crop area bounding box dengan context margin
       final w = fullImage.width;
@@ -112,17 +110,16 @@ class AugmentationPipelineIsolate {
       final base224 = img.copyResize(baseCrop, width: 224, height: 224, interpolation: img.Interpolation.linear);
 
       // 2. Jalankan 15 Transformasi Augmentasi Profesional
-      final variations = _generate15Transforms(base224);
+      final variations = generate15Transforms(base224);
 
       for (final entry in variations.entries) {
         final transformed224 = entry.value;
-        final normFloats = _normalizeImageNet(transformed224);
         final jpegBytes = Uint8List.fromList(img.encodeJpg(transformed224, quality: 78));
 
         outputList.add(_RawIsolateResult(
           sampleId: sample.id,
           transformName: entry.key,
-          normalizedFloats: normFloats,
+          embedding: VisualBagEmbedder.embed(transformed224),
           jpegBytes: jpegBytes,
         ));
       }
@@ -132,17 +129,17 @@ class AugmentationPipelineIsolate {
   }
 
   /// Menghasilkan 15 variasi citra dari 1 base crop 224x224
-  static Map<String, img.Image> _generate15Transforms(img.Image base) {
+  static Map<String, img.Image> generate15Transforms(img.Image base) {
     final transforms = <String, img.Image>{};
 
     // 1. Base Clean Crop
     transforms['orig_clean'] = img.Image.from(base);
 
-    // 2. Clockwise Tilt (+12 derajat)
-    transforms['rot_pos_12'] = _rotateSafe(base, 12);
+    // 2. Clockwise Tilt (+15 derajat)
+    transforms['rot_pos_15'] = _rotateSafe(base, 15);
 
-    // 3. Counter-Clockwise Tilt (-12 derajat)
-    transforms['rot_neg_12'] = _rotateSafe(base, -12);
+    // 3. Counter-Clockwise Tilt (-15 derajat)
+    transforms['rot_neg_15'] = _rotateSafe(base, -15);
 
     // 4. Top-Down Perspective Warp (Simulasi kemasan di atas meja bar)
     transforms['persp_top_down'] = _skewVertical(base, 0.14);
@@ -168,8 +165,8 @@ class AugmentationPipelineIsolate {
     // 11. Finger Cutout Occlusion (Sebagian bungkus tertutup jari barista)
     transforms['finger_cutout_occlusion'] = _applyFingerOcclusion(base);
 
-    // 12. Tight Center Zoom (88% crop di-upscale ke 224x224)
-    transforms['zoom_in_90'] = _zoomIn(base, 0.88);
+    // 12. Crop Jitter (88% crop bergeser ke kanan-bawah, di-upscale ke 224x224)
+    transforms['crop_jitter_88'] = _zoomIn(base, 0.88, shift: 10);
 
     // 13. Wide Context Zoom (112% scaled down dengan neutral frame)
     transforms['zoom_out_112'] = _zoomOut(base, 0.88);
@@ -282,9 +279,9 @@ class AugmentationPipelineIsolate {
     return out;
   }
 
-  static img.Image _zoomIn(img.Image src, double factor) {
+  static img.Image _zoomIn(img.Image src, double factor, {int shift = 0}) {
     final cropSize = (224 * factor).toInt();
-    final offset = (224 - cropSize) ~/ 2;
+    final offset = ((224 - cropSize) ~/ 2 + shift).clamp(0, 224 - cropSize);
     final cropped = img.copyCrop(src, x: offset, y: offset, width: cropSize, height: cropSize);
     return img.copyResize(cropped, width: 224, height: 224);
   }
@@ -334,23 +331,6 @@ class AugmentationPipelineIsolate {
     return warm;
   }
 
-  /// Normalisasi standar ImageNet (RGB): (val / 255 - mean) / std
-  static Float32List _normalizeImageNet(img.Image src) {
-    final floats = Float32List(224 * 224 * 3);
-    int idx = 0;
-    const mean = [0.485, 0.456, 0.406];
-    const std = [0.229, 0.224, 0.225];
-
-    for (int y = 0; y < 224; y++) {
-      for (int x = 0; x < 224; x++) {
-        final p = src.getPixel(x, y);
-        floats[idx++] = ((p.r / 255.0) - mean[0]) / std[0];
-        floats[idx++] = ((p.g / 255.0) - mean[1]) / std[1];
-        floats[idx++] = ((p.b / 255.0) - mean[2]) / std[2];
-      }
-    }
-    return floats;
-  }
 }
 
 class _SampleInputDto {
@@ -374,13 +354,13 @@ class _SampleInputDto {
 class _RawIsolateResult {
   final String sampleId;
   final String transformName;
-  final Float32List normalizedFloats;
+  final Float32List embedding;
   final Uint8List jpegBytes;
 
   const _RawIsolateResult({
     required this.sampleId,
     required this.transformName,
-    required this.normalizedFloats,
+    required this.embedding,
     required this.jpegBytes,
   });
 }

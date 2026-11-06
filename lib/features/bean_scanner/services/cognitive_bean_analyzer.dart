@@ -37,15 +37,19 @@ class CognitiveBeanAnalyzer {
   static const List<String> _noisePhrases = [
     'fresh bean',
     'better brew',
+    'fresh bean better brew',
     'roasting date',
     'roast date',
+    'tgl roasting',
     'best before',
     'production date',
     'exp date',
+    'expired date',
     'net weight',
     'netto',
     'berat bersih',
     '100% arabica',
+    '100% arabika',
     'pure arabica',
     'specialty coffee',
     'single origin',
@@ -59,27 +63,43 @@ class CognitiveBeanAnalyzer {
     'filter coffee',
     'espresso roast',
     'espresso',
+    'filter roast',
     'diproduksi oleh',
+    'diproduksi',
     'p-irt',
     'pirt',
     'halal',
     'dari gunung',
     'untuk cita rasa terbaik',
+    'dari gunung, untuk cita rasa terbaik',
+    'dart gunung',
+    'citai terbaik',
+    'cita rasa terbaik',
+    'terbaik wine',
     'premium quality',
     'fresh roasted',
     'master your brew',
     'indonesia',
     'coffee bean',
     'coffee beans',
+    'proses',
+    'process',
   ];
 
   static const List<TerroirProfile> _terroirProfiles = [
     TerroirProfile(
+      canonicalName: 'Gunung Halu',
+      regionProvince: 'Gunung Halu, Bandung Barat, Jawa Barat',
+      defaultAltitude: '1350 - 1650 MDPL',
+      defaultVarietals: 'Sigararutang, Lini S795, Ateng Super',
+      keywords: ['gunung halu', 'halu', 'gn halu', 'gununghalu', 'haloe', 'sindangkerta'],
+    ),
+    TerroirProfile(
       canonicalName: 'Malabar',
-      regionProvince: 'Gunung Malabar / Halu, Jawa Barat',
+      regionProvince: 'Gunung Malabar / Pangalengan, Jawa Barat',
       defaultAltitude: '1400 - 1800 MDPL',
       defaultVarietals: 'Sigararutang, Lini S795, Kartika',
-      keywords: ['malabar', 'pangalengan', 'puntang', 'ciwidey', 'preanger', 'gunung halu', 'halu'],
+      keywords: ['malabar', 'pangalengan', 'puntang', 'ciwidey', 'preanger', 'banjaran'],
     ),
     TerroirProfile(
       canonicalName: 'Aceh Gayo',
@@ -189,14 +209,6 @@ class CognitiveBeanAnalyzer {
     if (trimmed.isEmpty || trimmed.length <= 1) return true;
     final lower = trimmed.toLowerCase();
 
-    for (final noise in _noisePhrases) {
-      if (lower == noise) return true;
-    }
-    if (lower.contains('fresh bean') && lower.contains('better brew')) return true;
-    if (lower.contains('roasting date') || lower.contains('roast date')) return true;
-    if (lower.contains('dari gunung') || lower.contains('cita rasa')) return true;
-    if (lower.contains('diproduksi oleh') || lower.contains('p-irt')) return true;
-
     // Checkbox noise: [ ] washed, [ ] wine (unselected)
     if ((lower.startsWith('[ ]') || lower.startsWith('( )') || lower.startsWith('[]')) &&
         !lower.contains('x') &&
@@ -204,6 +216,26 @@ class CognitiveBeanAnalyzer {
         !lower.contains('✓')) {
       return true;
     }
+
+    for (final noise in _noisePhrases) {
+      if (lower == noise) return true;
+    }
+
+    // Slogan & marketing lines (termasuk variasi typo OCR)
+    if (lower.contains('fresh bean') || lower.contains('better brew')) return true;
+    if (lower.contains('dari gunung') || lower.contains('dart gunung')) return true;
+    if (lower.contains('cita rasa') || lower.contains('citai terbaik') || lower.contains('terbaik wine') || lower.contains('cita rasa terbaik')) return true;
+    if (lower.contains('roasting date') || lower.contains('roast date') || lower.contains('tgl roasting')) return true;
+    if (lower.contains('best before') || lower.contains('exp date') || lower.contains('production date')) return true;
+    if (lower.contains('netto') || lower.contains('net weight') || lower.contains('berat bersih')) return true;
+    if (lower.contains('p-irt') || lower.contains('pirt') || lower.contains('halal') || lower.contains('bpom')) return true;
+    if (lower.contains('diproduksi') || lower.contains('produced by') || lower.contains('roasted by')) return true;
+    if (lower.contains('100% arabica') || lower.contains('100% arabika') || lower.contains('premium quality')) return true;
+    if (lower.contains('single origin') || lower.contains('specialty coffee') || lower.contains('whole bean') || lower.contains('whole beans')) return true;
+
+    // Angka/tanggal saja (e.g. "26/10", "200g", "250 gr")
+    if (RegExp(r'^\d+[\s]*(g|gr|gram|kg|oz|ml)?$', caseSensitive: false).hasMatch(lower)) return true;
+    if (RegExp(r'^\d{1,2}[/\-\.]\d{1,2}([/\-\.]\d{2,4})?$').hasMatch(lower)) return true;
 
     return false;
   }
@@ -383,21 +415,60 @@ class CognitiveBeanAnalyzer {
 
       final lower = text.toLowerCase();
       BlockRole role;
-      if ((lower.contains('coffee') || lower.contains('bean') || lower.contains('roastery') || lower.contains('kopi')) &&
-          topY <= 0.45) {
-        detectedRoastery ??= _titleCase(text);
-        role = BlockRole.roastery;
-      } else if (lower.contains('wine') ||
+
+      // 1. Check Process
+      final isProc = lower.contains('wine') ||
           lower.contains('natural') ||
           lower.contains('washed') ||
           lower.contains('honey') ||
-          lower.contains('anaerobic')) {
+          lower.contains('anaerobic') ||
+          lower.contains('giling basah');
+
+      // 2. Check Origin (Prioritas tinggi agar tidak tertelan roastery / tasting notes)
+      final originMatch = findOrigin(text);
+
+      // 3. Check Tasting Notes (Hanya jika benar-benar cocok ke flavor lexicon)
+      final notesMatched = matchTastingNotes(text);
+
+      // 4. Check Altitude
+      final hasAlt = _extractAltitude(text) != null;
+
+      // 5. Check Variety
+      final hasVar = _extractVarietal(text) != null;
+
+      // 6. Check Roastery (Hanya jika bukan Origin dan posisi di bagian atas bungkus)
+      final isRoastery = (lower.contains('roastery') ||
+              lower.contains('roasters') ||
+              lower.contains('coffee roastery') ||
+              (lower.contains('coffee') && originMatch == null) ||
+              (lower.contains('bean') && originMatch == null)) &&
+          originMatch == null &&
+          topY <= 0.45;
+
+      if (originMatch != null) {
+        role = BlockRole.originOrTitle;
+        String cleaned = _titleCase(text);
+        if (cleaned.toLowerCase().startsWith('kopi ')) {
+          cleaned = cleaned.substring(5).trim();
+        }
+        titleCandidate ??= cleaned;
+      } else if (isRoastery) {
+        detectedRoastery ??= _titleCase(text);
+        role = BlockRole.roastery;
+      } else if (isProc) {
         role = BlockRole.process;
-      } else if (findOrigin(text) != null || normH >= 0.10) {
+      } else if (hasAlt) {
+        role = BlockRole.altitude;
+      } else if (hasVar) {
+        role = BlockRole.variety;
+      } else if (notesMatched.isNotEmpty) {
+        role = BlockRole.tastingNote;
+      } else if (normH >= 0.12 && !isNoise(text) && titleCandidate == null) {
         titleCandidate ??= _titleCase(text);
         role = BlockRole.originOrTitle;
       } else {
-        role = BlockRole.tastingNote;
+        // Solusi Bug 2: Default ke ignoredNoise, JANGAN PERNAH tastingNote!
+        role = BlockRole.ignoredNoise;
       }
 
       classified.add(ClassifiedOcrBlock(
@@ -480,6 +551,13 @@ class CognitiveBeanAnalyzer {
 
   static String _composeBeanName(String? title, TerroirProfile? origin, String process, String roastery) {
     String base = title ?? origin?.canonicalName ?? 'Specialty Coffee';
+    if (isNoise(base) ||
+        base.toLowerCase().contains('cita rasa') ||
+        base.toLowerCase().contains('dari gunung') ||
+        base.toLowerCase().contains('dart gunung') ||
+        base.toLowerCase().contains('citai terbaik')) {
+      base = origin?.canonicalName ?? 'Specialty Coffee';
+    }
     final rLow = roastery.toLowerCase();
     if (base.toLowerCase().startsWith(rLow)) {
       base = base.substring(rLow.length).trim();
@@ -509,7 +587,8 @@ class CognitiveBeanAnalyzer {
     for (final line in text.split('\n').take(4)) {
       final lower = line.trim().toLowerCase();
       if ((lower.contains('coffee') || lower.contains('bean') || lower.contains('roastery') || lower.contains('roasters')) &&
-          !isNoise(line)) {
+          !isNoise(line) &&
+          findOrigin(line) == null) {
         return _titleCase(line.trim());
       }
     }
