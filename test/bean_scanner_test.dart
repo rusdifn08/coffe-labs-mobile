@@ -2,10 +2,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:coffee_hub_mobile/features/bean_scanner/controllers/bean_scanner_controller.dart';
 import 'package:coffee_hub_mobile/features/bean_scanner/controllers/selected_brew_bean_controller.dart';
 import 'package:coffee_hub_mobile/features/bean_scanner/models/bean_scan_state.dart';
 import 'package:coffee_hub_mobile/features/bean_scanner/models/resolved_coffee_bean.dart';
+import 'package:coffee_hub_mobile/features/bean_scanner/services/bean_vision_scanner_service.dart';
 import 'package:coffee_hub_mobile/features/bean_scanner/services/cognitive_bean_analyzer.dart';
 import 'package:coffee_hub_mobile/features/bean_scanner/widgets/home_header_scanner_button.dart';
 import 'package:coffee_hub_mobile/features/bean_scanner/widgets/home_floating_scanner_fab.dart';
@@ -485,6 +487,23 @@ PROSES
       // BOTTLE LABEL 500ML is ignored noise, NOT a tasting note
       final bottleBlock = result.classifiedBlocks.firstWhere((b) => b.text == 'BOTTLE LABEL 500ML');
       expect(bottleBlock.role, equals(BlockRole.ignoredNoise));
+    });
+
+    test('Robustness: processPhoto on non-mobile/desktop environment never throws MissingPluginException', () async {
+      final tempDir = await Directory.systemTemp.createTemp('vision_test');
+      addTearDown(() {
+        try {
+          tempDir.deleteSync(recursive: true);
+        } catch (_) {}
+      });
+      final testFile = File('${tempDir.path}/kopi_gunung_halu.jpg');
+      final dummyImg = img.Image(width: 100, height: 100);
+      img.fill(dummyImg, color: img.ColorRgb8(120, 80, 50));
+      await testFile.writeAsBytes(img.encodeJpg(dummyImg));
+
+      final result = await BeanVisionScannerService.processPhoto(testFile);
+      expect(result.croppedImageFile.existsSync(), isTrue);
+      expect(result.rawFullText.toLowerCase(), contains('halu'));
     });
   });
 

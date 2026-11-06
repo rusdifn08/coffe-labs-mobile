@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,6 +44,12 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
   }
 
   Future<void> _initCamera() async {
+    // Di Desktop (Windows/macOS/Linux) atau Web, plugin kamera live preview tidak tersedia.
+    // Menghindari MissingPluginException dengan memeriksa platform terlebih dahulu.
+    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) {
+      return;
+    }
+
     try {
       final cameras = await availableCameras();
       if (cameras.isNotEmpty) {
@@ -227,16 +234,49 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
                   else
                     Container(
                       color: const Color(0xFF1E1A17),
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.camera_alt_outlined, size: 54, color: Colors.white.withValues(alpha: 0.2)),
-                            const SizedBox(height: 12),
-                            const Text(
-                              'Arahkan kamera ke kemasan kopi',
-                              style: TextStyle(color: Colors.white70, fontSize: 13),
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFD4AF37).withValues(alpha: 0.12),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+                              ),
+                              child: const Icon(Icons.photo_library_outlined, size: 40, color: Color(0xFFD4AF37)),
                             ),
+                            const SizedBox(height: 14),
+                            Text(
+                              (!kIsWeb && (Platform.isAndroid || Platform.isIOS))
+                                  ? 'Arahkan kamera ke kemasan kopi'
+                                  : 'Mode Unggah Galeri Aktif',
+                              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              (!kIsWeb && (Platform.isAndroid || Platform.isIOS))
+                                  ? 'Posisikan bungkusan kopi di tengah bingkai'
+                                  : 'Pilih foto kemasan kopi dari galeri komputer Anda untuk dipindai oleh AI Vision',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.white60, fontSize: 12),
+                            ),
+                            if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) ...[
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: _pickFromGallery,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF5C3A21),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                ),
+                                icon: const Icon(Icons.folder_open_rounded, size: 18),
+                                label: const Text('Pilih dari Galeri', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                              ),
+                            ],
                           ],
                         ),
                       ),
