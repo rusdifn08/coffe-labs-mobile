@@ -1,4 +1,4 @@
-package com.example.coffee_hub_mobile.kiosk
+package com.supernovalabs.coffeelabs.kiosk
 
 import android.app.Activity
 import android.app.admin.DevicePolicyManager
@@ -26,7 +26,7 @@ class KioskManager(private val activity: Activity) {
     }
 
     private val homeAliasComponent: ComponentName by lazy {
-        ComponentName(activity, "com.example.coffee_hub_mobile.kiosk.KioskHomeLauncherAlias")
+        ComponentName(activity, "${activity.packageName}.kiosk.KioskHomeLauncherAlias")
     }
 
     fun isDeviceOwner(): Boolean {

@@ -8,7 +8,7 @@
 PRODUCT_NAME = coffee_hub_mobile
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.coffeeHubMobile
+PRODUCT_BUNDLE_IDENTIFIER = com.supernovalabs.coffeelabs
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.example. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 com.supernovalabs. All rights reserved.

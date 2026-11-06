@@ -1,4 +1,4 @@
-package com.example.coffee_hub_mobile.kiosk
+package com.supernovalabs.coffeelabs.kiosk
 
 import android.content.Context
 import android.content.SharedPreferences

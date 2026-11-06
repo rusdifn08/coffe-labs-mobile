@@ -1,4 +1,4 @@
-package com.example.coffee_hub_mobile
+package com.supernovalabs.coffeelabs
 
 import android.content.Intent
 import android.net.Uri
@@ -6,8 +6,8 @@ import android.os.Build
 import android.provider.Settings
 import android.view.KeyEvent
 import androidx.core.content.FileProvider
-import com.example.coffee_hub_mobile.kiosk.KioskDirectBootStore
-import com.example.coffee_hub_mobile.kiosk.KioskManager
+import com.supernovalabs.coffeelabs.kiosk.KioskDirectBootStore
+import com.supernovalabs.coffeelabs.kiosk.KioskManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel

@@ -1,4 +1,4 @@
-package com.example.coffee_hub_mobile.kiosk
+package com.supernovalabs.coffeelabs.kiosk
 
 import android.app.admin.DeviceAdminReceiver
 import android.content.Context

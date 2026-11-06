@@ -1,10 +1,10 @@
-package com.example.coffee_hub_mobile.kiosk
+package com.supernovalabs.coffeelabs.kiosk
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.example.coffee_hub_mobile.MainActivity
+import com.supernovalabs.coffeelabs.MainActivity
 
 class BootCompletedReceiver : BroadcastReceiver() {
     companion object {
