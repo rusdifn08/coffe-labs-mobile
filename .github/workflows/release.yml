@@ -142,7 +142,7 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             TAG="${GITHUB_REF#refs/tags/}"
           else
-            TAG="v2.1.0-$(date +'%Y%m%d-%H%M')"
+            TAG="v2.1.1-$(date +'%Y%m%d-%H%M')"
           fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "title=Coffee Labs App Release $TAG" >> $GITHUB_OUTPUT
@@ -155,7 +155,7 @@ jobs:
           draft: false
           prerelease: false
           body: |
-            ## ☕ Coffee Labs Mobile Release v2.1.0
+            ## ☕ Coffee Labs Mobile Release v2.1.1
             
             Unduh file aplikasi secara langsung tanpa kompresi `.zip`:
             
@@ -168,13 +168,11 @@ jobs:
             ### 🍏 iOS (.ipa):
             - **`CoffeeLabs-iOS-Release.ipa`** *(Format `.ipa` terkompresi untuk sideloading via AltStore, Sideloadly, TrollStore, atau Scarlet)*
 
-            ### ✨ Apa yang Baru di v2.1.0:
-            - 🔬 **Lab Ekstraksi & AI**: Pengelompokan baru yang intuitif untuk Smart Brew AI, Studio AI, Dial-In Assistant, Matriks Grinder, Kalkulator 4:6, dan Ekstraksi TDS & Golden Cup.
-            - 🧠 **Studio Pelatihan AI (On-Device Few-Shot Transfer Learning)**: Latih model AI mengenali kemasan kopi baru dengan alur foto terpandu (Depan, Kiri, Kanan).
-            - ⛰️ **Precision MDPL Stepper**: Pengaturan elevasi praktis `+50` / `-50` MDPL (default: 1200 - 1600 MDPL).
-            - 🎨 **Bespoke Vector SVG Icons**: Ikon vektor presisi kustom untuk setiap alat ekstraksi kopi.
-            - 🚀 **Fluid Portal Login Animation**: Transisi login mulus dengan auto-retry untuk serverless database Neon.
-            - 📐 **Zero Layout Overflow**: Desain card yang responsif dan bebas overflow di semua resolusi layar.
+            ### ✨ Apa yang Baru di v2.1.1:
+            - 🎯 **Stage 0 Trained AI Model Prioritization**: Pemindaian kemasan langsung mendeteksi model hasil pelatihan lokal (`🎯 Trained AI Model Match (99%)`) dengan embedding 512-D deterministik offline dan fusi sidik jari OCR.
+            - 📐 **Fix Bounding-Box & Sensory Classification**: Menghilangkan bug catch-all kotak biru "Tasting Note" pada teks sembarang. Klasifikasi Origin (`Malabar`, `Gunung Halu`) presisi dan tidak lagi tertukar menjadi Roastery.
+            - 🛡️ **Slogan Misread Elimination**: Slogan pemasaran kemasan seperti *"Dari Gunung, Untuk Cita Rasa Terbaik"* disaring bersih agar tidak lagi keliru terbaca sebagai nama kopi.
+            - 📚 **Coffee Knowledge Graph Runtime Sync**: Integrasi ontologi global terroir, roastery, varietas, dan SCA flavor lexicon yang tersinkronisasi otomatis dengan database aplikasi.
           files: release-files/*.*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
