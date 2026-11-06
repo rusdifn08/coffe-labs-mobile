@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:coffee_hub_mobile/features/in_app_trainer/domain/annotated_training_sample.dart';
 import 'package:coffee_hub_mobile/features/in_app_trainer/domain/class_slug_generator.dart';
 import 'package:coffee_hub_mobile/features/in_app_trainer/domain/trained_coffee_class_model.dart';
 import 'package:coffee_hub_mobile/features/in_app_trainer/services/on_device_transfer_learner.dart';
