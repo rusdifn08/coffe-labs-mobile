@@ -60,7 +60,7 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
   Widget build(BuildContext context) {
     final isEn = LanguageService.isEnglish;
 
-    // 1. Dial-In & Extraction Precision
+    // 1. Lab Ekstraksi & AI
     final List<ToolkitItem> extractionTools = [
       ToolkitItem(
         title: isEn ? 'Smart Brew Dial-In' : 'Smart Brew AI',
@@ -72,6 +72,19 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
         gradientColors: const [Color(0xFFFAF3EC), Color(0xFFF3E7DC)],
         destination: const BeanRecipeRecommenderScreen(),
         isLocked: _isTrial,
+      ),
+      ToolkitItem(
+        title: isEn ? 'AI Bean Studio' : 'Studio AI',
+        subtitle: isEn
+            ? 'In-app transfer learning: train custom coffee bag models'
+            : 'Latih AI kenali kemasan kopi baru langsung di HP',
+        iconType: 'cupping',
+        fallbackIcon: CupertinoIcons.sparkles,
+        primaryColor: const Color(0xFFD4AF37),
+        secondaryColor: const Color(0xFF5C3A21),
+        gradientColors: const [Color(0xFFFFF8E1), Color(0xFFFFECB3)],
+        destination: const InAppBeanTrainerScreen(),
+        isLocked: false,
       ),
       ToolkitItem(
         title: isEn ? 'Dial-In Assistant' : 'Asisten Dial-In',
@@ -121,19 +134,6 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
 
     // 2. Coffee Science & Beans
     final List<ToolkitItem> scienceTools = [
-      ToolkitItem(
-        title: isEn ? 'AI Bean Studio' : 'Studio Latih AI',
-        subtitle: isEn
-            ? 'In-app transfer learning: train custom coffee bag models'
-            : 'Latih AI kenali kemasan kopi baru langsung di HP',
-        iconType: 'cupping',
-        fallbackIcon: CupertinoIcons.sparkles,
-        primaryColor: const Color(0xFFD4AF37),
-        secondaryColor: const Color(0xFF5C3A21),
-        gradientColors: const [Color(0xFFFFF8E1), Color(0xFFFFECB3)],
-        destination: const InAppBeanTrainerScreen(),
-        isLocked: false,
-      ),
       ToolkitItem(
         title: isEn ? 'Water Chemistry' : 'Kimia Air Seduh',
         subtitle: isEn ? 'SCA, Barista Hustle & Lotus drops recipe' : 'Resep mineral air SCA, Rao & Lotus drops',
@@ -361,11 +361,11 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
           _buildGrid(ecosystemTools),
           const SizedBox(height: 20),
 
-          // Section 2: Extraction & Dial-In Lab
+          // Section 2: Extraction & AI Lab
           ToolkitSectionHeader(
             icon: const LabSectionIcon(size: 20),
-            title: isEn ? 'Extraction & Dial-In Lab' : 'Lab Ekstraksi & Dial-In',
-            subtitle: isEn ? 'Troubleshooting, clicks & yield' : 'Kalibrasi rasa, klik grinder & yield',
+            title: isEn ? 'Extraction & AI Lab' : 'Lab Ekstraksi & AI',
+            subtitle: isEn ? 'Smart AI, clicks & yield' : 'Smart AI, kalibrasi rasa & yield',
             badgeBg: const Color(0xFFFCE4EC),
             borderColor: const Color(0xFFF8BBD0),
             trailing: _isTrial
@@ -447,7 +447,7 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
       itemCount: items.length,
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 260,
-        mainAxisExtent: 110,
+        mainAxisExtent: 124,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),

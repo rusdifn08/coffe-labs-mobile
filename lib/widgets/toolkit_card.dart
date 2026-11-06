@@ -130,7 +130,7 @@ class ToolkitCard extends StatelessWidget {
           );
         },
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -139,29 +139,29 @@ class ToolkitCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
-                    width: 36,
-                    height: 36,
+                    width: 34,
+                    height: 34,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: tool.gradientColors,
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(11),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     alignment: Alignment.center,
                     child: tool.fallbackIcon != null
-                        ? Icon(tool.fallbackIcon, color: tool.primaryColor, size: 20)
+                        ? Icon(tool.fallbackIcon, color: tool.primaryColor, size: 19)
                         : ToolkitVectorIcon(
                             type: tool.iconType,
-                            size: 20,
+                            size: 19,
                             primaryColor: tool.primaryColor,
                             secondaryColor: tool.secondaryColor,
                           ),
                   ),
                   if (tool.isLocked)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFFF3E0),
                         borderRadius: BorderRadius.circular(6),
@@ -170,7 +170,7 @@ class ToolkitCard extends StatelessWidget {
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(CupertinoIcons.lock_fill, size: 10, color: Color(0xFFE65100)),
+                          Icon(CupertinoIcons.lock_fill, size: 9.5, color: Color(0xFFE65100)),
                           SizedBox(width: 3),
                           Text(
                             'PRO',
@@ -186,27 +186,29 @@ class ToolkitCard extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Text(
                 tool.title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 13.5,
+                  fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: AppTheme.textDark,
                   letterSpacing: -0.2,
                 ),
               ),
-              const SizedBox(height: 3),
-              Text(
-                tool.subtitle,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 10.5,
-                  color: AppTheme.textMuted,
-                  height: 1.3,
+              const SizedBox(height: 2),
+              Flexible(
+                child: Text(
+                  tool.subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppTheme.textMuted,
+                    height: 1.25,
+                  ),
                 ),
               ),
             ],
