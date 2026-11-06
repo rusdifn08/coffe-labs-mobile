@@ -170,6 +170,37 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
               ],
             ),
           ),
+          InkWell(
+            onTap: () {
+              Navigator.pop(context);
+              context.push(AppRoutes.inAppTrainer);
+            },
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0xFFD4AF37).withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.5), width: 1),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.auto_awesome, color: Color(0xFFD4AF37), size: 13),
+                  SizedBox(width: 4),
+                  Text(
+                    'Latih AI',
+                    style: TextStyle(
+                      color: Color(0xFFD4AF37),
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
           IconButton(
             icon: const Icon(CupertinoIcons.xmark_circle_fill, color: Colors.white38),
             onPressed: () => Navigator.pop(context),
@@ -801,6 +832,21 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
                 foregroundColor: Colors.white,
               ),
               child: const Text('Coba Lagi'),
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                context.push(AppRoutes.inAppTrainer);
+              },
+              icon: const Icon(Icons.auto_awesome, color: Color(0xFFD4AF37), size: 16),
+              label: const Text(
+                'Kemasan Baru? Latih AI Studio',
+                style: TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFFD4AF37)),
+              ),
             ),
           ],
         ),

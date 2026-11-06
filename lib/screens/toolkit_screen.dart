@@ -20,6 +20,7 @@ import 'smart_scale_screen.dart';
 import 'social_coffee_screen.dart';
 import 'tds_extraction_screen.dart';
 import 'water_recipe_screen.dart';
+import '../features/in_app_trainer/presentation/in_app_bean_trainer_screen.dart';
 
 class ToolkitScreen extends StatefulWidget {
   const ToolkitScreen({super.key});
@@ -120,6 +121,19 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
 
     // 2. Coffee Science & Beans
     final List<ToolkitItem> scienceTools = [
+      ToolkitItem(
+        title: isEn ? 'AI Bean Studio' : 'Studio Latih AI',
+        subtitle: isEn
+            ? 'In-app transfer learning: train custom coffee bag models'
+            : 'Latih AI kenali kemasan kopi baru langsung di HP',
+        iconType: 'cupping',
+        fallbackIcon: CupertinoIcons.sparkles,
+        primaryColor: const Color(0xFFD4AF37),
+        secondaryColor: const Color(0xFF5C3A21),
+        gradientColors: const [Color(0xFFFFF8E1), Color(0xFFFFECB3)],
+        destination: const InAppBeanTrainerScreen(),
+        isLocked: false,
+      ),
       ToolkitItem(
         title: isEn ? 'Water Chemistry' : 'Kimia Air Seduh',
         subtitle: isEn ? 'SCA, Barista Hustle & Lotus drops recipe' : 'Resep mineral air SCA, Rao & Lotus drops',
