@@ -155,14 +155,29 @@ GoRouter appRouter(Ref ref) {
         pageBuilder: (context, state) => CustomTransitionPage(
           key: state.pageKey,
           child: const MainLayout(),
-          transitionDuration: const Duration(milliseconds: 380),
+          transitionDuration: const Duration(milliseconds: 550),
+          reverseTransitionDuration: const Duration(milliseconds: 400),
           transitionsBuilder: (context, anim, secondaryAnim, child) {
-            final curved = CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
+            final curved = CurvedAnimation(
+              parent: anim,
+              curve: const Cubic(0.16, 1.0, 0.3, 1.0),
+            );
             return FadeTransition(
-              opacity: curved,
-              child: ScaleTransition(
-                scale: Tween<double>(begin: 0.96, end: 1.0).animate(curved),
-                child: child,
+              opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
+                CurvedAnimation(
+                  parent: anim,
+                  curve: const Interval(0.0, 0.65, curve: Curves.easeOut),
+                ),
+              ),
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0.0, 0.035),
+                  end: Offset.zero,
+                ).animate(curved),
+                child: ScaleTransition(
+                  scale: Tween<double>(begin: 0.96, end: 1.0).animate(curved),
+                  child: child,
+                ),
               ),
             );
           },
