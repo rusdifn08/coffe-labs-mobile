@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../core/router/app_router.dart';
@@ -25,6 +26,7 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   bool _isSignUpMode = false;
   bool _isLoading = false;
+  bool _isSuccess = false;
   String? _errorMessage;
 
   // Login Controllers
@@ -88,6 +90,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
     setState(() {
       _isLoading = true;
+      _isSuccess = false;
       _errorMessage = null;
     });
 
@@ -95,9 +98,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     ref.invalidate(authControllerProvider);
 
     if (!mounted) return;
-    setState(() => _isLoading = false);
 
     if (result.success) {
+      setState(() {
+        _isLoading = false;
+        _isSuccess = true;
+      });
+      HapticFeedback.mediumImpact();
+
+      // Animasi transisi lembut: berikan waktu sejenak agar pengguna melihat badge sukses
+      await Future.delayed(const Duration(milliseconds: 650));
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -106,10 +118,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 : 'Selamat datang kembali, ${result.user?.fullName}!',
           ),
           backgroundColor: AppTheme.primaryBrown,
+          duration: const Duration(seconds: 2),
         ),
       );
       context.go(AppRoutes.home);
     } else {
+      setState(() {
+        _isLoading = false;
+        _isSuccess = false;
+      });
       if (result.status == 'pending') {
         AuthStatusDialogs.showPendingApproval(
           context: context,
@@ -257,6 +274,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           usernameController: _loginUsernameCtrl,
                           passwordController: _loginPasswordCtrl,
                           isLoading: _isLoading,
+                          isSuccess: _isSuccess,
                           onLogin: _handleLogin,
                           onSwitchToSignUp: () {
                             setState(() {

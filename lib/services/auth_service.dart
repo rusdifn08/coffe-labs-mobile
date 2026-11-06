@@ -280,34 +280,39 @@ class AuthService {
           )
           .timeout(const Duration(seconds: 45));
 
-      // Auto-retry jika terkena rate-limit transien atau cold-start proxy (429/502/503)
-      if (response.statusCode == 429 || response.statusCode == 502 || response.statusCode == 503) {
+      // Helper evaluasi apakah kegagalan bersifat transien (cold-start Render / idle drop NeonDB)
+      bool isTransientFailure(http.Response res) {
+        if (res.statusCode == 429 || res.statusCode == 502 || res.statusCode == 503) {
+          return true;
+        }
+        if (res.statusCode == 500 &&
+            (res.body.contains('DATABASE_ERROR') ||
+                res.body.contains('gangguan pemrosesan data') ||
+                res.body.contains('NeonDB') ||
+                res.body.contains('connection'))) {
+          return true;
+        }
+        return false;
+      }
+
+      // Auto-retry cerdas jika terkena gangguan serverless / cold-start proxy
+      int retryCount = 0;
+      while (isTransientFailure(response) && retryCount < 2) {
+        retryCount++;
+        debugPrint('⚠️ Auth Login retry ke-$retryCount (HTTP ${response.statusCode})...');
+        await Future.delayed(Duration(milliseconds: 600 * retryCount));
         try {
-          final localUri = Uri.parse('http://localhost:3000/api/auth/login');
-          final localRes = await _httpClient
+          response = await _httpClient
               .post(
-                localUri,
-                headers: {'Content-Type': 'application/json'},
+                uri,
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Connection': 'keep-alive',
+                },
                 body: encodedBody,
               )
-              .timeout(const Duration(seconds: 4));
-          if (localRes.statusCode != 429 && localRes.statusCode < 500) {
-            response = localRes;
-          }
+              .timeout(const Duration(seconds: 20));
         } catch (_) {}
-      }
-      if (response.statusCode == 429 || response.statusCode == 502 || response.statusCode == 503) {
-        await Future.delayed(const Duration(seconds: 5));
-        response = await _httpClient
-            .post(
-              uri,
-              headers: {
-                'Content-Type': 'application/json',
-                'Connection': 'keep-alive',
-              },
-              body: encodedBody,
-            )
-            .timeout(const Duration(seconds: 45));
       }
 
       final data = _safeDecodeJson(response.body, response.statusCode);

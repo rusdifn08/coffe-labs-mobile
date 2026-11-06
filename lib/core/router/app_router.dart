@@ -155,8 +155,17 @@ GoRouter appRouter(Ref ref) {
         pageBuilder: (context, state) => CustomTransitionPage(
           key: state.pageKey,
           child: const MainLayout(),
-          transitionsBuilder: (context, anim, secondaryAnim, child) =>
-              FadeTransition(opacity: anim, child: child),
+          transitionDuration: const Duration(milliseconds: 380),
+          transitionsBuilder: (context, anim, secondaryAnim, child) {
+            final curved = CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
+            return FadeTransition(
+              opacity: curved,
+              child: ScaleTransition(
+                scale: Tween<double>(begin: 0.96, end: 1.0).animate(curved),
+                child: child,
+              ),
+            );
+          },
         ),
       ),
       GoRoute(
