@@ -104,8 +104,6 @@ class CuratedRoasteryBean {
         pack = 'assets/images/beans/mknd_bali_kintamani.jpg';
       } else if (slug.contains('excelsa')) {
         pack = 'assets/images/beans/mknd_kopi_excelsa.jpg';
-      } else if (slug.contains('gayo')) {
-        pack = 'assets/images/beans/mknd_aceh_gayo.jpg';
       } else if (slug.contains('toraja') || slug.contains('sapan')) {
         pack = 'assets/images/beans/mknd_toraja_sapan.jpg';
       }
@@ -116,27 +114,7 @@ class CuratedRoasteryBean {
         pack = 'assets/images/beans/fugol_sample_b.jpg';
       } else if (slug.contains('kamojang')) {
         pack = 'assets/images/beans/kamojang_classico.jpg';
-      } else {
-        pack = 'assets/images/beans/fugol_sample_c.jpg';
       }
-    } else if (rId == 'space_coffee') {
-      if (slug.contains('tolu') || slug.contains('batak')) {
-        pack = 'assets/images/beans/space_tolu_batak.jpg';
-      } else {
-        pack = 'assets/images/beans/space_halu_pink_banana.jpg';
-      }
-    } else if (rId == 'tanamera_coffee' && slug.contains('gayo')) {
-      pack = 'assets/images/beans/tanamera_aceh_gayo.jpg';
-    } else if (rId == 'smoking_barrels' && slug.contains('kerinci')) {
-      pack = 'assets/images/beans/smoking_barrels_kerinci.jpg';
-    } else if (rId == 'common_grounds' && slug.contains('guji')) {
-      pack = 'assets/images/beans/common_grounds_guji.jpg';
-    } else if (rId == 'anomali_coffee' && slug.contains('toraja')) {
-      pack = 'assets/images/beans/anomali_toraja.jpg';
-    } else if (rId == 'gordi_coffee' && slug.contains('flores')) {
-      pack = 'assets/images/beans/gordi_flores.jpg';
-    } else if (rId == 'hungry_bird_coffee' && slug.contains('berawa')) {
-      pack = 'assets/images/beans/hungry_bird_berawa.jpg';
     }
 
     BeanDripper dripper = BeanDripper.v60;
