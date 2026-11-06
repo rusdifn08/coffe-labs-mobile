@@ -145,51 +145,83 @@ class _LabPainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    final trackPaint = Paint()
-      ..color = primaryColor.withValues(alpha: 0.3)
-      ..strokeWidth = 2.0
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
+    // 1. Sleek Chemistry Extraction Flask / Dripper Body
+    final flaskPath = Path();
+    flaskPath.moveTo(w * 0.38, h * 0.12);
+    flaskPath.lineTo(w * 0.62, h * 0.12);
+    flaskPath.lineTo(w * 0.62, h * 0.32);
+    flaskPath.lineTo(w * 0.88, h * 0.78);
+    flaskPath.cubicTo(w * 0.92, h * 0.86, w * 0.86, h * 0.92, w * 0.76, h * 0.92);
+    flaskPath.lineTo(w * 0.24, h * 0.92);
+    flaskPath.cubicTo(w * 0.14, h * 0.92, w * 0.08, h * 0.86, w * 0.12, h * 0.78);
+    flaskPath.lineTo(w * 0.38, h * 0.32);
+    flaskPath.close();
 
-    final thumbFill = Paint()
+    final outlinePaint = Paint()
       ..color = primaryColor
-      ..style = PaintingStyle.fill;
-
-    final thumbBorder = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke;
-
-    final gaugeRing = Paint()
-      ..color = primaryColor
-      ..strokeWidth = 1.4
-      ..style = PaintingStyle.stroke;
-
-    // 1. Top slider track & thumb (Dial-In Grinder click)
-    final topTrackY = h * 0.28;
-    canvas.drawLine(Offset(w * 0.12, topTrackY), Offset(w * 0.88, topTrackY), trackPaint);
-    final topThumbPos = Offset(w * 0.65, topTrackY);
-    canvas.drawCircle(topThumbPos, w * 0.11, thumbFill);
-    canvas.drawCircle(topThumbPos, w * 0.11, thumbBorder);
-
-    // 2. Bottom slider track & thumb (Extraction ratio)
-    final bottomTrackY = h * 0.72;
-    canvas.drawLine(Offset(w * 0.12, bottomTrackY), Offset(w * 0.88, bottomTrackY), trackPaint);
-    final bottomThumbPos = Offset(w * 0.35, bottomTrackY);
-    canvas.drawCircle(bottomThumbPos, w * 0.11, thumbFill);
-    canvas.drawCircle(bottomThumbPos, w * 0.11, thumbBorder);
-
-    // 3. Center precision dial indicator (Pressure / TDS target)
-    final center = Offset(w * 0.5, h * 0.5);
-    canvas.drawCircle(center, w * 0.18, gaugeRing);
-    final needlePaint = Paint()
-      ..color = secondaryColor
       ..strokeWidth = 1.3
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    canvas.drawPath(flaskPath, outlinePaint);
+
+    // 2. Liquid Level in Flask with gradient
+    final liquidPath = Path();
+    liquidPath.moveTo(w * 0.27, h * 0.62);
+    liquidPath.cubicTo(w * 0.40, h * 0.58, w * 0.60, h * 0.66, w * 0.73, h * 0.62);
+    liquidPath.lineTo(w * 0.82, h * 0.78);
+    liquidPath.cubicTo(w * 0.86, h * 0.85, w * 0.80, h * 0.90, w * 0.72, h * 0.90);
+    liquidPath.lineTo(w * 0.28, h * 0.90);
+    liquidPath.cubicTo(w * 0.20, h * 0.90, w * 0.14, h * 0.85, w * 0.18, h * 0.78);
+    liquidPath.close();
+
+    final liquidPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          primaryColor.withValues(alpha: 0.4),
+          secondaryColor.withValues(alpha: 0.85),
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Rect.fromLTWH(0, 0, w, h))
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(liquidPath, liquidPaint);
+
+    // 3. AI Neural Sparkling Core (Smart AI + Lab extraction)
+    final sparkCenter = Offset(w * 0.5, h * 0.75);
+    final sparkPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(sparkCenter, w * 0.06, sparkPaint);
+
+    // Neural nodes radiating from the core
+    final nodePaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.9)
+      ..strokeWidth = 0.8
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(sparkCenter, Offset(w * 0.38, h * 0.70), nodePaint);
+    canvas.drawLine(sparkCenter, Offset(w * 0.62, h * 0.70), nodePaint);
+    canvas.drawCircle(Offset(w * 0.38, h * 0.70), w * 0.035, sparkPaint);
+    canvas.drawCircle(Offset(w * 0.62, h * 0.70), w * 0.035, sparkPaint);
+
+    // 4. Calibration Ticks on Flask Neck / Wall
+    final tickPaint = Paint()
+      ..color = primaryColor.withValues(alpha: 0.7)
+      ..strokeWidth = 1.0
       ..strokeCap = StrokeCap.round;
-    // Angled needle pointing ~45 degrees
-    final needleEnd = Offset(center.dx + w * 0.11, center.dy - h * 0.11);
-    canvas.drawLine(center, needleEnd, needlePaint);
-    canvas.drawCircle(center, w * 0.04, thumbFill);
+    canvas.drawLine(Offset(w * 0.42, h * 0.44), Offset(w * 0.49, h * 0.44), tickPaint);
+    canvas.drawLine(Offset(w * 0.36, h * 0.53), Offset(w * 0.45, h * 0.53), tickPaint);
+
+    // 5. Rising AI spark at mouth of flask
+    final topSpark = Path();
+    final sx = w * 0.5;
+    final sy = h * 0.08;
+    topSpark.moveTo(sx, sy - h * 0.08);
+    topSpark.lineTo(sx + w * 0.04, sy);
+    topSpark.lineTo(sx, sy + h * 0.08);
+    topSpark.lineTo(sx - w * 0.04, sy);
+    topSpark.close();
+    canvas.drawPath(topSpark, Paint()..color = secondaryColor);
   }
 
   @override

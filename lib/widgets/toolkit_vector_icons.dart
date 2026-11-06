@@ -73,6 +73,30 @@ class _ToolkitIconPainter extends CustomPainter {
       case 'marketplace':
         _paintMarketplace(canvas, w, h);
         break;
+      case 'smart_brew_ai':
+        _paintSmartBrewAi(canvas, w, h);
+        break;
+      case 'studio_ai':
+        _paintStudioAi(canvas, w, h);
+        break;
+      case 'dialin':
+        _paintDialin(canvas, w, h);
+        break;
+      case 'grinder':
+        _paintGrinder(canvas, w, h);
+        break;
+      case 'foursix':
+        _paintFourSix(canvas, w, h);
+        break;
+      case 'tds':
+        _paintTds(canvas, w, h);
+        break;
+      case 'water':
+        _paintWater(canvas, w, h);
+        break;
+      case 'freshness':
+        _paintFreshness(canvas, w, h);
+        break;
     }
   }
 
@@ -420,6 +444,481 @@ class _ToolkitIconPainter extends CustomPainter {
     seamPath.moveTo(w * 0.5, h * 0.47);
     seamPath.cubicTo(w * 0.46, h * 0.56, w * 0.54, h * 0.60, w * 0.5, h * 0.69);
     canvas.drawPath(seamPath, seamPaint);
+  }
+
+  // 9. Smart Brew AI: Specialty V60 Dripper with AI Holographic Intelligence Spark
+  void _paintSmartBrewAi(Canvas canvas, double w, double h) {
+    // V60 Cone body with gradient
+    final dripperPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [primaryColor, secondaryColor],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ).createShader(Rect.fromLTWH(0, 0, w, h))
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w * 0.08
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final cone = Path();
+    cone.moveTo(w * 0.16, h * 0.30);
+    cone.lineTo(w * 0.84, h * 0.30);
+    cone.lineTo(w * 0.58, h * 0.70);
+    cone.lineTo(w * 0.42, h * 0.70);
+    cone.close();
+    canvas.drawPath(cone, dripperPaint);
+
+    // Dripper base collar
+    final collarPaint = Paint()
+      ..color = primaryColor
+      ..strokeWidth = w * 0.08
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset(w * 0.28, h * 0.76), Offset(w * 0.72, h * 0.76), collarPaint);
+
+    // Internal spiral extraction ribs
+    final ribPaint = Paint()
+      ..color = secondaryColor.withValues(alpha: 0.7)
+      ..strokeWidth = w * 0.05
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset(w * 0.36, h * 0.38), Offset(w * 0.46, h * 0.62), ribPaint);
+    canvas.drawLine(Offset(w * 0.64, h * 0.38), Offset(w * 0.54, h * 0.62), ribPaint);
+
+    // Extraction drip falling
+    final dripPaint = Paint()
+      ..color = primaryColor
+      ..style = PaintingStyle.fill;
+    final drip = Path();
+    drip.moveTo(w * 0.50, h * 0.82);
+    drip.cubicTo(w * 0.44, h * 0.88, w * 0.44, h * 0.94, w * 0.50, h * 0.96);
+    drip.cubicTo(w * 0.56, h * 0.94, w * 0.56, h * 0.88, w * 0.50, h * 0.82);
+    drip.close();
+    canvas.drawPath(drip, dripPaint);
+
+    // Floating 4-point AI Star above dripper
+    final starPaint = Paint()..color = secondaryColor;
+    final star = Path();
+    final sx = w * 0.50;
+    final sy = h * 0.16;
+    star.moveTo(sx, sy - h * 0.13);
+    star.cubicTo(sx + w * 0.03, sy - h * 0.03, sx + w * 0.03, sy - h * 0.03, sx + w * 0.13, sy);
+    star.cubicTo(sx + w * 0.03, sy + h * 0.03, sx + w * 0.03, sy + h * 0.03, sx, sy + h * 0.13);
+    star.cubicTo(sx - w * 0.03, sy + h * 0.03, sx - w * 0.03, sy + h * 0.03, sx - w * 0.13, sy);
+    star.cubicTo(sx - w * 0.03, sy - h * 0.03, sx - w * 0.03, sy - h * 0.03, sx, sy - h * 0.13);
+    star.close();
+    canvas.drawPath(star, starPaint);
+
+    // Inner bright center dot
+    canvas.drawCircle(Offset(sx, sy), w * 0.035, Paint()..color = Colors.white);
+  }
+
+  // 10. Studio AI: Computer Vision Viewfinder & Neural Packaging Detector
+  void _paintStudioAi(Canvas canvas, double w, double h) {
+    final bracketPaint = Paint()
+      ..color = primaryColor
+      ..strokeWidth = w * 0.08
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    final arm = w * 0.22;
+    // Top-Left Corner
+    final tl = Path()
+      ..moveTo(w * 0.10, h * 0.10 + arm)
+      ..lineTo(w * 0.10, h * 0.10)
+      ..lineTo(w * 0.10 + arm, h * 0.10);
+    canvas.drawPath(tl, bracketPaint);
+
+    // Top-Right Corner
+    final tr = Path()
+      ..moveTo(w * 0.90 - arm, h * 0.10)
+      ..lineTo(w * 0.90, h * 0.10)
+      ..lineTo(w * 0.90, h * 0.10 + arm);
+    canvas.drawPath(tr, bracketPaint);
+
+    // Bottom-Left Corner
+    final bl = Path()
+      ..moveTo(w * 0.10, h * 0.90 - arm)
+      ..lineTo(w * 0.10, h * 0.90)
+      ..lineTo(w * 0.10 + arm, h * 0.90);
+    canvas.drawPath(bl, bracketPaint);
+
+    // Bottom-Right Corner
+    final br = Path()
+      ..moveTo(w * 0.90 - arm, h * 0.90)
+      ..lineTo(w * 0.90, h * 0.90)
+      ..lineTo(w * 0.90, h * 0.90 - arm);
+    canvas.drawPath(br, bracketPaint);
+
+    // Center Coffee Bag Silhouette
+    final bagPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          primaryColor.withValues(alpha: 0.85),
+          secondaryColor,
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Rect.fromLTWH(0, 0, w, h))
+      ..style = PaintingStyle.fill;
+
+    final bag = Path();
+    bag.moveTo(w * 0.32, h * 0.30);
+    bag.lineTo(w * 0.68, h * 0.30);
+    bag.lineTo(w * 0.74, h * 0.78);
+    bag.cubicTo(w * 0.74, h * 0.82, w * 0.70, h * 0.84, w * 0.66, h * 0.84);
+    bag.lineTo(w * 0.34, h * 0.84);
+    bag.cubicTo(w * 0.30, h * 0.84, w * 0.26, h * 0.82, w * 0.26, h * 0.78);
+    bag.close();
+    canvas.drawPath(bag, bagPaint);
+
+    // Top Seal Fold
+    final sealPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.9)
+      ..strokeWidth = w * 0.05
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset(w * 0.34, h * 0.32), Offset(w * 0.66, h * 0.32), sealPaint);
+
+    // Center Scanning AI Laser Line & Dot
+    final laserPaint = Paint()
+      ..color = const Color(0xFFD4AF37)
+      ..strokeWidth = w * 0.06
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset(w * 0.22, h * 0.54), Offset(w * 0.78, h * 0.54), laserPaint);
+
+    final focalDot = Paint()..color = Colors.white;
+    canvas.drawCircle(Offset(w * 0.50, h * 0.54), w * 0.08, focalDot);
+    canvas.drawCircle(Offset(w * 0.50, h * 0.54), w * 0.045, Paint()..color = const Color(0xFF5C3A21));
+  }
+
+  // 11. Asisten Dial-In: Precision Espresso & Filter Calibration Gauge & Adjustment Dial
+  void _paintDialin(Canvas canvas, double w, double h) {
+    final center = Offset(w * 0.50, h * 0.52);
+    final radius = w * 0.40;
+
+    // Outer Gauge Arc (260 degrees)
+    final gaugePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w * 0.08
+      ..strokeCap = StrokeCap.round
+      ..color = primaryColor.withValues(alpha: 0.25);
+
+    const startAngle = 0.75 * math.pi;
+    const sweepAngle = 1.50 * math.pi;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      startAngle,
+      sweepAngle,
+      false,
+      gaugePaint,
+    );
+
+    // Sweet Spot Active Zone (Golden Green / Bright Magenta highlight)
+    final sweetSpotPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w * 0.08
+      ..strokeCap = StrokeCap.round
+      ..shader = LinearGradient(
+        colors: [primaryColor, secondaryColor],
+      ).createShader(Rect.fromLTWH(0, 0, w, h));
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      startAngle + sweepAngle * 0.45,
+      sweepAngle * 0.35,
+      false,
+      sweetSpotPaint,
+    );
+
+    // Tick Marks (Coarse to Fine)
+    final tickPaint = Paint()
+      ..color = primaryColor
+      ..strokeWidth = w * 0.04
+      ..strokeCap = StrokeCap.round;
+
+    for (int i = 0; i <= 6; i++) {
+      final angle = startAngle + (sweepAngle * (i / 6.0));
+      final innerR = radius - w * 0.12;
+      final outerR = radius - w * 0.05;
+      final p1 = Offset(center.dx + innerR * math.cos(angle), center.dy + innerR * math.sin(angle));
+      final p2 = Offset(center.dx + outerR * math.cos(angle), center.dy + outerR * math.sin(angle));
+      canvas.drawLine(p1, p2, tickPaint);
+    }
+
+    // Dial Needle pointing to Sweet Spot
+    final needleAngle = startAngle + sweepAngle * 0.62;
+    final needleEnd = Offset(
+      center.dx + (radius - w * 0.06) * math.cos(needleAngle),
+      center.dy + (radius - w * 0.06) * math.sin(needleAngle),
+    );
+    final needlePaint = Paint()
+      ..color = secondaryColor
+      ..strokeWidth = w * 0.075
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(center, needleEnd, needlePaint);
+
+    // Central Precision Hub
+    canvas.drawCircle(center, w * 0.12, Paint()..color = primaryColor);
+    canvas.drawCircle(center, w * 0.05, Paint()..color = Colors.white);
+  }
+
+  // 12. Matriks Grinder: Coffee Burr Blades & Micron Click Calibration Mechanism
+  void _paintGrinder(Canvas canvas, double w, double h) {
+    final center = Offset(w * 0.50, h * 0.50);
+
+    // Outer Burr Ring
+    final ringPaint = Paint()
+      ..color = primaryColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w * 0.075;
+    canvas.drawCircle(center, w * 0.42, ringPaint);
+
+    // 8 Conical Cutting Blades radiating outward
+    final bladePaint = Paint()
+      ..color = primaryColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w * 0.065
+      ..strokeCap = StrokeCap.round;
+
+    for (int i = 0; i < 8; i++) {
+      final angle = i * (math.pi / 4);
+      final p1 = Offset(center.dx + w * 0.18 * math.cos(angle), center.dy + w * 0.18 * math.sin(angle));
+      final p2 = Offset(
+        center.dx + w * 0.40 * math.cos(angle + 0.28),
+        center.dy + w * 0.40 * math.sin(angle + 0.28),
+      );
+      canvas.drawLine(p1, p2, bladePaint);
+    }
+
+    // Inner Cone Hub
+    final hubPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [primaryColor, secondaryColor],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ).createShader(Rect.fromLTWH(0, 0, w, h))
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, w * 0.18, hubPaint);
+
+    // Center Click Hex Adjustment Nut
+    final hexPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, w * 0.07, hexPaint);
+
+    // Micron Click Indicator Dots on outer perimeter
+    final dotPaint = Paint()..color = secondaryColor;
+    for (int i = 0; i < 8; i++) {
+      final angle = i * (math.pi / 4) + (math.pi / 8);
+      final p = Offset(center.dx + w * 0.35 * math.cos(angle), center.dy + w * 0.35 * math.sin(angle));
+      canvas.drawCircle(p, w * 0.025, dotPaint);
+    }
+  }
+
+  // 13. Kalkulator 4:6: Tetsu Kasuya 4:6 Segmented Ratio Ring & Precision Pour Steps
+  void _paintFourSix(Canvas canvas, double w, double h) {
+    final center = Offset(w * 0.50, h * 0.50);
+    final radius = w * 0.40;
+    final strokeWidth = w * 0.11;
+
+    // Phase 1 (40% Sweetness/Acidity) - 2 Pours
+    final phase1Paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..color = primaryColor;
+
+    const start1 = -math.pi * 0.5;
+    const sweep1 = (144.0 / 180.0) * math.pi - 0.15;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      start1,
+      sweep1,
+      false,
+      phase1Paint,
+    );
+
+    // Phase 2 (60% Strength/Body) - 3 Pours
+    final phase2Paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..color = secondaryColor;
+
+    final start2 = start1 + sweep1 + 0.30;
+    const sweep2 = (216.0 / 180.0) * math.pi - 0.30;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      start2,
+      sweep2,
+      false,
+      phase2Paint,
+    );
+
+    // Center Pour Drop
+    final dropPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [primaryColor, secondaryColor],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Rect.fromLTWH(0, 0, w, h))
+      ..style = PaintingStyle.fill;
+
+    final drop = Path();
+    drop.moveTo(w * 0.50, h * 0.30);
+    drop.cubicTo(w * 0.38, h * 0.46, w * 0.38, h * 0.65, w * 0.50, h * 0.70);
+    drop.cubicTo(w * 0.62, h * 0.65, w * 0.62, h * 0.46, w * 0.50, h * 0.30);
+    drop.close();
+    canvas.drawPath(drop, dropPaint);
+
+    // High clarity white core
+    canvas.drawCircle(Offset(w * 0.50, h * 0.56), w * 0.05, Paint()..color = Colors.white);
+  }
+
+  // 14. Ekstraksi & TDS: SCA Extraction Yield % Refractometer Prism & Golden Cup Graph
+  void _paintTds(Canvas canvas, double w, double h) {
+    // Coordinate Graph Box (Golden Cup Region)
+    final gridPaint = Paint()
+      ..color = primaryColor.withValues(alpha: 0.25)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w * 0.05;
+
+    final graphRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(w * 0.12, h * 0.15, w * 0.76, h * 0.72),
+      Radius.circular(w * 0.12),
+    );
+    canvas.drawRRect(graphRect, gridPaint);
+
+    // Ideal SCA Golden Zone (18% - 22% EY) Target Fill
+    final goldenZonePaint = Paint()
+      ..color = secondaryColor.withValues(alpha: 0.30)
+      ..style = PaintingStyle.fill;
+
+    final targetZone = RRect.fromRectAndRadius(
+      Rect.fromLTWH(w * 0.34, h * 0.30, w * 0.38, h * 0.38),
+      Radius.circular(w * 0.06),
+    );
+    canvas.drawRRect(targetZone, goldenZonePaint);
+
+    // Extraction Yield Curve climbing across axes
+    final curvePaint = Paint()
+      ..shader = LinearGradient(
+        colors: [primaryColor, secondaryColor],
+        begin: Alignment.bottomLeft,
+        end: Alignment.topRight,
+      ).createShader(Rect.fromLTWH(0, 0, w, h))
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w * 0.08
+      ..strokeCap = StrokeCap.round;
+
+    final curve = Path();
+    curve.moveTo(w * 0.22, h * 0.72);
+    curve.cubicTo(w * 0.35, h * 0.68, w * 0.42, h * 0.52, w * 0.53, h * 0.46);
+    curve.lineTo(w * 0.72, h * 0.32);
+    canvas.drawPath(curve, curvePaint);
+
+    // Focal Target Bullseye in Golden Cup Zone
+    final bullseye = Offset(w * 0.53, h * 0.46);
+    canvas.drawCircle(bullseye, w * 0.09, Paint()..color = primaryColor);
+    canvas.drawCircle(bullseye, w * 0.045, Paint()..color = Colors.white);
+
+    // Axis indicator tick marks
+    final axisPaint = Paint()
+      ..color = primaryColor
+      ..strokeWidth = w * 0.05
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset(w * 0.12, h * 0.87), Offset(w * 0.88, h * 0.87), axisPaint);
+    canvas.drawLine(Offset(w * 0.12, h * 0.15), Offset(w * 0.12, h * 0.87), axisPaint);
+  }
+
+  // 15. Kimia Air Seduh: Mineral Water Droplet with Chemical Bond Ion Core
+  void _paintWater(Canvas canvas, double w, double h) {
+    final dropPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [primaryColor, secondaryColor],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Rect.fromLTWH(0, 0, w, h))
+      ..style = PaintingStyle.fill;
+
+    final drop = Path();
+    drop.moveTo(w * 0.50, h * 0.10);
+    drop.cubicTo(w * 0.22, h * 0.45, w * 0.15, h * 0.70, w * 0.28, h * 0.86);
+    drop.cubicTo(w * 0.38, h * 0.96, w * 0.62, h * 0.96, w * 0.72, h * 0.86);
+    drop.cubicTo(w * 0.85, h * 0.70, w * 0.78, h * 0.45, w * 0.50, h * 0.10);
+    drop.close();
+    canvas.drawPath(drop, dropPaint);
+
+    // Mineral Molecule Bond Ring (Ca2+ / Mg2+ Buffer)
+    final bondPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.9)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w * 0.05
+      ..strokeCap = StrokeCap.round;
+
+    final c = Offset(w * 0.50, h * 0.65);
+    canvas.drawCircle(c, w * 0.14, bondPaint);
+
+    final ionPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(Offset(w * 0.50, h * 0.51), w * 0.045, ionPaint);
+    canvas.drawCircle(Offset(w * 0.38, h * 0.73), w * 0.045, ionPaint);
+    canvas.drawCircle(Offset(w * 0.62, h * 0.73), w * 0.045, ionPaint);
+  }
+
+  // 16. Kesegaran Biji: Roasted Specialty Coffee Bean with Ascending CO2 Degassing Curve
+  void _paintFreshness(Canvas canvas, double w, double h) {
+    final beanCenter = Offset(w * 0.50, h * 0.68);
+    final beanPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [primaryColor, secondaryColor],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ).createShader(Rect.fromLTWH(0, 0, w, h))
+      ..style = PaintingStyle.fill;
+
+    canvas.drawOval(
+      Rect.fromCenter(center: beanCenter, width: w * 0.62, height: h * 0.44),
+      beanPaint,
+    );
+
+    // Bean center crease
+    final seamPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.85)
+      ..strokeWidth = w * 0.06
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final seam = Path();
+    seam.moveTo(beanCenter.dx - w * 0.22, beanCenter.dy);
+    seam.cubicTo(
+      beanCenter.dx - w * 0.05,
+      beanCenter.dy - h * 0.08,
+      beanCenter.dx + w * 0.05,
+      beanCenter.dy + h * 0.08,
+      beanCenter.dx + w * 0.22,
+      beanCenter.dy,
+    );
+    canvas.drawPath(seam, seamPaint);
+
+    // Rising CO2 Degassing Wavelets
+    final co2Paint = Paint()
+      ..color = secondaryColor
+      ..strokeWidth = w * 0.06
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final wave1 = Path();
+    wave1.moveTo(w * 0.36, h * 0.42);
+    wave1.cubicTo(w * 0.32, h * 0.32, w * 0.40, h * 0.24, w * 0.34, h * 0.14);
+    canvas.drawPath(wave1, co2Paint);
+
+    final wave2 = Path();
+    wave2.moveTo(w * 0.64, h * 0.42);
+    wave2.cubicTo(w * 0.68, h * 0.32, w * 0.60, h * 0.24, w * 0.66, h * 0.14);
+    canvas.drawPath(wave2, co2Paint);
+
+    // Peak flavor sparkle at top
+    canvas.drawCircle(Offset(w * 0.50, h * 0.16), w * 0.045, Paint()..color = primaryColor);
   }
 
   @override
