@@ -16,7 +16,7 @@ class CoffeeTrainingDraft {
     required this.beanName,
     this.varietal = 'Mixed Varieties',
     this.process = 'Natural',
-    this.altitudeMasl = '1400 - 1650 MASL',
+    this.altitudeMasl = '1200 - 1600 MDPL',
     this.tastingNotes = const [],
     this.recommendedRecipeId,
     this.samples = const [],

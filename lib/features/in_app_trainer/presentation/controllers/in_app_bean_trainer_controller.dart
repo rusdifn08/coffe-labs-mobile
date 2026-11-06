@@ -102,7 +102,7 @@ class InAppTrainerController extends Notifier<InAppTrainerState> {
         beanName: '',
         varietal: 'Mixed Varieties',
         process: 'Natural',
-        altitudeMasl: '1400 - 1650 MASL',
+        altitudeMasl: '1200 - 1600 MDPL',
         tastingNotes: ['Blueberry', 'Milk Chocolate'],
       ),
     );
@@ -298,7 +298,7 @@ class InAppTrainerController extends Notifier<InAppTrainerState> {
         beanName: '',
         varietal: 'Mixed Varieties',
         process: 'Natural',
-        altitudeMasl: '1400 - 1650 MASL',
+        altitudeMasl: '1200 - 1600 MDPL',
         tastingNotes: ['Blueberry', 'Milk Chocolate'],
       ),
     );

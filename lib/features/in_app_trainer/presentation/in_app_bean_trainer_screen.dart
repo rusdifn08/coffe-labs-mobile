@@ -11,8 +11,8 @@ import 'widgets/smart_annotation_canvas.dart';
 import 'widgets/training_telemetry_modal.dart';
 
 /// Studio Pelatihan AI On-Device (In-App Few-Shot Transfer Learning & Smart Annotation).
-/// Memungkinkan barista memotret 3 sudut kemasan, tap-to-snap bounding box,
-/// dan melatih klasifikasi kemasan kopi langsung di HP tanpa jank.
+/// Memungkinkan barista memotret 3 sudut kemasan (Depan, Kiri, Kanan),
+/// tap-to-snap bounding box, dan melatih model klasifikasi kopi langsung di HP (Offline).
 class InAppBeanTrainerScreen extends ConsumerStatefulWidget {
   const InAppBeanTrainerScreen({super.key});
 
@@ -28,28 +28,83 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
   final TextEditingController _altitudeCtrl = TextEditingController();
   final TextEditingController _newNoteCtrl = TextEditingController();
 
+  int _altitudeMin = 1200;
+  int _altitudeMax = 1600;
+
+  static const List<String> _varietalPresets = [
+    'Geisha / Gesha',
+    'Bourbon',
+    'Typica',
+    'Ateng Super / TimTim',
+    'Sigarar Utang',
+    'Andungsari',
+    'Kartika',
+    'Caturra',
+    'Catuai',
+    'SL28',
+    'SL34',
+    'Pacamara',
+    'Pink Bourbon',
+    'Yellow Bourbon',
+    'Heirloom / Landrace',
+    'Mixed Varieties',
+  ];
+
   static const List<String> _processOptions = [
     'Natural',
     'Washed',
     'Honey',
-    'Wine',
-    'Anaerobic',
+    'Anaerobic Natural',
+    'Anaerobic Washed',
+    'Wine Process',
+    'Carbonic Maceration',
     'Thermal Shock',
-    'Wet Hulled',
+    'Wet Hulled (Giling Basah)',
   ];
 
   static const List<String> _commonNotes = [
-    'Blueberry',
-    'Peach',
     'Jasmine',
-    'Bergamot',
-    'Milk Chocolate',
-    'Caramel',
-    'Orange Citrus',
-    'Black Tea',
+    'Peach',
+    'Blueberry',
     'Strawberry',
-    'Red Apple',
+    'Citrus',
+    'Bergamot',
+    'Caramel',
+    'Dark Chocolate',
+    'Milk Chocolate',
+    'Black Tea',
+    'Crisp Green Apple',
+    'Tropical Mango',
+    'Orange Blossom',
+    'Honey',
+    'Lavender',
+    'Plum',
+    'Vanilla',
+    'Floral',
   ];
+
+  static const List<String> _roasteryPresets = [
+    'Two Hands',
+    'Space Roastery',
+    'Fugol Coffee',
+    'Common Grounds',
+    'Tanamera',
+    'Anomali',
+    'Smoking Barrels',
+  ];
+
+  static const List<String> _originPresets = [
+    'Kamojang',
+    'Gayo Pantan Musara',
+    'Kerinci Gunung Tujuh',
+    'Ijen Sweet Java',
+    'Toraja Sapan',
+    'Bali Kintamani',
+    'Flores Bajawa',
+    'Ethiopia Yirgacheffe',
+  ];
+
+  static const List<String> _slotLabels = ['Depan', 'Kiri', 'Kanan'];
 
   @override
   void initState() {
@@ -58,7 +113,44 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
     _brandCtrl.text = draft.roasteryBrand;
     _nameCtrl.text = draft.beanName;
     _varietalCtrl.text = draft.varietal;
-    _altitudeCtrl.text = draft.altitudeMasl;
+
+    _parseAltitude(draft.altitudeMasl);
+    _altitudeCtrl.text = '$_altitudeMin - $_altitudeMax MDPL';
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(inAppTrainerControllerProvider.notifier).updateMetadata(
+            altitude: '$_altitudeMin - $_altitudeMax MDPL',
+          );
+    });
+  }
+
+  void _parseAltitude(String raw) {
+    final numbers = RegExp(r'\d+').allMatches(raw).map((m) => int.parse(m.group(0)!)).toList();
+    if (numbers.length >= 2) {
+      _altitudeMin = numbers[0];
+      _altitudeMax = numbers[1];
+    } else if (numbers.length == 1) {
+      _altitudeMin = numbers[0];
+      _altitudeMax = numbers[0] + 400;
+    } else {
+      _altitudeMin = 1200;
+      _altitudeMax = 1600;
+    }
+  }
+
+  void _updateAltitude({int? newMin, int? newMax}) {
+    setState(() {
+      if (newMin != null) _altitudeMin = newMin.clamp(500, 3000);
+      if (newMax != null) _altitudeMax = newMax.clamp(500, 3000);
+      if (_altitudeMin > _altitudeMax) {
+        if (newMin != null) _altitudeMax = _altitudeMin;
+        if (newMax != null) _altitudeMin = _altitudeMax;
+      }
+      final formatted = '$_altitudeMin - $_altitudeMax MDPL';
+      _altitudeCtrl.text = formatted;
+      ref.read(inAppTrainerControllerProvider.notifier).updateMetadata(altitude: formatted);
+    });
+    HapticFeedback.selectionClick();
   }
 
   @override
@@ -100,7 +192,149 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
     }
   }
 
+  /// Alur pengambilan 3 foto sekaligus secara berurutan: Depan -> Kiri -> Kanan.
+  Future<void> _startSequentialCapture([ImageSource source = ImageSource.camera]) async {
+    final ctrl = ref.read(inAppTrainerControllerProvider.notifier);
+    final angles = [
+      {'title': 'Depan', 'hint': 'Posisikan kemasan tegak lurus tampak depan'},
+      {'title': 'Kiri', 'hint': 'Miringkan kemasan ke sisi kiri ~25°'},
+      {'title': 'Kanan', 'hint': 'Miringkan kemasan ke sisi kanan ~25°'},
+    ];
+
+    for (int i = 0; i < 3; i++) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(CupertinoIcons.camera, color: Color(0xFFD4AF37), size: 18),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Langkah ${i + 1}/3 (${angles[i]['title']}): ${angles[i]['hint']}',
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+          duration: const Duration(seconds: 2),
+          backgroundColor: const Color(0xFF1E1714),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      final picked = await _picker.pickImage(
+        source: source,
+        imageQuality: 92,
+        maxWidth: 1600,
+        maxHeight: 1600,
+      );
+
+      if (picked == null) {
+        if (mounted && i > 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Pengambilan foto dihentikan. $i foto tersimpan.'),
+              backgroundColor: const Color(0xFFF59E0B),
+            ),
+          );
+        }
+        return;
+      }
+
+      ctrl.addOrUpdateSample(
+        index: i,
+        imagePath: picked.path,
+        boundingBox: const Rect.fromLTWH(0.08, 0.08, 0.84, 0.84),
+      );
+      ctrl.selectSampleIndex(i);
+      HapticFeedback.mediumImpact();
+
+      if (i < 2) {
+        await Future.delayed(const Duration(milliseconds: 600));
+      }
+    }
+
+    if (mounted) {
+      ctrl.selectSampleIndex(0);
+      HapticFeedback.heavyImpact();
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✨ Lengkap! 3 foto kemasan (Depan, Kiri, Kanan) siap di-annotasi.'),
+          backgroundColor: Color(0xFF10B981),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  void _showSequentialCaptureOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E1714),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Ambil 3 Foto Berurutan',
+                style: TextStyle(
+                  color: Color(0xFFF9F5EE),
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Alur otomatis: Depan ➔ Sisi Kiri (~25°) ➔ Sisi Kanan (~25°)',
+                style: TextStyle(color: Colors.white60, fontSize: 12),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(CupertinoIcons.camera_fill, color: Color(0xFFD4AF37)),
+                title: const Text('Buka Kamera (Berurutan Langsung)', style: TextStyle(color: Colors.white)),
+                subtitle: const Text('Rekomendasi barista untuk akurasi terbaik', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _startSequentialCapture(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: const Icon(CupertinoIcons.photo_fill, color: Color(0xFFD4AF37)),
+                title: const Text('Pilih dari Galeri (Berurutan)', style: TextStyle(color: Colors.white)),
+                subtitle: const Text('Pilih 3 foto dari galeri HP satu per satu', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _startSequentialCapture(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showImagePickerSheet(int slotIndex) {
+    final label = _slotLabels[slotIndex.clamp(0, 2)];
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF1E1714),
@@ -123,7 +357,7 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
               ),
               const SizedBox(height: 16),
               Text(
-                'Ambil Foto Slot ${slotIndex + 1}',
+                'Ambil Foto $label',
                 style: const TextStyle(
                   color: Color(0xFFF9F5EE),
                   fontSize: 16,
@@ -160,7 +394,6 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
 
     HapticFeedback.mediumImpact();
 
-    // Tampilkan dialog telemetry
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -181,7 +414,6 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
             onDismiss: () {
               Navigator.of(dialogCtx, rootNavigator: true).pop();
               if (liveState.phase == TrainingPhase.completed) {
-                // Berhasil dilatih! Arahkan atau tampilkan snackbar sukses
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
@@ -197,7 +429,6 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
       ),
     );
 
-    // Jalankan training
     await ref.read(inAppTrainerControllerProvider.notifier).startTraining();
   }
 
@@ -301,14 +532,10 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Banner Edukasi Cepat
-            _buildIntroBanner(),
-            const SizedBox(height: 16),
-
             // Card 1: 3 Foto Kemasan & Smart Annotation Canvas
             _buildAnnotationSection(state, activeSample, selectedIdx),
             const SizedBox(height: 20),
@@ -323,50 +550,6 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
         ),
       ),
       bottomSheet: _buildBottomActionBar(state),
-    );
-  }
-
-  Widget _buildIntroBanner() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1F1815),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF5C3A21).withValues(alpha: 0.6)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.auto_awesome, color: Color(0xFFD4AF37), size: 20),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Latih HP Kenali Kemasan Baru',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Cukup 3 foto. AI menggandakan 45x variasi & melatih Cosine Head langsung di HP (Offline).',
-                  style: TextStyle(color: Colors.white60, fontSize: 11, height: 1.3),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -385,22 +568,20 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header tanpa "(Min. 3 Sudut)" dan menggunakan Expanded agar tidak overflow
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
-                children: [
-                  Icon(CupertinoIcons.camera_viewfinder, color: Color(0xFFD4AF37), size: 18),
-                  SizedBox(width: 8),
-                  Text(
-                    '1. Foto Kemasan (Min. 3 Sudut)',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
+              const Icon(CupertinoIcons.camera_viewfinder, color: Color(0xFFD4AF37), size: 18),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  '1. Foto Kemasan',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
                   ),
-                ],
+                ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -425,12 +606,35 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
           ),
           const SizedBox(height: 12),
 
-          // 3 Thumbnail Slot Selector
+          // Tombol Alur Cepat: Ambil 3 Foto Sekaligus Berurutan (Depan ➔ Kiri ➔ Kanan)
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _showSequentialCaptureOptions,
+              icon: const Icon(Icons.burst_mode, size: 18),
+              label: const Text(
+                'Ambil 3 Foto Berurutan (Depan ➔ Kiri ➔ Kanan)',
+                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF422B1D),
+                foregroundColor: const Color(0xFFF9F5EE),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: const BorderSide(color: Color(0xFFD4AF37), width: 1.1),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // 3 Thumbnail Slot Selector (Hanya label Depan, Kiri, Kanan)
           Row(
             children: [
               _buildPhotoSlot(
                 index: 0,
-                label: 'Tampak Depan',
+                label: 'Depan',
                 tag: 'front',
                 isSelected: selectedIdx == 0,
                 state: state,
@@ -438,7 +642,7 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
               const SizedBox(width: 8),
               _buildPhotoSlot(
                 index: 1,
-                label: 'Serong Kiri (~25°)',
+                label: 'Kiri',
                 tag: 'angle_left',
                 isSelected: selectedIdx == 1,
                 state: state,
@@ -446,7 +650,7 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
               const SizedBox(width: 8),
               _buildPhotoSlot(
                 index: 2,
-                label: 'Serong Kanan (~25°)',
+                label: 'Kanan',
                 tag: 'angle_right',
                 isSelected: selectedIdx == 2,
                 state: state,
@@ -502,7 +706,7 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
             GestureDetector(
               onTap: () => _showImagePickerSheet(selectedIdx),
               child: Container(
-                height: 200,
+                height: 180,
                 decoration: BoxDecoration(
                   color: const Color(0xFF241D1A),
                   borderRadius: BorderRadius.circular(16),
@@ -524,12 +728,12 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
                         child: const Icon(
                           CupertinoIcons.camera_fill,
                           color: Color(0xFFD4AF37),
-                          size: 32,
+                          size: 30,
                         ),
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        'Ambil Foto Slot ${selectedIdx + 1}',
+                        'Ambil Foto ${_slotLabels[selectedIdx.clamp(0, 2)]}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
@@ -612,8 +816,8 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
                 label,
                 style: TextStyle(
                   color: isSelected ? const Color(0xFFD4AF37) : Colors.white70,
-                  fontSize: 10,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -661,7 +865,33 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
             controller: _brandCtrl,
             onChanged: (val) => ctrl.updateMetadata(brand: val),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
+          SizedBox(
+            height: 28,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _roasteryPresets.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 6),
+              itemBuilder: (context, idx) {
+                final b = _roasteryPresets[idx];
+                return ActionChip(
+                  backgroundColor: const Color(0xFF221A17),
+                  side: const BorderSide(color: Colors.white12),
+                  padding: EdgeInsets.zero,
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+                  label: Text(b, style: const TextStyle(color: Colors.white60, fontSize: 10.5)),
+                  onPressed: () {
+                    setState(() {
+                      _brandCtrl.text = b;
+                    });
+                    ctrl.updateMetadata(brand: b);
+                    HapticFeedback.selectionClick();
+                  },
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 14),
 
           // Bean Name / Origin
           _buildTextField(
@@ -670,16 +900,101 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
             controller: _nameCtrl,
             onChanged: (val) => ctrl.updateMetadata(beanName: val),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
+          SizedBox(
+            height: 28,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _originPresets.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 6),
+              itemBuilder: (context, idx) {
+                final o = _originPresets[idx];
+                return ActionChip(
+                  backgroundColor: const Color(0xFF221A17),
+                  side: const BorderSide(color: Colors.white12),
+                  padding: EdgeInsets.zero,
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+                  label: Text(o, style: const TextStyle(color: Colors.white60, fontSize: 10.5)),
+                  onPressed: () {
+                    setState(() {
+                      _nameCtrl.text = o;
+                    });
+                    ctrl.updateMetadata(beanName: o);
+                    HapticFeedback.selectionClick();
+                  },
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 14),
 
-          // Varietas
+          // Varietas (Preset Pilihan Chip + Input Kustom)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Varietas:',
+                style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+              if (_varietalCtrl.text.isNotEmpty)
+                Flexible(
+                  child: Text(
+                    _varietalCtrl.text,
+                    style: const TextStyle(
+                      color: Color(0xFFD4AF37),
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          SizedBox(
+            height: 34,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _varietalPresets.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 6),
+              itemBuilder: (context, idx) {
+                final v = _varietalPresets[idx];
+                final isSel = _varietalCtrl.text.toLowerCase() == v.toLowerCase();
+                return ChoiceChip(
+                  label: Text(v),
+                  selected: isSel,
+                  selectedColor: const Color(0xFFD4AF37),
+                  backgroundColor: const Color(0xFF251D1A),
+                  labelStyle: TextStyle(
+                    color: isSel ? Colors.black : Colors.white70,
+                    fontSize: 11,
+                    fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                  ),
+                  side: BorderSide(
+                    color: isSel ? const Color(0xFFD4AF37) : Colors.white12,
+                  ),
+                  onSelected: (val) {
+                    if (val) {
+                      setState(() {
+                        _varietalCtrl.text = v;
+                      });
+                      ctrl.updateMetadata(varietal: v);
+                      HapticFeedback.selectionClick();
+                    }
+                  },
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 6),
           _buildTextField(
-            label: 'Varietas',
-            hint: 'Misal: Typica, Ateng Super, Gesha, Mixed Varieties',
+            label: 'Atau Input Varietas Kustom',
+            hint: 'Misal: Typica, Ateng Super, Gesha...',
             controller: _varietalCtrl,
             onChanged: (val) => ctrl.updateMetadata(varietal: val),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
 
           // Proses Pascapanen Filter Chips
           const Text(
@@ -706,23 +1021,21 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
                   color: isSel ? const Color(0xFFD4AF37) : Colors.white12,
                 ),
                 onSelected: (val) {
-                  if (val) ctrl.updateMetadata(process: proc);
+                  if (val) {
+                    ctrl.updateMetadata(process: proc);
+                    HapticFeedback.selectionClick();
+                  }
                 },
               );
             }).toList(),
           ),
-          const SizedBox(height: 14),
-
-          // Altitude
-          _buildTextField(
-            label: 'Ketinggian (Altitude)',
-            hint: 'Misal: 1400 - 1650 MASL',
-            controller: _altitudeCtrl,
-            onChanged: (val) => ctrl.updateMetadata(altitude: val),
-          ),
           const SizedBox(height: 16),
 
-          // Tasting Notes
+          // Ketinggian Stepper (+50 dan -50 MDPL)
+          _buildAltitudeStepperSection(),
+          const SizedBox(height: 16),
+
+          // Tasting Notes dari Katalog Resep Dunia
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -740,58 +1053,283 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
               ),
             ],
           ),
+          if (draft.tastingNotes.isNotEmpty) ...[
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                ...draft.tastingNotes.map((note) {
+                  return Chip(
+                    backgroundColor: const Color(0xFF2C221D),
+                    side: const BorderSide(color: Color(0xFF5C3A21)),
+                    label: Text(
+                      note,
+                      style: const TextStyle(color: Color(0xFFF9F5EE), fontSize: 11),
+                    ),
+                    deleteIcon: const Icon(Icons.close, size: 13, color: Colors.white54),
+                    onDeleted: () {
+                      final updated = List<String>.from(draft.tastingNotes)..remove(note);
+                      ctrl.updateMetadata(tastingNotes: updated);
+                      HapticFeedback.lightImpact();
+                    },
+                  );
+                }),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
+          const Text(
+            'Pilih dari World Recipe (Tap untuk Tambah / Hapus):',
+            style: TextStyle(color: Colors.white38, fontSize: 10.5),
+          ),
           const SizedBox(height: 6),
           Wrap(
             spacing: 6,
             runSpacing: 6,
-            children: [
-              ...draft.tastingNotes.map((note) {
-                return Chip(
-                  backgroundColor: const Color(0xFF2C221D),
-                  side: const BorderSide(color: Color(0xFF5C3A21)),
-                  label: Text(
-                    note,
-                    style: const TextStyle(color: Color(0xFFF9F5EE), fontSize: 11),
-                  ),
-                  deleteIcon: const Icon(Icons.close, size: 13, color: Colors.white54),
-                  onDeleted: () {
-                    final updated = List<String>.from(draft.tastingNotes)..remove(note);
-                    ctrl.updateMetadata(tastingNotes: updated);
-                  },
-                );
-              }),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // Rekomendasi Cepat Tasting Notes Populer
-          const Text(
-            'Saran Cepat:',
-            style: TextStyle(color: Colors.white38, fontSize: 10),
-          ),
-          const SizedBox(height: 4),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: _commonNotes
-                .where((n) => !draft.tastingNotes.contains(n))
-                .take(6)
-                .map((note) {
-              return ActionChip(
+            children: _commonNotes.map((note) {
+              final isSelected = draft.tastingNotes.contains(note);
+              return FilterChip(
+                selected: isSelected,
+                selectedColor: const Color(0xFFD4AF37),
                 backgroundColor: const Color(0xFF221A17),
-                side: const BorderSide(color: Colors.white10),
-                label: Text(
-                  '+ $note',
-                  style: const TextStyle(color: Colors.white60, fontSize: 10.5),
+                checkmarkColor: Colors.black,
+                side: BorderSide(
+                  color: isSelected ? const Color(0xFFD4AF37) : Colors.white10,
                 ),
-                onPressed: () {
-                  final updated = List<String>.from(draft.tastingNotes)..add(note);
+                label: Text(
+                  note,
+                  style: TextStyle(
+                    color: isSelected ? Colors.black : Colors.white70,
+                    fontSize: 11,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+                onSelected: (selected) {
+                  final updated = List<String>.from(draft.tastingNotes);
+                  if (selected) {
+                    if (!updated.contains(note)) updated.add(note);
+                  } else {
+                    updated.remove(note);
+                  }
                   ctrl.updateMetadata(tastingNotes: updated);
+                  HapticFeedback.selectionClick();
                 },
               );
             }).toList(),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Interactive Stepper Ketinggian dengan tombol + 50 dan - 50 (Format: MDPL).
+  Widget _buildAltitudeStepperSection() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF221A17),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.terrain, color: Color(0xFFD4AF37), size: 16),
+                  SizedBox(width: 6),
+                  Text(
+                    'Ketinggian (Altitude)',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.4)),
+                ),
+                child: Text(
+                  '$_altitudeMin - $_altitudeMax MDPL',
+                  style: const TextStyle(
+                    color: Color(0xFFD4AF37),
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Stepper baris Batas Bawah & Batas Atas dengan tombol + 50 dan - 50
+          Row(
+            children: [
+              // Min Altitude
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1B1513),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Batas Bawah',
+                        style: TextStyle(color: Colors.white38, fontSize: 10),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$_altitudeMin MDPL',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _buildStepperButton(
+                            label: '- 50',
+                            onTap: () => _updateAltitude(newMin: _altitudeMin - 50),
+                          ),
+                          const SizedBox(width: 6),
+                          _buildStepperButton(
+                            label: '+ 50',
+                            onTap: () => _updateAltitude(newMin: _altitudeMin + 50),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+
+              // Max Altitude
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1B1513),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Batas Atas',
+                        style: TextStyle(color: Colors.white38, fontSize: 10),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$_altitudeMax MDPL',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _buildStepperButton(
+                            label: '- 50',
+                            onTap: () => _updateAltitude(newMax: _altitudeMax - 50),
+                          ),
+                          const SizedBox(width: 6),
+                          _buildStepperButton(
+                            label: '+ 50',
+                            onTap: () => _updateAltitude(newMax: _altitudeMax + 50),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Tombol Geser Rentang +/- 50 MDPL Sekaligus
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => _updateAltitude(
+                    newMin: _altitudeMin - 50,
+                    newMax: _altitudeMax - 50,
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white70,
+                    side: const BorderSide(color: Colors.white24),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Geser - 50 MDPL', style: TextStyle(fontSize: 11)),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => _updateAltitude(
+                    newMin: _altitudeMin + 50,
+                    newMax: _altitudeMax + 50,
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFD4AF37),
+                    side: const BorderSide(color: Color(0xFFD4AF37)),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Geser + 50 MDPL', style: TextStyle(fontSize: 11)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStepperButton({required String label, required VoidCallback onTap}) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFF2C221D),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: const Color(0xFF5C3A21)),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFFF9F5EE),
+              fontSize: 11.5,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
       ),
     );
   }
