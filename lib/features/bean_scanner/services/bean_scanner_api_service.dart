@@ -29,7 +29,7 @@ class BeanScannerApiService {
       };
 
       final payload = {
-        'raw_full_text': rawFullText.isNotEmpty ? rawFullText : 'Specialty Coffee Roastery Single Origin',
+        'raw_full_text': rawFullText.trim(),
         'blocks': blocks,
       };
 
@@ -42,7 +42,26 @@ class BeanScannerApiService {
       if (res.statusCode == 200 || res.statusCode == 201) {
         final body = json.decode(res.body);
         final data = body['data'] as Map<String, dynamic>;
-        final serverResolved = ResolvedCoffeeBean.fromJson(data, localImagePath: croppedImagePath);
+        var serverResolved = ResolvedCoffeeBean.fromJson(data, localImagePath: croppedImagePath);
+
+        // Pertahankan ekstraksi lokal eksplisit jika backend mengembalikan inferensi generik
+        if (localCognitiveBean.notesSource == 'OCR_EXPLICIT' && serverResolved.notesSource != 'OCR_EXPLICIT') {
+          serverResolved = serverResolved.copyWith(
+            tastingNotes: localCognitiveBean.tastingNotes,
+            notesSource: 'OCR_EXPLICIT',
+          );
+        }
+
+        if (localCognitiveBean.beanName.isNotEmpty &&
+            !localCognitiveBean.beanName.toLowerCase().startsWith('specialty coffee') &&
+            serverResolved.beanName.toLowerCase().startsWith('specialty coffee')) {
+          serverResolved = serverResolved.copyWith(
+            beanName: localCognitiveBean.beanName,
+            roasteryName: localCognitiveBean.roasteryName,
+            origin: localCognitiveBean.origin,
+            process: localCognitiveBean.process,
+          );
+        }
 
         // If server response didn't include classified blocks, preserve client-side bounding boxes
         if (serverResolved.classifiedBlocks.isEmpty && localCognitiveBean.classifiedBlocks.isNotEmpty) {

@@ -145,9 +145,137 @@ PROSES
       );
 
       expect(result.process, 'Natural');
-      expect(result.origin, anyOf(contains('Halu'), contains('Malabar')));
+      expect(
+        result.origin,
+        contains('Gunung Halu'),
+        reason: 'Origin harus Gunung Halu, bukan Malabar (regression longest-match-wins)',
+      );
       expect(result.tastingNotes, contains('Blueberry'));
       expect(result.recommendedWaterTempC, 90);
+    });
+
+    test('GUNUNG PUNTANG WINE tidak boleh salah jadi Malabar (regression)', () {
+      const rawText = '''
+PUNTANG WINE
+SPECIALTY ROASTERY
+GUNUNG PUNTANG
+WINE PROCESS
+Winey
+''';
+
+      final blocks = [
+        {
+          'text': 'PUNTANG WINE',
+          'normalized_height': 0.14,
+          'top_y': 0.40,
+          'left_x': 0.2,
+          'normalized_width': 0.6,
+        },
+        {
+          'text': 'GUNUNG PUNTANG',
+          'normalized_height': 0.05,
+          'top_y': 0.55,
+          'left_x': 0.2,
+          'normalized_width': 0.5,
+        },
+        {
+          'text': 'WINE PROCESS',
+          'normalized_height': 0.04,
+          'top_y': 0.65,
+          'left_x': 0.2,
+          'normalized_width': 0.4,
+        },
+      ];
+
+      final result = CognitiveBeanAnalyzer.analyze(
+        rawFullText: rawText,
+        blocksDto: blocks,
+      );
+
+      expect(result.origin, contains('Puntang'));
+      expect(
+        result.origin,
+        isNot(contains('Malabar')),
+        reason: 'Kemasan menulis Puntang — origin tidak boleh Malabar',
+      );
+      expect(result.process, 'Wine Process');
+    });
+
+    test('Longest-match-wins: GUNUNG HALU menang atas keyword longgar "halu"', () {
+      final halu = CognitiveBeanAnalyzer.findOrigin('ARABICA NATURAL HALU BANANA GUNUNG HALU');
+      expect(halu?.canonicalName, 'Gunung Halu');
+
+      final puntang = CognitiveBeanAnalyzer.findOrigin('PUNTANG WINE GUNUNG PUNTANG');
+      expect(puntang?.canonicalName, 'Gunung Puntang');
+
+      final malabar = CognitiveBeanAnalyzer.findOrigin('MALABAR WINE PROCESS');
+      expect(malabar?.canonicalName, 'Malabar');
+    });
+
+    test('ARABICA NATURAL HALU BANANA terdeteksi Natural, bukan Full Washed (regression)', () {
+      const rawText = '''
+ARABICA NATURAL
+HALU BANANA
+BY TIGA IKAT COFFEE SUPPLY
+Sweet Caramel, Banana, Low Body, Smooth
+100g - 200g - 500g - 1000g
+''';
+
+      final blocks = [
+        {
+          'text': 'HALU BANANA',
+          'normalized_height': 0.16,
+          'top_y': 0.45,
+          'left_x': 0.2,
+          'normalized_width': 0.6,
+        },
+        {
+          'text': 'BY TIGA IKAT COFFEE SUPPLY',
+          'normalized_height': 0.04,
+          'top_y': 0.60,
+          'left_x': 0.2,
+          'normalized_width': 0.6,
+        },
+        {
+          'text': 'Sweet Caramel, Banana, Low Body, Smooth',
+          'normalized_height': 0.04,
+          'top_y': 0.70,
+          'left_x': 0.2,
+          'normalized_width': 0.6,
+        },
+      ];
+
+      final result = CognitiveBeanAnalyzer.analyze(
+        rawFullText: rawText,
+        blocksDto: blocks,
+      );
+
+      expect(
+        result.process,
+        'Natural',
+        reason: 'Kemasan menulis ARABICA NATURAL — bukan Full Washed',
+      );
+      expect(result.origin, contains('Halu'));
+      expect(result.recommendedWaterTempC, 90);
+    });
+
+    test('detectProcess: urutan prioritas wet-hulled sebelum washed', () {
+      expect(
+        CognitiveBeanAnalyzer.detectProcess('Gayo Semi Washed Giling Basah').canonicalName,
+        'Wet Hulled (Giling Basah)',
+      );
+      expect(
+        CognitiveBeanAnalyzer.detectProcess('ARABICA NATURA').canonicalName,
+        'Natural',
+      );
+      expect(
+        CognitiveBeanAnalyzer.detectProcess('Anaerobic Natural Carbonic').canonicalName,
+        'Anaerobic Natural',
+      );
+      expect(
+        CognitiveBeanAnalyzer.detectProcess('Full Washed Process').canonicalName,
+        'Full Washed',
+      );
     });
 
     test('Otten COFFEE - WAMENA BPIRI washed (Explicit notes & altitude extraction)', () {
@@ -504,6 +632,150 @@ PROSES
       final result = await BeanVisionScannerService.processPhoto(testFile);
       expect(result.croppedImageFile.existsSync(), isTrue);
       expect(result.rawFullText.toLowerCase(), contains('halu'));
+    });
+
+    test('User Bag Case 1: HALU BANANA BY TIGA IKAT COFFEE SUPPLY (Natural, Sweet Caramel & Banana)', () {
+      const rawText = '''
+HALU BANANA
+BY TIGA IKAT COFFEE SUPPLY
+Sweet Caramel, Banana, Low Body, Smooth Finish
+ARABICA HALU BANANA NATURAL
+100g - 200g - 500g - 1000g
+''';
+
+      final blocks = [
+        {
+          'text': 'HALU BANANA',
+          'normalized_height': 0.10,
+          'top_y': 0.15,
+          'left_x': 0.20,
+          'normalized_width': 0.60,
+        },
+        {
+          'text': 'BY TIGA IKAT COFFEE SUPPLY',
+          'normalized_height': 0.04,
+          'top_y': 0.28,
+          'left_x': 0.20,
+          'normalized_width': 0.60,
+        },
+        {
+          'text': 'Sweet Caramel, Banana, Low Body, Smooth Finish',
+          'normalized_height': 0.04,
+          'top_y': 0.35,
+          'left_x': 0.15,
+          'normalized_width': 0.70,
+        },
+        {
+          'text': 'ARABICA HALU BANANA NATURAL',
+          'normalized_height': 0.05,
+          'top_y': 0.65,
+          'left_x': 0.15,
+          'normalized_width': 0.70,
+        },
+      ];
+
+      final result = CognitiveBeanAnalyzer.analyze(
+        rawFullText: rawText,
+        blocksDto: blocks,
+      );
+
+      expect(result.roasteryName, equals('Tiga Ikat Coffee Supply'));
+      expect(result.beanName, equals('Halu Banana'));
+      expect(result.origin, contains('Gunung Halu'));
+      expect(result.process, equals('Natural'));
+      expect(result.tastingNotes, contains('Banana'));
+      expect(result.tastingNotes, anyOf(contains('Sweet Caramel'), contains('Caramel')));
+      expect(result.notesSource, equals('OCR_EXPLICIT'));
+    });
+
+    test('User Bag Case 2: WATERMELON SMASH WANOJA COFFEE (Kamojang Garut, Anaerobic Natural, Explicit Notes)', () {
+      const rawText = '''
+WATERMELON SMASH
+ORIGIN: Kamojang, Garut, West Java, Indonesia
+FARMER: Wanoja Coffee
+PROCESS: Anaerobic Natural
+ALTITUDE: 1500 masl
+VARIETY: Mixed Variety
+TASTING NOTES: Watermelon, Strawberry, Mandarin Orange
+FILTER ROAST
+''';
+
+      final blocks = [
+        {
+          'text': 'WATERMELON SMASH',
+          'normalized_height': 0.08,
+          'top_y': 0.63,
+          'left_x': 0.14,
+          'normalized_width': 0.72,
+        },
+        {
+          'text': 'ORIGIN: Kamojang, Garut, West Java, Indonesia',
+          'normalized_height': 0.02,
+          'top_y': 0.75,
+          'left_x': 0.07,
+          'normalized_width': 0.40,
+        },
+        {
+          'text': 'FARMER: Wanoja Coffee',
+          'normalized_height': 0.02,
+          'top_y': 0.75,
+          'left_x': 0.70,
+          'normalized_width': 0.25,
+        },
+        {
+          'text': 'PROCESS: Anaerobic Natural',
+          'normalized_height': 0.02,
+          'top_y': 0.85,
+          'left_x': 0.07,
+          'normalized_width': 0.30,
+        },
+        {
+          'text': 'ALTITUDE: 1500 masl',
+          'normalized_height': 0.02,
+          'top_y': 0.85,
+          'left_x': 0.45,
+          'normalized_width': 0.20,
+        },
+        {
+          'text': 'VARIETY: Mixed Variety',
+          'normalized_height': 0.02,
+          'top_y': 0.85,
+          'left_x': 0.70,
+          'normalized_width': 0.25,
+        },
+        {
+          'text': 'TASTING NOTES: Watermelon, Strawberry, Mandarin Orange',
+          'normalized_height': 0.02,
+          'top_y': 0.91,
+          'left_x': 0.07,
+          'normalized_width': 0.60,
+        },
+        {
+          'text': 'FILTER ROAST',
+          'normalized_height': 0.02,
+          'top_y': 0.91,
+          'left_x': 0.80,
+          'normalized_width': 0.15,
+        },
+      ];
+
+      final result = CognitiveBeanAnalyzer.analyze(
+        rawFullText: rawText,
+        blocksDto: blocks,
+      );
+
+      expect(result.beanName, equals('Watermelon Smash'));
+      expect(result.roasteryName, equals('Wanoja Coffee'));
+      expect(result.origin, contains('Kamojang'));
+      expect(result.process, equals('Anaerobic Natural'));
+      expect(result.altitudeMasl, contains('1500'));
+      expect(result.variety, equals('Mixed Variety'));
+      expect(result.tastingNotes, contains('Watermelon'));
+      expect(result.tastingNotes, contains('Strawberry'));
+      expect(result.tastingNotes, contains('Mandarin Orange'));
+      expect(result.notesSource, equals('OCR_EXPLICIT'));
+      expect(result.isAiInferredAltitude, isFalse);
+      expect(result.isAiInferredVariety, isFalse);
     });
   });
 

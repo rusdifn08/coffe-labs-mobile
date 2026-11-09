@@ -22,6 +22,8 @@ import '../features/recipe_detail/widgets/recipe_steps_list.dart';
 import '../features/recipe_detail/widgets/recipe_detail_bottom_bar.dart';
 import '../features/recipe_detail/widgets/recipe_dose_scaler.dart';
 import '../features/masterclass/screens/pre_brew_masterclass_screen.dart';
+import '../features/bean_scanner/controllers/selected_brew_bean_controller.dart';
+import '../features/bean_scanner/models/resolved_coffee_bean.dart';
 
 class RecipeDetailScreen extends ConsumerStatefulWidget {
   final dynamic recipeData;
@@ -55,35 +57,68 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
 
   double get _scaleFactor => _scaledCoffeeGrams / _baseCoffeeGrams;
 
-  Map<String, dynamic> _buildScaledRecipe() {
-    if (_scaledCoffeeGrams == _baseCoffeeGrams) return _recipe;
-    final factor = _scaleFactor;
-    final baseWater = _recipe['totalWaterWeightGrams'] as int;
-    final baseIce = _recipe['iceWeightGrams'] as int;
-    final rawSteps = _recipe['steps'] as List<dynamic>;
+  /// Menyuntikkan identitas biji kopi hasil scan kamera (Smart Coffee Bag Scanner)
+  /// ke dalam resep, sehingga header Brew Timer otomatis menampilkan nama kopi
+  /// yang benar-benar dipindai (mis. "Halu Banana", "Puntang Wine").
+  Map<String, dynamic> _applyScannedBeanIdentity(Map<String, dynamic> recipe) {
+    final ResolvedCoffeeBean? scanned = ref.read(selectedBrewBeanProvider);
+    if (scanned == null) return recipe;
 
-    int sumStepWater = 0;
-    final List<Map<String, dynamic>> scaledSteps = [];
-    for (final s in rawSteps) {
-      final map = Map<String, dynamic>.from(s as Map);
-      final w = (map['waterAddedGrams'] ?? map['waterGrams'] ?? 0) as int;
-      final scaledW = (w * factor).round();
-      sumStepWater += scaledW;
-      map['waterAddedGrams'] = scaledW;
-      map['waterGrams'] = scaledW;
-      map['cumulativeWaterGrams'] = sumStepWater;
-      scaledSteps.add(map);
+    final copy = Map<String, dynamic>.from(recipe);
+    final cleanBeanName = scanned.beanName.trim();
+    if (cleanBeanName.isNotEmpty && cleanBeanName != 'Specialty Coffee') {
+      copy['beanName'] = cleanBeanName;
+      // Simpan juga untuk pencarian judul/atribusi pada deducer
+      copy['origin'] = scanned.origin;
+    }
+    if (scanned.variety.trim().isNotEmpty) {
+      copy['variety'] = scanned.variety;
+    }
+    if (scanned.process.trim().isNotEmpty) {
+      copy['process'] = scanned.process;
+    }
+    if (scanned.roasteryName.trim().isNotEmpty && scanned.roasteryName != 'Specialty Roastery') {
+      copy['scannedRoastery'] = scanned.roasteryName;
+    }
+    copy['scannedBeanName'] = cleanBeanName;
+    copy['scannedProcess'] = scanned.process;
+    copy['scannedVariety'] = scanned.variety;
+    return copy;
+  }
+
+  Map<String, dynamic> _buildScaledRecipe() {
+    Map<String, dynamic> source = _recipe;
+    if (_scaledCoffeeGrams != _baseCoffeeGrams) {
+      final factor = _scaleFactor;
+      final baseWater = _recipe['totalWaterWeightGrams'] as int;
+      final baseIce = _recipe['iceWeightGrams'] as int;
+      final rawSteps = _recipe['steps'] as List<dynamic>;
+
+      int sumStepWater = 0;
+      final List<Map<String, dynamic>> scaledSteps = [];
+      for (final s in rawSteps) {
+        final map = Map<String, dynamic>.from(s as Map);
+        final w = (map['waterAddedGrams'] ?? map['waterGrams'] ?? 0) as int;
+        final scaledW = (w * factor).round();
+        sumStepWater += scaledW;
+        map['waterAddedGrams'] = scaledW;
+        map['waterGrams'] = scaledW;
+        map['cumulativeWaterGrams'] = sumStepWater;
+        scaledSteps.add(map);
+      }
+
+      final scaledTotalWater = sumStepWater > 0 ? sumStepWater : (baseWater * factor).round();
+      final scaledIce = (baseIce * factor).round();
+
+      final copy = Map<String, dynamic>.from(_recipe);
+      copy['coffeeWeightGrams'] = _scaledCoffeeGrams;
+      copy['totalWaterWeightGrams'] = scaledTotalWater;
+      copy['iceWeightGrams'] = scaledIce;
+      copy['steps'] = scaledSteps;
+      source = copy;
     }
 
-    final scaledTotalWater = sumStepWater > 0 ? sumStepWater : (baseWater * factor).round();
-    final scaledIce = (baseIce * factor).round();
-
-    final copy = Map<String, dynamic>.from(_recipe);
-    copy['coffeeWeightGrams'] = _scaledCoffeeGrams;
-    copy['totalWaterWeightGrams'] = scaledTotalWater;
-    copy['iceWeightGrams'] = scaledIce;
-    copy['steps'] = scaledSteps;
-    return copy;
+    return _applyScannedBeanIdentity(source);
   }
 
   Future<void> _startBrewing() async {

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:ui';
@@ -105,6 +106,18 @@ class BeanVisionScannerService {
         } catch (e) {
           debugPrint('On-device OCR platform fallback: $e');
         }
+      } else if (!kIsWeb && Platform.isWindows) {
+        // High-Performance Native Windows OCR (Menggunakan Windows.Media.Ocr built-in OS)
+        final winOcr = await _runWindowsNativeOcr(finalCroppedFile);
+        if (winOcr != null) {
+          fullText = winOcr['full_text']?.toString() ?? '';
+          final rawBlocks = winOcr['blocks'] as List? ?? [];
+          for (final b in rawBlocks) {
+            if (b is Map) {
+              blocksDto.add(Map<String, dynamic>.from(b));
+            }
+          }
+        }
       }
 
       // Fallback Cerdas untuk Desktop / Ketika OCR lokal tidak menghasilkan teks:
@@ -202,5 +215,82 @@ class BeanVisionScannerService {
     final outFile = File(outPath);
     await outFile.writeAsBytes(croppedBytes);
     return outFile;
+  }
+
+  /// On-Device Windows Native OCR menggunakan engine Windows.Media.Ocr
+  static Future<Map<String, dynamic>?> _runWindowsNativeOcr(File imageFile) async {
+    try {
+      final safePath = imageFile.absolute.path.replaceAll("'", "''");
+      final psScript = '''
+Add-Type -AssemblyName System.Runtime.WindowsRuntime
+\$asm = [System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { \$_.GetName().Name -eq 'System.Runtime.WindowsRuntime' }
+\$type = \$asm.GetType('System.WindowsRuntimeSystemExtensions')
+\$asTaskGeneric = \$type.GetMethods() | Where-Object { \$_.Name -eq 'AsTask' -and \$_.GetParameters().Count -eq 1 -and \$_.IsGenericMethodDefinition } | Select-Object -First 1
+
+function Await(\$asyncOp, \$type) {
+    \$m = \$asTaskGeneric.MakeGenericMethod(\$type)
+    \$task = \$m.Invoke(\$null, @(\$asyncOp))
+    \$task.Wait() | Out-Null
+    return \$task.Result
+}
+
+[Windows.Media.Ocr.OcrEngine, Windows.Foundation, ContentType = WindowsRuntime] | Out-Null
+[Windows.Graphics.Imaging.BitmapDecoder, Windows.Foundation, ContentType = WindowsRuntime] | Out-Null
+[Windows.Storage.StorageFile, Windows.Foundation, ContentType = WindowsRuntime] | Out-Null
+
+\$file = Await ([Windows.Storage.StorageFile]::GetFileFromPathAsync('$safePath')) ([Windows.Storage.StorageFile])
+\$stream = Await (\$file.OpenAsync([Windows.Storage.FileAccessMode]::Read)) ([Windows.Storage.Streams.IRandomAccessStream])
+\$decoder = Await ([Windows.Graphics.Imaging.BitmapDecoder]::CreateAsync(\$stream)) ([Windows.Graphics.Imaging.BitmapDecoder])
+\$softBmp = Await (\$decoder.GetSoftwareBitmapAsync()) ([Windows.Graphics.Imaging.SoftwareBitmap])
+
+\$engine = [Windows.Media.Ocr.OcrEngine]::TryCreateFromUserProfileLanguages()
+if (-not \$engine) {
+    \$engine = [Windows.Media.Ocr.OcrEngine]::TryCreateFromLanguage([Windows.Globalization.Language]::new('en-US'))
+}
+\$ocrResult = Await (\$engine.RecognizeAsync(\$softBmp)) ([Windows.Media.Ocr.OcrResult])
+
+\$w = [double]\$softBmp.PixelWidth
+\$h = [double]\$softBmp.PixelHeight
+
+\$blocks = @()
+foreach (\$line in \$ocrResult.Lines) {
+    \$minX = \$w; \$minY = \$h; \$maxX = 0.0; \$maxY = 0.0
+    foreach (\$word in \$line.Words) {
+        if (\$word.BoundingRect.X -lt \$minX) { \$minX = \$word.BoundingRect.X }
+        if (\$word.BoundingRect.Y -lt \$minY) { \$minY = \$word.BoundingRect.Y }
+        \$rx = \$word.BoundingRect.X + \$word.BoundingRect.Width
+        \$by = \$word.BoundingRect.Y + \$word.BoundingRect.Height
+        if (\$rx -gt \$maxX) { \$maxX = \$rx }
+        if (\$by -gt \$maxY) { \$maxY = \$by }
+    }
+    \$blocks += [PSCustomObject]@{
+        text = \$line.Text
+        left_x = [Math]::Round(\$minX / \$w, 4)
+        top_y = [Math]::Round(\$minY / \$h, 4)
+        normalized_width = [Math]::Round((\$maxX - \$minX) / \$w, 4)
+        normalized_height = [Math]::Round((\$maxY - \$minY) / \$h, 4)
+        confidence = 0.95
+    }
+}
+
+\$outObj = [PSCustomObject]@{
+    full_text = \$ocrResult.Text
+    blocks = \$blocks
+}
+
+\$outObj | ConvertTo-Json -Depth 5 -Compress
+''';
+
+      final res = await Process.run('powershell', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', psScript]);
+      if (res.exitCode == 0 && res.stdout != null) {
+        final text = res.stdout.toString().trim();
+        if (text.isNotEmpty && text.startsWith('{')) {
+          return json.decode(text) as Map<String, dynamic>;
+        }
+      }
+    } catch (e) {
+      debugPrint('Windows native OCR error: $e');
+    }
+    return null;
   }
 }

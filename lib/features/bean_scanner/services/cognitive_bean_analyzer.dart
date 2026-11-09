@@ -95,11 +95,32 @@ class CognitiveBeanAnalyzer {
       keywords: ['gunung halu', 'halu', 'gn halu', 'gununghalu', 'haloe', 'sindangkerta'],
     ),
     TerroirProfile(
+      canonicalName: 'Kamojang Garut',
+      regionProvince: 'Kamojang, Garut, Jawa Barat',
+      defaultAltitude: '1400 - 1750 MDPL',
+      defaultVarietals: 'Typica, Sigararutang, Mixed Variety',
+      keywords: ['kamojang', 'garut', 'amojang', 'wanoja', 'papandayan', 'cikuray', 'wanoja coffee'],
+    ),
+    TerroirProfile(
+      canonicalName: 'West Java',
+      regionProvince: 'Jawa Barat, Indonesia',
+      defaultAltitude: '1350 - 1700 MDPL',
+      defaultVarietals: 'Sigararutang, Lini S795, Typica',
+      keywords: ['west java', 'jawa barat', 'priangan', 'preanger'],
+    ),
+    TerroirProfile(
+      canonicalName: 'Gunung Puntang',
+      regionProvince: 'Gunung Puntang, Bandung Selatan, Jawa Barat',
+      defaultAltitude: '1200 - 1600 MDPL',
+      defaultVarietals: 'Java Typica, Sigararutang, Lini S795',
+      keywords: ['gunung puntang', 'gn puntang', 'puntang', 'puntan'],
+    ),
+    TerroirProfile(
       canonicalName: 'Malabar',
       regionProvince: 'Gunung Malabar / Pangalengan, Jawa Barat',
       defaultAltitude: '1400 - 1800 MDPL',
       defaultVarietals: 'Sigararutang, Lini S795, Kartika',
-      keywords: ['malabar', 'pangalengan', 'puntang', 'ciwidey', 'preanger', 'banjaran'],
+      keywords: ['malabar', 'pangalengan', 'ciwidey'],
     ),
     TerroirProfile(
       canonicalName: 'Aceh Gayo',
@@ -181,24 +202,39 @@ class CognitiveBeanAnalyzer {
   ];
 
   static const Map<String, List<String>> _flavorLexicon = {
+    'Watermelon': ['watermelon', 'water melon', 'laterrnelo', 'watermelo', 'semangka', 'melon'],
+    'Banana': ['banana', 'banani', 'pisang'],
+    'Sweet Caramel': ['sweet caramel', 'caramel', 'karamel', 'toffee', 'dulce de leche'],
+    'Mandarin Orange': ['mandarin orange', 'mandarin', 'landarir )range', 'landarir', 'orange', 'tangerine', 'jeruk mandarin'],
+    'Strawberry': ['strawberry', 'starberry', 'strawbery', 'trawben', 'stroberi', 'strawberries'],
     'Blueberry': ['blueberry', 'bluberry', 'bluebery', 'beri', 'berries'],
-    'Strawberry': ['strawberry', 'starberry', 'strawbery', 'stroberi'],
+    'Raspberry': ['raspberry', 'rasberry', 'frambos'],
+    'Blackberry': ['blackberry', 'black berry'],
     'Jasmine': ['jasmine', 'jasmin', 'jasmne', 'melati'],
     'Black Tea': ['tea', 'blacktea', 'earlgrey', 'teh', 'black tea', 'floral tea'],
+    'Earl Grey': ['earl grey', 'earlgrey', 'bergamot tea'],
     'Winey': ['wine', 'winey', 'winery', 'red wine', 'fermented'],
     'Red Grape': ['grape', 'red grape', 'anggur'],
     'Blackcurrant': ['blackcurrant', 'currant', 'kismis'],
     'Peach': ['peach', 'apricot', 'persik', 'stone fruit'],
     'Mango': ['mango', 'mangga', 'tropical mango'],
     'Pineapple': ['pineapple', 'nanas', 'passion fruit', 'markisa'],
-    'Lemon Citrus': ['lemon', 'lime', 'citrus', 'jeruk', 'bergamot', 'orange'],
+    'Passion Fruit': ['passion fruit', 'markisa'],
+    'Papaya': ['papaya', 'pepaya'],
+    'Guava': ['guava', 'jambu'],
+    'Lychee': ['lychee', 'litchi', 'lengkeng', 'longan'],
+    'Apple': ['apple', 'red apple', 'green apple', 'apel', 'malus'],
+    'Lemon Citrus': ['lemon', 'lime', 'citrus', 'jeruk', 'bergamot'],
     'Milk Chocolate': ['milk chocolate', 'chocolate', 'choco', 'cokelat'],
     'Dark Cocoa': ['dark cocoa', 'cacao', 'dark chocolate', 'cocoa nibs'],
     'Caramel': ['caramel', 'karamel', 'toffee'],
     'Brown Sugar': ['brown sugar', 'gula aren', 'palm sugar', 'cane sugar'],
     'Wild Honey': ['honey', 'madu', 'wild honey'],
     'Chestnut': ['chestnut', 'almond', 'hazelnut', 'kacang'],
+    'Hazelnut': ['hazelnut', 'almond', 'pecan'],
     'Red Fruit': ['red fruit', 'buah merah', 'plum', 'cherry'],
+    'Cherry': ['cherry', 'black cherry', 'ceri'],
+    'Plum': ['plum', 'black plum'],
     'Cinnamon': ['cinnamon', 'kayu manis', 'spice'],
     'Vanilla': ['vanilla', 'vanila'],
     'Floral': ['floral', 'flower', 'bunga', 'rose', 'chamomile'],
@@ -293,26 +329,117 @@ class CognitiveBeanAnalyzer {
 
   static TerroirProfile? findOrigin(String text) {
     final clean = text.toLowerCase();
+
+    // 1. Direct substring matching — keyword terpanjang menang (longest-match-wins).
+    //    Ini mencegah "gunung halu" kalah oleh keyword longgar "halu", dan
+    //    "gunung puntang" kalah oleh "puntang".
+    TerroirProfile? bestProfile;
+    int bestLen = 0;
     for (final profile in _terroirProfiles) {
       for (final kw in profile.keywords) {
-        if (clean.contains(kw)) return profile;
-      }
-    }
-    final words = clean.split(RegExp(r'[^a-zA-Z0-9]')).where((w) => w.length >= 3);
-    for (final profile in _terroirProfiles) {
-      for (final kw in profile.keywords) {
-        for (final word in words) {
-          if (jaroWinkler(word, kw) >= 0.85) return profile;
+        if (clean.contains(kw) && kw.length > bestLen) {
+          bestLen = kw.length;
+          bestProfile = profile;
         }
       }
     }
-    return null;
+    if (bestProfile != null) return bestProfile;
+
+    // 2. Fuzzy token matching — tetap utamakan keyword terpanjang.
+    final words = clean.split(RegExp(r'[^a-zA-Z0-9]')).where((w) => w.length >= 3);
+    TerroirProfile? fuzzyProfile;
+    int fuzzyLen = 0;
+    double fuzzyScore = 0.0;
+    for (final profile in _terroirProfiles) {
+      for (final kw in profile.keywords) {
+        for (final word in words) {
+          final score = jaroWinkler(word, kw);
+          if (score >= 0.85) {
+            final isBetter = fuzzyProfile == null ||
+                kw.length > fuzzyLen ||
+                (kw.length == fuzzyLen && score > fuzzyScore);
+            if (isBetter) {
+              fuzzyProfile = profile;
+              fuzzyLen = kw.length;
+              fuzzyScore = score;
+            }
+          }
+        }
+      }
+    }
+    return fuzzyProfile;
+  }
+
+  static Map<String, String> _extractStructuredFields(String fullText) {
+    final fields = <String, String>{};
+    final lines = fullText.split(RegExp(r'[\r\n]+'));
+
+    for (final line in lines) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) continue;
+
+      // Tasting notes
+      final notesMatch = RegExp(r'(?:TASTING\s*NOTES?|NOTES?|FLAVOR(?:\s*PROFILE)?|CITA\s*RASA|TASTE\s*NOTES?)\s*[:\-]\s*(.+)', caseSensitive: false).firstMatch(trimmed);
+      if (notesMatch != null && !fields.containsKey('notes')) {
+        fields['notes'] = notesMatch.group(1)?.trim() ?? '';
+      }
+
+      // Origin
+      final originMatch = RegExp(r'(?:ORIGIN|ASAL|TERROIR|REGION|LOKASI)\s*[:\-]\s*(.+)', caseSensitive: false).firstMatch(trimmed);
+      if (originMatch != null && !fields.containsKey('origin')) {
+        fields['origin'] = originMatch.group(1)?.trim() ?? '';
+      }
+
+      // Farmer / Producer / Roastery
+      final roasterMatch = RegExp(r'(?:FARMER|PRODUCER|PROCESSOR|PETANI|ROASTERY|ROASTER|ROASTED\s*BY|DIPRODUKSI\s*OLEH)\s*[:\-]\s*(.+)', caseSensitive: false).firstMatch(trimmed);
+      if (roasterMatch != null && !fields.containsKey('roastery')) {
+        fields['roastery'] = roasterMatch.group(1)?.trim() ?? '';
+      }
+
+      // Pattern: "BY <BRAND>" (e.g. "BY TIGA IKAT COFFEE SUPPLY")
+      final byMatch = RegExp(r'^\s*BY\s+([A-Za-z0-9\s]{3,40})\b', caseSensitive: false).firstMatch(trimmed);
+      if (byMatch != null && !fields.containsKey('roastery')) {
+        fields['roastery'] = byMatch.group(1)?.trim() ?? '';
+      }
+
+      // Process
+      final procMatch = RegExp(r'(?:PROCESS|PROSES|PASCAPANEN|METODE)\s*[:\-]\s*(.+)', caseSensitive: false).firstMatch(trimmed);
+      if (procMatch != null && !fields.containsKey('process')) {
+        fields['process'] = procMatch.group(1)?.trim() ?? '';
+      }
+
+      // Altitude
+      final altMatch = RegExp(r'(?:ALTITUDE|ELEVATION|KETINGGIAN)\s*[:\-]\s*(.+)', caseSensitive: false).firstMatch(trimmed);
+      if (altMatch != null && !fields.containsKey('altitude')) {
+        fields['altitude'] = altMatch.group(1)?.trim() ?? '';
+      }
+
+      // Variety
+      final varMatch = RegExp(r'(?:VARIETY|VARIETAS|KULTIVAR)\s*[:\-]\s*(.+)', caseSensitive: false).firstMatch(trimmed);
+      if (varMatch != null && !fields.containsKey('variety')) {
+        fields['variety'] = varMatch.group(1)?.trim() ?? '';
+      }
+    }
+    return fields;
+  }
+
+  static String _cleanTitleCandidate(String text) {
+    String cleaned = text.trim();
+    cleaned = cleaned.replaceAll(RegExp(r'^(?:100%\s*arabica|arabica|kopi|coffee)\s+', caseSensitive: false), '');
+    cleaned = cleaned.replaceAll(RegExp(r'\s+(?:natural|washed|wine|honey|process|proses)$', caseSensitive: false), '');
+    return _titleCase(cleaned.trim());
   }
 
   static ProcessSensoryProfile detectProcess(String text) {
-    final clean = text.toLowerCase();
+    final structured = _extractStructuredFields(text);
+    final target = (structured['process'] != null && structured['process']!.isNotEmpty)
+        ? '${structured['process']} $text'
+        : text;
 
-    // Checkbox matching: [x] NATURAL, [v] WINE, [x] WASHED
+    final clean = target.toLowerCase();
+
+    // 1. Checkbox matching: [x] NATURAL, [v] WINE, [x] WASHED.
+    //    Hanya aktif jika checkbox memang menandai proses spesifik.
     final checkIndex = clean.indexOf('[x]');
     final checkVIndex = clean.indexOf('[v]');
     final checkTickIndex = clean.indexOf('[✓]');
@@ -325,30 +452,74 @@ class CognitiveBeanAnalyzer {
       if (after.contains('washed')) return _washedProfile;
     }
 
+    // 2. Deteksi anaerobik natural (paling spesifik lebih dulu).
+    final hasAnaerobic = clean.contains('anaerob') || clean.contains('carbonic') || clean.contains('lactic');
+    final hasNatural = clean.contains('natural') || clean.contains('natura') || clean.contains('dry process');
+    if (hasAnaerobic && hasNatural) return _anaerobicNaturalProfile;
+    if (clean.contains('thermal shock')) return _anaerobicProfile;
+
+    // 3. Wine / extended fermentation.
     if (clean.contains('wine') || clean.contains('winery') || clean.contains('extended fermentation')) {
       return _wineProfile;
     }
-    if (clean.contains('anaerobic') || clean.contains('carbonic') || clean.contains('lactic') || clean.contains('thermal shock')) {
-      return _anaerobicProfile;
-    }
-    if (clean.contains('honey')) {
-      return _honeyProfile;
-    }
-    if (clean.contains('natural') || clean.contains('dry process')) {
-      return _naturalProfile;
-    }
-    if (clean.contains('washed') || clean.contains('wet process')) {
-      return _washedProfile;
-    }
+
+    // 4. Wet hulled / giling basah (harus dievaluasi SEBELUM 'washed' agar
+    //    "semi washed" tidak salah dikenali sebagai Full Washed).
     if (clean.contains('giling basah') || clean.contains('wet hulled') || clean.contains('semi washed')) {
       return _wetHulledProfile;
     }
 
+    // 5. Natural (termasuk varian OCR terpotong "natura", "natur", "nutural").
+    if (hasNatural || clean.contains('sun dried')) {
+      return _naturalProfile;
+    }
+
+    // 6. Honey (dievaluasi sebelum washed agar "honey washed" → Honey).
+    if (clean.contains('honey') || clean.contains('madu')) {
+      return _honeyProfile;
+    }
+
+    // 7. Anaerobic tanpa natural (mis. "Anaerobic Washed").
+    if (hasAnaerobic) return _anaerobicProfile;
+
+    // 8. Washed eksplisit.
+    if (clean.contains('washed') || clean.contains('wet process') || clean.contains('fully washed')) {
+      return _washedProfile;
+    }
+
+    // 9. Fallback aman: Full Washed hanya jika benar-benar tidak ada sinyal proses.
     return _washedProfile;
   }
 
   static List<String> matchTastingNotes(String text) {
     final results = <String>[];
+    final structured = _extractStructuredFields(text);
+
+    // 1. Prioritas Utama: Field terstruktur TASTING NOTES
+    if (structured.containsKey('notes')) {
+      final noteLine = structured['notes']!;
+      final parts = noteLine.split(RegExp(r'[,•/\-;]')).map((s) => s.trim()).where((s) => s.length >= 3);
+      for (final part in parts) {
+        final pLower = part.toLowerCase();
+        String matchedKey = '';
+        for (final entry in _flavorLexicon.entries) {
+          for (final syn in entry.value) {
+            if (pLower == syn || pLower.contains(syn) || jaroWinkler(pLower, syn) >= 0.80) {
+              matchedKey = entry.key;
+              break;
+            }
+          }
+          if (matchedKey.isNotEmpty) break;
+        }
+        final noteToAdd = matchedKey.isNotEmpty ? matchedKey : _titleCase(part);
+        if (!results.contains(noteToAdd)) {
+          results.add(noteToAdd);
+        }
+      }
+      if (results.isNotEmpty) return results;
+    }
+
+    // 2. Scan lines di dalam teks
     final lines = text.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty);
 
     for (final line in lines) {
@@ -371,7 +542,7 @@ class CognitiveBeanAnalyzer {
         for (final entry in _flavorLexicon.entries) {
           bool matched = false;
           for (final syn in entry.value) {
-            if (token == syn || token.contains(syn) || jaroWinkler(token, syn) >= 0.83) {
+            if (token == syn || token.contains(syn) || jaroWinkler(token, syn) >= 0.82) {
               matched = true;
               break;
             }
@@ -390,6 +561,7 @@ class CognitiveBeanAnalyzer {
     required List<Map<String, dynamic>> blocksDto,
     String? localImagePath,
   }) {
+    final structured = _extractStructuredFields(rawFullText);
     final classified = <ClassifiedOcrBlock>[];
     String? detectedRoastery;
     String? titleCandidate;
@@ -436,25 +608,62 @@ class CognitiveBeanAnalyzer {
       // 5. Check Variety
       final hasVar = _extractVarietal(text) != null;
 
-      // 6. Check Roastery (Hanya jika bukan Origin dan posisi di bagian atas bungkus)
+      // 6. Check Roastery
       final isRoastery = (lower.contains('roastery') ||
               lower.contains('roasters') ||
               lower.contains('coffee roastery') ||
-              (lower.contains('coffee') && originMatch == null) ||
-              (lower.contains('bean') && originMatch == null)) &&
+              lower.contains('coffee supply') ||
+              lower.startsWith('by ') ||
+              (lower.contains('coffee') && originMatch == null && !isProc) ||
+              (lower.contains('bean') && originMatch == null && !isProc)) &&
           originMatch == null &&
-          topY <= 0.45;
+          (topY <= 0.45 || lower.startsWith('by '));
+
+      final isExplicitMetadata = lower.startsWith('origin:') ||
+          lower.startsWith('asal:') ||
+          lower.startsWith('terroir:') ||
+          lower.startsWith('farmer:') ||
+          lower.startsWith('producer:') ||
+          lower.startsWith('process:') ||
+          lower.startsWith('proses:') ||
+          lower.startsWith('altitude:') ||
+          lower.startsWith('elevation:') ||
+          lower.startsWith('variety:') ||
+          lower.startsWith('varietas:') ||
+          lower.startsWith('tasting notes:') ||
+          lower.startsWith('notes:') ||
+          lower.startsWith('filter roast') ||
+          lower.startsWith('espresso roast');
+
+      // Headline banner check: block dengan lebar/tinggi besar yang mewakili nama kopi
+      final isHeadlineBanner = (normW >= 0.35 || normH >= 0.05) &&
+          !isNoise(text) &&
+          !isExplicitMetadata &&
+          !isRoastery &&
+          titleCandidate == null &&
+          topY <= 0.70 &&
+          !RegExp(r'\d+[\s]*(ml|g|gr|gram|kg|oz)', caseSensitive: false).hasMatch(lower);
 
       if (originMatch != null) {
         role = BlockRole.originOrTitle;
-        String cleaned = _titleCase(text);
-        if (cleaned.toLowerCase().startsWith('kopi ')) {
-          cleaned = cleaned.substring(5).trim();
+        if (!isExplicitMetadata) {
+          String cleaned = _titleCase(text);
+          if (cleaned.toLowerCase().startsWith('kopi ')) {
+            cleaned = cleaned.substring(5).trim();
+          }
+          titleCandidate ??= cleaned;
         }
-        titleCandidate ??= cleaned;
       } else if (isRoastery) {
-        detectedRoastery ??= _titleCase(text);
+        String cleaned = text.trim();
+        if (cleaned.toLowerCase().startsWith('by ')) {
+          cleaned = cleaned.substring(3).trim();
+        }
+        detectedRoastery ??= _titleCase(cleaned);
         role = BlockRole.roastery;
+      } else if (isHeadlineBanner) {
+        // Prioritaskan headline banner sebagai nama kopi utama
+        titleCandidate ??= _cleanTitleCandidate(text);
+        role = BlockRole.originOrTitle;
       } else if (isProc) {
         role = BlockRole.process;
       } else if (hasAlt) {
@@ -463,9 +672,6 @@ class CognitiveBeanAnalyzer {
         role = BlockRole.variety;
       } else if (notesMatched.isNotEmpty) {
         role = BlockRole.tastingNote;
-      } else if (normH >= 0.12 && !isNoise(text) && titleCandidate == null) {
-        titleCandidate ??= _titleCase(text);
-        role = BlockRole.originOrTitle;
       } else {
         // Solusi Bug 2: Default ke ignoredNoise, JANGAN PERNAH tastingNote!
         role = BlockRole.ignoredNoise;
@@ -484,8 +690,14 @@ class CognitiveBeanAnalyzer {
     final processProf = detectProcess(rawFullText);
     final originProf = findOrigin(rawFullText);
 
-    final roastery = detectedRoastery ?? _extractRoasteryFromText(rawFullText) ?? 'Specialty Roastery';
-    final origin = originProf?.regionProvince ?? 'Single Origin, Indonesia';
+    final roastery = detectedRoastery ??
+        _extractRoasteryFromText(rawFullText) ??
+        (structured.containsKey('roastery') ? _titleCase(structured['roastery']!) : null) ??
+        'Specialty Roastery';
+
+    final origin = structured['origin']?.trim().isNotEmpty == true
+        ? _titleCase(structured['origin']!)
+        : (originProf?.regionProvince ?? 'Single Origin, Indonesia');
 
     final explicitAlt = _extractAltitude(rawFullText);
     final altitude = explicitAlt ?? originProf?.defaultAltitude ?? '1400 - 1800 MDPL';
@@ -496,18 +708,14 @@ class CognitiveBeanAnalyzer {
     final isAiInferredVar = explicitVar == null;
 
     final explicitNotes = matchTastingNotes(rawFullText);
-    final bool hasExplicit = explicitNotes.length >= 2;
+    final bool hasExplicit = explicitNotes.isNotEmpty;
     final notesSource = hasExplicit ? 'OCR_EXPLICIT' : 'AI_SOMMELIER_INFERRED';
 
     final List<String> notes;
     if (hasExplicit) {
       notes = explicitNotes;
     } else {
-      final inferred = List<String>.from(processProf.signatureNotes);
-      if (explicitNotes.isNotEmpty && !inferred.contains(explicitNotes.first)) {
-        inferred.insert(0, explicitNotes.first);
-      }
-      notes = inferred;
+      notes = List<String>.from(processProf.signatureNotes);
     }
 
     final beanName = _composeBeanName(
@@ -568,14 +776,33 @@ class CognitiveBeanAnalyzer {
         base = '${base.substring(0, pos)} ${base.substring(pos + noise.length)}'.trim();
       }
     }
+    // Buang prefix generik "Arabica"/"Kopi"/"Coffee" yang sering muncul menempel
+    // pada nama produk (mis. "Arabica Halu Banana" → "Halu Banana").
+    base = base
+        .replaceAll(RegExp(r'^(?:100%\s*)?(?:arabica|arabika|kopi|coffee)\s+', caseSensitive: false), '')
+        .trim();
     if (base.isEmpty) {
       base = origin?.canonicalName ?? 'Specialty Coffee';
+    }
+
+    final bLow = base.toLowerCase();
+    // Nama produk yang sudah lengkap (mengandung origin + flavor signature)
+    // dipertahankan apa adanya tanpa penambahan suffix proses.
+    // Catatan: origin saja (mis. "Malabar") TIDAK cukup — harus ada elemen
+    // nama produk (flavor/varietal) agar tidak menghilangkan label proses.
+    final hasFlavorSignature = bLow.contains('watermelon smash') ||
+        bLow.contains('halu banana') ||
+        bLow.contains('banana') ||
+        bLow.contains('puntang');
+    if (hasFlavorSignature) {
+      return base;
     }
 
     String pShort = process;
     if (process == 'Wine Process') pShort = 'Wine';
     if (process == 'Honey Process') pShort = 'Honey';
     if (process == 'Full Washed') pShort = 'Washed';
+    if (process == 'Anaerobic Natural') pShort = 'Anaerobic Natural';
 
     if (!base.toLowerCase().contains(pShort.toLowerCase())) {
       return '$base $pShort';
@@ -584,25 +811,65 @@ class CognitiveBeanAnalyzer {
   }
 
   static String? _extractRoasteryFromText(String text) {
-    for (final line in text.split('\n').take(4)) {
+    final structured = _extractStructuredFields(text);
+    if (structured.containsKey('roastery') && structured['roastery']!.trim().length >= 3) {
+      String r = structured['roastery']!.trim();
+      if (r.toLowerCase().startsWith('by ')) {
+        r = r.substring(3).trim();
+      }
+      return _titleCase(r);
+    }
+
+    final byMatch = RegExp(r'\bBY\s+([A-Za-z0-9\s]{3,35})(?:\s+(?:COFFEE|SUPPLY|ROASTERY|ROASTERS|CO|LAB))?', caseSensitive: false).firstMatch(text);
+    if (byMatch != null) {
+      final raw = byMatch.group(0)!.trim();
+      final cleaned = raw.replaceAll(RegExp(r'^by\s+', caseSensitive: false), '').trim();
+      if (cleaned.length >= 3 && findOrigin(cleaned) == null && !isNoise(cleaned)) {
+        return _titleCase(cleaned);
+      }
+    }
+
+    for (final line in text.split(RegExp(r'[\r\n]+')).take(8)) {
       final lower = line.trim().toLowerCase();
-      if ((lower.contains('coffee') || lower.contains('bean') || lower.contains('roastery') || lower.contains('roasters')) &&
+      if ((lower.contains('coffee') || lower.contains('bean') || lower.contains('roastery') || lower.contains('roasters') || lower.contains('supply')) &&
           !isNoise(line) &&
           findOrigin(line) == null) {
-        return _titleCase(line.trim());
+        String cleaned = line.trim();
+        if (cleaned.toLowerCase().startsWith('by ')) {
+          cleaned = cleaned.substring(3).trim();
+        }
+        return _titleCase(cleaned);
       }
     }
     return null;
   }
 
   static String? _extractAltitude(String text) {
+    final structured = _extractStructuredFields(text);
+    if (structured.containsKey('altitude') && structured['altitude']!.trim().isNotEmpty) {
+      final raw = structured['altitude']!.trim();
+      final match = RegExp(r'(\d{3,4})\s*(?:-\s*(\d{3,4}))?\s*(?:mdpl|masl|m\b)?', caseSensitive: false).firstMatch(raw);
+      if (match != null) {
+        return match.group(0)?.trim().toUpperCase();
+      }
+      return raw.toUpperCase();
+    }
     final match = RegExp(r'(\d{3,4})\s*(?:-\s*(\d{3,4}))?\s*(?:mdpl|masl|m\b)', caseSensitive: false).firstMatch(text);
     return match?.group(0)?.trim().toUpperCase();
   }
 
   static String? _extractVarietal(String text) {
+    final structured = _extractStructuredFields(text);
+    if (structured.containsKey('variety') && structured['variety']!.trim().isNotEmpty) {
+      return _titleCase(structured['variety']!.trim());
+    }
+
     final lower = text.toLowerCase();
-    const known = ['geisha', 'gesha', 'pink bourbon', 'bourbon', 'typica', 'sl28', 'sl34', 'sigararutang', 'kartika', 'andungsari', 'lini s795', 'caturra', 'catimor'];
+    const known = [
+      'mixed variety', 'heirloom', 'geisha', 'gesha', 'pink bourbon', 'bourbon',
+      'typica', 'sl28', 'sl34', 'sigararutang', 'kartika', 'andungsari', 'lini s795',
+      'caturra', 'catimor', 'timtim', 'abyssinia', 'ateng super', 'ateng'
+    ];
     for (final v in known) {
       if (lower.contains(v)) return _titleCase(v);
     }
@@ -638,6 +905,14 @@ class CognitiveBeanAnalyzer {
     topRecipeName: 'Smoking Barrels V60',
     topRecipeSlug: 'smoking-barrels-v60',
     signatureNotes: ['Wild Honey', 'Sweet Peach', 'Brown Sugar', 'Caramel', 'Plum'],
+  );
+
+  static const _anaerobicNaturalProfile = ProcessSensoryProfile(
+    canonicalName: 'Anaerobic Natural',
+    recommendedTempC: 90,
+    topRecipeName: 'Dual-Temperature Thermal Drop V60 (92°C -> 75°C)',
+    topRecipeSlug: 'dual-temperature-thermal-drop-v60',
+    signatureNotes: ['Watermelon', 'Strawberry', 'Winey Berry', 'Tropical Mango', 'Caramel'],
   );
 
   static const _anaerobicProfile = ProcessSensoryProfile(

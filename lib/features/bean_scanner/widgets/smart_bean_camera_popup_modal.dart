@@ -558,9 +558,13 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
                 const SizedBox(height: 2),
                 Row(
                   children: [
-                    Text(
-                      bean.roasteryName,
-                      style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 12.5, fontWeight: FontWeight.w600),
+                    Flexible(
+                      child: Text(
+                        bean.roasteryName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 12.5, fontWeight: FontWeight.w600),
+                      ),
                     ),
                     const SizedBox(width: 6),
                     Container(
@@ -579,6 +583,8 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
                 const SizedBox(height: 4),
                 Text(
                   '${bean.origin} • ${bean.altitudeMasl ?? "1500 MDPL"}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: Colors.white70, fontSize: 11.5),
                 ),
               ],
@@ -757,9 +763,9 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   icon: const Icon(Icons.coffee, size: 18),
-                  label: Text(
-                    'Next: Resep Seduh (${bean.recommendedWaterTempC}°C) →',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  label: const Text(
+                    'Next →',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                 ),
               ),
@@ -829,7 +835,14 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
               children: [
                 Row(
                   children: [
-                    Text(title, style: const TextStyle(color: Colors.white38, fontSize: 10)),
+                    Flexible(
+                      child: Text(
+                        title,
+                        style: const TextStyle(color: Colors.white38, fontSize: 10),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                     if (isInferred) ...[
                       const SizedBox(width: 4),
                       Container(
@@ -839,7 +852,7 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
                           borderRadius: BorderRadius.circular(3),
                         ),
                         child: const Text(
-                          '✨ AI Sommelier',
+                          '✨ AI',
                           style: TextStyle(color: Color(0xFFD4AF37), fontSize: 7.5, fontWeight: FontWeight.bold),
                         ),
                       ),

@@ -12,8 +12,22 @@
       "region_province": "Gunung Malabar / Pangalengan, Jawa Barat",
       "default_altitude": "1400 - 1800 MDPL",
       "default_varieties": "Sigararutang, Lini S795, Kartika",
-      "aliases": ["malabar", "mlabr", "malbar", "gn malabar", "puntang", "gunung puntang", "banjaran", "pangalengan", "ciwidey", "preanger"],
-      "keywords": ["malabar", "pangalengan", "puntang", "ciwidey", "preanger", "banjaran"],
+      "aliases": ["malabar", "mlabr", "malbar", "gn malabar", "mb", "pangalengan", "ciwidey", "preanger"],
+      "keywords": ["malabar", "pangalengan", "ciwidey", "preanger"],
+      "process_notes_map": {
+        "Wine Process": ["Winey", "Red Grape", "Blackcurrant", "Fermented Berry", "Dark Cocoa"],
+        "Natural": ["Strawberry Jam", "Tropical Fruit", "Milk Chocolate", "Caramel"],
+        "Full Washed": ["Citrus", "Black Tea", "Brown Sugar", "Clean Finish"]
+      }
+    },
+    {
+      "id": "gunung_puntang",
+      "canonical_name": "Gunung Puntang",
+      "region_province": "Gunung Puntang, Bandung Selatan, Jawa Barat",
+      "default_altitude": "1200 - 1600 MDPL",
+      "default_varieties": "Java Typica, Sigararutang, Lini S795",
+      "aliases": ["puntang", "gunung puntang", "gn puntang", "puntan", "puntng", "mb puntang"],
+      "keywords": ["puntang", "gunung puntang", "gn puntang"],
       "process_notes_map": {
         "Wine Process": ["Winey", "Red Grape", "Blackcurrant", "Fermented Berry", "Dark Cocoa"],
         "Natural": ["Strawberry Jam", "Tropical Fruit", "Milk Chocolate", "Caramel"],
@@ -26,13 +40,27 @@
       "region_province": "Gunung Halu, Bandung Barat, Jawa Barat",
       "default_altitude": "1350 - 1650 MDPL",
       "default_varieties": "Sigararutang, Lini S795, Ateng Super",
-      "aliases": ["gunung halu", "halu", "gn halu", "gununghalu", "haloe", "west java halu", "sindangkerta", "kopi gunung halu"],
-      "keywords": ["gunung halu", "halu", "gn halu", "gununghalu", "haloe", "sindangkerta"],
+      "aliases": ["gunung halu", "halu", "gn halu", "gununghalu", "haloe", "west java halu", "sindangkerta", "kopi gunung halu", "halu banana"],
+      "keywords": ["gunung halu", "halu", "gn halu", "gununghalu", "haloe", "sindangkerta", "banana"],
       "process_notes_map": {
-        "Natural": ["Blueberry", "Strawberry Jam", "Milk Chocolate", "Sweet Banana"],
+        "Natural": ["Sweet Caramel", "Banana", "Blueberry", "Strawberry Jam", "Milk Chocolate"],
         "Wine Process": ["Winey", "Red Grape", "Fermented Cherry", "Dark Chocolate"],
         "Honey Process": ["Wild Honey", "Sweet Peach", "Brown Sugar", "Caramel"],
         "Full Washed": ["Lime Citrus", "Jasmine", "Black Tea", "Cane Sugar"]
+      }
+    },
+    {
+      "id": "kamojang_garut",
+      "canonical_name": "Kamojang Garut",
+      "region_province": "Kamojang, Garut, Jawa Barat",
+      "default_altitude": "1400 - 1750 MDPL",
+      "default_varieties": "Typica, Sigararutang, Mixed Variety",
+      "aliases": ["kamojang", "garut", "amojang", "wanoja", "wanoja coffee", "papandayan", "cikuray", "kamojang garut", "west java kamojang"],
+      "keywords": ["kamojang", "garut", "amojang", "wanoja", "papandayan", "cikuray"],
+      "process_notes_map": {
+        "Anaerobic Natural": ["Watermelon", "Strawberry", "Mandarin Orange", "Sweet Candy", "Tropical Mango"],
+        "Natural": ["Strawberry", "Tropical Fruit", "Caramel", "Milk Chocolate"],
+        "Full Washed": ["Jasmine", "Citrus", "Black Tea", "Cane Sugar"]
       }
     },
     {
@@ -185,6 +213,8 @@
     }
   ],
   "known_roasteries": [
+    "Tiga Ikat Coffee Supply",
+    "Wanoja Coffee",
     "Tanamera Coffee",
     "Fugol Coffee Roasters",
     "Two Hands Roastery",
