@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/router/app_router.dart';
+import '../../in_app_trainer/presentation/in_app_bean_trainer_screen.dart';
 import '../controllers/bean_scanner_controller.dart';
 import '../controllers/selected_brew_bean_controller.dart';
 import '../models/bean_scan_state.dart';
@@ -511,15 +512,17 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
                             ),
                           ),
                           child: Text(
-                            bean.notesSource == 'ON_DEVICE_AI_FEW_SHOT_MODEL'
-                                ? '🎯 Trained AI Model Match (${bean.confidenceScore.toStringAsFixed(0)}%)'
-                                : (bean.isCatalogVerified
-                                    ? '✓ Katalog Terverifikasi'
-                                    : (bean.notesSource == 'AI_SOMMELIER_INFERRED'
-                                        ? '✨ Cognitive AI Sommelier'
-                                        : '✨ OCR Smart Extract')),
+                            bean.notesSource.startsWith('🎯')
+                                ? bean.notesSource
+                                : (bean.notesSource == 'ON_DEVICE_AI_FEW_SHOT_MODEL'
+                                    ? '🎯 Trained AI Model Match (${bean.confidenceScore.toStringAsFixed(0)}%)'
+                                    : (bean.isCatalogVerified
+                                        ? '✓ Katalog Terverifikasi'
+                                        : (bean.notesSource == 'AI_SOMMELIER_INFERRED'
+                                            ? '✨ Cognitive AI Sommelier'
+                                            : '✨ OCR Smart Extract'))),
                             style: TextStyle(
-                              color: bean.notesSource == 'ON_DEVICE_AI_FEW_SHOT_MODEL'
+                              color: (bean.notesSource.startsWith('🎯') || bean.notesSource == 'ON_DEVICE_AI_FEW_SHOT_MODEL')
                                   ? const Color(0xFF00E5FF)
                                   : (bean.isCatalogVerified ? Colors.greenAccent : const Color(0xFFD4AF37)),
                               fontSize: 9.5,
@@ -542,9 +545,11 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
                         border: Border.all(color: Colors.white12),
                       ),
                       child: Text(
-                        bean.notesSource == 'ON_DEVICE_AI_FEW_SHOT_MODEL'
-                            ? 'On-Device AI'
-                            : (bean.isCatalogVerified ? 'Database' : 'Smart AI Inference'),
+                        bean.notesSource.startsWith('🎯')
+                            ? 'MobileNetV4 NCM'
+                            : (bean.notesSource == 'ON_DEVICE_AI_FEW_SHOT_MODEL'
+                                ? 'On-Device AI'
+                                : (bean.isCatalogVerified ? 'Database' : 'Smart AI Inference')),
                         style: const TextStyle(color: Colors.white60, fontSize: 8.5),
                       ),
                     ),
@@ -732,7 +737,42 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
             const SizedBox(height: 20),
           ],
 
-          // Action Buttons: Foto Ulang & Next
+          // Action Buttons: Foto Ulang, Next, & Tombol Latih AI untuk Kemasan Baru
+          if (!bean.notesSource.startsWith('🎯') && bean.notesSource != 'ON_DEVICE_AI_FEW_SHOT_MODEL') ...[
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => InAppBeanTrainerScreen(
+                        initialRoastery: bean.roasteryName != 'Specialty Roastery' ? bean.roasteryName : '',
+                        initialBeanName: !bean.beanName.toLowerCase().startsWith('specialty coffee') ? bean.beanName : '',
+                        initialProcess: bean.process,
+                        initialNotes: bean.tastingNotes,
+                      ),
+                    ),
+                  );
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFD4AF37),
+                  side: const BorderSide(color: Color(0xFFD4AF37), width: 1.2),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  backgroundColor: const Color(0xFFD4AF37).withValues(alpha: 0.08),
+                ),
+                icon: const Icon(CupertinoIcons.sparkles, size: 16, color: Color(0xFFD4AF37)),
+                label: const Text(
+                  '✨ Latih AI untuk Kemasan Ini',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFFD4AF37)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+
           Row(
             children: [
               OutlinedButton.icon(

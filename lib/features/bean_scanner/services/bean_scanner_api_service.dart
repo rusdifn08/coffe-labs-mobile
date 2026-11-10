@@ -44,22 +44,60 @@ class BeanScannerApiService {
         final data = body['data'] as Map<String, dynamic>;
         var serverResolved = ResolvedCoffeeBean.fromJson(data, localImagePath: croppedImagePath);
 
-        // Pertahankan ekstraksi lokal eksplisit jika backend mengembalikan inferensi generik
-        if (localCognitiveBean.notesSource == 'OCR_EXPLICIT' && serverResolved.notesSource != 'OCR_EXPLICIT') {
+        // GROUND TRUTH RULE: The physical scanned bag is the Ground Truth!
+        // Never let generic backend catalog rows overwrite explicit or non-generic OCR features!
+        if (localCognitiveBean.notesSource == 'OCR_EXPLICIT') {
           serverResolved = serverResolved.copyWith(
             tastingNotes: localCognitiveBean.tastingNotes,
             notesSource: 'OCR_EXPLICIT',
           );
         }
 
+        // Preserve local bean name if local found a specific product name
         if (localCognitiveBean.beanName.isNotEmpty &&
             !localCognitiveBean.beanName.toLowerCase().startsWith('specialty coffee') &&
-            serverResolved.beanName.toLowerCase().startsWith('specialty coffee')) {
+            !localCognitiveBean.beanName.toLowerCase().startsWith('roastery washed')) {
           serverResolved = serverResolved.copyWith(
             beanName: localCognitiveBean.beanName,
+          );
+        }
+
+        // Preserve local roastery if local found a specific roastery / brand / farmer
+        if (localCognitiveBean.roasteryName.isNotEmpty &&
+            localCognitiveBean.roasteryName != 'Specialty Roastery' &&
+            !localCognitiveBean.roasteryName.toLowerCase().startsWith('specialty coffee')) {
+          serverResolved = serverResolved.copyWith(
             roasteryName: localCognitiveBean.roasteryName,
-            origin: localCognitiveBean.origin,
+          );
+        }
+
+        // Preserve local process if local detected specific process (Natural, Anaerobic, Wine, Honey)
+        if (localCognitiveBean.process != 'Full Washed' || rawFullText.toLowerCase().contains('washed')) {
+          serverResolved = serverResolved.copyWith(
             process: localCognitiveBean.process,
+          );
+        }
+
+        // Preserve local origin if specific
+        if (localCognitiveBean.origin != 'Single Origin, Indonesia') {
+          serverResolved = serverResolved.copyWith(
+            origin: localCognitiveBean.origin,
+          );
+        }
+
+        // Preserve local variety if specific
+        if (!localCognitiveBean.isAiInferredVariety) {
+          serverResolved = serverResolved.copyWith(
+            variety: localCognitiveBean.variety,
+            isAiInferredVariety: false,
+          );
+        }
+
+        // Preserve local altitude if specific
+        if (!localCognitiveBean.isAiInferredAltitude) {
+          serverResolved = serverResolved.copyWith(
+            altitudeMasl: localCognitiveBean.altitudeMasl,
+            isAiInferredAltitude: false,
           );
         }
 

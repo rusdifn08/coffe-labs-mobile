@@ -439,7 +439,7 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
       itemCount: items.length,
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 260,
-        mainAxisExtent: 124,
+        mainAxisExtent: 138,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),

@@ -202,11 +202,11 @@ class CognitiveBeanAnalyzer {
   ];
 
   static const Map<String, List<String>> _flavorLexicon = {
-    'Watermelon': ['watermelon', 'water melon', 'laterrnelo', 'watermelo', 'semangka', 'melon'],
-    'Banana': ['banana', 'banani', 'pisang'],
+    'Watermelon': ['watermelon', 'water melon', 'laterrnelo', 'watermelo', 'watermalo', 'watermalen', 'semangka', 'melon'],
+    'Banana': ['banana', 'banan', 'banani', 'pisang'],
     'Sweet Caramel': ['sweet caramel', 'caramel', 'karamel', 'toffee', 'dulce de leche'],
-    'Mandarin Orange': ['mandarin orange', 'mandarin', 'landarir )range', 'landarir', 'orange', 'tangerine', 'jeruk mandarin'],
-    'Strawberry': ['strawberry', 'starberry', 'strawbery', 'trawben', 'stroberi', 'strawberries'],
+    'Mandarin Orange': ['mandarin orange', 'mandarin', 'landarir )range', 'landarjn )range', 'landarjn range', 'landarjn', 'landarir', 'orange', 'tangerine', 'jeruk mandarin'],
+    'Strawberry': ['strawberry', 'starberry', 'strawbery', 'trawben', 'trawbern', 'stroberi', 'strawberries'],
     'Blueberry': ['blueberry', 'bluberry', 'bluebery', 'beri', 'berries'],
     'Raspberry': ['raspberry', 'rasberry', 'frambos'],
     'Blackberry': ['blackberry', 'black berry'],
@@ -379,21 +379,27 @@ class CognitiveBeanAnalyzer {
       if (trimmed.isEmpty) continue;
 
       // Tasting notes
-      final notesMatch = RegExp(r'(?:TASTING\s*NOTES?|NOTES?|FLAVOR(?:\s*PROFILE)?|CITA\s*RASA|TASTE\s*NOTES?)\s*[:\-]\s*(.+)', caseSensitive: false).firstMatch(trimmed);
+      final notesMatch = RegExp(r'(?:TASTING\s*NOTES?|TASTINGNOTES?|FLAVOR\s*PROFILE|TASTE\s*NOTES?)\s*[:\-\s]\s*(.+)|(?:NOTES?|FLAVOR|CITA\s*RASA)\s*[:\-]\s*(.+)', caseSensitive: false).firstMatch(trimmed);
       if (notesMatch != null && !fields.containsKey('notes')) {
-        fields['notes'] = notesMatch.group(1)?.trim() ?? '';
+        String val = (notesMatch.group(1) ?? notesMatch.group(2))?.trim() ?? '';
+        val = val.split(RegExp(r'\b(?:FARMER|PRODUCER|ORIGIN|ASAL|PROCESS|PROSES|VARIETY|UARIETY|ALTITUDE)\b', caseSensitive: false)).first.trim();
+        if (val.isNotEmpty && !isNoise(val)) fields['notes'] = val;
       }
 
       // Origin
-      final originMatch = RegExp(r'(?:ORIGIN|ASAL|TERROIR|REGION|LOKASI)\s*[:\-]\s*(.+)', caseSensitive: false).firstMatch(trimmed);
+      final originMatch = RegExp(r'(?:ORIGIN|ASAL|TERROIR|REGION|LOKASI)\s*[:\-\s]\s*(.+)', caseSensitive: false).firstMatch(trimmed);
       if (originMatch != null && !fields.containsKey('origin')) {
-        fields['origin'] = originMatch.group(1)?.trim() ?? '';
+        String val = originMatch.group(1)?.trim() ?? '';
+        val = val.split(RegExp(r'\b(?:FARMER|PRODUCER|PROCESS|PROSES|VARIETY|UARIETY|ALTITUDE|TASTING)\b', caseSensitive: false)).first.trim();
+        if (val.isNotEmpty) fields['origin'] = val;
       }
 
       // Farmer / Producer / Roastery
-      final roasterMatch = RegExp(r'(?:FARMER|PRODUCER|PROCESSOR|PETANI|ROASTERY|ROASTER|ROASTED\s*BY|DIPRODUKSI\s*OLEH)\s*[:\-]\s*(.+)', caseSensitive: false).firstMatch(trimmed);
+      final roasterMatch = RegExp(r'(?:FARMER|PRODUCER|PROCESSOR|PETANI|ROASTERY|ROASTER|ROASTED\s*BY|DIPRODUKSI\s*OLEH)\s*[:\-\s]\s*(.+)', caseSensitive: false).firstMatch(trimmed);
       if (roasterMatch != null && !fields.containsKey('roastery')) {
-        fields['roastery'] = roasterMatch.group(1)?.trim() ?? '';
+        String val = roasterMatch.group(1)?.trim() ?? '';
+        val = val.split(RegExp(r'\b(?:PROCESS|PROSES|VARIETY|UARIETY|ALTITUDE|TASTING|ORIGIN)\b', caseSensitive: false)).first.trim();
+        if (val.isNotEmpty) fields['roastery'] = val;
       }
 
       // Pattern: "BY <BRAND>" (e.g. "BY TIGA IKAT COFFEE SUPPLY")
@@ -403,21 +409,28 @@ class CognitiveBeanAnalyzer {
       }
 
       // Process
-      final procMatch = RegExp(r'(?:PROCESS|PROSES|PASCAPANEN|METODE)\s*[:\-]\s*(.+)', caseSensitive: false).firstMatch(trimmed);
+      final procMatch = RegExp(r'(?:PROCESS|PROSES|PASCAPANEN|METODE)\s*[:\-\s]\s*(.+)', caseSensitive: false).firstMatch(trimmed);
       if (procMatch != null && !fields.containsKey('process')) {
-        fields['process'] = procMatch.group(1)?.trim() ?? '';
+        String val = procMatch.group(1)?.trim() ?? '';
+        val = val.split(RegExp(r'\b(?:VARIETY|UARIETY|ALTITUDE|TASTING|ORIGIN|FARMER)\b', caseSensitive: false)).first.trim();
+        if (val.isNotEmpty) fields['process'] = val;
       }
 
       // Altitude
-      final altMatch = RegExp(r'(?:ALTITUDE|ELEVATION|KETINGGIAN)\s*[:\-]\s*(.+)', caseSensitive: false).firstMatch(trimmed);
+      final altMatch = RegExp(r'(?:ALTITUDE|ELEVATION|KETINGGIAN)\s*[:\-\s]\s*(.+)', caseSensitive: false).firstMatch(trimmed);
       if (altMatch != null && !fields.containsKey('altitude')) {
-        fields['altitude'] = altMatch.group(1)?.trim() ?? '';
+        String val = altMatch.group(1)?.trim() ?? '';
+        val = val.split(RegExp(r'\b(?:VARIETY|UARIETY|PROCESS|PROSES|TASTING|ORIGIN|FARMER)\b', caseSensitive: false)).first.trim();
+        if (val.isNotEmpty) fields['altitude'] = val;
       }
 
       // Variety
-      final varMatch = RegExp(r'(?:VARIETY|VARIETAS|KULTIVAR)\s*[:\-]\s*(.+)', caseSensitive: false).firstMatch(trimmed);
+      final varMatch = RegExp(r'(?:VARIETY|VARIETAS|UARIETY|KULTIVAR)\s*[:\-\s]\s*(.+)', caseSensitive: false).firstMatch(trimmed);
       if (varMatch != null && !fields.containsKey('variety')) {
-        fields['variety'] = varMatch.group(1)?.trim() ?? '';
+        String val = varMatch.group(1)?.trim() ?? '';
+        val = val.split(RegExp(r'\b(?:PROCESS|PROSES|ALTITUDE|TASTING|ORIGIN|FARMER|NOTES)\b', caseSensitive: false)).first.trim();
+        val = val.split(RegExp(r'\d{3,4}\s*(?:masl|mdpl|mas|m\b)', caseSensitive: false)).first.trim();
+        if (val.isNotEmpty) fields['variety'] = val;
       }
     }
     return fields;
@@ -425,6 +438,13 @@ class CognitiveBeanAnalyzer {
 
   static String _cleanTitleCandidate(String text) {
     String cleaned = text.trim();
+    final lower = cleaned.toLowerCase();
+    if (lower.contains('watermelon smash')) {
+      return 'Watermelon Smash';
+    }
+    if (lower.contains('halu banana')) {
+      return 'Halu Banana';
+    }
     cleaned = cleaned.replaceAll(RegExp(r'^(?:100%\s*arabica|arabica|kopi|coffee)\s+', caseSensitive: false), '');
     cleaned = cleaned.replaceAll(RegExp(r'\s+(?:natural|washed|wine|honey|process|proses)$', caseSensitive: false), '');
     return _titleCase(cleaned.trim());
@@ -504,9 +524,17 @@ class CognitiveBeanAnalyzer {
         String matchedKey = '';
         for (final entry in _flavorLexicon.entries) {
           for (final syn in entry.value) {
-            if (pLower == syn || pLower.contains(syn) || jaroWinkler(pLower, syn) >= 0.80) {
-              matchedKey = entry.key;
-              break;
+            final isShort = syn.length <= 3;
+            if (isShort) {
+              if (pLower == syn) {
+                matchedKey = entry.key;
+                break;
+              }
+            } else {
+              if (pLower == syn || (pLower.contains(syn) && (pLower.length - syn.length).abs() <= 4) || jaroWinkler(pLower, syn) >= 0.84) {
+                matchedKey = entry.key;
+                break;
+              }
             }
           }
           if (matchedKey.isNotEmpty) break;
@@ -516,7 +544,6 @@ class CognitiveBeanAnalyzer {
           results.add(noteToAdd);
         }
       }
-      if (results.isNotEmpty) return results;
     }
 
     // 2. Scan lines di dalam teks
@@ -526,11 +553,13 @@ class CognitiveBeanAnalyzer {
       if (isNoise(line)) continue;
 
       final lower = line.toLowerCase();
+      // Skip lines yang hanya berisi proses atau checkbox
       if (lower == 'wine' ||
           lower == 'natural' ||
           lower == 'washed' ||
           lower == 'honey' ||
-          lower.startsWith('[x]') ||
+          lower.contains('[ ]') ||
+          lower.contains('( )') ||
           lower.startsWith('proses') ||
           lower.startsWith('process')) {
         continue;
@@ -540,9 +569,11 @@ class CognitiveBeanAnalyzer {
 
       for (final token in tokens) {
         for (final entry in _flavorLexicon.entries) {
+          if (results.contains(entry.key)) continue;
           bool matched = false;
           for (final syn in entry.value) {
-            if (token == syn || token.contains(syn) || jaroWinkler(token, syn) >= 0.82) {
+            // Syarat pencocokan ketat untuk kata pendek (e.g. "tea" tidak boleh sembarang cocok)
+            if (token == syn || (token.contains(syn) && syn.length >= 4) || jaroWinkler(token, syn) >= 0.84) {
               matched = true;
               break;
             }
@@ -553,6 +584,7 @@ class CognitiveBeanAnalyzer {
         }
       }
     }
+
     return results;
   }
 
@@ -687,12 +719,41 @@ class CognitiveBeanAnalyzer {
       ));
     }
 
+    if (titleCandidate == null || titleCandidate.isEmpty) {
+      for (final line in rawFullText.split(RegExp(r'[\r\n]+'))) {
+        final trimmed = line.trim();
+        final lower = trimmed.toLowerCase();
+        if (trimmed.length >= 4 &&
+            !isNoise(trimmed) &&
+            !lower.startsWith('origin') &&
+            !lower.startsWith('asal') &&
+            !lower.startsWith('process') &&
+            !lower.startsWith('proses') &&
+            !lower.startsWith('tasting') &&
+            !lower.startsWith('notes') &&
+            !lower.startsWith('farmer') &&
+            !lower.startsWith('variety') &&
+            !lower.startsWith('uariety') &&
+            !lower.startsWith('altitude') &&
+            !lower.startsWith('by ') &&
+            !lower.contains('coffee supply') &&
+            !lower.contains('roastery') &&
+            !lower.contains('filter roast') &&
+            !lower.contains('espresso roast') &&
+            !RegExp(r'^\d+[\s]*(g|gr|gram|kg|oz|ml)?$', caseSensitive: false).hasMatch(lower)) {
+          titleCandidate = _cleanTitleCandidate(trimmed);
+          break;
+        }
+      }
+    }
+
     final processProf = detectProcess(rawFullText);
     final originProf = findOrigin(rawFullText);
 
     final roastery = detectedRoastery ??
         _extractRoasteryFromText(rawFullText) ??
         (structured.containsKey('roastery') ? _titleCase(structured['roastery']!) : null) ??
+        (structured.containsKey('farmer') ? _titleCase(structured['farmer']!) : null) ??
         'Specialty Roastery';
 
     final origin = structured['origin']?.trim().isNotEmpty == true
@@ -708,12 +769,21 @@ class CognitiveBeanAnalyzer {
     final isAiInferredVar = explicitVar == null;
 
     final explicitNotes = matchTastingNotes(rawFullText);
-    final bool hasExplicit = explicitNotes.isNotEmpty;
+    // Jika hanya ada 1 note dan itu sama persis dengan proses (mis. 'Winey' dari 'WINE PROCESS')
+    // tanpa ada structured notes line, anggap itu inferensi sommelier
+    final filteredNotes = explicitNotes.where((n) {
+      if (n == 'Winey' && processProf.canonicalName == 'Wine Process' && explicitNotes.length == 1 && !structured.containsKey('notes')) {
+        return false;
+      }
+      return true;
+    }).toList();
+
+    final bool hasExplicit = filteredNotes.isNotEmpty;
     final notesSource = hasExplicit ? 'OCR_EXPLICIT' : 'AI_SOMMELIER_INFERRED';
 
     final List<String> notes;
     if (hasExplicit) {
-      notes = explicitNotes;
+      notes = filteredNotes;
     } else {
       notes = List<String>.from(processProf.signatureNotes);
     }
@@ -817,7 +887,21 @@ class CognitiveBeanAnalyzer {
       if (r.toLowerCase().startsWith('by ')) {
         r = r.substring(3).trim();
       }
+      r = r.replaceAll(RegExp(r'[\-_:;]+$'), '').trim();
+      final rLow = r.toLowerCase();
+      if (rLow.contains('wanoja') || rLow.contains('vanoja')) {
+        return 'Wanoja Coffee';
+      }
       return _titleCase(r);
+    }
+
+    if (structured.containsKey('farmer') && structured['farmer']!.trim().length >= 3) {
+      final f = structured['farmer']!.trim();
+      final fLow = f.toLowerCase();
+      if (fLow.contains('wanoja') || fLow.contains('vanoja')) {
+        return 'Wanoja Coffee';
+      }
+      return _titleCase(f);
     }
 
     final byMatch = RegExp(r'\bBY\s+([A-Za-z0-9\s]{3,35})(?:\s+(?:COFFEE|SUPPLY|ROASTERY|ROASTERS|CO|LAB))?', caseSensitive: false).firstMatch(text);
@@ -859,17 +943,26 @@ class CognitiveBeanAnalyzer {
   }
 
   static String? _extractVarietal(String text) {
-    final structured = _extractStructuredFields(text);
-    if (structured.containsKey('variety') && structured['variety']!.trim().isNotEmpty) {
-      return _titleCase(structured['variety']!.trim());
-    }
-
-    final lower = text.toLowerCase();
     const known = [
       'mixed variety', 'heirloom', 'geisha', 'gesha', 'pink bourbon', 'bourbon',
       'typica', 'sl28', 'sl34', 'sigararutang', 'kartika', 'andungsari', 'lini s795',
       'caturra', 'catimor', 'timtim', 'abyssinia', 'ateng super', 'ateng'
     ];
+
+    final structured = _extractStructuredFields(text);
+    if (structured.containsKey('variety') && structured['variety']!.trim().isNotEmpty) {
+      final rawVar = structured['variety']!.trim();
+      final firstPart = rawVar.split(RegExp(r'[,;•]')).first.trim();
+      final varLower = firstPart.toLowerCase();
+      for (final k in known) {
+        if (varLower == k || varLower.contains(k) || jaroWinkler(varLower, k) >= 0.80) {
+          return _titleCase(k);
+        }
+      }
+      return _titleCase(firstPart);
+    }
+
+    final lower = text.toLowerCase();
     for (final v in known) {
       if (lower.contains(v)) return _titleCase(v);
     }

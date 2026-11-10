@@ -199,7 +199,7 @@ class ToolkitCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 2),
-              Flexible(
+              Expanded(
                 child: Text(
                   tool.subtitle,
                   maxLines: 2,

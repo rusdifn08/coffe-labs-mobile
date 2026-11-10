@@ -14,7 +14,18 @@ import 'widgets/training_telemetry_modal.dart';
 /// Memungkinkan barista memotret 3 sudut kemasan (Depan, Kiri, Kanan),
 /// tap-to-snap bounding box, dan melatih model klasifikasi kopi langsung di HP (Offline).
 class InAppBeanTrainerScreen extends ConsumerStatefulWidget {
-  const InAppBeanTrainerScreen({super.key});
+  final String? initialRoastery;
+  final String? initialBeanName;
+  final String? initialProcess;
+  final List<String>? initialNotes;
+
+  const InAppBeanTrainerScreen({
+    super.key,
+    this.initialRoastery,
+    this.initialBeanName,
+    this.initialProcess,
+    this.initialNotes,
+  });
 
   @override
   ConsumerState<InAppBeanTrainerScreen> createState() => _InAppBeanTrainerScreenState();
@@ -110,17 +121,34 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
   void initState() {
     super.initState();
     final draft = ref.read(inAppTrainerControllerProvider).draft;
-    _brandCtrl.text = draft.roasteryBrand;
-    _nameCtrl.text = draft.beanName;
+    _brandCtrl.text = widget.initialRoastery?.isNotEmpty == true
+        ? widget.initialRoastery!
+        : draft.roasteryBrand;
+    _nameCtrl.text = widget.initialBeanName?.isNotEmpty == true
+        ? widget.initialBeanName!
+        : draft.beanName;
     _varietalCtrl.text = draft.varietal;
 
     _parseAltitude(draft.altitudeMasl);
     _altitudeCtrl.text = '$_altitudeMin - $_altitudeMax MDPL';
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(inAppTrainerControllerProvider.notifier).updateMetadata(
-            altitude: '$_altitudeMin - $_altitudeMax MDPL',
-          );
+      final notifier = ref.read(inAppTrainerControllerProvider.notifier);
+      if (widget.initialRoastery?.isNotEmpty == true) {
+        notifier.updateMetadata(brand: widget.initialRoastery!);
+      }
+      if (widget.initialBeanName?.isNotEmpty == true) {
+        notifier.updateMetadata(beanName: widget.initialBeanName!);
+      }
+      if (widget.initialProcess?.isNotEmpty == true) {
+        notifier.updateMetadata(process: widget.initialProcess!);
+      }
+      if (widget.initialNotes != null && widget.initialNotes!.isNotEmpty) {
+        notifier.updateMetadata(tastingNotes: widget.initialNotes!);
+      }
+      notifier.updateMetadata(
+        altitude: '$_altitudeMin - $_altitudeMax MDPL',
+      );
     });
   }
 

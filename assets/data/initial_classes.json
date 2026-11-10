@@ -1,0 +1,56 @@
+[
+  {
+    "class_slug": "bandung_kopi_malabar_wine",
+    "roastery": "Bandung Kopi",
+    "coffee_name": "Malabar Wine",
+    "origin": "Gunung Malabar, Pangalengan, Jawa Barat",
+    "variety": "Typica, Sigararutang, Ateng Super",
+    "process": "Wine Process",
+    "altitude": "1400 - 1800 MDPL",
+    "recommended_temp": 91,
+    "tasting_notes": [
+      "Winey",
+      "Red Grape",
+      "Dark Chocolate",
+      "Fermented Strawberry",
+      "Brown Sugar"
+    ],
+    "sample_count": 15,
+    "notes_source": "INITIAL_SEED_MODEL"
+  },
+  {
+    "class_slug": "kopi_gunung_halu_banana",
+    "roastery": "Tiga Ikat Coffee Supply",
+    "coffee_name": "Halu Banana",
+    "origin": "Gunung Halu, Bandung Barat, Jawa Barat",
+    "variety": "Sigararutang, Lini S795",
+    "process": "Natural",
+    "altitude": "1350 - 1650 MDPL",
+    "recommended_temp": 90,
+    "tasting_notes": [
+      "Banana",
+      "Sweet Caramel",
+      "Low Body",
+      "Smooth Honey"
+    ],
+    "sample_count": 15,
+    "notes_source": "INITIAL_SEED_MODEL"
+  },
+  {
+    "class_slug": "wanoja_watermelon_smash",
+    "roastery": "Wanoja Coffee",
+    "coffee_name": "Watermelon Smash",
+    "origin": "Kamojang, Garut, West Java, Indonesia",
+    "variety": "Mixed Variety",
+    "process": "Anaerobic Natural",
+    "altitude": "1500 masl",
+    "recommended_temp": 92,
+    "tasting_notes": [
+      "Watermelon",
+      "Strawberry",
+      "Mandarin Orange"
+    ],
+    "sample_count": 15,
+    "notes_source": "INITIAL_SEED_MODEL"
+  }
+]
