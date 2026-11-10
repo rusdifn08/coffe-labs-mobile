@@ -324,7 +324,7 @@ class AuthService {
 
         final prefs = await SharedPreferences.getInstance();
 
-        // Auto-sinkronisasi subscription tier ke SubscriptionService
+        // Auto-sinkronisasi subscription tier ke SubscriptionService secara tegas & terisolasi
         if (user.isBusiness) {
           await SubscriptionService.activatePlan(
             SubscriptionPlan.business,
@@ -344,8 +344,9 @@ class AuthService {
           );
           await TrialService.setTrialMode(false);
         } else {
-          final isPro = await SubscriptionService.isProOrBusiness();
-          await TrialService.setTrialMode(!isPro);
+          // Akun non-business (Trial / Standard User) WAJIB reset ke Trial murni!
+          await SubscriptionService.resetToTrial();
+          await TrialService.setTrialMode(true);
         }
 
         await Future.wait([
@@ -510,13 +511,68 @@ class AuthService {
     }
   }
 
-  /// Logout pengguna dan bersihkan sesi
+  /// Logout pengguna dan bersihkan sesi secara tuntas tanpa residu lisensi
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_userKey);
+    // Hapus total lisensi lokal agar pengguna berikutnya tidak tertular Business / Pro
+    await SubscriptionService.resetToTrial();
     await TrialService.setTrialMode(false);
     changeNotifier.value++;
+  }
+
+  /// Sinkronisasi data profil pengguna terkini dari server backend (Ground Truth RBAC)
+  static Future<AuthUser?> syncProfile() async {
+    try {
+      final token = await getToken();
+      if (token == null || token.isEmpty) return null;
+
+      final baseUrl = await getBaseUrl();
+      final uri = Uri.parse('$baseUrl/api/v1/auth/me');
+
+      final response = await _httpClient.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 8));
+
+      if (response.statusCode == 200) {
+        final data = _safeDecodeJson(response.body, response.statusCode);
+        final rawUser = data['data'] is Map<String, dynamic>
+            ? data['data']
+            : (data['user'] is Map<String, dynamic> ? data['user'] : null);
+        if (rawUser != null) {
+          final user = AuthUser.fromJson(rawUser as Map<String, dynamic>);
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(_userKey, json.encode(user.toJson()));
+
+          if (user.isBusiness || user.isAdmin) {
+            await SubscriptionService.activatePlan(
+              SubscriptionPlan.business,
+              paymentMethod: user.isAdmin ? 'Administrator License' : 'Business Commercial License',
+            );
+            await TrialService.setTrialMode(false);
+          } else if (user.isPro) {
+            await SubscriptionService.activatePlan(
+              SubscriptionPlan.pro,
+              paymentMethod: 'Pro Lifetime License',
+            );
+            await TrialService.setTrialMode(false);
+          } else {
+            // User trial / standard: pastikan SubscriptionService strictly trial!
+            await SubscriptionService.resetToTrial();
+            await TrialService.setTrialMode(true);
+          }
+
+          changeNotifier.value++;
+          return user;
+        }
+      }
+    } catch (_) {}
+    return getCurrentUser();
   }
 
   // ================= ADMIN FUNCTIONS =================

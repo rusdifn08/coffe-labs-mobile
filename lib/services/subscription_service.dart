@@ -12,41 +12,34 @@ class SubscriptionService {
 
   static final ValueNotifier<int> changeNotifier = ValueNotifier<int>(0);
 
-  /// Mengambil paket langganan yang sedang aktif saat ini
+  /// Mengambil paket langganan yang sedang aktif saat ini.
+  /// PRIORITAS UTAMA: Jika ada sesi akun pengguna login, tier akun dari backend adalah Ground Truth mutlak!
   static Future<SubscriptionPlan> getCurrentPlan() async {
     final prefs = await SharedPreferences.getInstance();
-    final planString = prefs.getString(_planKey);
-    final storedPlan = SubscriptionPlan.fromString(planString);
 
-    if (storedPlan.tier != SubscriptionTier.trial) {
-      return storedPlan;
-    }
-
-    // Failsafe auto-detection dari sesi pengguna login tersimpan
+    // 1. Otoritas Tertinggi: Sesi pengguna login resmi (RBAC dari server/database)
     final rawUserJson = prefs.getString('coffeehub_auth_user_json');
     if (rawUserJson != null && rawUserJson.isNotEmpty) {
       try {
         final map = json.decode(rawUserJson) as Map<String, dynamic>;
         final role = map['role']?.toString().toLowerCase();
-        final tier = map['tier']?.toString().toLowerCase();
+        final tier = (map['tier']?.toString() ?? 'trial').toLowerCase().trim();
         final username = map['username']?.toString().toLowerCase();
 
         if (role == 'admin' || tier == 'business' || username == 'bisnis123') {
-          await activatePlan(
-            SubscriptionPlan.business,
-            paymentMethod: 'Business Commercial License',
-          );
           return SubscriptionPlan.business;
         } else if (tier == 'pro') {
-          await activatePlan(
-            SubscriptionPlan.pro,
-            paymentMethod: 'Pro Lifetime License',
-          );
           return SubscriptionPlan.pro;
+        } else {
+          // Pengguna terdaftar dengan tier trial / novice -> STRICTLY TRIAL!
+          return SubscriptionPlan.trial;
         }
       } catch (_) {}
     }
 
+    // 2. Mode Tamu / Unauthenticated: Cek lisensi lokal perangkat
+    final planString = prefs.getString(_planKey);
+    final storedPlan = SubscriptionPlan.fromString(planString);
     return storedPlan;
   }
 
@@ -59,22 +52,26 @@ class SubscriptionService {
   /// Cek apakah pengguna telah memiliki lisensi Pro atau Business (bebas iklan & seduh unlimited)
   static Future<bool> isProOrBusiness() async {
     final prefs = await SharedPreferences.getInstance();
-    final isPrem = prefs.getBool(_premiumKey) ?? false;
-    if (isPrem) return true;
 
+    // Jika ada akun login, gunakan hak akses akun secara ketat
     final rawUserJson = prefs.getString('coffeehub_auth_user_json');
     if (rawUserJson != null && rawUserJson.isNotEmpty) {
       try {
         final map = json.decode(rawUserJson) as Map<String, dynamic>;
         final role = map['role']?.toString().toLowerCase();
-        final tier = map['tier']?.toString().toLowerCase();
+        final tier = (map['tier']?.toString() ?? 'trial').toLowerCase().trim();
         final username = map['username']?.toString().toLowerCase();
 
         if (role == 'admin' || tier == 'business' || tier == 'pro' || username == 'bisnis123') {
           return true;
         }
+        // Akun login biasa (trial) tidak boleh mewarisi sisa flag lokal perangkat
+        return false;
       } catch (_) {}
     }
+
+    final isPrem = prefs.getBool(_premiumKey) ?? false;
+    if (isPrem) return true;
 
     final tier = await getCurrentTier();
     return tier == SubscriptionTier.pro || tier == SubscriptionTier.business;
@@ -83,17 +80,21 @@ class SubscriptionService {
   /// Cek apakah pengguna memiliki lisensi Business
   static Future<bool> isBusiness() async {
     final prefs = await SharedPreferences.getInstance();
+
+    // Jika ada akun login, otoritas hanya dari status akun server
     final rawUserJson = prefs.getString('coffeehub_auth_user_json');
     if (rawUserJson != null && rawUserJson.isNotEmpty) {
       try {
         final map = json.decode(rawUserJson) as Map<String, dynamic>;
         final role = map['role']?.toString().toLowerCase();
-        final tier = map['tier']?.toString().toLowerCase();
+        final tier = (map['tier']?.toString() ?? 'trial').toLowerCase().trim();
         final username = map['username']?.toString().toLowerCase();
 
         if (role == 'admin' || tier == 'business' || username == 'bisnis123') {
           return true;
         }
+        // Akun login non-business STRICTLY dilarang mengakses business mode!
+        return false;
       } catch (_) {}
     }
 

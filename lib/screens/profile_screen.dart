@@ -63,32 +63,53 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _loadProfileData() async {
-    final user = await AuthService.getCurrentUser();
+    // 1. Sinkronisasi status profil terbaru dari backend server di background (jika online)
+    AuthUser? user = await AuthService.getCurrentUser();
+    if (user != null) {
+      AuthService.syncProfile().then((synced) {
+        if (synced != null && mounted && synced.tier != user.tier) {
+          _loadProfileData();
+        }
+      }).catchError((_) {});
+    }
+
     final plan = await SubscriptionService.getCurrentPlan();
     final isTrial = await TrialService.isTrialMode();
     final name = await ProfileService.getUserName();
     final avatar = await ProfileService.getUserImagePath();
     final gStats = await GamificationService.instance.getStats();
 
-    // Validasi RBAC tingkat tinggi: deteksi status Business atau Pro dari akun
-    final bool isBusinessUser = (user != null &&
-            (user.isAdmin || user.isBusiness || user.username.toLowerCase() == 'bisnis123')) ||
-        plan.tier == SubscriptionTier.business;
-    final bool isProUser = (user != null && (user.isPro || isBusinessUser)) ||
-        plan.tier == SubscriptionTier.pro ||
-        isBusinessUser;
+    // Validasi RBAC tingkat tinggi: deteksi status Business atau Pro secara ketat
+    // Jika ada akun login resmi, OTORITAS TERTINGGI adalah akun tersebut, BUKAN preferensi lokal!
+    final bool isBusinessUser = user != null
+        ? (user.isAdmin || user.isBusiness || user.username.toLowerCase() == 'bisnis123')
+        : (plan.tier == SubscriptionTier.business);
+
+    final bool isProUser = user != null
+        ? (user.isPro || isBusinessUser)
+        : (plan.tier == SubscriptionTier.pro || isBusinessUser);
 
     final effectivePlan = isBusinessUser
         ? SubscriptionPlan.business
-        : (isProUser ? SubscriptionPlan.pro : plan);
+        : (isProUser ? SubscriptionPlan.pro : SubscriptionPlan.trial);
 
-    // Auto-repair persistensi lokal jika akun berlisensi tapi tercatat trial
-    if ((isBusinessUser || isProUser) && (isTrial || plan.tier == SubscriptionTier.trial)) {
-      await TrialService.setTrialMode(false);
-      await SubscriptionService.activatePlan(
-        effectivePlan,
-        paymentMethod: isBusinessUser ? 'Business Commercial License' : 'Pro Lifetime License',
-      );
+    // Auto-repair & auto-heal persistensi lokal
+    if (isBusinessUser || isProUser) {
+      if (isTrial || plan.tier == SubscriptionTier.trial) {
+        await TrialService.setTrialMode(false);
+        await SubscriptionService.activatePlan(
+          effectivePlan,
+          paymentMethod: isBusinessUser ? 'Business Commercial License' : 'Pro Lifetime License',
+        );
+      }
+    } else if (user != null) {
+      // Auto-heal: Akun terdaftar biasa (trial) yang sebelumnya tercemar lisensi lokal direset tuntas!
+      if (plan.tier != SubscriptionTier.trial) {
+        await SubscriptionService.resetToTrial();
+      }
+      if (!isTrial) {
+        await TrialService.setTrialMode(true);
+      }
     }
 
     int totalUsers = 0;
@@ -127,8 +148,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     setState(() {
       _currentUser = user;
       _currentPlan = effectivePlan;
-      // Pengguna adalah trial hanya jika bukan admin, bukan business, dan bukan pro
-      _isTrial = !isProUser && (isTrial || plan.tier == SubscriptionTier.trial) && (user == null || !user.isAdmin);
+      // Pengguna adalah trial jika bukan admin, bukan business, dan bukan pro
+      _isTrial = !isProUser && !isBusinessUser && (user == null || !user.isAdmin);
       _displayName = user?.fullName ?? name;
       _avatarPath = user?.avatarUrl.isNotEmpty == true ? user!.avatarUrl : avatar;
       _totalUsersCount = totalUsers;

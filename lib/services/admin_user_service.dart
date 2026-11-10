@@ -129,4 +129,28 @@ class AdminUserService {
       return false;
     }
   }
+
+  /// Ubah tier langganan user secara langsung (Khusus Admin: trial / pro / business)
+  static Future<bool> updateUserTier(String userId, String tier) async {
+    try {
+      final token = await AuthService.getToken();
+      if (token == null) return false;
+
+      final baseUrl = await AuthService.getBaseUrl();
+      final uri = Uri.parse('$baseUrl/api/admin/users/$userId/tier');
+
+      final response = await http.patch(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({'tier': tier.trim().toLowerCase()}),
+      ).timeout(const Duration(seconds: 30));
+
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
 }

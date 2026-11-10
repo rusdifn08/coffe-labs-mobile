@@ -48,9 +48,8 @@ class WorkspaceModeController extends Notifier<WorkspaceMode> {
   static Future<bool> _checkBusinessTierAccess() async {
     try {
       final user = await AuthService.getCurrentUser();
-      if (user?.isAdmin == true) return true;
-      if (user?.isBusiness == true || user?.username.toLowerCase() == 'bisnis123') {
-        return true;
+      if (user != null) {
+        return user.isAdmin || user.isBusiness || user.username.toLowerCase() == 'bisnis123';
       }
       return await SubscriptionService.isBusiness();
     } catch (_) {
