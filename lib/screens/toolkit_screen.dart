@@ -20,6 +20,7 @@ import 'smart_scale_screen.dart';
 import 'social_coffee_screen.dart';
 import 'tds_extraction_screen.dart';
 import 'water_recipe_screen.dart';
+import '../features/annotation_studio/presentation/mobile_dataset_kanban_screen.dart';
 import '../features/in_app_trainer/presentation/in_app_bean_trainer_screen.dart';
 
 class ToolkitScreen extends StatefulWidget {
@@ -81,7 +82,7 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
         primaryColor: const Color(0xFFD4AF37),
         secondaryColor: const Color(0xFF5C3A21),
         gradientColors: const [Color(0xFFFFF8E1), Color(0xFFFFECB3)],
-        destination: const InAppBeanTrainerScreen(),
+        destination: const MobileDatasetKanbanScreen(),
         isLocked: false,
       ),
       ToolkitItem(

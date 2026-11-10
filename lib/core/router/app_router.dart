@@ -23,6 +23,7 @@ import '../../screens/splash_screen.dart';
 import '../../services/auth_service.dart';
 import '../../services/trial_service.dart';
 import '../../features/business_pos/screens/aod_kiosk_showcase_route_wrapper.dart';
+import '../../features/annotation_studio/presentation/mobile_dataset_kanban_screen.dart';
 import '../../features/in_app_trainer/presentation/in_app_bean_trainer_screen.dart';
 import '../../models/business_pos_models.dart';
 import '../services/kiosk_engine_service.dart';
@@ -259,7 +260,7 @@ GoRouter appRouter(Ref ref) {
       ),
       GoRoute(
         path: AppRoutes.inAppTrainer,
-        builder: (context, state) => const InAppBeanTrainerScreen(),
+        builder: (context, state) => const MobileDatasetKanbanScreen(),
       ),
       GoRoute(
         path: AppRoutes.aodShowcase,

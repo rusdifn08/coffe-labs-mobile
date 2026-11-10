@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/router/app_router.dart';
+import '../../annotation_studio/presentation/mobile_dataset_kanban_screen.dart';
 import '../../in_app_trainer/presentation/in_app_bean_trainer_screen.dart';
 import '../controllers/bean_scanner_controller.dart';
 import '../controllers/selected_brew_bean_controller.dart';
@@ -747,12 +748,7 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => InAppBeanTrainerScreen(
-                        initialRoastery: bean.roasteryName != 'Specialty Roastery' ? bean.roasteryName : '',
-                        initialBeanName: !bean.beanName.toLowerCase().startsWith('specialty coffee') ? bean.beanName : '',
-                        initialProcess: bean.process,
-                        initialNotes: bean.tastingNotes,
-                      ),
+                      builder: (_) => const MobileDatasetKanbanScreen(),
                     ),
                   );
                 },
