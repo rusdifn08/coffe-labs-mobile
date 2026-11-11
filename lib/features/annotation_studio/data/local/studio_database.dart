@@ -28,7 +28,9 @@ class StudioDatabase {
     }
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       sqfliteFfiInit();
-      databaseFactory = databaseFactoryFfi;
+      if (databaseFactory != databaseFactoryFfi) {
+        databaseFactory = databaseFactoryFfi;
+      }
     }
 
     final dbPath = await getDatabasesPath();

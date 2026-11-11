@@ -80,6 +80,19 @@ class IncrementalVisionEngine {
 
     // 2. Load TFLite Model with NPU/GPU Delegate Acceleration and Graceful CPU Fallback
     try {
+      if (!kIsWeb && Platform.isWindows) {
+        try {
+          final exeDir = File(Platform.resolvedExecutable).parent.path;
+          final dllDirect = File('$exeDir\\libtensorflowlite_c-win.dll');
+          final dllBlobs = File('$exeDir\\blobs\\libtensorflowlite_c-win.dll');
+          if (!dllDirect.existsSync() && !dllBlobs.existsSync()) {
+            debugPrint('IncrementalVisionEngine: Desktop Windows (no libtensorflowlite_c-win.dll bundled). Using deterministic Dart feature extractor fallback.');
+            _isInitialized = true;
+            return;
+          }
+        } catch (_) {}
+      }
+
       final options = InterpreterOptions()..threads = 4;
       if (!kIsWeb && Platform.isAndroid) {
         try {

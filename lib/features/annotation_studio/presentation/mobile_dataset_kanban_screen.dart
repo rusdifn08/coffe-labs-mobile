@@ -76,6 +76,7 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
       appBar: AppBar(
         backgroundColor: const Color(0xFF1F1813),
         elevation: 0,
+        titleSpacing: 0,
         leading: IconButton(
           icon: const Icon(CupertinoIcons.back, color: Color(0xFFD4AF37)),
           onPressed: () => Navigator.of(context).pop(),
@@ -83,15 +84,15 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(5),
               decoration: BoxDecoration(
                 color: const Color(0xFFD4AF37).withValues(alpha: 0.16),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: const Color(0xFFD4AF37), width: 1),
               ),
-              child: const Icon(Icons.dataset_outlined, size: 16, color: Color(0xFFD4AF37)),
+              child: const Icon(Icons.dataset_outlined, size: 15, color: Color(0xFFD4AF37)),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,7 +102,7 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
                     'Roboflow Studio',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 15,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
                     maxLines: 1,
@@ -109,7 +110,7 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
                   ),
                   Text(
                     'Batch Auto-Labeler & NCM',
-                    style: TextStyle(color: Color(0xFFD4A373), fontSize: 10),
+                    style: TextStyle(color: Color(0xFFD4A373), fontSize: 9.5),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -122,7 +123,9 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
           // Import coffee.json Button
           IconButton(
             tooltip: 'Import coffee.json',
-            icon: const Icon(Icons.file_download_outlined, color: Color(0xFFD4A373), size: 20),
+            padding: const EdgeInsets.all(8),
+            constraints: const BoxConstraints(),
+            icon: const Icon(Icons.file_download_outlined, color: Color(0xFFD4A373), size: 19),
             onPressed: () async {
               final count = await notifier.importCoffeeJson();
               if (context.mounted) {
@@ -142,12 +145,13 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
               style: ElevatedButton.styleFrom(
                 foregroundColor: const Color(0xFF1F1813),
                 backgroundColor: const Color(0xFFD4AF37),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                minimumSize: const Size(0, 32),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 elevation: 0,
               ),
-              icon: const Icon(Icons.smart_toy_outlined, size: 14),
-              label: const Text('Auto-Label', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+              icon: const Icon(Icons.smart_toy_outlined, size: 13),
+              label: const Text('Auto-Label', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
               onPressed: () {
                 showModalBottomSheet(
                   context: context,
@@ -158,7 +162,7 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
               },
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 4),
         ],
       ),
       body: Column(
