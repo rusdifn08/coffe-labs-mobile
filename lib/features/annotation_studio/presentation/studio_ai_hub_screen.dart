@@ -11,8 +11,8 @@ import 'widgets/studio_live_diagnostic_sheet.dart';
 import 'widgets/studio_model_manager_sheet.dart';
 
 /// Studio AI Hub Screen: Pusat kendali dan pilihan fitur AI Computer Vision Coffee Labs
-/// Memadukan alur transfer learning cepat (In-App Trainer), Roboflow Dataset Kanban,
-/// manajemen model NCM, sinkronisasi cloud roastery, dan live diagnostik akurasi.
+/// Didesain dengan tema cerah premium khas Coffee Labs (Warm Cream & Espresso),
+/// layout card compact, icon custom tematik, dan tanpa teks deskripsi yang panjang.
 class StudioAiHubScreen extends ConsumerStatefulWidget {
   const StudioAiHubScreen({super.key});
 
@@ -54,37 +54,62 @@ class _StudioAiHubScreenState extends ConsumerState<StudioAiHubScreen> {
 
   @override
   Widget build(BuildContext context) {
+    const bgCream = Color(0xFFF9F6F0);
+    const textDark = Color(0xFF2D1F17);
+    const textMuted = Color(0xFF8F857D);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF17120E), // Coffee Labs Deep Warm Espresso
+      backgroundColor: bgCream,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1F1813),
+        backgroundColor: bgCream,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(CupertinoIcons.back, color: Color(0xFFD4AF37)),
+          icon: const Icon(CupertinoIcons.back, color: textDark),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+        title: Row(
           children: [
-            Text(
-              'Studio AI Coffee Labs',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFD4AF37).withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.4)),
               ),
+              child: const Icon(Icons.auto_awesome, color: Color(0xFFB45309), size: 16),
             ),
-            Text(
-              'Computer Vision & On-Device Transfer Learning',
-              style: TextStyle(color: Color(0xFFD4A373), fontSize: 11),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Studio AI',
+                    style: TextStyle(
+                      color: textDark,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    'Computer Vision & Transfer Learning',
+                    style: TextStyle(color: textMuted, fontSize: 10.5),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
         actions: [
           IconButton(
             tooltip: 'Refresh Status',
-            icon: const Icon(Icons.refresh, color: Color(0xFFD4AF37), size: 20),
+            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF6B4423), size: 21),
             onPressed: _loadTelemetry,
           ),
           const SizedBox(width: 4),
@@ -92,41 +117,39 @@ class _StudioAiHubScreenState extends ConsumerState<StudioAiHubScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: _loadTelemetry,
-        color: const Color(0xFFD4AF37),
-        backgroundColor: const Color(0xFF261D16),
+        color: const Color(0xFF6B4423),
+        backgroundColor: Colors.white,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Hero Telemetry Banner
-              _buildHeroTelemetryCard(),
-              const SizedBox(height: 22),
+              // Compact Telemetry Banner
+              _buildCompactTelemetryBanner(),
+              const SizedBox(height: 16),
 
               // Section Header
               const Text(
-                'PILIHAN MODE STUDIO AI',
+                'PILIHAN FITUR STUDIO AI',
                 style: TextStyle(
-                  color: Color(0xFFD4A373),
+                  color: Color(0xFF9A7B4F),
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
+                  letterSpacing: 0.8,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
 
-              // Card 1: Latih Biji Kopi Baru (Quick 3-Foto)
-              _buildStudioFeatureCard(
-                badgeText: '⚡ CEPAT (3 FOTO)',
-                badgeColor: const Color(0xFFD4AF37),
-                icon: Icons.add_a_photo_outlined,
-                iconColor: const Color(0xFFD4AF37),
-                title: 'Latih Biji Kopi Baru',
-                subtitle: 'Few-Shot On-Device Transfer Learning',
-                description:
-                    'Ambil 3 sudut kemasan kopi (depan, kiri, kanan), sesuaikan bounding box, tentukan resep V60 & rasa, lalu latih model on-device langsung di HP.',
-                actionLabel: 'Buka Studio Latih Kopi',
+              // Card 1: Latih Kemasan Kopi Baru (Few-Shot 3 Foto)
+              _buildCompactFeatureCard(
+                tag: '⚡ CEPAT',
+                tagColor: const Color(0xFFD97706),
+                icon: Icons.camera_enhance_rounded,
+                iconColor: const Color(0xFFD97706),
+                iconGradient: const [Color(0xFFFFF7ED), Color(0xFFFFEDD5)],
+                title: 'Latih Kemasan Baru',
+                subtitle: 'Foto 3 sudut kemasan & simpan profil seduh V60',
                 onTap: () {
                   Navigator.push(
                     context,
@@ -136,19 +159,17 @@ class _StudioAiHubScreenState extends ConsumerState<StudioAiHubScreen> {
                   ).then((_) => _loadTelemetry());
                 },
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
 
               // Card 2: Roboflow Annotation Studio (Batch Auto-Labeler)
-              _buildStudioFeatureCard(
-                badgeText: '🤖 AUTO-LABEL BATCH',
-                badgeColor: const Color(0xFFECA400),
-                icon: Icons.grid_view_rounded,
-                iconColor: const Color(0xFFECA400),
+              _buildCompactFeatureCard(
+                tag: '🤖 AUTO-LABEL',
+                tagColor: const Color(0xFF7C3AED),
+                icon: Icons.auto_awesome_motion_rounded,
+                iconColor: const Color(0xFF7C3AED),
+                iconGradient: const [Color(0xFFF5F3FF), Color(0xFFEDE9FE)],
                 title: 'Roboflow Annotation Studio',
-                subtitle: 'Two-Stage SAM Segmentation & Semantic OCR',
-                description:
-                    'Kelola puluhan foto kemasan dari galeri secara massal, auto-labeling poligon presisi tinggi (RDP), Non-Coffee Gatekeeper, dan ekstraksi OCR {brand}_{kopi}_{proses}.',
-                actionLabel: 'Buka Kanban Dataset & Anotasi',
+                subtitle: 'Batch anotasi foto, poligon RDP & ekstraksi OCR',
                 onTap: () {
                   Navigator.push(
                     context,
@@ -158,19 +179,17 @@ class _StudioAiHubScreenState extends ConsumerState<StudioAiHubScreen> {
                   ).then((_) => _loadTelemetry());
                 },
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
 
-              // Card 3: Manajemen Model & Class Prototipe
-              _buildStudioFeatureCard(
-                badgeText: 'ZERO FORGETTING',
-                badgeColor: const Color(0xFFC86D51),
-                icon: Icons.memory_outlined,
-                iconColor: const Color(0xFFC86D51),
-                title: 'Manajemen Model & Class Prototipe',
-                subtitle: 'MobileNetV4 1280-D NCM Memory',
-                description:
-                    'Inspeksi seluruh class kemasan kopi yang tersimpan di memori SQLite, periksa sub-prototipe multi-angle, atau latih versi NCM baru dengan 5-step stepper.',
-                actionLabel: 'Kelola Prototipe & Versi Model',
+              // Card 3: Manajemen Model & NCM Prototipe
+              _buildCompactFeatureCard(
+                tag: 'NCM 1280-D',
+                tagColor: const Color(0xFFB45309),
+                icon: Icons.memory_rounded,
+                iconColor: const Color(0xFFB45309),
+                iconGradient: const [Color(0xFFFEF3C7), Color(0xFFFDE68A)],
+                title: 'Manajemen Model & Prototipe',
+                subtitle: 'Inspeksi prototipe SQLite & versi model continual',
                 onTap: () {
                   showModalBottomSheet(
                     context: context,
@@ -180,19 +199,17 @@ class _StudioAiHubScreenState extends ConsumerState<StudioAiHubScreen> {
                   ).then((_) => _loadTelemetry());
                 },
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
 
               // Card 4: Sinkronisasi Katalog Cloud Roastery
-              _buildStudioFeatureCard(
-                badgeText: 'NEONDB CLOUD',
-                badgeColor: const Color(0xFF10B981),
-                icon: Icons.cloud_sync_outlined,
-                iconColor: const Color(0xFF10B981),
-                title: 'Sinkronisasi Katalog Cloud Roastery',
-                subtitle: 'Rust Axum REST API v1 • NeonDB PostgreSQL',
-                description:
-                    'Unduh katalog model roastery terverifikasi se-Indonesia (Fugol, Tanamera, Anomali, 5758, dll.) atau sinkronkan model buatan Anda ke backend.',
-                actionLabel: 'Sinkronkan Katalog Model',
+              _buildCompactFeatureCard(
+                tag: 'NEONDB',
+                tagColor: const Color(0xFF059669),
+                icon: Icons.cloud_sync_rounded,
+                iconColor: const Color(0xFF059669),
+                iconGradient: const [Color(0xFFECFDF5), Color(0xFFD1FAE5)],
+                title: 'Sinkronisasi Cloud Roastery',
+                subtitle: 'Unduh & unggah katalog model via REST API',
                 onTap: () {
                   showModalBottomSheet(
                     context: context,
@@ -202,19 +219,17 @@ class _StudioAiHubScreenState extends ConsumerState<StudioAiHubScreen> {
                   ).then((_) => _loadTelemetry());
                 },
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
 
-              // Card 5: Uji Diagnostik Akurasi (Live AI Viewfinder)
-              _buildStudioFeatureCard(
-                badgeText: 'REAL-TIME TEST',
-                badgeColor: const Color(0xFF3B82F6),
-                icon: Icons.center_focus_strong_outlined,
-                iconColor: const Color(0xFF3B82F6),
-                title: 'Uji Akurasi Model (Live Viewfinder)',
-                subtitle: 'Cosine Similarity & Gatekeeper Telemetry',
-                description:
-                    'Uji coba langsung foto kemasan kopi untuk mengukur skor Cosine Similarity, jarak prototipe terdekat, dan validitas gatekeeper sebelum dipakai di kasir.',
-                actionLabel: 'Mulai Uji Coba Diagnostik',
+              // Card 5: Uji Diagnostik Akurasi (Live Viewfinder)
+              _buildCompactFeatureCard(
+                tag: 'LIVE TEST',
+                tagColor: const Color(0xFF0284C7),
+                icon: Icons.center_focus_strong_rounded,
+                iconColor: const Color(0xFF0284C7),
+                iconGradient: const [Color(0xFFF0F9FF), Color(0xFFE0F2FE)],
+                title: 'Uji Akurasi Viewfinder',
+                subtitle: 'Live Cosine Similarity & deteksi kemasan kopi',
                 onTap: () {
                   showModalBottomSheet(
                     context: context,
@@ -224,7 +239,6 @@ class _StudioAiHubScreenState extends ConsumerState<StudioAiHubScreen> {
                   );
                 },
               ),
-              const SizedBox(height: 30),
             ],
           ),
         ),
@@ -232,19 +246,19 @@ class _StudioAiHubScreenState extends ConsumerState<StudioAiHubScreen> {
     );
   }
 
-  Widget _buildHeroTelemetryCard() {
+  Widget _buildCompactTelemetryBanner() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF261D16),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFF3D2D22), width: 1.2),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFEFE8DE), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF5C3A21).withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -255,82 +269,91 @@ class _StudioAiHubScreenState extends ConsumerState<StudioAiHubScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFD4AF37).withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFD4AF37), width: 0.8),
+                  color: const Color(0xFFE8F5E9),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFA5D6A7), width: 0.8),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.auto_awesome, size: 12, color: Color(0xFFD4AF37)),
-                    SizedBox(width: 5),
-                    Text(
-                      'AI Computer Vision Active',
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF2E7D32),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    const Text(
+                      'MobileNetV4 NCM (1280-D)',
                       style: TextStyle(
-                        color: Color(0xFFD4AF37),
-                        fontSize: 10,
+                        color: Color(0xFF2E7D32),
+                        fontSize: 9.5,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Text(
-                'MobileNetV4 1280-D',
-                style: TextStyle(color: Colors.white60, fontSize: 10, fontWeight: FontWeight.w600),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF8E1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFFFE082), width: 0.8),
+                ),
+                child: const Text(
+                  'On-Device AI',
+                  style: TextStyle(
+                    color: Color(0xFFB78103),
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          const Text(
-            'Sistem Pelatihan Visual On-Device',
-            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Melatih klasifikasi kemasan kopi langsung di HP dengan zero catastrophic forgetting.',
-            style: TextStyle(color: Color(0xFFC7BBAF), fontSize: 12, height: 1.3),
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
 
-          // 4 Stats in 1 row
+          // 4 Compact Stats in 1 row
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFF1F1813),
+              color: const Color(0xFFFBF8F4),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF34261C)),
+              border: Border.all(color: const Color(0xFFF0EAE2)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildMiniStat(
-                  icon: Icons.class_outlined,
-                  color: const Color(0xFFD4AF37),
+                _buildCompactStat(
+                  icon: Icons.inventory_2_outlined,
+                  color: const Color(0xFFB45309),
                   value: _isLoading ? '...' : '$_prototypeCount',
                   label: 'Class Model',
                 ),
-                _buildStatDivider(),
-                _buildMiniStat(
+                _buildDivider(),
+                _buildCompactStat(
                   icon: Icons.photo_library_outlined,
-                  color: const Color(0xFFECA400),
+                  color: const Color(0xFFD97706),
                   value: _isLoading ? '...' : '$_datasetCount',
                   label: 'Foto Dataset',
                 ),
-                _buildStatDivider(),
-                _buildMiniStat(
-                  icon: Icons.bolt,
-                  color: const Color(0xFF10B981),
+                _buildDivider(),
+                _buildCompactStat(
+                  icon: Icons.bolt_rounded,
+                  color: const Color(0xFF059669),
                   value: '< 12 ms',
                   label: 'Latensi NPU',
                 ),
-                _buildStatDivider(),
-                _buildMiniStat(
-                  icon: Icons.shield_outlined,
-                  color: const Color(0xFF3B82F6),
-                  value: '4 Syarat',
+                _buildDivider(),
+                _buildCompactStat(
+                  icon: Icons.verified_user_outlined,
+                  color: const Color(0xFF0284C7),
+                  value: 'Aktif',
                   label: 'Gatekeeper',
                 ),
               ],
@@ -341,141 +364,165 @@ class _StudioAiHubScreenState extends ConsumerState<StudioAiHubScreen> {
     );
   }
 
-  Widget _buildMiniStat({
+  Widget _buildCompactStat({
     required IconData icon,
     required Color color,
     required String value,
     required String label,
   }) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 14, color: color),
-        const SizedBox(height: 4),
+        const SizedBox(height: 3),
         Text(
           value,
-          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Color(0xFF2D1F17),
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 1),
         Text(
           label,
-          style: const TextStyle(color: Colors.white54, fontSize: 9),
+          style: const TextStyle(
+            color: Color(0xFF8F857D),
+            fontSize: 9,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildStatDivider() {
+  Widget _buildDivider() {
     return Container(
       width: 1,
-      height: 26,
-      color: Colors.white12,
+      height: 22,
+      color: const Color(0xFFE8DFD8),
     );
   }
 
-  Widget _buildStudioFeatureCard({
-    required String badgeText,
-    required Color badgeColor,
+  Widget _buildCompactFeatureCard({
+    required String tag,
+    required Color tagColor,
     required IconData icon,
     required Color iconColor,
+    required List<Color> iconGradient,
     required String title,
     required String subtitle,
-    required String description,
-    required String actionLabel,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF261D16),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFF3D2D22), width: 1.1),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top Row: Badge + Icon
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: badgeColor.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: badgeColor.withValues(alpha: 0.6), width: 0.8),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFEFE8DE), width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF5C3A21).withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Custom Unique Squircle Icon Container
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: iconGradient,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  child: Text(
-                    badgeText,
-                    style: TextStyle(
-                      color: badgeColor,
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(color: iconColor.withValues(alpha: 0.22), width: 1),
+                ),
+                child: Icon(icon, color: iconColor, size: 21),
+              ),
+              const SizedBox(width: 12),
+
+              // Title + Tag & Subtitle
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            title,
+                            style: const TextStyle(
+                              color: Color(0xFF2D1F17),
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: tagColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            tag,
+                            style: TextStyle(
+                              color: tagColor,
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: Color(0xFF8F857D),
+                        fontSize: 11,
+                        height: 1.2,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(icon, color: iconColor, size: 18),
+              ),
+              const SizedBox(width: 8),
+
+              // Forward Arrow Circle
+              Container(
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF9F6F0),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFEFE8DE)),
                 ),
-              ],
-            ),
-            const SizedBox(height: 10),
-
-            // Title & Subtitle
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: iconColor.withValues(alpha: 0.9),
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // Description
-            Text(
-              description,
-              style: const TextStyle(
-                color: Color(0xFFC7BBAF),
-                fontSize: 11.5,
-                height: 1.35,
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            // Action Row
-            Row(
-              children: [
-                Text(
-                  actionLabel,
-                  style: TextStyle(
-                    color: iconColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: const Icon(
+                  CupertinoIcons.chevron_forward,
+                  size: 13,
+                  color: Color(0xFF8F857D),
                 ),
-                const SizedBox(width: 6),
-                Icon(Icons.arrow_forward_rounded, size: 14, color: iconColor),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );

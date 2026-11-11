@@ -16,30 +16,28 @@ class _StudioLiveDiagnosticSheetState extends State<StudioLiveDiagnosticSheet> {
   final ImagePicker _picker = ImagePicker();
   File? _selectedImage;
   bool _isEvaluating = false;
+
   VisionMatchResult? _visionMatch;
   AutoLabelResult? _autoLabelResult;
 
   Future<void> _pickAndEvaluate(ImageSource source) async {
+    final picked = await _picker.pickImage(source: source);
+    if (picked == null) return;
+
+    final file = File(picked.path);
+    setState(() {
+      _selectedImage = file;
+      _isEvaluating = true;
+      _visionMatch = null;
+      _autoLabelResult = null;
+    });
+
     try {
-      final XFile? photo = await _picker.pickImage(source: source);
-      if (photo == null) return;
-
-      final file = File(photo.path);
-      setState(() {
-        _selectedImage = file;
-        _isEvaluating = true;
-        _visionMatch = null;
-        _autoLabelResult = null;
-      });
-
-      // 1. Initialize vision engine
       await IncrementalVisionEngine.instance.initialize();
 
-      // 2. Preprocess & Classify NCM Prototype
       final tensor = await ImageTensorIsolate.preprocessSingleImage(file);
       final match = IncrementalVisionEngine.instance.classifyImage(tensor);
 
-      // 3. Run Segmenter & Gatekeeper
       final labelResult = await CoffeeBagSegmenterService.processSingleImage(
         imageFile: file,
         existingClasses: IncrementalVisionEngine.instance.cachedRecords.map((r) => r.classSlug).toList(),
@@ -62,11 +60,15 @@ class _StudioLiveDiagnosticSheetState extends State<StudioLiveDiagnosticSheet> {
 
   @override
   Widget build(BuildContext context) {
+    const bgCream = Color(0xFFF9F6F0);
+    const textDark = Color(0xFF2D1F17);
+    const textMuted = Color(0xFF8F857D);
+
     return Container(
-      height: MediaQuery.of(context).size.height * 0.88,
-      padding: const EdgeInsets.only(top: 16, left: 18, right: 18, bottom: 24),
+      height: MediaQuery.of(context).size.height * 0.85,
+      padding: const EdgeInsets.only(top: 14, left: 16, right: 16, bottom: 20),
       decoration: const BoxDecoration(
-        color: Color(0xFF1F1813), // Warm Dark Roast
+        color: bgCream,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -74,25 +76,25 @@ class _StudioLiveDiagnosticSheetState extends State<StudioLiveDiagnosticSheet> {
         children: [
           Center(
             child: Container(
-              width: 44,
+              width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: const Color(0xFFD8CFBE),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
           Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6).withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(8),
+                  color: const Color(0xFFE0F2FE),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.center_focus_strong, color: Color(0xFF3B82F6), size: 20),
+                child: const Icon(Icons.center_focus_strong_rounded, color: Color(0xFF0284C7), size: 20),
               ),
               const SizedBox(width: 12),
               const Expanded(
@@ -102,21 +104,21 @@ class _StudioLiveDiagnosticSheetState extends State<StudioLiveDiagnosticSheet> {
                     Text(
                       'Uji Diagnostik Akurasi AI',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 17,
+                        color: textDark,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
-                      'Live Cosine Similarity & Non-Coffee Gatekeeper Tester',
-                      style: TextStyle(color: Color(0xFFD4A373), fontSize: 11),
+                      'Live Cosine Similarity & Gatekeeper Telemetry',
+                      style: TextStyle(color: textMuted, fontSize: 10.5),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
           // Action buttons: Pick image
           Row(
@@ -124,12 +126,13 @@ class _StudioLiveDiagnosticSheetState extends State<StudioLiveDiagnosticSheet> {
               Expanded(
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFFD4AF37),
-                    side: const BorderSide(color: Color(0xFFD4AF37)),
+                    foregroundColor: const Color(0xFF6B4423),
+                    side: const BorderSide(color: Color(0xFFD8CFBE)),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
                   ),
                   icon: const Icon(Icons.camera_alt_outlined, size: 16),
-                  label: const Text('Foto Kamera', style: TextStyle(fontSize: 12)),
+                  label: const Text('Foto Kamera', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   onPressed: () => _pickAndEvaluate(ImageSource.camera),
                 ),
               ),
@@ -137,18 +140,19 @@ class _StudioLiveDiagnosticSheetState extends State<StudioLiveDiagnosticSheet> {
               Expanded(
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.white24),
+                    foregroundColor: const Color(0xFF6B4423),
+                    side: const BorderSide(color: Color(0xFFD8CFBE)),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
                   ),
                   icon: const Icon(Icons.photo_library_outlined, size: 16),
-                  label: const Text('Pilih Galeri', style: TextStyle(fontSize: 12)),
+                  label: const Text('Pilih Galeri', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   onPressed: () => _pickAndEvaluate(ImageSource.gallery),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
           // Diagnostic Results Area
           Expanded(
@@ -157,11 +161,11 @@ class _StudioLiveDiagnosticSheetState extends State<StudioLiveDiagnosticSheet> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        CircularProgressIndicator(color: Color(0xFFD4AF37)),
+                        CircularProgressIndicator(color: Color(0xFF6B4423)),
                         SizedBox(height: 12),
                         Text(
                           'Menganalisis kemasan & menghitung Cosine Similarity...',
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                          style: TextStyle(color: textMuted, fontSize: 12),
                         ),
                       ],
                     ),
@@ -171,11 +175,11 @@ class _StudioLiveDiagnosticSheetState extends State<StudioLiveDiagnosticSheet> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.image_search, size: 54, color: Colors.white.withValues(alpha: 0.2)),
-                            const SizedBox(height: 10),
+                            Icon(Icons.image_search_rounded, size: 48, color: textMuted.withValues(alpha: 0.4)),
+                            const SizedBox(height: 8),
                             const Text(
                               'Pilih atau foto kemasan kopi untuk menguji akurasi model',
-                              style: TextStyle(color: Colors.white60, fontSize: 12),
+                              style: TextStyle(color: textMuted, fontSize: 12),
                             ),
                           ],
                         ),
@@ -185,57 +189,67 @@ class _StudioLiveDiagnosticSheetState extends State<StudioLiveDiagnosticSheet> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Thumbnail & status
-                            Row(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: Image.file(_selectedImage!, width: 70, height: 70, fit: BoxFit.cover),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        _visionMatch?.isRecognized == true
-                                            ? '🎯 RECOGNIZED MODEL'
-                                            : '❓ UNRECOGNIZED / FALLBACK',
-                                        style: TextStyle(
-                                          color: _visionMatch?.isRecognized == true
-                                              ? const Color(0xFF10B981)
-                                              : const Color(0xFFECA400),
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        _visionMatch?.classSlug ?? 'Belum ada model yang cocok (Threshold 65%)',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        'Inferensi: ${_visionMatch?.inferenceTimeMs.toStringAsFixed(1)} ms • ${_visionMatch?.totalClassesEvaluated} class',
-                                        style: const TextStyle(color: Colors.white54, fontSize: 10),
-                                      ),
-                                    ],
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFEFE8DE), width: 1.1),
+                              ),
+                              child: Row(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.file(_selectedImage!, width: 64, height: 64, fit: BoxFit.cover),
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          _visionMatch?.isRecognized == true
+                                              ? '🎯 RECOGNIZED MODEL'
+                                              : '❓ UNRECOGNIZED / FALLBACK',
+                                          style: TextStyle(
+                                            color: _visionMatch?.isRecognized == true
+                                                ? const Color(0xFF059669)
+                                                : const Color(0xFFD97706),
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          _visionMatch?.classSlug ?? 'Belum ada model yang cocok (Threshold 65%)',
+                                          style: const TextStyle(
+                                            color: textDark,
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'Inferensi: ${_visionMatch?.inferenceTimeMs.toStringAsFixed(1)} ms • ${_visionMatch?.totalClassesEvaluated} class',
+                                          style: const TextStyle(color: textMuted, fontSize: 10),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 12),
 
                             // Cosine Similarity Meter
                             Container(
-                              padding: const EdgeInsets.all(14),
+                              padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF261D16),
+                                color: Colors.white,
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: const Color(0xFF3B2D24)),
+                                border: Border.all(color: const Color(0xFFEFE8DE), width: 1.1),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,15 +259,15 @@ class _StudioLiveDiagnosticSheetState extends State<StudioLiveDiagnosticSheet> {
                                     children: [
                                       const Text(
                                         'Cosine Similarity Score',
-                                        style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
+                                        style: TextStyle(color: textDark, fontSize: 12, fontWeight: FontWeight.bold),
                                       ),
                                       Text(
                                         '${((_visionMatch?.confidence ?? 0.0) * 100).toStringAsFixed(1)}%',
                                         style: TextStyle(
                                           color: (_visionMatch?.confidence ?? 0.0) >= 0.65
-                                              ? const Color(0xFF10B981)
-                                              : const Color(0xFFECA400),
-                                          fontSize: 14,
+                                              ? const Color(0xFF059669)
+                                              : const Color(0xFFD97706),
+                                          fontSize: 13,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -264,11 +278,11 @@ class _StudioLiveDiagnosticSheetState extends State<StudioLiveDiagnosticSheet> {
                                     borderRadius: BorderRadius.circular(4),
                                     child: LinearProgressIndicator(
                                       value: (_visionMatch?.confidence ?? 0.0).clamp(0.0, 1.0),
-                                      backgroundColor: Colors.white12,
+                                      backgroundColor: const Color(0xFFE8DFD8),
                                       valueColor: AlwaysStoppedAnimation<Color>(
                                         (_visionMatch?.confidence ?? 0.0) >= 0.65
-                                            ? const Color(0xFF10B981)
-                                            : const Color(0xFFECA400),
+                                            ? const Color(0xFF059669)
+                                            : const Color(0xFFD97706),
                                       ),
                                       minHeight: 8,
                                     ),
@@ -276,19 +290,20 @@ class _StudioLiveDiagnosticSheetState extends State<StudioLiveDiagnosticSheet> {
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 12),
 
                             // Gatekeeper Diagnostic Card
                             if (_autoLabelResult != null) ...[
                               Container(
-                                padding: const EdgeInsets.all(14),
+                                padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF261D16),
+                                  color: Colors.white,
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: _autoLabelResult!.isRejected
-                                        ? const Color(0xFFEF4444).withValues(alpha: 0.5)
-                                        : const Color(0xFF10B981).withValues(alpha: 0.5),
+                                        ? const Color(0xFFEF4444).withValues(alpha: 0.4)
+                                        : const Color(0xFF059669).withValues(alpha: 0.4),
+                                    width: 1.1,
                                   ),
                                 ),
                                 child: Column(
@@ -297,11 +312,11 @@ class _StudioLiveDiagnosticSheetState extends State<StudioLiveDiagnosticSheet> {
                                     Row(
                                       children: [
                                         Icon(
-                                          _autoLabelResult!.isRejected ? Icons.cancel : Icons.check_circle,
+                                          _autoLabelResult!.isRejected ? Icons.cancel_outlined : Icons.check_circle_outlined,
                                           size: 16,
                                           color: _autoLabelResult!.isRejected
                                               ? const Color(0xFFEF4444)
-                                              : const Color(0xFF10B981),
+                                              : const Color(0xFF059669),
                                         ),
                                         const SizedBox(width: 8),
                                         Text(
@@ -311,23 +326,23 @@ class _StudioLiveDiagnosticSheetState extends State<StudioLiveDiagnosticSheet> {
                                           style: TextStyle(
                                             color: _autoLabelResult!.isRejected
                                                 ? const Color(0xFFEF4444)
-                                                : const Color(0xFF10B981),
-                                            fontSize: 12,
+                                                : const Color(0xFF059669),
+                                            fontSize: 11.5,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 8),
+                                    const SizedBox(height: 6),
                                     Text(
                                       'Aspect Ratio: ${_autoLabelResult!.gatekeeperResult.aspectRatio.toStringAsFixed(2)} • Solidity: ${(_autoLabelResult!.gatekeeperResult.solidity * 100).toStringAsFixed(1)}%',
-                                      style: const TextStyle(color: Colors.white60, fontSize: 11),
+                                      style: const TextStyle(color: textMuted, fontSize: 10.5),
                                     ),
                                     if (_autoLabelResult!.ocrResult != null) ...[
-                                      const SizedBox(height: 6),
+                                      const SizedBox(height: 4),
                                       Text(
                                         'OCR Parsed Slug: ${_autoLabelResult!.ocrResult!.canonicalSlug}',
-                                        style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 11, fontWeight: FontWeight.bold),
+                                        style: const TextStyle(color: Color(0xFFB45309), fontSize: 10.5, fontWeight: FontWeight.bold),
                                       ),
                                     ],
                                   ],
