@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -148,17 +149,26 @@ class PrototypeDatabase {
     return _database!;
   }
 
+  static bool _ffiInitialized = false;
+
+  /// Ensures SQLite FFI is initialized once safely on desktop platforms
+  static void ensureFfiInitialized() {
+    if (kIsWeb) return;
+    if (!_ffiInitialized && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+      sqfliteFfiInit();
+      try {
+        databaseFactory = databaseFactoryFfi;
+      } catch (_) {}
+      _ffiInitialized = true;
+    }
+  }
+
   static Future<Database> _initDatabase() async {
     // Platform guard: Desktop Windows/Linux/macOS or tests require sqflite_common_ffi
     if (kIsWeb) {
       throw UnsupportedError('sqflite is not supported on web.');
     }
-    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      sqfliteFfiInit();
-      if (databaseFactory != databaseFactoryFfi) {
-        databaseFactory = databaseFactoryFfi;
-      }
-    }
+    ensureFfiInitialized();
 
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, dbName);
@@ -288,7 +298,8 @@ class PrototypeDatabase {
     for (int i = 0; i < v.length; i++) {
       sum += v[i] * v[i];
     }
-    return sum > 0 ? (sum < 1e-12 ? 1e-6 : (sum >= 0 ? sum : 0.0)) : 1.0;
+    final norm = math.sqrt(sum);
+    return norm > 1e-12 ? norm : 1.0;
   }
 
   /// Loads all stored coffee prototype records from SQLite

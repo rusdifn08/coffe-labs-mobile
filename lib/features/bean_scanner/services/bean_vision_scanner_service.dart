@@ -110,12 +110,17 @@ class BeanVisionScannerService {
         // High-Performance Native Windows OCR (Menggunakan Windows.Media.Ocr built-in OS)
         final winOcr = await _runWindowsNativeOcr(finalCroppedFile);
         if (winOcr != null) {
-          fullText = winOcr['full_text']?.toString() ?? '';
+          final rawFull = winOcr['full_text']?.toString() ?? '';
           final rawBlocks = winOcr['blocks'] as List? ?? [];
           for (final b in rawBlocks) {
             if (b is Map) {
               blocksDto.add(Map<String, dynamic>.from(b));
             }
+          }
+          if (!rawFull.contains('\n') && blocksDto.isNotEmpty) {
+            fullText = blocksDto.map((b) => b['text']?.toString() ?? '').where((s) => s.isNotEmpty).join('\n');
+          } else {
+            fullText = rawFull;
           }
         }
       }
@@ -282,8 +287,9 @@ foreach (\$line in \$ocrResult.Lines) {
     }
 }
 
+\$linesText = (\$ocrResult.Lines | ForEach-Object { \$_.Text }) -join "`n"
 \$outObj = [PSCustomObject]@{
-    full_text = \$ocrResult.Text
+    full_text = \$linesText
     blocks = \$blocks
 }
 

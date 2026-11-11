@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:coffee_hub_mobile/features/scanner/data/local/prototype_database.dart';
 import 'package:coffee_hub_mobile/features/annotation_studio/domain/models/coffee_annotation_class.dart';
 import 'package:coffee_hub_mobile/features/annotation_studio/domain/models/studio_image_item.dart';
 import 'package:coffee_hub_mobile/features/annotation_studio/domain/services/coffee_bag_segmenter_service.dart';
@@ -10,8 +10,7 @@ import 'package:coffee_hub_mobile/features/annotation_studio/data/local/studio_d
 
 void main() {
   setUpAll(() {
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
+    PrototypeDatabase.ensureFfiInitialized();
   });
 
   group('1. Non-Coffee Gatekeeper (OOD / Invalid Media Filter) Tests', () {

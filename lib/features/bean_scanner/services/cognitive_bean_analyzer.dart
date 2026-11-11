@@ -542,7 +542,7 @@ class CognitiveBeanAnalyzer {
     return _washedProfile;
   }
 
-  static List<String> matchTastingNotes(String text) {
+  static List<String> matchTastingNotes(String text, [List<Map<String, dynamic>>? blocksDto]) {
     final results = <String>[];
     final structured = _extractStructuredFields(text);
 
@@ -562,7 +562,7 @@ class CognitiveBeanAnalyzer {
                 break;
               }
             } else {
-              if (pLower == syn || (pLower.contains(syn) && (pLower.length - syn.length).abs() <= 4) || jaroWinkler(pLower, syn) >= 0.84) {
+              if (pLower == syn || (pLower.contains(syn) && (pLower.length - syn.length).abs() <= 5) || jaroWinkler(pLower, syn) >= 0.84) {
                 matchedKey = entry.key;
                 break;
               }
@@ -571,42 +571,30 @@ class CognitiveBeanAnalyzer {
           if (matchedKey.isNotEmpty) break;
         }
         final noteToAdd = matchedKey.isNotEmpty ? matchedKey : _titleCase(part);
-        if (!results.contains(noteToAdd)) {
+        if (!results.contains(noteToAdd) && !isNoise(noteToAdd)) {
           results.add(noteToAdd);
         }
       }
     }
 
-    // 2. Scan lines di dalam teks
-    final lines = text.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty);
-
-    for (final line in lines) {
-      if (isNoise(line)) continue;
-
-      final lower = line.toLowerCase();
-      // Skip lines yang hanya berisi proses atau checkbox
-      if (lower == 'wine' ||
-          lower == 'natural' ||
-          lower == 'washed' ||
-          lower == 'honey' ||
-          lower.contains('[ ]') ||
-          lower.contains('( )') ||
-          lower.startsWith('proses') ||
-          lower.startsWith('process')) {
-        continue;
-      }
-
-      final tokens = line.split(RegExp(r'[,•/\-;]')).map((s) => s.trim().toLowerCase()).where((s) => s.length >= 3);
-
-      for (final token in tokens) {
+    void scanTokensForFlavors(Iterable<String> tokens) {
+      for (final tok in tokens) {
+        final tClean = tok.trim().toLowerCase();
+        if (tClean.length < 3 || isNoise(tClean)) continue;
         for (final entry in _flavorLexicon.entries) {
           if (results.contains(entry.key)) continue;
           bool matched = false;
           for (final syn in entry.value) {
-            // Syarat pencocokan ketat untuk kata pendek (e.g. "tea" tidak boleh sembarang cocok)
-            if (token == syn || (token.contains(syn) && syn.length >= 4) || jaroWinkler(token, syn) >= 0.84) {
-              matched = true;
-              break;
+            if (syn.length <= 3) {
+              if (tClean == syn) {
+                matched = true;
+                break;
+              }
+            } else {
+              if (tClean == syn || (tClean.contains(syn) && syn.length >= 4) || jaroWinkler(tClean, syn) >= 0.84) {
+                matched = true;
+                break;
+              }
             }
           }
           if (matched && !results.contains(entry.key)) {
@@ -614,6 +602,68 @@ class CognitiveBeanAnalyzer {
           }
         }
       }
+    }
+
+    // 2. Scan blocks directly (Ground Truth visual blocks)
+    if (blocksDto != null && blocksDto.isNotEmpty) {
+      for (final b in blocksDto) {
+        final bText = b['text']?.toString().trim() ?? '';
+        if (bText.isEmpty || isNoise(bText)) continue;
+        final bLower = bText.toLowerCase();
+
+        // Skip metadata headers, process, origin, roastery
+        if (bLower.startsWith('origin') ||
+            bLower.startsWith('asal') ||
+            bLower.startsWith('process') ||
+            bLower.startsWith('proses') ||
+            bLower.startsWith('variety') ||
+            bLower.startsWith('varietas') ||
+            bLower.startsWith('farmer') ||
+            bLower.startsWith('producer') ||
+            bLower.startsWith('altitude') ||
+            bLower.startsWith('elevation') ||
+            bLower.startsWith('by ') ||
+            bLower.contains('[x]') ||
+            bLower.contains('[v]') ||
+            bLower.contains('[ ]') ||
+            bLower.contains('( )') ||
+            bLower.contains('kopi ') ||
+            bLower.contains('coffee') ||
+            bLower.contains('bottle') ||
+            bLower == 'wine' ||
+            bLower == 'natural' ||
+            bLower == 'washed') {
+          continue;
+        }
+
+        final cleanBlock = bText.replaceAll(RegExp(r'^(?:TASTING\s*NOTES?|TASTINGNOTES?|FLAVOR|NOTES)\s*[:\-]?\s*', caseSensitive: false), '').trim();
+        final tokens = cleanBlock.split(RegExp(r'[,•/\-;]')).map((s) => s.trim()).where((s) => s.length >= 3);
+        scanTokensForFlavors(tokens);
+      }
+    }
+
+    // 3. Scan lines di dalam teks
+    final lines = text.split(RegExp(r'[\r\n]+')).map((l) => l.trim()).where((l) => l.isNotEmpty);
+
+    for (final line in lines) {
+      if (isNoise(line)) continue;
+
+      final lower = line.toLowerCase();
+      if (lower == 'wine' ||
+          lower == 'natural' ||
+          lower == 'washed' ||
+          lower == 'honey' ||
+          lower.contains('[ ]') ||
+          lower.contains('( )') ||
+          lower.contains('[x]') ||
+          lower.contains('[v]') ||
+          lower.startsWith('proses') ||
+          lower.startsWith('process')) {
+        continue;
+      }
+
+      final tokens = line.split(RegExp(r'[,•/\-;]')).map((s) => s.trim().toLowerCase()).where((s) => s.length >= 3);
+      scanTokensForFlavors(tokens);
     }
 
     return results;
@@ -699,13 +749,16 @@ class CognitiveBeanAnalyzer {
           lower.startsWith('espresso roast');
 
       // Headline banner check: block dengan lebar/tinggi besar yang mewakili nama kopi
-      final isHeadlineBanner = (normW >= 0.35 || normH >= 0.05) &&
+      final isHeadlineBanner = (normW >= 0.25 ||
+              normH >= 0.04 ||
+              lower.contains('watermelon') ||
+              (lower.contains('halu') && lower.contains('banana'))) &&
           !isNoise(text) &&
           !isExplicitMetadata &&
           !isRoastery &&
           titleCandidate == null &&
-          topY <= 0.70 &&
-          !RegExp(r'\d+[\s]*(ml|g|gr|gram|kg|oz)', caseSensitive: false).hasMatch(lower);
+          topY <= 0.75 &&
+          !RegExp(r'^\d+[\s]*(ml|g|gr|gram|kg|oz)$', caseSensitive: false).hasMatch(lower);
 
       if (originMatch != null) {
         role = BlockRole.originOrTitle;
@@ -800,7 +853,7 @@ class CognitiveBeanAnalyzer {
     final variety = explicitVar ?? originProf?.defaultVarietals ?? 'Arabica Specialty';
     final isAiInferredVar = explicitVar == null;
 
-    final explicitNotes = matchTastingNotes(rawFullText);
+    final explicitNotes = matchTastingNotes(rawFullText, blocksDto);
     // Jika hanya ada 1 note dan itu sama persis dengan proses (mis. 'Winey' dari 'WINE PROCESS')
     // tanpa ada structured notes line, anggap itu inferensi sommelier
     final filteredNotes = explicitNotes.where((n) {

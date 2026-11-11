@@ -65,6 +65,7 @@ class IncrementalVisionEngine {
 
     // 1. Initialize SQLite Prototypical Memory
     try {
+      PrototypeDatabase.ensureFfiInitialized();
       await PrototypeDatabase.seedInitialClassesIfEmpty();
       final records = await PrototypeDatabase.loadAllPrototypes();
       for (final rec in records) {
@@ -377,7 +378,12 @@ class IncrementalVisionEngine {
     return centroids;
   }
 
-  /// Pure Dart deterministic feature extractor fallback (for environments without native TFLite)
+  /// Pure Dart deterministic feature extractor fallback (for environments without native TFLite).
+  /// Extracts high-discrimination 1280-D L2-normalized feature representation:
+  /// - Section 1: Global Context (128 dims): RGB moments, luminance, chromatic diffs, global gradient orientation
+  /// - Section 2: Regional Quadrants 2x2 (256 dims): 4 x 64 dims regional color/contrast/gradients
+  /// - Section 3: Detailed Spatial Grid 4x4 (640 dims): 16 x 40 dims spatial texture & color distribution
+  /// - Section 4: Fine Spatial Grid 8x8 (256 dims): 64 x 4 dims micro-region luminance & edge magnitude
   static Float32List _extractDeterministicFallbackEmbedding(List<List<List<List<double>>>> tensor) {
     final vec = Float32List(embeddingDim);
     if (tensor.isEmpty || tensor[0].isEmpty || tensor[0][0].isEmpty) {
@@ -388,41 +394,220 @@ class IncrementalVisionEngine {
     final h = plane.length;
     final w = plane[0].length;
 
-    // 4x4 spatial grid with 80 bins per grid cell = 1280 dimensions
-    const gridSize = 4;
-    const binsPerCell = embeddingDim ~/ (gridSize * gridSize); // 1280 / 16 = 80
-    final cellH = h ~/ gridSize;
-    final cellW = w ~/ gridSize;
+    // Precompute pixel luminance and local gradient maps for rapid pooling
+    final lum = List.generate(h, (_) => Float32List(w));
+    for (int y = 0; y < h; y++) {
+      final row = plane[y];
+      final lRow = lum[y];
+      for (int x = 0; x < w; x++) {
+        final p = row[x];
+        lRow[x] = (p[0] * 0.299 + p[1] * 0.587 + p[2] * 0.114);
+      }
+    }
 
-    for (int gy = 0; gy < gridSize; gy++) {
-      for (int gx = 0; gx < gridSize; gx++) {
-        final cellIdx = gy * gridSize + gx;
-        final baseDim = cellIdx * binsPerCell;
+    // --- SECTION 1: Global Context (128 dims: index 0..127) ---
+    double globalR = 0.0, globalG = 0.0, globalB = 0.0, globalY = 0.0;
+    double globalR2 = 0.0, globalG2 = 0.0, globalB2 = 0.0;
+    final globalOrient = Float32List(16);
+    int totalPixels = 0;
 
-        double sumR = 0.0, sumG = 0.0, sumB = 0.0;
-        int count = 0;
+    for (int y = 1; y < h - 1; y += 2) {
+      for (int x = 1; x < w - 1; x += 2) {
+        final p = plane[y][x];
+        final r = p[0];
+        final g = p[1];
+        final b = p[2];
+        final yVal = lum[y][x];
 
-        for (int y = gy * cellH; y < (gy + 1) * cellH && y < h; y++) {
-          for (int x = gx * cellW; x < (gx + 1) * cellW && x < w; x++) {
-            final rgb = plane[y][x];
-            final r = rgb[0];
-            final g = rgb[1];
-            final b = rgb[2];
-            sumR += r;
-            sumG += g;
-            sumB += b;
-            count++;
+        globalR += r;
+        globalG += g;
+        globalB += b;
+        globalY += yVal;
+        globalR2 += r * r;
+        globalG2 += g * g;
+        globalB2 += b * b;
 
-            // Distribute into bins based on color gradient
-            final bin = ((r * 13 + g * 29 + b * 43).abs().toInt()) % binsPerCell;
-            vec[baseDim + bin] += (r * 0.3 + g * 0.5 + b * 0.2).abs();
+        final dx = lum[y][x + 1] - lum[y][x - 1];
+        final dy = lum[y + 1][x] - lum[y - 1][x];
+        final mag = math.sqrt(dx * dx + dy * dy);
+        final angle = (math.atan2(dy, dx) + math.pi) / (2 * math.pi);
+        final bin = (angle * 16).toInt().clamp(0, 15);
+        globalOrient[bin] += mag;
+
+        totalPixels++;
+      }
+    }
+
+    if (totalPixels > 0) {
+      final invN = 1.0 / totalPixels;
+      vec[0] = globalR * invN;
+      vec[1] = globalG * invN;
+      vec[2] = globalB * invN;
+      vec[3] = globalY * invN;
+      vec[4] = math.sqrt(math.max(0.0, (globalR2 * invN) - (vec[0] * vec[0])));
+      vec[5] = math.sqrt(math.max(0.0, (globalG2 * invN) - (vec[1] * vec[1])));
+      vec[6] = math.sqrt(math.max(0.0, (globalB2 * invN) - (vec[2] * vec[2])));
+      vec[7] = vec[0] - vec[1];
+      vec[8] = vec[1] - vec[2];
+      vec[9] = vec[2] - vec[0];
+      vec[10] = (vec[0] + vec[1] + vec[2]) / 3.0;
+
+      for (int i = 0; i < 16; i++) {
+        vec[16 + i] = globalOrient[i] * invN;
+      }
+    }
+
+    // --- SECTION 2: Regional Quadrants 2x2 (256 dims: index 128..383) ---
+    const qSize = 2;
+    const dimsPerQuad = 64;
+    final qH = h ~/ qSize;
+    final qW = w ~/ qSize;
+
+    for (int qy = 0; qy < qSize; qy++) {
+      for (int qx = 0; qx < qSize; qx++) {
+        final qIdx = qy * qSize + qx;
+        final base = 128 + (qIdx * dimsPerQuad);
+
+        double qR = 0, qG = 0, qB = 0, qMag = 0;
+        final qHisto = Float32List(16);
+        int qCount = 0;
+
+        for (int y = qy * qH + 1; y < (qy + 1) * qH - 1; y += 2) {
+          for (int x = qx * qW + 1; x < (qx + 1) * qW - 1; x += 2) {
+            final p = plane[y][x];
+            qR += p[0];
+            qG += p[1];
+            qB += p[2];
+
+            final dx = lum[y][x + 1] - lum[y][x - 1];
+            final dy = lum[y + 1][x] - lum[y - 1][x];
+            final mag = math.sqrt(dx * dx + dy * dy);
+            qMag += mag;
+
+            final angle = (math.atan2(dy, dx) + math.pi) / (2 * math.pi);
+            final bin = (angle * 16).toInt().clamp(0, 15);
+            qHisto[bin] += mag;
+
+            qCount++;
           }
         }
 
-        if (count > 0) {
-          vec[baseDim] += (sumR / count);
-          vec[baseDim + 1] += (sumG / count);
-          vec[baseDim + 2] += (sumB / count);
+        if (qCount > 0) {
+          final invQ = 1.0 / qCount;
+          vec[base + 0] = qR * invQ;
+          vec[base + 1] = qG * invQ;
+          vec[base + 2] = qB * invQ;
+          vec[base + 3] = qMag * invQ;
+          vec[base + 4] = (qR - qG) * invQ;
+          vec[base + 5] = (qG - qB) * invQ;
+          vec[base + 6] = (qB - qR) * invQ;
+          for (int i = 0; i < 16; i++) {
+            vec[base + 7 + i] = qHisto[i] * invQ;
+          }
+        }
+      }
+    }
+
+    // --- SECTION 3: Detailed Spatial Grid 4x4 (640 dims: index 384..1023) ---
+    const gSize = 4;
+    const dimsPerCell = 40;
+    final cH = h ~/ gSize;
+    final cW = w ~/ gSize;
+
+    for (int gy = 0; gy < gSize; gy++) {
+      for (int gx = 0; gx < gSize; gx++) {
+        final cIdx = gy * gSize + gx;
+        final base = 384 + (cIdx * dimsPerCell);
+
+        double cR = 0, cG = 0, cB = 0, cMag = 0, cLum = 0;
+        final cOrient = Float32List(8);
+        final colorBins = Float32List(12);
+        int cCount = 0;
+
+        for (int y = gy * cH; y < (gy + 1) * cH && y < h; y += 2) {
+          for (int x = gx * cW; x < (gx + 1) * cW && x < w; x += 2) {
+            final p = plane[y][x];
+            final r = p[0];
+            final g = p[1];
+            final b = p[2];
+            cR += r;
+            cG += g;
+            cB += b;
+            final yVal = lum[y][x];
+            cLum += yVal;
+
+            if (x > 0 && x < w - 1 && y > 0 && y < h - 1) {
+              final dx = lum[y][x + 1] - lum[y][x - 1];
+              final dy = lum[y + 1][x] - lum[y - 1][x];
+              final mag = math.sqrt(dx * dx + dy * dy);
+              cMag += mag;
+              final angle = (math.atan2(dy, dx) + math.pi) / (2 * math.pi);
+              final bin = (angle * 8).toInt().clamp(0, 7);
+              cOrient[bin] += mag;
+            }
+
+            final colIdx = (((r * 3 + g * 5 + b * 7).abs().toInt()) % 12);
+            colorBins[colIdx] += (r + g + b).abs();
+
+            cCount++;
+          }
+        }
+
+        if (cCount > 0) {
+          final invC = 1.0 / cCount;
+          vec[base + 0] = cR * invC;
+          vec[base + 1] = cG * invC;
+          vec[base + 2] = cB * invC;
+          vec[base + 3] = cLum * invC;
+          vec[base + 4] = cMag * invC;
+          vec[base + 5] = (cR - cG) * invC;
+          vec[base + 6] = (cG - cB) * invC;
+          vec[base + 7] = (cB - cR) * invC;
+          for (int i = 0; i < 8; i++) {
+            vec[base + 8 + i] = cOrient[i] * invC;
+          }
+          for (int i = 0; i < 12; i++) {
+            vec[base + 16 + i] = colorBins[i] * invC;
+          }
+        }
+      }
+    }
+
+    // --- SECTION 4: Fine Spatial Grid 8x8 (256 dims: index 1024..1279) ---
+    const mSize = 8;
+    const dimsPerMicro = 4;
+    final mH = h ~/ mSize;
+    final mW = w ~/ mSize;
+
+    for (int my = 0; my < mSize; my++) {
+      for (int mx = 0; mx < mSize; mx++) {
+        final mIdx = my * mSize + mx;
+        final base = 1024 + (mIdx * dimsPerMicro);
+
+        double mR = 0, mG = 0, mB = 0, mMag = 0;
+        int mCount = 0;
+
+        for (int y = my * mH; y < (my + 1) * mH && y < h; y += 4) {
+          for (int x = mx * mW; x < (mx + 1) * mW && x < w; x += 4) {
+            final p = plane[y][x];
+            mR += p[0];
+            mG += p[1];
+            mB += p[2];
+            if (x > 0 && x < w - 1 && y > 0 && y < h - 1) {
+              final dx = lum[y][x + 1] - lum[y][x - 1];
+              final dy = lum[y + 1][x] - lum[y - 1][x];
+              mMag += (dx.abs() + dy.abs());
+            }
+            mCount++;
+          }
+        }
+
+        if (mCount > 0) {
+          final invM = 1.0 / mCount;
+          vec[base + 0] = (mR * 0.299 + mG * 0.587 + mB * 0.114) * invM;
+          vec[base + 1] = mMag * invM;
+          vec[base + 2] = (mR - mB) * invM;
+          vec[base + 3] = (mG - ((mR + mB) * 0.5)) * invM;
         }
       }
     }

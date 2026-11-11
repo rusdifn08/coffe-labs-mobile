@@ -1,15 +1,13 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:coffee_hub_mobile/features/scanner/data/local/prototype_database.dart';
 import 'package:coffee_hub_mobile/features/scanner/domain/services/incremental_vision_engine.dart';
-import 'package:coffee_hub_mobile/features/scanner/domain/services/image_tensor_isolate.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  sqfliteFfiInit();
-  databaseFactory = databaseFactoryFfi;
+  PrototypeDatabase.ensureFfiInitialized();
 
   group('PrototypeDatabase & Serialization Tests', () {
     test('Float32List <-> Uint8List BLOB serialization preserves exact values', () {

@@ -2,11 +2,18 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show PlatformDispatcher, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'core/router/app_router.dart';
 import 'theme/app_theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inisialisasi sqflite FFI untuk platform desktop (Windows / Linux / macOS)
+  if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
 
   // Mencegah crash akibat bug assertion bawaan engine Flutter Windows RawKeyboard saat menekan tombol Alt / Alt+Tab
   final originalOnError = FlutterError.onError;
