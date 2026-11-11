@@ -259,6 +259,93 @@ Sweet Caramel, Banana, Low Body, Smooth
       expect(result.recommendedWaterTempC, 90);
     });
 
+    test('WATERMELON SMASH Wanoja Coffee (Anaerobic Natural, Kamojang, Full OCR Ground Truth)', () {
+      const ocrText = '''
+WATERMELON SMASH
+ORIGIN
+'(amojang, Gar _ West Jav;
+PROCESS
+Anaerobic Natura_
+TASTINGNOTES Watermelo ,
+FARMER
+vanoja cotte-
+UARIETY
+Mixeci Variet,
+trawbern ,
+2500 mas:
+landarjn
+)range
+FILTER ROAST
+''';
+
+      final blocks = [
+        {
+          'text': 'WATERMELON SMASH',
+          'normalized_height': 0.10,
+          'top_y': 0.65,
+          'left_x': 0.15,
+          'normalized_width': 0.70,
+        },
+        {
+          'text': 'Anaerobic Natura_',
+          'normalized_height': 0.04,
+          'top_y': 0.82,
+          'left_x': 0.06,
+          'normalized_width': 0.25,
+        },
+        {
+          'text': 'TASTINGNOTES Watermelo ,',
+          'normalized_height': 0.03,
+          'top_y': 0.92,
+          'left_x': 0.06,
+          'normalized_width': 0.35,
+        },
+        {
+          'text': 'trawbern ,',
+          'normalized_height': 0.03,
+          'top_y': 0.92,
+          'left_x': 0.38,
+          'normalized_width': 0.20,
+        },
+        {
+          'text': 'landarjn )range',
+          'normalized_height': 0.03,
+          'top_y': 0.92,
+          'left_x': 0.60,
+          'normalized_width': 0.25,
+        },
+        {
+          'text': 'vanoja cotte-',
+          'normalized_height': 0.03,
+          'top_y': 0.77,
+          'left_x': 0.78,
+          'normalized_width': 0.18,
+        },
+        {
+          'text': 'Mixeci Variet,',
+          'normalized_height': 0.03,
+          'top_y': 0.85,
+          'left_x': 0.78,
+          'normalized_width': 0.18,
+        },
+      ];
+
+      final result = CognitiveBeanAnalyzer.analyze(
+        rawFullText: ocrText,
+        blocksDto: blocks,
+      );
+
+      expect(result.beanName, 'Watermelon Smash');
+      expect(result.roasteryName, 'Wanoja Coffee');
+      expect(result.process, 'Anaerobic Natural');
+      expect(result.origin, contains('Kamojang'));
+      expect(result.variety, 'Mixed Variety');
+      expect(result.notesSource, 'OCR_EXPLICIT');
+      expect(result.tastingNotes, contains('Watermelon'));
+      expect(result.tastingNotes, contains('Strawberry'));
+      expect(result.tastingNotes, contains('Mandarin Orange'));
+    });
+
     test('detectProcess: urutan prioritas wet-hulled sebelum washed', () {
       expect(
         CognitiveBeanAnalyzer.detectProcess('Gayo Semi Washed Giling Basah').canonicalName,

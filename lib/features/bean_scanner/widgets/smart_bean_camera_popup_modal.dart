@@ -8,7 +8,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/router/app_router.dart';
-import '../../annotation_studio/presentation/mobile_dataset_kanban_screen.dart';
 import '../../in_app_trainer/presentation/in_app_bean_trainer_screen.dart';
 import '../controllers/bean_scanner_controller.dart';
 import '../controllers/selected_brew_bean_controller.dart';
@@ -559,12 +558,14 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
                 const SizedBox(height: 8),
                 Text(
                   bean.beanName,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 2),
                 Row(
                   children: [
-                    Flexible(
+                    Expanded(
                       child: Text(
                         bean.roasteryName,
                         maxLines: 1,
@@ -625,7 +626,7 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
             children: [
               Expanded(
                 child: _buildParameterTile(
-                  'Altitude / Ketinggian',
+                  'Ketinggian (MDPL)',
                   bean.altitudeMasl ?? '1400 - 1800 MDPL',
                   Icons.landscape_rounded,
                   isInferred: bean.isAiInferredAltitude,
@@ -748,7 +749,12 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const MobileDatasetKanbanScreen(),
+                      builder: (_) => InAppBeanTrainerScreen(
+                        initialRoastery: bean.roasteryName != 'Specialty Roastery' ? bean.roasteryName : '',
+                        initialBeanName: !bean.beanName.toLowerCase().startsWith('specialty coffee') ? bean.beanName : '',
+                        initialProcess: bean.process,
+                        initialNotes: bean.tastingNotes,
+                      ),
                     ),
                   );
                 },
@@ -871,7 +877,7 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
               children: [
                 Row(
                   children: [
-                    Flexible(
+                    Expanded(
                       child: Text(
                         title,
                         style: const TextStyle(color: Colors.white38, fontSize: 10),

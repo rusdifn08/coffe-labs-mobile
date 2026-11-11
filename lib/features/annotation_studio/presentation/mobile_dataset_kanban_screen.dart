@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -28,7 +29,7 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('${files.length} foto berhasil ditambahkan ke antrean.'),
-              backgroundColor: const Color(0xFF6D28D9),
+              backgroundColor: const Color(0xFFD4AF37),
             ),
           );
         }
@@ -71,37 +72,49 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0F19), // Deep Espresso Obsidian
+      backgroundColor: const Color(0xFF17120E), // Warm Coffee Dark
       appBar: AppBar(
-        backgroundColor: const Color(0xFF12100E),
+        backgroundColor: const Color(0xFF1F1813),
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(CupertinoIcons.back, color: Color(0xFFD4AF37)),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: const Color(0xFF6D28D9),
+                color: const Color(0xFFD4AF37).withValues(alpha: 0.16),
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFD4AF37), width: 1),
               ),
-              child: const Icon(Icons.dataset_outlined, size: 18, color: Colors.white),
+              child: const Icon(Icons.dataset_outlined, size: 16, color: Color(0xFFD4AF37)),
             ),
-            const SizedBox(width: 10),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Roboflow Studio',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Roboflow Studio',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                Text(
-                  'On-Device Auto-Labeler & NCM Trainer',
-                  style: TextStyle(color: Color(0xFFD4A373), fontSize: 10),
-                ),
-              ],
+                  Text(
+                    'Batch Auto-Labeler & NCM',
+                    style: TextStyle(color: Color(0xFFD4A373), fontSize: 10),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -109,7 +122,7 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
           // Import coffee.json Button
           IconButton(
             tooltip: 'Import coffee.json',
-            icon: const Icon(Icons.file_download_outlined, color: Color(0xFFD4A373)),
+            icon: const Icon(Icons.file_download_outlined, color: Color(0xFFD4A373), size: 20),
             onPressed: () async {
               final count = await notifier.importCoffeeJson();
               if (context.mounted) {
@@ -123,25 +136,29 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
             },
           ),
           // Auto-Label Batch Button
-          TextButton.icon(
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.white,
-              backgroundColor: const Color(0xFF6D28D9),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                foregroundColor: const Color(0xFF1F1813),
+                backgroundColor: const Color(0xFFD4AF37),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                elevation: 0,
+              ),
+              icon: const Icon(Icons.smart_toy_outlined, size: 14),
+              label: const Text('Auto-Label', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => const BatchAutoLabelConfigSheet(),
+                );
+              },
             ),
-            icon: const Icon(Icons.smart_toy_outlined, size: 14),
-            label: const Text('Auto-Label', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (_) => const BatchAutoLabelConfigSheet(),
-              );
-            },
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
         ],
       ),
       body: Column(
@@ -149,7 +166,7 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
           // Filter Tabs (Horizontal Scroll)
           Container(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-            color: const Color(0xFF12100E),
+            color: const Color(0xFF1F1813),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -164,6 +181,7 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
                   _buildFilterPill(
                     title: 'Belum Terlabel',
                     count: state.unassignedCount,
+                    badgeColor: const Color(0xFFECA400),
                     isActive: state.selectedTab == 'unassigned',
                     onTap: () => notifier.setSelectedTab('unassigned'),
                   ),
@@ -192,7 +210,7 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
           if (state.selectedTab == 'rejected' && state.rejectedCount > 0)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: const Color(0xFF1F1518),
+              color: const Color(0xFF26181A),
               child: Row(
                 children: [
                   const Icon(Icons.warning_amber_rounded, size: 16, color: Color(0xFFEF4444)),
@@ -230,7 +248,7 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
           Expanded(
             child: state.isLoading
                 ? const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF8B5CF6)),
+                    child: CircularProgressIndicator(color: Color(0xFFD4AF37)),
                   )
                 : filteredList.isEmpty
                     ? _buildEmptyState()
@@ -256,20 +274,20 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(12),
         decoration: const BoxDecoration(
-          color: Color(0xFF12100E),
-          border: Border(top: BorderSide(color: Colors.white10)),
+          color: Color(0xFF1F1813),
+          border: Border(top: BorderSide(color: Color(0xFF34261C))),
         ),
         child: Row(
           children: [
             // Add Photo Options
             IconButton(
               tooltip: 'Ambil Foto Kemasan',
-              icon: const Icon(Icons.camera_alt_outlined, color: Colors.white),
+              icon: const Icon(Icons.camera_alt_outlined, color: Color(0xFFD4AF37)),
               onPressed: _pickFromCamera,
             ),
             IconButton(
               tooltip: 'Pilih Banyak Foto dari Galeri',
-              icon: const Icon(Icons.photo_library_outlined, color: Colors.white),
+              icon: const Icon(Icons.photo_library_outlined, color: Colors.white70),
               onPressed: _pickFromGallery,
             ),
             const SizedBox(width: 8),
@@ -310,7 +328,7 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
   Widget _buildFilterPill({
     required String title,
     required int count,
-    Color badgeColor = const Color(0xFF6D28D9),
+    Color badgeColor = const Color(0xFFD4AF37),
     required bool isActive,
     required VoidCallback onTap,
   }) {
@@ -320,10 +338,10 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isActive ? badgeColor.withValues(alpha: 0.25) : const Color(0xFF1F2937),
+          color: isActive ? badgeColor.withValues(alpha: 0.22) : const Color(0xFF261D16),
           border: Border.all(
-            color: isActive ? badgeColor : Colors.white12,
-            width: 1.5,
+            color: isActive ? badgeColor : const Color(0xFF3B2D24),
+            width: 1.2,
           ),
           borderRadius: BorderRadius.circular(20),
         ),
@@ -347,8 +365,8 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
               ),
               child: Text(
                 '$count',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: isActive ? const Color(0xFF12100E) : Colors.white,
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                 ),
@@ -373,17 +391,17 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
           ),
         );
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(14),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF161B26),
-          borderRadius: BorderRadius.circular(12),
+          color: const Color(0xFF261D16),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: item.isRejected
                 ? const Color(0xFFEF4444).withValues(alpha: 0.5)
                 : item.isAnnotated
                     ? const Color(0xFF10B981).withValues(alpha: 0.5)
-                    : Colors.white12,
+                    : const Color(0xFF3D2D22),
           ),
         ),
         clipBehavior: Clip.antiAlias,
@@ -398,8 +416,8 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
                   fileExists
                       ? Image.file(file, fit: BoxFit.cover)
                       : Container(
-                          color: Colors.white10,
-                          child: const Icon(Icons.broken_image, color: Colors.white38),
+                          color: const Color(0xFF1F1813),
+                          child: const Icon(Icons.broken_image, color: Colors.white24),
                         ),
 
                   // Top Status Badge
@@ -414,14 +432,14 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFEF2F2),
+                              color: const Color(0xFF381A1C),
                               border: Border.all(color: const Color(0xFFEF4444)),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Text(
                               '🚫 NON-COFFEE',
                               style: TextStyle(
-                                color: Color(0xFFB91C1C),
+                                color: Color(0xFFF87171),
                                 fontSize: 9,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -432,8 +450,8 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                             decoration: BoxDecoration(
                               color: item.isNewClass
-                                  ? const Color(0xFFECFDF5)
-                                  : const Color(0xFFEFF6FF),
+                                  ? const Color(0xFF1B382B)
+                                  : const Color(0xFF192B45),
                               border: Border.all(
                                 color: item.isNewClass
                                     ? const Color(0xFF10B981)
@@ -445,8 +463,8 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
                               item.isNewClass ? '✨ NEW OCR' : '✓ MATCHED',
                               style: TextStyle(
                                 color: item.isNewClass
-                                    ? const Color(0xFF047857)
-                                    : const Color(0xFF1D4ED8),
+                                    ? const Color(0xFF34D399)
+                                    : const Color(0xFF60A5FA),
                                 fontSize: 9,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -470,10 +488,10 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
                           Container(
                             padding: const EdgeInsets.all(4),
                             decoration: const BoxDecoration(
-                              color: Color(0xFF6D28D9),
+                              color: Color(0xFFD4AF37),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.polyline, size: 10, color: Colors.white),
+                            child: const Icon(Icons.polyline, size: 10, color: Color(0xFF12100E)),
                           ),
                       ],
                     ),
@@ -503,7 +521,7 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
                     item.isRejected
                         ? (item.rejectionReason ?? 'Bukan kemasan kopi valid')
                         : '${item.brand ?? "brand"} • ${item.process ?? "proses"}',
-                    style: const TextStyle(color: Colors.white54, fontSize: 10),
+                    style: const TextStyle(color: Color(0xFFC7BBAF), fontSize: 10),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -523,11 +541,11 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
         children: [
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1F2937),
+            decoration: const BoxDecoration(
+              color: Color(0xFF261D16),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.photo_library_outlined, size: 48, color: Color(0xFF8B5CF6)),
+            child: const Icon(Icons.photo_library_outlined, size: 48, color: Color(0xFFD4AF37)),
           ),
           const SizedBox(height: 16),
           const Text(
@@ -537,18 +555,18 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
           const SizedBox(height: 6),
           const Text(
             'Ambil foto kemasan atau pilih dari galeri untuk mulai anotasi.',
-            style: TextStyle(color: Colors.white54, fontSize: 12),
+            style: TextStyle(color: Color(0xFFC7BBAF), fontSize: 12),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6D28D9),
-              foregroundColor: Colors.white,
+              backgroundColor: const Color(0xFFD4AF37),
+              foregroundColor: const Color(0xFF12100E),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             icon: const Icon(Icons.add_photo_alternate, size: 18),
-            label: const Text('Pilih dari Galeri'),
+            label: const Text('Pilih dari Galeri', style: TextStyle(fontWeight: FontWeight.bold)),
             onPressed: _pickFromGallery,
           ),
         ],

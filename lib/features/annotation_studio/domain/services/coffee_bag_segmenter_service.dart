@@ -134,16 +134,16 @@ class CoffeeBagSegmenterService {
 
     final bool isMobilePlatform = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
     if (isMobilePlatform && config.enableSegmentation) {
+      ObjectDetector? objectDetector;
       try {
         final options = ObjectDetectorOptions(
           mode: DetectionMode.single,
           classifyObjects: false,
           multipleObjects: true,
         );
-        final objectDetector = ObjectDetector(options: options);
+        objectDetector = ObjectDetector(options: options);
         final inputImage = InputImage.fromFilePath(imageFile.path);
         final detected = await objectDetector.processImage(inputImage);
-        await objectDetector.close();
 
         if (detected.isNotEmpty) {
           detected.sort((a, b) =>
@@ -154,6 +154,12 @@ class CoffeeBagSegmenterService {
         }
       } catch (e) {
         debugPrint('MLKit Object Detector notice: $e. Using smart adaptive bounding box.');
+      } finally {
+        if (objectDetector != null) {
+          try {
+            await objectDetector.close();
+          } catch (_) {}
+        }
       }
     }
 

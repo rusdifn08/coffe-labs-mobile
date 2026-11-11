@@ -92,14 +92,14 @@ class CognitiveBeanAnalyzer {
       regionProvince: 'Gunung Halu, Bandung Barat, Jawa Barat',
       defaultAltitude: '1350 - 1650 MDPL',
       defaultVarietals: 'Sigararutang, Lini S795, Ateng Super',
-      keywords: ['gunung halu', 'halu', 'gn halu', 'gununghalu', 'haloe', 'sindangkerta'],
+      keywords: ['gunung halu', 'halu', 'gn halu', 'gununghalu', 'haloe', 'sindangkerta', 'halu banana'],
     ),
     TerroirProfile(
       canonicalName: 'Kamojang Garut',
       regionProvince: 'Kamojang, Garut, Jawa Barat',
       defaultAltitude: '1400 - 1750 MDPL',
       defaultVarietals: 'Typica, Sigararutang, Mixed Variety',
-      keywords: ['kamojang', 'garut', 'amojang', 'wanoja', 'papandayan', 'cikuray', 'wanoja coffee'],
+      keywords: ['kamojang', 'garut', 'amojang', 'wanoja', 'papandayan', 'cikuray', 'wanoja coffee', 'west java', 'west jav', 'jawa barat'],
     ),
     TerroirProfile(
       canonicalName: 'West Java',
@@ -372,11 +372,42 @@ class CognitiveBeanAnalyzer {
 
   static Map<String, String> _extractStructuredFields(String fullText) {
     final fields = <String, String>{};
-    final lines = fullText.split(RegExp(r'[\r\n]+'));
+    final lines = fullText.split(RegExp(r'[\r\n]+')).map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
 
-    for (final line in lines) {
-      final trimmed = line.trim();
-      if (trimmed.isEmpty) continue;
+    for (int i = 0; i < lines.length; i++) {
+      final trimmed = lines[i];
+      final nextLine = (i + 1 < lines.length) ? lines[i + 1] : '';
+
+      // Multi-line header check: label header berdiri sendiri pada 1 baris
+      final isFarmerHeader = RegExp(r'^(?:FARMER|PRODUCER|PROCESSOR|PETANI|ROASTERY|ROASTER|ROASTED\s*BY|DIPRODUKSI\s*OLEH)\s*[:\-]?$', caseSensitive: false).hasMatch(trimmed);
+      if (isFarmerHeader && !fields.containsKey('roastery') && nextLine.isNotEmpty) {
+        fields['roastery'] = nextLine;
+      }
+
+      final isVarietyHeader = RegExp(r'^(?:VARIETY|VARIETAS|UARIETY|KULTIVAR)\s*[:\-]?$', caseSensitive: false).hasMatch(trimmed);
+      if (isVarietyHeader && !fields.containsKey('variety') && nextLine.isNotEmpty) {
+        fields['variety'] = nextLine;
+      }
+
+      final isProcessHeader = RegExp(r'^(?:PROCESS|PROSES|PASCAPANEN|METODE)\s*[:\-]?$', caseSensitive: false).hasMatch(trimmed);
+      if (isProcessHeader && !fields.containsKey('process') && nextLine.isNotEmpty) {
+        fields['process'] = nextLine;
+      }
+
+      final isOriginHeader = RegExp(r'^(?:ORIGIN|ASAL|TERROIR|REGION|LOKASI)\s*[:\-]?$', caseSensitive: false).hasMatch(trimmed);
+      if (isOriginHeader && !fields.containsKey('origin') && nextLine.isNotEmpty) {
+        fields['origin'] = nextLine;
+      }
+
+      final isAltitudeHeader = RegExp(r'^(?:ALTITUDE|ELEVATION|KETINGGIAN)\s*[:\-]?$', caseSensitive: false).hasMatch(trimmed);
+      if (isAltitudeHeader && !fields.containsKey('altitude') && nextLine.isNotEmpty) {
+        fields['altitude'] = nextLine;
+      }
+
+      final isNotesHeader = RegExp(r'^(?:TASTING\s*NOTES?|TASTINGNOTES?|FLAVOR\s*PROFILE|TASTE\s*NOTES?|NOTES?|FLAVOR|CITA\s*RASA)\s*[:\-]?$', caseSensitive: false).hasMatch(trimmed);
+      if (isNotesHeader && !fields.containsKey('notes') && nextLine.isNotEmpty) {
+        fields['notes'] = nextLine;
+      }
 
       // Tasting notes
       final notesMatch = RegExp(r'(?:TASTING\s*NOTES?|TASTINGNOTES?|FLAVOR\s*PROFILE|TASTE\s*NOTES?)\s*[:\-\s]\s*(.+)|(?:NOTES?|FLAVOR|CITA\s*RASA)\s*[:\-]\s*(.+)', caseSensitive: false).firstMatch(trimmed);
@@ -439,10 +470,10 @@ class CognitiveBeanAnalyzer {
   static String _cleanTitleCandidate(String text) {
     String cleaned = text.trim();
     final lower = cleaned.toLowerCase();
-    if (lower.contains('watermelon smash')) {
+    if (lower.contains('watermelon')) {
       return 'Watermelon Smash';
     }
-    if (lower.contains('halu banana')) {
+    if (lower.contains('halu') && lower.contains('banana')) {
       return 'Halu Banana';
     }
     cleaned = cleaned.replaceAll(RegExp(r'^(?:100%\s*arabica|arabica|kopi|coffee)\s+', caseSensitive: false), '');
@@ -756,9 +787,10 @@ class CognitiveBeanAnalyzer {
         (structured.containsKey('farmer') ? _titleCase(structured['farmer']!) : null) ??
         'Specialty Roastery';
 
-    final origin = structured['origin']?.trim().isNotEmpty == true
-        ? _titleCase(structured['origin']!)
-        : (originProf?.regionProvince ?? 'Single Origin, Indonesia');
+    final origin = originProf?.regionProvince ??
+        (structured['origin']?.trim().isNotEmpty == true
+            ? _titleCase(structured['origin']!)
+            : 'Single Origin, Indonesia');
 
     final explicitAlt = _extractAltitude(rawFullText);
     final altitude = explicitAlt ?? originProf?.defaultAltitude ?? '1400 - 1800 MDPL';
@@ -944,7 +976,7 @@ class CognitiveBeanAnalyzer {
 
   static String? _extractVarietal(String text) {
     const known = [
-      'mixed variety', 'heirloom', 'geisha', 'gesha', 'pink bourbon', 'bourbon',
+      'mixed variety', 'mixed variet', 'mixeci variet', 'heirloom', 'geisha', 'gesha', 'pink bourbon', 'bourbon',
       'typica', 'sl28', 'sl34', 'sigararutang', 'kartika', 'andungsari', 'lini s795',
       'caturra', 'catimor', 'timtim', 'abyssinia', 'ateng super', 'ateng'
     ];
@@ -954,17 +986,23 @@ class CognitiveBeanAnalyzer {
       final rawVar = structured['variety']!.trim();
       final firstPart = rawVar.split(RegExp(r'[,;•]')).first.trim();
       final varLower = firstPart.toLowerCase();
+      if (varLower.contains('mix') || varLower.contains('mixed') || varLower.contains('mixeci')) {
+        return 'Mixed Variety';
+      }
       for (final k in known) {
         if (varLower == k || varLower.contains(k) || jaroWinkler(varLower, k) >= 0.80) {
-          return _titleCase(k);
+          return k.contains('mix') ? 'Mixed Variety' : _titleCase(k);
         }
       }
       return _titleCase(firstPart);
     }
 
     final lower = text.toLowerCase();
+    if (lower.contains('mixed variety') || lower.contains('mixeci variet') || lower.contains('mixed variet')) {
+      return 'Mixed Variety';
+    }
     for (final v in known) {
-      if (lower.contains(v)) return _titleCase(v);
+      if (lower.contains(v)) return v.contains('mix') ? 'Mixed Variety' : _titleCase(v);
     }
     return null;
   }

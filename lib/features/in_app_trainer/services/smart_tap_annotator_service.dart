@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_object_detection/google_mlkit_object_detection.dart';
 import 'package:image/image.dart' as img;
@@ -40,6 +41,9 @@ class SmartTapAnnotatorService {
   }
 
   static Future<Rect?> _detectWithMlKit(File imageFile, Offset tapNormalized) async {
+    final bool isMobilePlatform = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+    if (!isMobilePlatform) return null;
+
     final options = ObjectDetectorOptions(
       mode: DetectionMode.single,
       classifyObjects: false,
@@ -95,7 +99,11 @@ class SmartTapAnnotatorService {
         bestBox.bottom / imgH,
       );
     } finally {
-      await detector.close();
+      try {
+        await detector.close();
+      } catch (e) {
+        debugPrint('ML Kit Object Detector close safely ignored: $e');
+      }
     }
   }
 

@@ -172,6 +172,12 @@ class BeanVisionScannerService {
   }
 
   static Future<File> _cropPackagingInIsolate(File file, Rect? boundingBox) async {
+    // Jika tidak ada deteksi bounding box kemasan eksplisit, pertahankan gambar asli secara utuh.
+    // Ini mencegah pemotongan 88% membabi buta yang berisiko memenggal teks penting di tepi kemasan.
+    if (boundingBox == null) {
+      return file;
+    }
+
     final bytes = await file.readAsBytes();
     Directory dir;
     try {
@@ -188,16 +194,6 @@ class BeanVisionScannerService {
     final croppedBytes = await Isolate.run<List<int>>(() {
       final decoded = img.decodeImage(bytes);
       if (decoded == null) return bytes;
-
-      if (boundingBox == null) {
-        // Jika tidak ada object box spesifik, lakukan auto-center crop 88% untuk menghilangkan pinggiran meja
-        final w = (decoded.width * 0.88).toInt();
-        final h = (decoded.height * 0.88).toInt();
-        final x = (decoded.width - w) ~/ 2;
-        final y = (decoded.height - h) ~/ 2;
-        final cropped = img.copyCrop(decoded, x: x, y: y, width: w, height: h);
-        return img.encodeJpg(cropped, quality: 88);
-      }
 
       // Berikan safety margin 8% di sekeliling bounding box yang terdeteksi
       final marginX = (boundingBox.width * 0.08).toInt();
@@ -225,10 +221,10 @@ class BeanVisionScannerService {
 Add-Type -AssemblyName System.Runtime.WindowsRuntime
 \$asm = [System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { \$_.GetName().Name -eq 'System.Runtime.WindowsRuntime' }
 \$type = \$asm.GetType('System.WindowsRuntimeSystemExtensions')
-\$asTaskGeneric = \$type.GetMethods() | Where-Object { \$_.Name -eq 'AsTask' -and \$_.GetParameters().Count -eq 1 -and \$_.IsGenericMethodDefinition } | Select-Object -First 1
+\$asTaskGeneric = \$type.GetMethods() | Where-Object { \$_.Name -eq 'AsTask' -and \$_.GetParameters().Count -eq 1 -and \$_.IsGenericMethodDefinition } | Select-Object -First 
 
-function Await(\$asyncOp, \$type) {
-    \$m = \$asTaskGeneric.MakeGenericMethod(\$type)
+function Await(\$asyncOp, \$targetType) {
+    \$m = \$asTaskGeneric.MakeGenericMethod(\$targetType)
     \$task = \$m.Invoke(\$null, @(\$asyncOp))
     \$task.Wait() | Out-Null
     return \$task.Result
@@ -237,6 +233,7 @@ function Await(\$asyncOp, \$type) {
 [Windows.Media.Ocr.OcrEngine, Windows.Foundation, ContentType = WindowsRuntime] | Out-Null
 [Windows.Graphics.Imaging.BitmapDecoder, Windows.Foundation, ContentType = WindowsRuntime] | Out-Null
 [Windows.Storage.StorageFile, Windows.Foundation, ContentType = WindowsRuntime] | Out-Null
+[Windows.Globalization.Language, Windows.Foundation, ContentType = WindowsRuntime] | Out-Null
 
 \$file = Await ([Windows.Storage.StorageFile]::GetFileFromPathAsync('$safePath')) ([Windows.Storage.StorageFile])
 \$stream = Await (\$file.OpenAsync([Windows.Storage.FileAccessMode]::Read)) ([Windows.Storage.Streams.IRandomAccessStream])
@@ -245,7 +242,19 @@ function Await(\$asyncOp, \$type) {
 
 \$engine = [Windows.Media.Ocr.OcrEngine]::TryCreateFromUserProfileLanguages()
 if (-not \$engine) {
-    \$engine = [Windows.Media.Ocr.OcrEngine]::TryCreateFromLanguage([Windows.Globalization.Language]::new('en-US'))
+    try {
+        \$engine = [Windows.Media.Ocr.OcrEngine]::TryCreateFromLanguage([Windows.Globalization.Language]::new('en-US'))
+    } catch {}
+}
+if (-not \$engine) {
+    \$langs = [Windows.Media.Ocr.OcrEngine]::AvailableRecognizerLanguages
+    if (\$langs -and \$langs.Count -gt 0) {
+        \$engine = [Windows.Media.Ocr.OcrEngine]::TryCreateFromLanguage(\$langs[0])
+    }
+}
+if (-not \$engine) {
+    Write-Output "{}"
+    exit 0
 }
 \$ocrResult = Await (\$engine.RecognizeAsync(\$softBmp)) ([Windows.Media.Ocr.OcrResult])
 
