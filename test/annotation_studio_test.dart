@@ -6,11 +6,13 @@ import 'package:coffee_hub_mobile/features/annotation_studio/domain/models/studi
 import 'package:coffee_hub_mobile/features/annotation_studio/domain/services/coffee_bag_segmenter_service.dart';
 import 'package:coffee_hub_mobile/features/annotation_studio/domain/services/coffee_ocr_parser_service.dart';
 import 'package:coffee_hub_mobile/features/annotation_studio/domain/services/non_coffee_gatekeeper_service.dart';
+import 'package:coffee_hub_mobile/features/annotation_studio/domain/services/smart_sam_engine_service.dart';
 import 'package:coffee_hub_mobile/features/annotation_studio/data/local/studio_database.dart';
 
 void main() {
   setUpAll(() {
     PrototypeDatabase.ensureFfiInitialized();
+    StudioDatabase.setTestDbName('test_annotation_studio_${DateTime.now().millisecondsSinceEpoch}.db');
   });
 
   group('1. Non-Coffee Gatekeeper (OOD / Invalid Media Filter) Tests', () {
@@ -264,6 +266,39 @@ void main() {
       final remaining = await StudioDatabase.getAllImages();
       expect(remaining.length, equals(1));
       expect(remaining.first.status, equals('annotated'));
+    });
+  });
+
+  group('5. On-Device SAM 3 & Multi-Tool Interactive Engine Tests', () {
+    test('1-Click positive point prompt creates balanced pouch polygon', () {
+      final res = SmartSamEngineService.predictFromPoints(
+        points: [
+          const SamPromptPoint(normalizedPoint: Offset(0.5, 0.5), isPositive: true),
+        ],
+      );
+      expect(res.polygon.length, greaterThanOrEqualTo(8));
+      expect(res.boundingBox.width, inInclusiveRange(0.4, 0.8));
+      expect(res.boundingBox.height, inInclusiveRange(0.4, 0.9));
+      expect(res.confidence, greaterThanOrEqualTo(0.90));
+    });
+
+    test('Negative point prompt excludes background zone and indents polygon', () {
+      final resWithNeg = SmartSamEngineService.predictFromPoints(
+        points: [
+          const SamPromptPoint(normalizedPoint: Offset(0.5, 0.5), isPositive: true),
+          const SamPromptPoint(normalizedPoint: Offset(0.2, 0.5), isPositive: false),
+        ],
+      );
+      expect(resWithNeg.polygon.isNotEmpty, isTrue);
+      expect(resWithNeg.boundingBox.left, greaterThanOrEqualTo(0.20));
+    });
+
+    test('Box SAM prompt generates tight pouch contour inside user bbox', () {
+      final normBox = const Rect.fromLTWH(0.20, 0.15, 0.60, 0.70);
+      final res = SmartSamEngineService.predictFromBox(normBox);
+      expect(res.polygon.length, greaterThanOrEqualTo(6));
+      expect(res.boundingBox.left, closeTo(0.20, 0.01));
+      expect(res.boundingBox.top, closeTo(0.15, 0.01));
     });
   });
 }

@@ -707,18 +707,17 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
             ),
             const SizedBox(height: 10),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
-                  children: [
-                    Icon(Icons.touch_app_outlined, size: 14, color: Color(0xFFD4AF37)),
-                    SizedBox(width: 4),
-                    Text(
-                      'Tap kemasan untuk Auto-Snap • Geser sudut untuk fine-tune',
-                      style: TextStyle(color: Colors.white54, fontSize: 10.5),
-                    ),
-                  ],
+                const Icon(Icons.touch_app_outlined, size: 14, color: Color(0xFFD4AF37)),
+                const SizedBox(width: 4),
+                const Expanded(
+                  child: Text(
+                    'Tap kemasan untuk Auto-Snap • Geser sudut untuk fine-tune',
+                    style: TextStyle(color: Colors.white54, fontSize: 10.5),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
+                const SizedBox(width: 4),
                 TextButton.icon(
                   onPressed: () => _showImagePickerSheet(selectedIdx),
                   icon: const Icon(Icons.refresh, size: 14, color: Color(0xFFD4AF37)),
@@ -1163,24 +1162,23 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.terrain, color: Color(0xFFD4AF37), size: 16),
-                  SizedBox(width: 6),
-                  Text(
-                    'Ketinggian (Altitude)',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
+              const Icon(Icons.terrain, color: Color(0xFFD4AF37), size: 16),
+              const SizedBox(width: 6),
+              const Expanded(
+                child: Text(
+                  'Ketinggian (Altitude)',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
-                ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
@@ -1190,7 +1188,7 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
                   '$_altitudeMin - $_altitudeMax MDPL',
                   style: const TextStyle(
                     color: Color(0xFFD4AF37),
-                    fontSize: 12,
+                    fontSize: 11.5,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'monospace',
                   ),

@@ -10,10 +10,17 @@ import '../../domain/models/studio_image_item.dart';
 /// Local SQLite Database for In-App Mobile Roboflow Annotation Studio
 class StudioDatabase {
   static const String dbName = 'coffee_annotation_studio.db';
+  static String? _testDbName;
   static const String imagesTable = 'studio_images';
   static const String classesTable = 'coffee_classes';
 
   static Database? _database;
+
+  /// Sets isolated database for testing
+  static void setTestDbName(String? name) {
+    _testDbName = name;
+    _database = null;
+  }
 
   static Future<Database> get database async {
     if (_database != null) return _database!;
@@ -28,9 +35,10 @@ class StudioDatabase {
     PrototypeDatabase.ensureFfiInitialized();
 
     final dbPath = await getDatabasesPath();
-    final path = join(dbPath, dbName);
+    final activeDbName = _testDbName ?? dbName;
+    final path = join(dbPath, activeDbName);
 
-    return await openDatabase(
+    final db = await openDatabase(
       path,
       version: 1,
       onCreate: (db, version) async {
@@ -74,6 +82,13 @@ class StudioDatabase {
         ''');
       },
     );
+
+    // In production database, purge any accidental mock test records
+    if (_testDbName == null) {
+      await db.delete(imagesTable, where: "file_path LIKE 'test/%'");
+    }
+
+    return db;
   }
 
   // --- Seed & Import Operations ---

@@ -8,6 +8,7 @@ import '../../domain/models/auto_label_config.dart';
 import '../../domain/models/coffee_annotation_class.dart';
 import '../../domain/models/studio_image_item.dart';
 import '../../domain/services/coffee_bag_segmenter_service.dart';
+import '../../domain/services/smart_sam_engine_service.dart';
 import 'annotation_studio_state.dart';
 
 final annotationStudioProvider =
@@ -46,6 +47,70 @@ class AnnotationStudioController extends Notifier<AnnotationStudioState> {
 
   void updateConfig(AutoLabelConfig config) {
     state = state.copyWith(config: config);
+  }
+
+  void setTool(StudioTool tool) {
+    state = state.copyWith(activeTool: tool, selectedVertexIndex: null);
+  }
+
+  void setSamPromptMode(SamPromptMode mode) {
+    state = state.copyWith(samPromptMode: mode);
+  }
+
+  void _pushSnapshot() {
+    final snapshot = StudioAnnotationSnapshot(
+      polygon: List<Offset>.from(state.activePolygon),
+      bbox: state.activeBbox,
+      samPoints: List<SamPromptPoint>.from(state.samPromptPoints),
+    );
+    final history = List<StudioAnnotationSnapshot>.from(state.undoStack)..add(snapshot);
+    if (history.length > 25) history.removeAt(0);
+    state = state.copyWith(
+      undoStack: history,
+      redoStack: const [],
+    );
+  }
+
+  void undo() {
+    if (!state.canUndo) return;
+    final current = StudioAnnotationSnapshot(
+      polygon: List<Offset>.from(state.activePolygon),
+      bbox: state.activeBbox,
+      samPoints: List<SamPromptPoint>.from(state.samPromptPoints),
+    );
+    final undoStack = List<StudioAnnotationSnapshot>.from(state.undoStack);
+    final prev = undoStack.removeLast();
+    final redoStack = List<StudioAnnotationSnapshot>.from(state.redoStack)..add(current);
+
+    state = state.copyWith(
+      undoStack: undoStack,
+      redoStack: redoStack,
+      activePolygon: prev.polygon,
+      activeBbox: prev.bbox,
+      samPromptPoints: prev.samPoints,
+      selectedVertexIndex: null,
+    );
+  }
+
+  void redo() {
+    if (!state.canRedo) return;
+    final current = StudioAnnotationSnapshot(
+      polygon: List<Offset>.from(state.activePolygon),
+      bbox: state.activeBbox,
+      samPoints: List<SamPromptPoint>.from(state.samPromptPoints),
+    );
+    final redoStack = List<StudioAnnotationSnapshot>.from(state.redoStack);
+    final next = redoStack.removeLast();
+    final undoStack = List<StudioAnnotationSnapshot>.from(state.undoStack)..add(current);
+
+    state = state.copyWith(
+      undoStack: undoStack,
+      redoStack: redoStack,
+      activePolygon: next.polygon,
+      activeBbox: next.bbox,
+      samPromptPoints: next.samPoints,
+      selectedVertexIndex: null,
+    );
   }
 
   Future<int> importCoffeeJson() async {
@@ -91,6 +156,9 @@ class AnnotationStudioController extends Notifier<AnnotationStudioState> {
         activePolygon: [],
         activeBbox: null,
         selectedVertexIndex: null,
+        samPromptPoints: const [],
+        undoStack: const [],
+        redoStack: const [],
       );
       return;
     }
@@ -105,11 +173,17 @@ class AnnotationStudioController extends Notifier<AnnotationStudioState> {
       activePolygon: List<Offset>.from(item.polygon),
       activeBbox: bbox,
       selectedVertexIndex: null,
+      samPromptPoints: const [],
+      undoStack: const [],
+      redoStack: const [],
     );
   }
 
   void updateActivePolygon(List<Offset> polygon) {
-    if (polygon.isEmpty) return;
+    if (polygon.isEmpty) {
+      state = state.copyWith(activePolygon: const [], activeBbox: null);
+      return;
+    }
 
     double minX = polygon.first.dx;
     double minY = polygon.first.dy;
@@ -140,26 +214,160 @@ class AnnotationStudioController extends Notifier<AnnotationStudioState> {
     updateActivePolygon(updated);
   }
 
-  /// 1-Tap Smart Point Selection on coffee bag
-  void smartPointSelect(Offset tapNormalized) {
-    final double cx = tapNormalized.dx.clamp(0.15, 0.85);
-    final double cy = tapNormalized.dy.clamp(0.15, 0.85);
-    const double halfW = 0.35;
-    const double halfH = 0.38;
+  /// 1-Click Interactive SAM 3 Point Prompts (+ Positive, - Negative)
+  void addSamPoint(Offset normPoint) {
+    _pushSnapshot();
 
-    final rect = Rect.fromLTRB(
-      (cx - halfW).clamp(0.05, 0.95),
-      (cy - halfH).clamp(0.05, 0.95),
-      (cx + halfW).clamp(0.05, 0.95),
-      (cy + halfH).clamp(0.05, 0.95),
+    // Check if clicked near existing prompt point (within 0.04 normalized dist) -> delete that point
+    final existingIdx = state.samPromptPoints.indexWhere(
+      (p) => (p.normalizedPoint - normPoint).distance <= 0.04,
     );
 
-    final poly = CoffeeBagSegmenterService.generateContouredPouchPolygon(rect);
+    List<SamPromptPoint> updatedPoints;
+    if (existingIdx >= 0) {
+      updatedPoints = List<SamPromptPoint>.from(state.samPromptPoints)..removeAt(existingIdx);
+    } else {
+      final newPoint = SamPromptPoint(
+        normalizedPoint: Offset(normPoint.dx.clamp(0.01, 0.99), normPoint.dy.clamp(0.01, 0.99)),
+        isPositive: state.samPromptMode == SamPromptMode.positive,
+      );
+      updatedPoints = List<SamPromptPoint>.from(state.samPromptPoints)..add(newPoint);
+    }
+
+    if (updatedPoints.isEmpty) {
+      state = state.copyWith(
+        samPromptPoints: const [],
+        activePolygon: const [],
+        activeBbox: null,
+      );
+      return;
+    }
+
+    final samResult = SmartSamEngineService.predictFromPoints(points: updatedPoints);
+
     state = state.copyWith(
-      activeBbox: rect,
+      samPromptPoints: updatedPoints,
+      activePolygon: samResult.polygon,
+      activeBbox: samResult.boundingBox,
+      selectedVertexIndex: null,
+    );
+  }
+
+  void clearSamPoints() {
+    if (state.samPromptPoints.isEmpty) return;
+    _pushSnapshot();
+    state = state.copyWith(samPromptPoints: const []);
+  }
+
+  /// Box SAM (Smart Box Segmentation inside dragged area)
+  void applySmartBox(Rect normBox) {
+    _pushSnapshot();
+    final samResult = SmartSamEngineService.predictFromBox(normBox);
+    state = state.copyWith(
+      activePolygon: samResult.polygon,
+      activeBbox: samResult.boundingBox,
+      selectedVertexIndex: null,
+    );
+  }
+
+  /// Standard Bounding Box (4-point rectangular polygon)
+  void applyBoundingBox(Rect normBox) {
+    _pushSnapshot();
+    final clampedBox = Rect.fromLTRB(
+      normBox.left.clamp(0.01, 0.99),
+      normBox.top.clamp(0.01, 0.99),
+      normBox.right.clamp(0.01, 0.99),
+      normBox.bottom.clamp(0.01, 0.99),
+    );
+
+    final poly = [
+      Offset(clampedBox.left, clampedBox.top),
+      Offset(clampedBox.right, clampedBox.top),
+      Offset(clampedBox.right, clampedBox.bottom),
+      Offset(clampedBox.left, clampedBox.bottom),
+    ];
+
+    state = state.copyWith(
+      activeBbox: clampedBox,
       activePolygon: poly,
       selectedVertexIndex: null,
     );
+  }
+
+  /// Add vertex for Manual Polygon Tool
+  void addPolygonVertex(Offset normPoint) {
+    _pushSnapshot();
+    final clamped = Offset(normPoint.dx.clamp(0.01, 0.99), normPoint.dy.clamp(0.01, 0.99));
+    final updated = List<Offset>.from(state.activePolygon)..add(clamped);
+    updateActivePolygon(updated);
+  }
+
+  /// Remove last vertex for Manual Polygon Tool
+  void removeLastPolygonVertex() {
+    if (state.activePolygon.isEmpty) return;
+    _pushSnapshot();
+    final updated = List<Offset>.from(state.activePolygon)..removeLast();
+    updateActivePolygon(updated);
+  }
+
+  /// Close manual polygon and ensure tight bbox
+  void closeManualPolygon() {
+    if (state.activePolygon.length < 3) return;
+    _pushSnapshot();
+    updateActivePolygon(state.activePolygon);
+    state = state.copyWith(activeTool: StudioTool.vertexEdit);
+  }
+
+  /// Insert vertex on edge midpoint
+  void insertPolygonVertex(int index, Offset newPos) {
+    _pushSnapshot();
+    final clamped = Offset(newPos.dx.clamp(0.01, 0.99), newPos.dy.clamp(0.01, 0.99));
+    final updated = List<Offset>.from(state.activePolygon);
+    if (index >= 0 && index <= updated.length) {
+      updated.insert(index, clamped);
+    } else {
+      updated.add(clamped);
+    }
+    updateActivePolygon(updated);
+  }
+
+  /// Delete vertex from polygon
+  void deletePolygonVertex(int index) {
+    if (index < 0 || index >= state.activePolygon.length) return;
+    if (state.activePolygon.length <= 3) return;
+    _pushSnapshot();
+    final updated = List<Offset>.from(state.activePolygon)..removeAt(index);
+    updateActivePolygon(updated);
+    state = state.copyWith(selectedVertexIndex: null);
+  }
+
+  /// Reset polygon to clean state
+  void resetPolygon() {
+    _pushSnapshot();
+    state = state.copyWith(
+      activePolygon: const [],
+      activeBbox: null,
+      samPromptPoints: const [],
+      selectedVertexIndex: null,
+    );
+  }
+
+  /// Reset to standard contoured pouch shape
+  void resetToPouchTemplate() {
+    _pushSnapshot();
+    const defaultBox = Rect.fromLTWH(0.18, 0.12, 0.64, 0.76);
+    final poly = CoffeeBagSegmenterService.generateContouredPouchPolygon(defaultBox);
+    state = state.copyWith(
+      activePolygon: poly,
+      activeBbox: defaultBox,
+      samPromptPoints: const [],
+      selectedVertexIndex: null,
+    );
+  }
+
+  /// 1-Tap Smart Point Selection on coffee bag (legacy fallback)
+  void smartPointSelect(Offset tapNormalized) {
+    addSamPoint(tapNormalized);
   }
 
   /// Save changes on active item

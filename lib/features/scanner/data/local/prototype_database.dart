@@ -154,12 +154,17 @@ class PrototypeDatabase {
   /// Ensures SQLite FFI is initialized once safely on desktop platforms
   static void ensureFfiInitialized() {
     if (kIsWeb) return;
-    if (!_ffiInitialized && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+    if (_ffiInitialized) return;
+    _ffiInitialized = true;
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       sqfliteFfiInit();
       try {
+        if (databaseFactory != databaseFactoryFfi) {
+          databaseFactory = databaseFactoryFfi;
+        }
+      } catch (_) {
         databaseFactory = databaseFactoryFfi;
-      } catch (_) {}
-      _ffiInitialized = true;
+      }
     }
   }
 

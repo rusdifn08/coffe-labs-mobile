@@ -586,7 +586,36 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
                         ? Image.file(file, fit: BoxFit.cover)
                         : Container(
                             color: const Color(0xFFF3EDE6),
-                            child: const Icon(Icons.broken_image, color: Colors.black26),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.broken_image_rounded, color: Color(0xFFEF4444), size: 28),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'File Hilang',
+                                  style: TextStyle(color: Color(0xFFDC2626), fontSize: 9.5, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 4),
+                                InkWell(
+                                  onTap: () {
+                                    if (item.id != null) {
+                                      ref.read(annotationStudioProvider.notifier).deleteImage(item.id!);
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFEF4444).withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text(
+                                      'Hapus',
+                                      style: TextStyle(color: Color(0xFFEF4444), fontSize: 9, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
 
                     // Top Status Badge
