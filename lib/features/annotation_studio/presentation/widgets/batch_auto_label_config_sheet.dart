@@ -37,17 +37,21 @@ class _BatchAutoLabelConfigSheetState extends ConsumerState<BatchAutoLabelConfig
 
   @override
   Widget build(BuildContext context) {
+    const bgCream = Color(0xFFF9F6F0);
+    const textDark = Color(0xFF2D1F17);
+    const textMuted = Color(0xFF8F857D);
+
     final state = ref.watch(annotationStudioProvider);
 
     return Container(
       padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        left: 18,
+        right: 18,
+        top: 14,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
       ),
       decoration: const BoxDecoration(
-        color: Color(0xFF161B26),
+        color: bgCream,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SingleChildScrollView(
@@ -57,25 +61,25 @@ class _BatchAutoLabelConfigSheetState extends ConsumerState<BatchAutoLabelConfig
           children: [
             Center(
               child: Container(
-                width: 48,
+                width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: const Color(0xFFD8CFBE),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
             Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6D28D9).withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
+                    color: const Color(0xFFF5F3FF),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.smart_toy_outlined, color: Color(0xFF8B5CF6), size: 20),
+                  child: const Icon(Icons.smart_toy_outlined, color: Color(0xFF7C3AED), size: 20),
                 ),
                 const SizedBox(width: 12),
                 const Expanded(
@@ -85,31 +89,31 @@ class _BatchAutoLabelConfigSheetState extends ConsumerState<BatchAutoLabelConfig
                       Text(
                         'Konfigurasi Auto-Label Batch',
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
+                          color: textDark,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
                         'Segmentasi Poligon, Gatekeeper & OCR On-Device',
-                        style: TextStyle(color: Colors.white60, fontSize: 11),
+                        style: TextStyle(color: textMuted, fontSize: 10.5),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
 
             // Real-Time Progress Card if running
             if (state.isBatchProcessing) ...[
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0B0F19),
-                  border: Border.all(color: const Color(0xFF8B5CF6)),
-                  borderRadius: BorderRadius.circular(16),
+                  color: Colors.white,
+                  border: Border.all(color: const Color(0xFF7C3AED), width: 1.2),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,41 +124,41 @@ class _BatchAutoLabelConfigSheetState extends ConsumerState<BatchAutoLabelConfig
                         Text(
                           'Memproses Batch (${state.batchCurrent}/${state.batchTotal})...',
                           style: const TextStyle(
-                            color: Color(0xFFD4A373),
+                            color: Color(0xFF7C3AED),
                             fontWeight: FontWeight.bold,
-                            fontSize: 13,
+                            fontSize: 12.5,
                           ),
                         ),
                         const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF8B5CF6)),
+                          width: 15,
+                          height: 15,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF7C3AED)),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
                         value: state.batchTotal > 0 ? state.batchCurrent / state.batchTotal : 0.0,
-                        backgroundColor: Colors.white12,
-                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF8B5CF6)),
+                        backgroundColor: const Color(0xFFE8DFD8),
+                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF7C3AED)),
                         minHeight: 6,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Text(
                       state.batchStatusMessage,
-                      style: const TextStyle(color: Colors.white70, fontSize: 11),
+                      style: const TextStyle(color: textDark, fontSize: 11),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         _buildStatChip(
                           icon: Icons.check_circle_outline,
-                          color: const Color(0xFF10B981),
+                          color: const Color(0xFF059669),
                           label: '${state.batchLabeledCount} Kemasan',
                         ),
                         const SizedBox(width: 8),
@@ -168,7 +172,7 @@ class _BatchAutoLabelConfigSheetState extends ConsumerState<BatchAutoLabelConfig
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 14),
             ],
 
             // 3 Switches
@@ -183,10 +187,10 @@ class _BatchAutoLabelConfigSheetState extends ConsumerState<BatchAutoLabelConfig
                       _saveConfig();
                     },
             ),
-            const Divider(color: Colors.white10, height: 16),
+            const Divider(color: Color(0xFFEFE8DE), height: 16),
 
             _buildSwitchTile(
-              title: 'Filter Foto Bukan Kopi (Non-Coffee Gatekeeper)',
+              title: 'Filter Foto Bukan Kopi (Gatekeeper)',
               subtitle: 'Verifikasi visual confidence, rasio luas, aspect ratio & solidity',
               value: _enableGatekeeper,
               onChanged: state.isBatchProcessing
@@ -196,7 +200,7 @@ class _BatchAutoLabelConfigSheetState extends ConsumerState<BatchAutoLabelConfig
                       _saveConfig();
                     },
             ),
-            const Divider(color: Colors.white10, height: 16),
+            const Divider(color: Color(0xFFEFE8DE), height: 16),
 
             _buildSwitchTile(
               title: 'Coffee Packaging OCR (brand_kopi_proses)',
@@ -209,65 +213,77 @@ class _BatchAutoLabelConfigSheetState extends ConsumerState<BatchAutoLabelConfig
                       _saveConfig();
                     },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
             // Class Resolution Radio
             const Text(
               'Strategi Resolusi Class OCR:',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+              style: TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 12),
             ),
-            const SizedBox(height: 6),
-            RadioListTile<bool>(
-              value: true,
-              groupValue: _autoCreateNew,
-              activeColor: const Color(0xFF8B5CF6),
-              contentPadding: EdgeInsets.zero,
-              dense: true,
-              title: const Text(
-                'Cocokkan (>=85%) atau Otomatis Buat Class Baru',
-                style: TextStyle(color: Colors.white, fontSize: 12),
+            const SizedBox(height: 4),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFEFE8DE)),
               ),
-              subtitle: const Text(
-                'Direkomendasikan untuk mendata kopi baru secara instan',
-                style: TextStyle(color: Colors.white54, fontSize: 10),
+              child: Column(
+                children: [
+                  RadioListTile<bool>(
+                    value: true,
+                    groupValue: _autoCreateNew,
+                    activeColor: const Color(0xFF7C3AED),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+                    dense: true,
+                    title: const Text(
+                      'Cocokkan (>=85%) atau Otomatis Buat Class Baru',
+                      style: TextStyle(color: textDark, fontSize: 11.5, fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: const Text(
+                      'Direkomendasikan untuk mendata kopi baru secara instan',
+                      style: TextStyle(color: textMuted, fontSize: 10),
+                    ),
+                    onChanged: state.isBatchProcessing
+                        ? null
+                        : (val) {
+                            setState(() => _autoCreateNew = val ?? true);
+                            _saveConfig();
+                          },
+                  ),
+                  const Divider(color: Color(0xFFEFE8DE), height: 1),
+                  RadioListTile<bool>(
+                    value: false,
+                    groupValue: _autoCreateNew,
+                    activeColor: const Color(0xFF7C3AED),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+                    dense: true,
+                    title: const Text(
+                      'Hanya Gunakan Class yang Ada di coffee.json',
+                      style: TextStyle(color: textDark, fontSize: 11.5, fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: const Text(
+                      'Batasi hanya pada class katalog terverifikasi',
+                      style: TextStyle(color: textMuted, fontSize: 10),
+                    ),
+                    onChanged: state.isBatchProcessing
+                        ? null
+                        : (val) {
+                            setState(() => _autoCreateNew = val ?? false);
+                            _saveConfig();
+                          },
+                  ),
+                ],
               ),
-              onChanged: state.isBatchProcessing
-                  ? null
-                  : (val) {
-                      setState(() => _autoCreateNew = val ?? true);
-                      _saveConfig();
-                    },
             ),
-            RadioListTile<bool>(
-              value: false,
-              groupValue: _autoCreateNew,
-              activeColor: const Color(0xFF8B5CF6),
-              contentPadding: EdgeInsets.zero,
-              dense: true,
-              title: const Text(
-                'Hanya Gunakan Class yang Ada di coffee.json',
-                style: TextStyle(color: Colors.white, fontSize: 12),
-              ),
-              subtitle: const Text(
-                'Batasi hanya pada class katalog terverifikasi',
-                style: TextStyle(color: Colors.white54, fontSize: 10),
-              ),
-              onChanged: state.isBatchProcessing
-                  ? null
-                  : (val) {
-                      setState(() => _autoCreateNew = val ?? false);
-                      _saveConfig();
-                    },
-            ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
             // Start Batch Button
             SizedBox(
               width: double.infinity,
-              height: 48,
+              height: 44,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6D28D9),
+                  backgroundColor: const Color(0xFF7C3AED),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
@@ -278,12 +294,12 @@ class _BatchAutoLabelConfigSheetState extends ConsumerState<BatchAutoLabelConfig
                         _saveConfig();
                         ref.read(annotationStudioProvider.notifier).runBatchAutoLabel();
                       },
-                icon: const Icon(Icons.play_arrow, size: 20),
+                icon: const Icon(Icons.play_arrow_rounded, size: 18),
                 label: Text(
                   state.isBatchProcessing
                       ? 'Sedang Memproses Batch...'
                       : '🤖 Jalankan Auto-Label Batch Sekarang',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
               ),
             ),
@@ -299,6 +315,9 @@ class _BatchAutoLabelConfigSheetState extends ConsumerState<BatchAutoLabelConfig
     required bool value,
     required ValueChanged<bool>? onChanged,
   }) {
+    const textDark = Color(0xFF2D1F17);
+    const textMuted = Color(0xFF8F857D);
+
     return Row(
       children: [
         Expanded(
@@ -307,12 +326,12 @@ class _BatchAutoLabelConfigSheetState extends ConsumerState<BatchAutoLabelConfig
             children: [
               Text(
                 title,
-                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                style: const TextStyle(color: textDark, fontSize: 12.5, fontWeight: FontWeight.w600),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 1),
               Text(
                 subtitle,
-                style: const TextStyle(color: Colors.white54, fontSize: 11),
+                style: const TextStyle(color: textMuted, fontSize: 10.5),
               ),
             ],
           ),
@@ -320,7 +339,7 @@ class _BatchAutoLabelConfigSheetState extends ConsumerState<BatchAutoLabelConfig
         Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: const Color(0xFF8B5CF6),
+          activeColor: const Color(0xFF7C3AED),
         ),
       ],
     );
@@ -332,11 +351,11 @@ class _BatchAutoLabelConfigSheetState extends ConsumerState<BatchAutoLabelConfig
     required String label,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -345,7 +364,7 @@ class _BatchAutoLabelConfigSheetState extends ConsumerState<BatchAutoLabelConfig
           const SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold),
+            style: TextStyle(color: color, fontSize: 10.5, fontWeight: FontWeight.bold),
           ),
         ],
       ),

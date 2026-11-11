@@ -68,11 +68,11 @@ class _SmartOcrClassBottomSheetState extends State<SmartOcrClassBottomSheet> {
   }
 
   List<MapEntry<CoffeeAnnotationClass, double>> _getTopMatchingClasses() {
-    final matches = <MapEntry<CoffeeAnnotationClass, double>>[];
-    final currentSlug = _previewSlug;
+    if (widget.existingClasses.isEmpty) return [];
 
+    final matches = <MapEntry<CoffeeAnnotationClass, double>>[];
     for (final cls in widget.existingClasses) {
-      final sim = _computeSimilarity(currentSlug, cls.classSlug);
+      final sim = _computeSimilarity(_previewSlug, cls.classSlug);
       matches.add(MapEntry(cls, sim));
     }
 
@@ -83,54 +83,41 @@ class _SmartOcrClassBottomSheetState extends State<SmartOcrClassBottomSheet> {
   double _computeSimilarity(String s1, String s2) {
     if (s1 == s2) return 1.0;
     if (s1.isEmpty || s2.isEmpty) return 0.0;
-    final int dist = _levenshtein(s1, s2);
-    final seqSim = 1.0 - (dist / math.max(s1.length, s2.length));
-    final t1 = s1.split('_').toSet();
-    final t2 = s2.split('_').toSet();
-    final union = t1.union(t2).length;
-    final jaccard = union == 0 ? 0.0 : t1.intersection(t2).length / union;
-    return (0.65 * seqSim) + (0.35 * jaccard);
-  }
 
-  int _levenshtein(String a, String b) {
-    final List<List<int>> dp = List.generate(
-      a.length + 1,
-      (_) => List<int>.filled(b.length + 1, 0),
-    );
-    for (int i = 0; i <= a.length; i++) {
-      dp[i][0] = i;
+    int matches = 0;
+    final maxLen = math.max(s1.length, s2.length);
+    final minLen = math.min(s1.length, s2.length);
+
+    for (int i = 0; i < minLen; i++) {
+      if (s1[i] == s2[i]) matches++;
     }
-    for (int j = 0; j <= b.length; j++) {
-      dp[0][j] = j;
+
+    if (s1.contains(s2) || s2.contains(s1)) {
+      return (matches / maxLen * 0.5) + 0.5;
     }
-    for (int i = 1; i <= a.length; i++) {
-      for (int j = 1; j <= b.length; j++) {
-        final cost = a[i - 1] == b[j - 1] ? 0 : 1;
-        dp[i][j] = [
-          dp[i - 1][j] + 1,
-          dp[i][j - 1] + 1,
-          dp[i - 1][j - 1] + cost,
-        ].reduce(math.min);
-      }
-    }
-    return dp[a.length][b.length];
+
+    return matches / maxLen;
   }
 
   @override
   Widget build(BuildContext context) {
+    const bgCream = Color(0xFFF9F6F0);
+    const textDark = Color(0xFF2D1F17);
+    const textMuted = Color(0xFF8F857D);
+
     final topMatches = _getTopMatchingClasses();
     final bool hasExactMatch = topMatches.isNotEmpty && topMatches.first.value >= 0.85;
     final matchedClass = hasExactMatch ? topMatches.first.key : null;
 
     return Container(
       padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        left: 18,
+        right: 18,
+        top: 14,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
       ),
       decoration: const BoxDecoration(
-        color: Color(0xFF161B26),
+        color: bgCream,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SingleChildScrollView(
@@ -138,18 +125,18 @@ class _SmartOcrClassBottomSheetState extends State<SmartOcrClassBottomSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Drag Handle & Title
+            // Drag Handle
             Center(
               child: Container(
-                width: 48,
+                width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: const Color(0xFFD8CFBE),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -157,19 +144,19 @@ class _SmartOcrClassBottomSheetState extends State<SmartOcrClassBottomSheet> {
                 const Text(
                   'Smart OCR Class Parser',
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
+                    color: textDark,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 // Status Badge
                 if (hasExactMatch)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: const Color(0xFFEFF6FF),
                       border: Border.all(color: const Color(0xFF3B82F6)),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -180,7 +167,7 @@ class _SmartOcrClassBottomSheetState extends State<SmartOcrClassBottomSheet> {
                           '✓ MATCHED (${(topMatches.first.value * 100).toStringAsFixed(0)}%)',
                           style: const TextStyle(
                             color: Color(0xFF1D4ED8),
-                            fontSize: 10,
+                            fontSize: 9.5,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -189,29 +176,29 @@ class _SmartOcrClassBottomSheetState extends State<SmartOcrClassBottomSheet> {
                   )
                 else
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: const Color(0xFFECFDF5),
                       border: Border.all(color: const Color(0xFF10B981)),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Text(
                       '✨ NEW OCR CLASS',
                       style: TextStyle(
                         color: Color(0xFF047857),
-                        fontSize: 10,
+                        fontSize: 9.5,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
               ],
             ),
-            const SizedBox(height: 4),
-            Text(
+            const SizedBox(height: 2),
+            const Text(
               'Format Baku: {brand}_{nama_kopi}_{proses}',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
+              style: TextStyle(color: textMuted, fontSize: 11),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
             // 3 Quick TextFields
             Row(
@@ -241,78 +228,78 @@ class _SmartOcrClassBottomSheetState extends State<SmartOcrClassBottomSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             // Live Preview Card
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF0B0F19),
-                border: Border.all(color: const Color(0xFF6D28D9).withValues(alpha: 0.5)),
+                color: Colors.white,
+                border: Border.all(color: const Color(0xFFEFE8DE), width: 1.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  const Row(
                     children: [
-                      const Icon(Icons.auto_awesome, size: 14, color: Color(0xFFD4A373)),
-                      const SizedBox(width: 6),
+                      Icon(Icons.auto_awesome, size: 13, color: Color(0xFFB45309)),
+                      SizedBox(width: 5),
                       Text(
                         'Generated Semantic Class Slug:',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.7),
-                          fontSize: 11,
+                          color: textMuted,
+                          fontSize: 10.5,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     _previewSlug,
                     style: const TextStyle(
-                      color: Color(0xFFD4A373),
-                      fontSize: 16,
+                      color: Color(0xFFB45309),
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
+                      letterSpacing: 0.3,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             // Quick-Select Matching Chips
             if (topMatches.isNotEmpty) ...[
-              Text(
-                'Class Terdaftar Terdekat (${topMatches.length}):',
+              const Text(
+                'Class Terdaftar Terdekat:',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  fontSize: 12,
+                  color: textDark,
+                  fontSize: 11.5,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: 6,
+                runSpacing: 6,
                 children: topMatches.map((entry) {
                   final cls = entry.key;
                   final simPercent = (entry.value * 100).toStringAsFixed(0);
                   final isSelected = cls.classSlug == _previewSlug;
 
                   return ActionChip(
-                    backgroundColor: isSelected ? const Color(0xFF6D28D9) : const Color(0xFF1F2937),
+                    backgroundColor: isSelected ? const Color(0xFF6B4423) : Colors.white,
                     side: BorderSide(
-                      color: isSelected ? const Color(0xFFD4A373) : Colors.white12,
+                      color: isSelected ? const Color(0xFF6B4423) : const Color(0xFFEFE8DE),
                     ),
                     label: Text(
                       '${cls.classSlug} ($simPercent%)',
                       style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.white70,
-                        fontSize: 11,
+                        color: isSelected ? Colors.white : textDark,
+                        fontSize: 10.5,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
@@ -327,16 +314,16 @@ class _SmartOcrClassBottomSheetState extends State<SmartOcrClassBottomSheet> {
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
             ],
 
             // Main Action Button
             SizedBox(
               width: double.infinity,
-              height: 48,
+              height: 44,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: hasExactMatch ? const Color(0xFF2563EB) : const Color(0xFF6D28D9),
+                  backgroundColor: hasExactMatch ? const Color(0xFF2563EB) : const Color(0xFF6B4423),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
@@ -357,9 +344,9 @@ class _SmartOcrClassBottomSheetState extends State<SmartOcrClassBottomSheet> {
                 },
                 child: Text(
                   hasExactMatch
-                      ? '✓ Gunakan Class Terdaftar: "${matchedClass?.classSlug ?? _previewSlug}"'
-                      : '✨ Gunakan & Tambah Class Baru: "$_previewSlug"',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ? '✓ Gunakan Class: "${matchedClass?.classSlug ?? _previewSlug}"'
+                      : '✨ Simpan Class Baru: "$_previewSlug"',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -375,13 +362,16 @@ class _SmartOcrClassBottomSheetState extends State<SmartOcrClassBottomSheet> {
     required String hint,
     required TextEditingController controller,
   }) {
+    const textDark = Color(0xFF2D1F17);
+    const textMuted = Color(0xFF8F857D);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
+          style: const TextStyle(
+            color: textMuted,
             fontSize: 10,
             fontWeight: FontWeight.w600,
           ),
@@ -391,20 +381,24 @@ class _SmartOcrClassBottomSheetState extends State<SmartOcrClassBottomSheet> {
         const SizedBox(height: 4),
         TextField(
           controller: controller,
-          style: const TextStyle(color: Colors.white, fontSize: 12),
+          style: const TextStyle(color: textDark, fontSize: 12),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: Colors.white24, fontSize: 12),
+            hintStyle: const TextStyle(color: Colors.black26, fontSize: 12),
             filled: true,
-            fillColor: const Color(0xFF0B0F19),
+            fillColor: Colors.white,
             contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+              borderSide: const BorderSide(color: Color(0xFFEFE8DE)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFEFE8DE)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF6D28D9), width: 1.5),
+              borderSide: const BorderSide(color: Color(0xFF6B4423), width: 1.5),
             ),
           ),
         ),

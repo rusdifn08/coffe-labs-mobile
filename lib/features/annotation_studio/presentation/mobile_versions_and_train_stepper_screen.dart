@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/models/coffee_annotation_class.dart';
@@ -142,24 +143,43 @@ class _MobileVersionsAndTrainStepperScreenState
 
   @override
   Widget build(BuildContext context) {
+    const bgCream = Color(0xFFF9F6F0);
+    const textDark = Color(0xFF2D1F17);
+    const textMuted = Color(0xFF8F857D);
+
     final state = ref.watch(annotationStudioProvider);
     final validImages = state.images.where((i) => i.isAnnotated && !i.isRejected).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0F19), // Deep Espresso Obsidian
+      backgroundColor: bgCream,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF12100E),
+        backgroundColor: bgCream,
         elevation: 0,
-        title: const Text(
-          'MobileNetV4 Version & Train',
-          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(CupertinoIcons.back, color: textDark),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'MobileNetV4 Version & Train',
+              style: TextStyle(color: textDark, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              '5-Step On-Device Continual Learning Stepper',
+              style: TextStyle(color: textMuted, fontSize: 10.5),
+            ),
+          ],
         ),
       ),
       body: Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.dark(
-            primary: Color(0xFF8B5CF6),
-            secondary: Color(0xFFD4A373),
+          colorScheme: const ColorScheme.light(
+            primary: Color(0xFF6B4423),
+            secondary: Color(0xFFD97706),
+            surface: Colors.white,
           ),
         ),
         child: Stepper(
@@ -182,23 +202,24 @@ class _MobileVersionsAndTrainStepperScreenState
           controlsBuilder: (context, details) {
             if (_currentStep == 4) {
               return Padding(
-                padding: const EdgeInsets.only(top: 20),
+                padding: const EdgeInsets.only(top: 18),
                 child: Row(
                   children: [
                     Expanded(
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6D28D9),
+                          backgroundColor: const Color(0xFF6B4423),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
                         ),
-                        icon: Icon(_trainingProgress >= 1.0 ? Icons.check : Icons.rocket_launch, size: 18),
+                        icon: Icon(_trainingProgress >= 1.0 ? Icons.check_rounded : Icons.rocket_launch_rounded, size: 17),
                         label: Text(
                           _isTraining
                               ? 'Sedang Melatih...'
                               : (_trainingProgress >= 1.0 ? 'Selesai & Tutup' : 'Mulai Train MobileNetV4 NCM'),
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                         ),
                         onPressed: _isTraining
                             ? null
@@ -210,14 +231,15 @@ class _MobileVersionsAndTrainStepperScreenState
               );
             }
             return Padding(
-              padding: const EdgeInsets.only(top: 16),
+              padding: const EdgeInsets.only(top: 14),
               child: Row(
                 children: [
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6D28D9),
+                      backgroundColor: const Color(0xFF6B4423),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      elevation: 0,
                     ),
                     onPressed: details.onStepContinue,
                     child: const Text('Lanjut'),
@@ -225,7 +247,7 @@ class _MobileVersionsAndTrainStepperScreenState
                   const SizedBox(width: 12),
                   if (_currentStep > 0)
                     TextButton(
-                      style: TextButton.styleFrom(foregroundColor: Colors.white60),
+                      style: TextButton.styleFrom(foregroundColor: textMuted),
                       onPressed: details.onStepCancel,
                       child: const Text('Kembali'),
                     ),
@@ -236,36 +258,37 @@ class _MobileVersionsAndTrainStepperScreenState
           steps: [
             // STEP 1: SOURCE IMAGES
             Step(
-              title: const Text('1. Source Images (Valid Bag)', style: TextStyle(color: Colors.white)),
+              title: const Text('1. Source Images (Valid Bag)', style: TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 13)),
               subtitle: Text(
                 '${validImages.length} Kemasan Kopi (Otomatis membuang foto non-kopi)',
-                style: const TextStyle(color: Colors.white54, fontSize: 11),
+                style: const TextStyle(color: textMuted, fontSize: 11),
               ),
               isActive: _currentStep >= 0,
               state: _currentStep > 0 ? StepState.complete : StepState.indexed,
               content: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF161B26),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFEFE8DE), width: 1.1),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.check_circle, color: Color(0xFF10B981), size: 18),
+                        const Icon(Icons.check_circle_rounded, color: Color(0xFF059669), size: 18),
                         const SizedBox(width: 8),
                         Text(
                           '${validImages.length} Foto Kemasan Kopi Terverifikasi',
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          style: const TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 12.5),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Text(
                       '${state.rejectedCount} foto bukan kopi berhasil disaring oleh Non-Coffee Gatekeeper dan tidak disertakan ke training.',
-                      style: const TextStyle(color: Colors.white60, fontSize: 11),
+                      style: const TextStyle(color: textMuted, fontSize: 11),
                     ),
                   ],
                 ),
@@ -274,10 +297,10 @@ class _MobileVersionsAndTrainStepperScreenState
 
             // STEP 2: TRAIN / VAL SPLIT
             Step(
-              title: const Text('2. Train / Val Split & Class Selector', style: TextStyle(color: Colors.white)),
+              title: const Text('2. Train / Val Split & Class Selector', style: TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 13)),
               subtitle: Text(
                 '${(_trainRatio * 100).toInt()}% Train / ${((1 - _trainRatio) * 100).toInt()}% Val',
-                style: const TextStyle(color: Colors.white54, fontSize: 11),
+                style: const TextStyle(color: textMuted, fontSize: 11),
               ),
               isActive: _currentStep >= 1,
               state: _currentStep > 1 ? StepState.complete : StepState.indexed,
@@ -290,22 +313,25 @@ class _MobileVersionsAndTrainStepperScreenState
                     max: 0.9,
                     divisions: 6,
                     label: '${(_trainRatio * 100).toInt()}%',
-                    activeColor: const Color(0xFF8B5CF6),
+                    activeColor: const Color(0xFF6B4423),
                     onChanged: (val) => setState(() => _trainRatio = val),
                   ),
-                  const SizedBox(height: 10),
-                  const Text('Pilih Class untuk Versi Ini:', style: TextStyle(color: Colors.white, fontSize: 12)),
+                  const SizedBox(height: 8),
+                  const Text('Pilih Class untuk Versi Ini:', style: TextStyle(color: textDark, fontSize: 12, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                    spacing: 6,
+                    runSpacing: 6,
                     children: state.classes.map((cls) {
                       final isSelected = _selectedClassSlugs.contains(cls.classSlug);
                       return FilterChip(
                         selected: isSelected,
                         label: Text(cls.classSlug, style: const TextStyle(fontSize: 10)),
-                        selectedColor: const Color(0xFF6D28D9),
+                        selectedColor: const Color(0xFF6B4423),
                         checkmarkColor: Colors.white,
+                        labelStyle: TextStyle(color: isSelected ? Colors.white : textDark),
+                        backgroundColor: Colors.white,
+                        side: BorderSide(color: isSelected ? const Color(0xFF6B4423) : const Color(0xFFEFE8DE)),
                         onSelected: (val) {
                           setState(() {
                             if (val) {
@@ -324,18 +350,19 @@ class _MobileVersionsAndTrainStepperScreenState
 
             // STEP 3: PREPROCESSING
             Step(
-              title: const Text('3. On-Device Preprocessing', style: TextStyle(color: Colors.white)),
+              title: const Text('3. On-Device Preprocessing', style: TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 13)),
               subtitle: const Text(
                 'Auto-Orient, Mask Isolation, CLAHE Contrast & 256x256 Resize',
-                style: TextStyle(color: Colors.white54, fontSize: 11),
+                style: TextStyle(color: textMuted, fontSize: 11),
               ),
               isActive: _currentStep >= 2,
               state: _currentStep > 2 ? StepState.complete : StepState.indexed,
               content: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF161B26),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFEFE8DE), width: 1.1),
                 ),
                 child: const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -351,49 +378,63 @@ class _MobileVersionsAndTrainStepperScreenState
 
             // STEP 4: AUGMENTATION
             Step(
-              title: const Text('4. Isolate Augmentation', style: TextStyle(color: Colors.white)),
+              title: const Text('4. Isolate Augmentation', style: TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 13)),
               subtitle: const Text(
                 '15x variasi per foto di background Isolate (Multi-Angle, Foil Sheen)',
-                style: TextStyle(color: Colors.white54, fontSize: 11),
+                style: TextStyle(color: textMuted, fontSize: 11),
               ),
               isActive: _currentStep >= 3,
               state: _currentStep > 3 ? StepState.complete : StepState.indexed,
-              content: Column(
-                children: [
-                  CheckboxListTile(
-                    title: const Text('Horizontal Flip & Jitter', style: TextStyle(color: Colors.white, fontSize: 12)),
-                    value: _augFlip,
-                    activeColor: const Color(0xFF8B5CF6),
-                    onChanged: (val) => setState(() => _augFlip = val ?? true),
-                  ),
-                  CheckboxListTile(
-                    title: const Text('Rotasi ±12° & Perspektif', style: TextStyle(color: Colors.white, fontSize: 12)),
-                    value: _augRotate,
-                    activeColor: const Color(0xFF8B5CF6),
-                    onChanged: (val) => setState(() => _augRotate = val ?? true),
-                  ),
-                  CheckboxListTile(
-                    title: const Text('Simulasi Kilau Foil / Pantulan Plastik', style: TextStyle(color: Colors.white, fontSize: 12)),
-                    value: _augFoilSheen,
-                    activeColor: const Color(0xFF8B5CF6),
-                    onChanged: (val) => setState(() => _augFoilSheen = val ?? true),
-                  ),
-                  CheckboxListTile(
-                    title: const Text('Variasi Pencahayaan Kafe (CCT 2700K - 6500K)', style: TextStyle(color: Colors.white, fontSize: 12)),
-                    value: _augLighting,
-                    activeColor: const Color(0xFF8B5CF6),
-                    onChanged: (val) => setState(() => _augLighting = val ?? true),
-                  ),
-                ],
+              content: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFEFE8DE), width: 1.1),
+                ),
+                child: Column(
+                  children: [
+                    CheckboxListTile(
+                      title: const Text('Horizontal Flip & Jitter', style: TextStyle(color: textDark, fontSize: 12)),
+                      value: _augFlip,
+                      activeColor: const Color(0xFF6B4423),
+                      dense: true,
+                      onChanged: (val) => setState(() => _augFlip = val ?? true),
+                    ),
+                    const Divider(color: Color(0xFFEFE8DE), height: 1),
+                    CheckboxListTile(
+                      title: const Text('Rotasi ±12° & Perspektif', style: TextStyle(color: textDark, fontSize: 12)),
+                      value: _augRotate,
+                      activeColor: const Color(0xFF6B4423),
+                      dense: true,
+                      onChanged: (val) => setState(() => _augRotate = val ?? true),
+                    ),
+                    const Divider(color: Color(0xFFEFE8DE), height: 1),
+                    CheckboxListTile(
+                      title: const Text('Simulasi Kilau Foil / Pantulan Plastik', style: TextStyle(color: textDark, fontSize: 12)),
+                      value: _augFoilSheen,
+                      activeColor: const Color(0xFF6B4423),
+                      dense: true,
+                      onChanged: (val) => setState(() => _augFoilSheen = val ?? true),
+                    ),
+                    const Divider(color: Color(0xFFEFE8DE), height: 1),
+                    CheckboxListTile(
+                      title: const Text('Variasi Pencahayaan Kafe (CCT 2700K - 6500K)', style: TextStyle(color: textDark, fontSize: 12)),
+                      value: _augLighting,
+                      activeColor: const Color(0xFF6B4423),
+                      dense: true,
+                      onChanged: (val) => setState(() => _augLighting = val ?? true),
+                    ),
+                  ],
+                ),
               ),
             ),
 
             // STEP 5: TRAIN MOBILENETV4 NCM
             Step(
-              title: const Text('5. Train & Update MobileNetV4 NCM', style: TextStyle(color: Colors.white)),
+              title: const Text('5. Train & Update MobileNetV4 NCM', style: TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 13)),
               subtitle: const Text(
                 'Ekstraksi 1280-D L2-norm, Centroid & K=2 Sub-Centroids ke SQLite',
-                style: TextStyle(color: Colors.white54, fontSize: 11),
+                style: TextStyle(color: textMuted, fontSize: 11),
               ),
               isActive: _currentStep >= 4,
               state: _trainingProgress >= 1.0 ? StepState.complete : StepState.indexed,
@@ -405,29 +446,29 @@ class _MobileVersionsAndTrainStepperScreenState
                       borderRadius: BorderRadius.circular(6),
                       child: LinearProgressIndicator(
                         value: _trainingProgress,
-                        backgroundColor: Colors.white12,
-                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF8B5CF6)),
+                        backgroundColor: const Color(0xFFE8DFD8),
+                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6B4423)),
                         minHeight: 8,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     Text(
                       _trainingStatusText,
-                      style: const TextStyle(color: Color(0xFFD4A373), fontSize: 12),
+                      style: const TextStyle(color: Color(0xFFB45309), fontSize: 12, fontWeight: FontWeight.w600),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                   ],
                   if (_completedClasses.isNotEmpty) ...[
-                    const Text('Class Berhasil Dilatih:', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                    const Text('Class Berhasil Dilatih:', style: TextStyle(color: textDark, fontSize: 12, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 6),
                     Wrap(
                       spacing: 6,
                       runSpacing: 6,
                       children: _completedClasses.map((c) {
                         return Chip(
-                          backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.2),
-                          side: const BorderSide(color: Color(0xFF10B981)),
-                          label: Text(c, style: const TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.bold)),
+                          backgroundColor: const Color(0xFFECFDF5),
+                          side: const BorderSide(color: Color(0xFF059669)),
+                          label: Text(c, style: const TextStyle(color: Color(0xFF059669), fontSize: 10, fontWeight: FontWeight.bold)),
                         );
                       }).toList(),
                     ),
@@ -452,7 +493,7 @@ class _PipelineItem extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Text(
         text,
-        style: const TextStyle(color: Colors.white70, fontSize: 11),
+        style: const TextStyle(color: Color(0xFF5C4E43), fontSize: 11.5),
       ),
     );
   }

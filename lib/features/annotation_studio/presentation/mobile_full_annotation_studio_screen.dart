@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/models/studio_image_item.dart';
@@ -49,7 +50,7 @@ class _MobileFullAnnotationStudioScreenState
             Text('Menjalankan Segmentasi Poligon & OCR On-Device...'),
           ],
         ),
-        backgroundColor: Color(0xFF6D28D9),
+        backgroundColor: Color(0xFF7C3AED),
         duration: Duration(seconds: 2),
       ),
     );
@@ -108,52 +109,71 @@ class _MobileFullAnnotationStudioScreenState
 
   @override
   Widget build(BuildContext context) {
+    const bgCream = Color(0xFFF9F6F0);
+    const textDark = Color(0xFF2D1F17);
+    const textMuted = Color(0xFF8F857D);
+
     final state = ref.watch(annotationStudioProvider);
     final notifier = ref.read(annotationStudioProvider.notifier);
     final currentItem = state.activeItem ?? widget.imageItem;
     final file = File(currentItem.filePath);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0F19), // Deep Espresso Obsidian
+      backgroundColor: bgCream,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF12100E),
+        backgroundColor: Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(CupertinoIcons.back, color: textDark),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               currentItem.classSlug ?? 'Anotasi Kemasan Kopi',
-              style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+              style: const TextStyle(color: textDark, fontSize: 14, fontWeight: FontWeight.bold),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             Text(
-              '${state.activePolygon.length} Titik Sudut Poligon RDP',
-              style: const TextStyle(color: Color(0xFFD4A373), fontSize: 11),
+              '${state.activePolygon.length} Titik Sudut Poligon RDP • Sentuh & Geser',
+              style: const TextStyle(color: textMuted, fontSize: 10.5),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
         actions: [
           // Auto-Label + OCR Button
-          TextButton.icon(
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.white,
-              backgroundColor: const Color(0xFF6D28D9),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: const Color(0xFF7C3AED),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                minimumSize: const Size(0, 32),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                elevation: 0,
+              ),
+              icon: const Icon(Icons.auto_fix_high, size: 14),
+              label: const Text('Auto-Label + OCR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+              onPressed: _triggerAutoLabel,
             ),
-            icon: const Icon(Icons.auto_fix_high, size: 14),
-            label: const Text('Auto-Label + OCR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-            onPressed: _triggerAutoLabel,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
 
           // Save / Done Button
           IconButton(
             tooltip: 'Simpan Anotasi',
-            icon: const Icon(Icons.check_circle, color: Color(0xFF10B981)),
+            icon: const Icon(Icons.check_circle_rounded, color: Color(0xFF059669), size: 24),
             onPressed: () {
               Navigator.of(context).pop();
             },
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body: Stack(
@@ -165,7 +185,7 @@ class _MobileFullAnnotationStudioScreenState
               polygon: state.activePolygon,
               bbox: state.activeBbox,
               classLabel: currentItem.classSlug,
-              classColor: const Color(0xFF8B5CF6),
+              classColor: const Color(0xFF7C3AED),
               isSmartTapMode: _isSmartTapMode,
               selectedVertexIndex: state.selectedVertexIndex,
               onSmartTap: (normPoint) {
@@ -183,22 +203,44 @@ class _MobileFullAnnotationStudioScreenState
 
           // Top Floating Tool Pill
           Positioned(
-            top: 16,
+            top: 14,
             left: 20,
             right: 20,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF161B26).withValues(alpha: 0.9),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white12),
+                  border: Border.all(color: const Color(0xFFEFE8DE), width: 1.2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF5C3A21).withValues(alpha: 0.06),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  _isSmartTapMode
-                      ? '🎯 Ketuk di tengah kemasan untuk snap poligon otomatis'
-                      : '👆 Geser titik sudut untuk menyesuaikan kontur kemasan',
-                  style: const TextStyle(color: Colors.white, fontSize: 11),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _isSmartTapMode ? Icons.touch_app_rounded : Icons.pan_tool_alt_rounded,
+                      size: 15,
+                      color: _isSmartTapMode ? const Color(0xFF7C3AED) : const Color(0xFFD97706),
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        _isSmartTapMode
+                            ? 'Ketuk kemasan untuk snap poligon otomatis'
+                            : 'Geser titik sudut untuk menyesuaikan bentuk kemasan',
+                        style: const TextStyle(color: textDark, fontSize: 11, fontWeight: FontWeight.w500),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -206,19 +248,19 @@ class _MobileFullAnnotationStudioScreenState
 
           // Floating Action Toolbar (Bottom Center)
           Positioned(
-            bottom: 24,
-            left: 24,
-            right: 24,
+            bottom: 20,
+            left: 20,
+            right: 20,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF161B26),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: const Color(0xFF6D28D9).withValues(alpha: 0.4)),
+                  border: Border.all(color: const Color(0xFFEFE8DE), width: 1.2),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.5),
+                      color: const Color(0xFF5C3A21).withValues(alpha: 0.08),
                       blurRadius: 16,
                       offset: const Offset(0, 4),
                     ),
@@ -231,8 +273,8 @@ class _MobileFullAnnotationStudioScreenState
                     IconButton(
                       tooltip: '1-Tap Smart Point',
                       icon: Icon(
-                        Icons.touch_app,
-                        color: _isSmartTapMode ? const Color(0xFFD4A373) : Colors.white70,
+                        Icons.touch_app_rounded,
+                        color: _isSmartTapMode ? const Color(0xFF7C3AED) : const Color(0xFF6B4423),
                       ),
                       onPressed: () {
                         setState(() => _isSmartTapMode = !_isSmartTapMode);
@@ -242,26 +284,29 @@ class _MobileFullAnnotationStudioScreenState
                     // Reset Polygon
                     IconButton(
                       tooltip: 'Reset Poligon ke Standar Pouch',
-                      icon: const Icon(Icons.refresh, color: Colors.white70),
+                      icon: const Icon(Icons.refresh_rounded, color: Color(0xFF8F857D)),
                       onPressed: () {
                         notifier.smartPointSelect(const Offset(0.5, 0.5));
                       },
                     ),
 
                     const SizedBox(
-                      height: 24,
-                      child: VerticalDivider(color: Colors.white24, width: 16),
+                      height: 22,
+                      child: VerticalDivider(color: Color(0xFFEFE8DE), width: 14),
                     ),
 
                     // Class Editor Button
                     TextButton.icon(
                       style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFFD4A373),
+                        foregroundColor: const Color(0xFFB45309),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       ),
-                      icon: const Icon(Icons.edit_note, size: 18),
+                      icon: const Icon(Icons.edit_note_rounded, size: 19),
                       label: Text(
                         currentItem.classSlug ?? 'Pilih Class',
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       onPressed: () {
                         final ocr = CoffeeOcrResult(
