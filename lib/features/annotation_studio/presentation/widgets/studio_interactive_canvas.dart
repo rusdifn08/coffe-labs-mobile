@@ -15,6 +15,9 @@ class StudioInteractiveCanvas extends StatefulWidget {
   final SamPromptMode samPromptMode;
   final List<SamPromptPoint> samPromptPoints;
   final int? selectedVertexIndex;
+  final bool isLayerVisible;
+  final double layerOpacity;
+  final bool isLayerLocked;
 
   // Callbacks
   final ValueChanged<Offset>? onSamPointTapped;
@@ -38,6 +41,9 @@ class StudioInteractiveCanvas extends StatefulWidget {
     this.samPromptMode = SamPromptMode.positive,
     this.samPromptPoints = const [],
     this.selectedVertexIndex,
+    this.isLayerVisible = true,
+    this.layerOpacity = 0.25,
+    this.isLayerLocked = false,
     this.onSamPointTapped,
     this.onSmartBoxDrawn,
     this.onBoundingBoxDrawn,
@@ -210,6 +216,9 @@ class _StudioInteractiveCanvasState extends State<StudioInteractiveCanvas> {
                 dragCurrent: _dragCurrentScreenPos,
                 cursorPos: _liveCursorScreenPos,
                 imagePixelSize: _imageNaturalSize,
+                isLayerVisible: widget.isLayerVisible,
+                layerOpacity: widget.layerOpacity,
+                isLayerLocked: widget.isLayerLocked,
               ),
             ),
           ],
@@ -218,6 +227,7 @@ class _StudioInteractiveCanvasState extends State<StudioInteractiveCanvas> {
         Widget gestureWrapped = GestureDetector(
           behavior: HitTestBehavior.opaque,
           onDoubleTapDown: (details) {
+            if (widget.isLayerLocked) return;
             if (widget.activeTool == StudioTool.vertexEdit) {
               final idx = _findNearestVertex(details.localPosition, imageRect);
               if (idx != null) {
@@ -234,6 +244,7 @@ class _StudioInteractiveCanvasState extends State<StudioInteractiveCanvas> {
             if (widget.activeTool == StudioTool.samPoints) {
               widget.onSamPointTapped?.call(norm);
             } else if (widget.activeTool == StudioTool.polygon) {
+              if (widget.isLayerLocked) return;
               // Check if tapped near first vertex to close
               if (widget.polygon.length >= 3) {
                 final first = widget.polygon.first;
@@ -248,6 +259,7 @@ class _StudioInteractiveCanvasState extends State<StudioInteractiveCanvas> {
               }
               widget.onPolygonVertexAdded?.call(norm);
             } else if (widget.activeTool == StudioTool.vertexEdit) {
+              if (widget.isLayerLocked) return;
               final tappedIdx = _findNearestVertex(touchPos, imageRect);
               if (tappedIdx != null) {
                 widget.onVertexSelected?.call(tappedIdx);
@@ -263,6 +275,7 @@ class _StudioInteractiveCanvasState extends State<StudioInteractiveCanvas> {
             }
           },
           onPanStart: (details) {
+            if (widget.isLayerLocked) return;
             final touchPos = details.localPosition;
 
             if (widget.activeTool == StudioTool.smartBox || widget.activeTool == StudioTool.boundingBox) {
@@ -377,6 +390,9 @@ class _StudioCanvasPainter extends CustomPainter {
   final Offset? dragCurrent;
   final Offset? cursorPos;
   final Size imagePixelSize;
+  final bool isLayerVisible;
+  final double layerOpacity;
+  final bool isLayerLocked;
 
   _StudioCanvasPainter({
     required this.imageRect,
@@ -391,6 +407,9 @@ class _StudioCanvasPainter extends CustomPainter {
     this.dragCurrent,
     this.cursorPos,
     required this.imagePixelSize,
+    required this.isLayerVisible,
+    required this.layerOpacity,
+    required this.isLayerLocked,
   });
 
   Offset _toScreen(Offset norm) => Offset(
@@ -407,157 +426,161 @@ class _StudioCanvasPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // 1. Draw Bounding Box Guideline (Subtle)
-    if (bbox != null) {
-      final screenBox = _toScreenRect(bbox!);
+    // If layer visibility is turned OFF, only draw live drag previews and SAM points
+    if (isLayerVisible) {
+      // 1. Draw Bounding Box Guideline (Subtle)
+      if (bbox != null) {
+        final screenBox = _toScreenRect(bbox!);
 
-      final boxPaint = Paint()
-        ..color = classColor.withValues(alpha: 0.35)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5;
+        final boxPaint = Paint()
+          ..color = classColor.withValues(alpha: 0.35)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5;
 
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(screenBox, const Radius.circular(8)),
-        boxPaint,
-      );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(screenBox, const Radius.circular(8)),
+          boxPaint,
+        );
 
-      // Label Header Pill (Top-Left of box)
-      if (classLabel != null && classLabel!.isNotEmpty) {
-        final textSpan = TextSpan(
-          text: classLabel!.replaceAll('_', ' ').toUpperCase(),
+        // Label Header Pill (Top-Left of box)
+        if (classLabel != null && classLabel!.isNotEmpty) {
+          final lockSuffix = isLayerLocked ? ' 🔒' : '';
+          final textSpan = TextSpan(
+            text: '${classLabel!.replaceAll('_', ' ').toUpperCase()}$lockSuffix',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 9.5,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          );
+          final tp = TextPainter(text: textSpan, textDirection: TextDirection.ltr)..layout();
+          final pillRect = Rect.fromLTWH(
+            screenBox.left,
+            math.max(imageRect.top, screenBox.top - 20),
+            tp.width + 14,
+            18,
+          );
+
+          final pillPaint = Paint()..color = classColor;
+          canvas.drawRRect(RRect.fromRectAndRadius(pillRect, const Radius.circular(5)), pillPaint);
+          tp.paint(canvas, Offset(pillRect.left + 7, pillRect.top + 2));
+        }
+
+        // Dimensions Pill (Bottom-Right of box)
+        final int pxW = (bbox!.width * imagePixelSize.width).round();
+        final int pxH = (bbox!.height * imagePixelSize.height).round();
+        final dimSpan = TextSpan(
+          text: '$pxW × $pxH',
           style: const TextStyle(
-            color: Colors.white,
-            fontSize: 9.5,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
+            color: Colors.white70,
+            fontSize: 8.5,
+            fontFamily: 'monospace',
+            fontWeight: FontWeight.w600,
           ),
         );
-        final tp = TextPainter(text: textSpan, textDirection: TextDirection.ltr)..layout();
-        final pillRect = Rect.fromLTWH(
-          screenBox.left,
-          math.max(imageRect.top, screenBox.top - 20),
-          tp.width + 14,
-          18,
+        final dimTp = TextPainter(text: dimSpan, textDirection: TextDirection.ltr)..layout();
+        final dimPillRect = Rect.fromLTWH(
+          screenBox.right - dimTp.width - 10,
+          math.min(imageRect.bottom - 16, screenBox.bottom + 4),
+          dimTp.width + 8,
+          15,
         );
-
-        final pillPaint = Paint()..color = classColor;
-        canvas.drawRRect(RRect.fromRectAndRadius(pillRect, const Radius.circular(5)), pillPaint);
-        tp.paint(canvas, Offset(pillRect.left + 7, pillRect.top + 2));
+        final dimPaint = Paint()..color = Colors.black87;
+        canvas.drawRRect(RRect.fromRectAndRadius(dimPillRect, const Radius.circular(4)), dimPaint);
+        dimTp.paint(canvas, Offset(dimPillRect.left + 4, dimPillRect.top + 1.5));
       }
 
-      // Dimensions Pill (Bottom-Right of box)
-      final int pxW = (bbox!.width * imagePixelSize.width).round();
-      final int pxH = (bbox!.height * imagePixelSize.height).round();
-      final dimSpan = TextSpan(
-        text: '$pxW × $pxH',
-        style: const TextStyle(
-          color: Colors.white70,
-          fontSize: 8.5,
-          fontFamily: 'monospace',
-          fontWeight: FontWeight.w600,
-        ),
-      );
-      final dimTp = TextPainter(text: dimSpan, textDirection: TextDirection.ltr)..layout();
-      final dimPillRect = Rect.fromLTWH(
-        screenBox.right - dimTp.width - 10,
-        math.min(imageRect.bottom - 16, screenBox.bottom + 4),
-        dimTp.width + 8,
-        15,
-      );
-      final dimPaint = Paint()..color = Colors.black87;
-      canvas.drawRRect(RRect.fromRectAndRadius(dimPillRect, const Radius.circular(4)), dimPaint);
-      dimTp.paint(canvas, Offset(dimPillRect.left + 4, dimPillRect.top + 1.5));
-    }
+      // 2. Draw Polygon Contour & Shading
+      if (polygon.length >= 3) {
+        final path = Path();
+        final firstScreen = _toScreen(polygon.first);
+        path.moveTo(firstScreen.dx, firstScreen.dy);
 
-    // 2. Draw Polygon Contour & Shading
-    if (polygon.length >= 3) {
-      final path = Path();
-      final firstScreen = _toScreen(polygon.first);
-      path.moveTo(firstScreen.dx, firstScreen.dy);
+        for (int i = 1; i < polygon.length; i++) {
+          final pt = _toScreen(polygon[i]);
+          path.lineTo(pt.dx, pt.dy);
+        }
+        path.close();
 
-      for (int i = 1; i < polygon.length; i++) {
-        final pt = _toScreen(polygon[i]);
-        path.lineTo(pt.dx, pt.dy);
+        // Translucent shaded fill with user-controlled opacity
+        final fillPaint = Paint()
+          ..color = classColor.withValues(alpha: layerOpacity)
+          ..style = PaintingStyle.fill;
+        canvas.drawPath(path, fillPaint);
+
+        // Solid Contour Stroke
+        final strokePaint = Paint()
+          ..color = classColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.4
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round;
+        canvas.drawPath(path, strokePaint);
       }
-      path.close();
 
-      // Translucent shaded fill
-      final fillPaint = Paint()
-        ..color = classColor.withValues(alpha: 0.20)
-        ..style = PaintingStyle.fill;
-      canvas.drawPath(path, fillPaint);
+      // 3. Draw Polygon Vertices & Edge Midpoints (in VertexEdit & Polygon tools)
+      if (activeTool == StudioTool.vertexEdit || activeTool == StudioTool.polygon) {
+        for (int i = 0; i < polygon.length; i++) {
+          final screenPos = _toScreen(polygon[i]);
+          final bool isSelected = (i == selectedVertexIndex);
+          final bool isFirst = (i == 0);
 
-      // Solid Contour Stroke
-      final strokePaint = Paint()
-        ..color = classColor
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.4
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round;
-      canvas.drawPath(path, strokePaint);
-    }
+          // Halo if selected
+          if (isSelected) {
+            canvas.drawCircle(
+              screenPos,
+              12.0,
+              Paint()..color = const Color(0xFFD4AF37).withValues(alpha: 0.40),
+            );
+          }
 
-    // 3. Draw Polygon Vertices & Edge Midpoints (in VertexEdit & Polygon tools)
-    if (activeTool == StudioTool.vertexEdit || activeTool == StudioTool.polygon) {
-      for (int i = 0; i < polygon.length; i++) {
-        final screenPos = _toScreen(polygon[i]);
-        final bool isSelected = (i == selectedVertexIndex);
-        final bool isFirst = (i == 0);
+          // Distinct gold ring for start vertex
+          if (isFirst && activeTool == StudioTool.polygon) {
+            canvas.drawCircle(
+              screenPos,
+              9.0,
+              Paint()
+                ..color = const Color(0xFFD4AF37)
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = 2.0,
+            );
+          }
 
-        // Halo if selected
-        if (isSelected) {
+          // Vertex Circle Handle
           canvas.drawCircle(
             screenPos,
-            12.0,
-            Paint()..color = const Color(0xFFD4AF37).withValues(alpha: 0.40),
+            isSelected ? 7.0 : 5.5,
+            Paint()..color = isSelected ? const Color(0xFFD4AF37) : classColor,
           );
-        }
-
-        // Distinct gold ring for start vertex
-        if (isFirst && activeTool == StudioTool.polygon) {
           canvas.drawCircle(
             screenPos,
-            9.0,
+            isSelected ? 7.0 : 5.5,
             Paint()
-              ..color = const Color(0xFFD4AF37)
+              ..color = Colors.white
               ..style = PaintingStyle.stroke
-              ..strokeWidth = 2.0,
+              ..strokeWidth = 1.8,
           );
-        }
 
-        // Vertex Circle Handle
-        canvas.drawCircle(
-          screenPos,
-          isSelected ? 7.0 : 5.5,
-          Paint()..color = isSelected ? const Color(0xFFD4AF37) : classColor,
-        );
-        canvas.drawCircle(
-          screenPos,
-          isSelected ? 7.0 : 5.5,
-          Paint()
-            ..color = Colors.white
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 1.8,
-        );
+          // Edge Midpoint Indicator (VertexEdit tool: allows 1-tap vertex insertion)
+          if (activeTool == StudioTool.vertexEdit && polygon.length >= 3 && !isLayerLocked) {
+            final nextPt = _toScreen(polygon[(i + 1) % polygon.length]);
+            final midScreen = Offset((screenPos.dx + nextPt.dx) / 2.0, (screenPos.dy + nextPt.dy) / 2.0);
 
-        // Edge Midpoint Indicator (VertexEdit tool: allows 1-tap vertex insertion)
-        if (activeTool == StudioTool.vertexEdit && polygon.length >= 3) {
-          final nextPt = _toScreen(polygon[(i + 1) % polygon.length]);
-          final midScreen = Offset((screenPos.dx + nextPt.dx) / 2.0, (screenPos.dy + nextPt.dy) / 2.0);
-
-          canvas.drawCircle(
-            midScreen,
-            3.5,
-            Paint()..color = Colors.white.withValues(alpha: 0.65),
-          );
-          canvas.drawCircle(
-            midScreen,
-            3.5,
-            Paint()
-              ..color = classColor
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 1.0,
-          );
+            canvas.drawCircle(
+              midScreen,
+              3.5,
+              Paint()..color = Colors.white.withValues(alpha: 0.65),
+            );
+            canvas.drawCircle(
+              midScreen,
+              3.5,
+              Paint()
+                ..color = classColor
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = 1.0,
+            );
+          }
         }
       }
     }
@@ -667,6 +690,9 @@ class _StudioCanvasPainter extends CustomPainter {
         oldDelegate.dragStart != dragStart ||
         oldDelegate.dragCurrent != dragCurrent ||
         oldDelegate.cursorPos != cursorPos ||
-        oldDelegate.imageRect != imageRect;
+        oldDelegate.imageRect != imageRect ||
+        oldDelegate.isLayerVisible != isLayerVisible ||
+        oldDelegate.layerOpacity != layerOpacity ||
+        oldDelegate.isLayerLocked != isLayerLocked;
   }
 }

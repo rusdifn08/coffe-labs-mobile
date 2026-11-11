@@ -7,6 +7,7 @@ import 'package:coffee_hub_mobile/features/annotation_studio/domain/services/cof
 import 'package:coffee_hub_mobile/features/annotation_studio/domain/services/coffee_ocr_parser_service.dart';
 import 'package:coffee_hub_mobile/features/annotation_studio/domain/services/non_coffee_gatekeeper_service.dart';
 import 'package:coffee_hub_mobile/features/annotation_studio/domain/services/smart_sam_engine_service.dart';
+import 'package:coffee_hub_mobile/features/annotation_studio/presentation/controllers/annotation_studio_state.dart';
 import 'package:coffee_hub_mobile/features/annotation_studio/data/local/studio_database.dart';
 
 void main() {
@@ -299,6 +300,40 @@ void main() {
       expect(res.polygon.length, greaterThanOrEqualTo(6));
       expect(res.boundingBox.left, closeTo(0.20, 0.01));
       expect(res.boundingBox.top, closeTo(0.15, 0.01));
+    });
+  });
+
+  group('6. Top Class Ribbon & Layer Management Tests', () {
+    test('Can create a new coffee class and verify canonical slug and color', () async {
+      final cls = CoffeeAnnotationClass(
+        classSlug: 'tiga_ikat_halubanana_natural',
+        displayName: 'TIGA IKAT HALU BANANA NATURAL',
+        colorHex: '#7C3AED',
+        brand: 'Tiga Ikat',
+        coffeeName: 'Halu Banana',
+        process: 'natural',
+        createdAt: DateTime.now(),
+      );
+
+      await StudioDatabase.upsertClass(cls);
+      final fetched = await StudioDatabase.getClassBySlug('tiga_ikat_halubanana_natural');
+
+      expect(fetched, isNotNull);
+      expect(fetched!.brand, equals('Tiga Ikat'));
+      expect(fetched.colorHex, equals('#7C3AED'));
+      expect(fetched.color, equals(const Color(0xFF7C3AED)));
+    });
+
+    test('AnnotationStudioState supports layer visibility, opacity and lock', () {
+      const state = AnnotationStudioState();
+      expect(state.isLayerVisible, isTrue);
+      expect(state.layerOpacity, closeTo(0.25, 0.01));
+      expect(state.isLayerLocked, isFalse);
+
+      final toggled = state.copyWith(isLayerVisible: false, layerOpacity: 0.50, isLayerLocked: true);
+      expect(toggled.isLayerVisible, isFalse);
+      expect(toggled.layerOpacity, closeTo(0.50, 0.01));
+      expect(toggled.isLayerLocked, isTrue);
     });
   });
 }

@@ -65,6 +65,11 @@ class AnnotationStudioState {
   final List<StudioAnnotationSnapshot> undoStack;
   final List<StudioAnnotationSnapshot> redoStack;
 
+  // Layer Management State
+  final bool isLayerVisible;
+  final double layerOpacity;
+  final bool isLayerLocked;
+
   const AnnotationStudioState({
     this.isLoading = false,
     this.selectedTab = 'all',
@@ -90,6 +95,9 @@ class AnnotationStudioState {
     this.samPromptPoints = const [],
     this.undoStack = const [],
     this.redoStack = const [],
+    this.isLayerVisible = true,
+    this.layerOpacity = 0.25,
+    this.isLayerLocked = false,
   });
 
   int get totalImages => images.length;
@@ -126,6 +134,9 @@ class AnnotationStudioState {
     List<SamPromptPoint>? samPromptPoints,
     List<StudioAnnotationSnapshot>? undoStack,
     List<StudioAnnotationSnapshot>? redoStack,
+    bool? isLayerVisible,
+    double? layerOpacity,
+    bool? isLayerLocked,
   }) {
     return AnnotationStudioState(
       isLoading: isLoading ?? this.isLoading,
@@ -152,6 +163,9 @@ class AnnotationStudioState {
       samPromptPoints: samPromptPoints ?? this.samPromptPoints,
       undoStack: undoStack ?? this.undoStack,
       redoStack: redoStack ?? this.redoStack,
+      isLayerVisible: isLayerVisible ?? this.isLayerVisible,
+      layerOpacity: layerOpacity ?? this.layerOpacity,
+      isLayerLocked: isLayerLocked ?? this.isLayerLocked,
     );
   }
 }

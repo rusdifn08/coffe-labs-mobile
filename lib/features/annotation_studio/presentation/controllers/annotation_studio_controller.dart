@@ -57,6 +57,89 @@ class AnnotationStudioController extends Notifier<AnnotationStudioState> {
     state = state.copyWith(samPromptMode: mode);
   }
 
+  void toggleLayerVisibility() {
+    state = state.copyWith(isLayerVisible: !state.isLayerVisible);
+  }
+
+  void cycleLayerOpacity() {
+    final current = state.layerOpacity;
+    double next = 0.25;
+    if (current < 0.20) {
+      next = 0.35;
+    } else if (current < 0.45) {
+      next = 0.60;
+    } else {
+      next = 0.12;
+    }
+    state = state.copyWith(layerOpacity: next);
+  }
+
+  void setLayerOpacity(double opacity) {
+    state = state.copyWith(layerOpacity: opacity.clamp(0.05, 0.85));
+  }
+
+  void toggleLayerLock() {
+    state = state.copyWith(isLayerLocked: !state.isLayerLocked);
+  }
+
+  /// Select an existing class and bind to active image item
+  Future<void> selectClass(String classSlug) async {
+    final match = state.classes.where((c) => c.classSlug == classSlug);
+    if (match.isEmpty) return;
+    final cls = match.first;
+
+    await saveActiveItem(
+      classSlug: cls.classSlug,
+      brand: cls.brand,
+      coffeeName: cls.coffeeName,
+      process: cls.process,
+      isNewClass: false,
+    );
+  }
+
+  /// Create a new coffee class and assign to active image
+  Future<CoffeeAnnotationClass> createAndAssignClass({
+    required String brand,
+    required String coffeeName,
+    required String process,
+    required String colorHex,
+    String origin = 'Indonesia',
+    String variety = 'Arabica Specialty',
+    String altitude = '1400 MDPL',
+  }) async {
+    final cleanBrand = brand.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+    final cleanName = coffeeName.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+    final cleanProc = process.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+    final classSlug = '${cleanBrand}_${cleanName}_$cleanProc';
+    final displayName = '${brand.trim()} ${coffeeName.trim()} ${process.trim()}'.toUpperCase();
+
+    final newClass = CoffeeAnnotationClass(
+      classSlug: classSlug,
+      displayName: displayName,
+      colorHex: colorHex.startsWith('#') ? colorHex : '#$colorHex',
+      brand: brand.trim(),
+      coffeeName: coffeeName.trim(),
+      process: process.trim(),
+      origin: origin,
+      variety: variety,
+      altitude: altitude,
+      createdAt: DateTime.now(),
+    );
+
+    await StudioDatabase.upsertClass(newClass);
+    await _refreshImagesAndClasses();
+
+    await saveActiveItem(
+      classSlug: classSlug,
+      brand: brand.trim(),
+      coffeeName: coffeeName.trim(),
+      process: process.trim(),
+      isNewClass: true,
+    );
+
+    return newClass;
+  }
+
   void _pushSnapshot() {
     final snapshot = StudioAnnotationSnapshot(
       polygon: List<Offset>.from(state.activePolygon),

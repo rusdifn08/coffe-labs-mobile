@@ -119,9 +119,9 @@ class _MobileFullAnnotationStudioScreenState
       ),
       builder: (ctx) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.55,
-          minChildSize: 0.35,
-          maxChildSize: 0.85,
+          initialChildSize: 0.60,
+          minChildSize: 0.40,
+          maxChildSize: 0.90,
           expand: false,
           builder: (_, scrollController) {
             return Column(
@@ -138,24 +138,41 @@ class _MobileFullAnnotationStudioScreenState
                   ),
                 ),
                 const SizedBox(height: 14),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(Icons.label_rounded, color: Color(0xFF7C3AED), size: 20),
-                      SizedBox(width: 8),
-                      Text(
-                        'Pilih Class Kemasan Kopi',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2D1F17),
+                      const Row(
+                        children: [
+                          Icon(Icons.label_rounded, color: Color(0xFF7C3AED), size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'Semua Class Kemasan Kopi',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF2D1F17),
+                            ),
+                          ),
+                        ],
+                      ),
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFF7C3AED),
+                          visualDensity: VisualDensity.compact,
                         ),
+                        icon: const Icon(Icons.add, size: 16),
+                        label: const Text('Tambah Class', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        onPressed: () {
+                          Navigator.of(ctx).pop();
+                          _showAddNewClassSheet(context, notifier);
+                        },
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 const Divider(height: 1),
                 Expanded(
                   child: ListView.separated(
@@ -166,17 +183,11 @@ class _MobileFullAnnotationStudioScreenState
                     itemBuilder: (context, idx) {
                       final cls = state.classes[idx];
                       final bool isSelected = cls.classSlug == currentItem.classSlug;
-                      final Color tagColor = _parseColor(cls.colorHex);
+                      final Color tagColor = cls.color;
 
                       return InkWell(
                         onTap: () {
-                          notifier.saveActiveItem(
-                            classSlug: cls.classSlug,
-                            brand: cls.brand,
-                            coffeeName: cls.coffeeName,
-                            process: cls.process,
-                            isNewClass: false,
-                          );
+                          notifier.selectClass(cls.classSlug);
                           Navigator.of(ctx).pop();
                         },
                         borderRadius: BorderRadius.circular(12),
@@ -240,6 +251,334 @@ class _MobileFullAnnotationStudioScreenState
     );
   }
 
+  void _showAddNewClassSheet(BuildContext context, AnnotationStudioController notifier) {
+    final brandController = TextEditingController();
+    final nameController = TextEditingController();
+    String selectedProcess = 'natural';
+    String selectedColor = '#7C3AED';
+
+    const roasterySuggestions = [
+      'Tiga Ikat',
+      'Fugol',
+      'Makmur Jaya',
+      'Anomali',
+      'Space Roastery',
+      'Otten Coffee',
+    ];
+
+    const processOptions = [
+      'natural',
+      'wine',
+      'washed',
+      'honey',
+      'anaerobic',
+      'experimental',
+      'wet hulled',
+    ];
+
+    const colorPalette = [
+      '#7C3AED', // Purple
+      '#059669', // Emerald
+      '#D97706', // Amber
+      '#2563EB', // Blue
+      '#E11D48', // Rose
+      '#0D9488', // Teal
+      '#D4AF37', // Gold
+      '#6366F1', // Indigo
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final String brandText = brandController.text.trim();
+            final String nameText = nameController.text.trim();
+            final String cleanB = brandText.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+            final String cleanN = nameText.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+            final String previewSlug = cleanB.isNotEmpty && cleanN.isNotEmpty
+                ? '${cleanB}_${cleanN}_$selectedProcess'
+                : 'roastery_namakopi_$selectedProcess';
+
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 14,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 38,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.black12,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const Row(
+                      children: [
+                        Icon(Icons.add_box_rounded, color: Color(0xFF7C3AED), size: 22),
+                        SizedBox(width: 8),
+                        Text(
+                          'Tambah Class Kemasan Baru',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2D1F17),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Brand / Roastery Input
+                    const Text(
+                      'Brand / Roastery',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2D1F17)),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: brandController,
+                      onChanged: (_) => setSheetState(() {}),
+                      decoration: InputDecoration(
+                        hintText: 'Contoh: Tiga Ikat Coffee',
+                        hintStyle: const TextStyle(color: Colors.black26, fontSize: 13),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                        filled: true,
+                        fillColor: const Color(0xFFF9F6F0),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Roastery Quick Suggestions
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: roasterySuggestions.map((sug) {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: InkWell(
+                              onTap: () {
+                                brandController.text = sug;
+                                setSheetState(() {});
+                              },
+                              borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF0EBE1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  sug,
+                                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF6B4423), fontWeight: FontWeight.w500),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Nama Kopi / Varietas
+                    const Text(
+                      'Nama Kopi / Biji',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2D1F17)),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: nameController,
+                      onChanged: (_) => setSheetState(() {}),
+                      decoration: InputDecoration(
+                        hintText: 'Contoh: Halu Banana Natural',
+                        hintStyle: const TextStyle(color: Colors.black26, fontSize: 13),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                        filled: true,
+                        fillColor: const Color(0xFFF9F6F0),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Process Selection
+                    const Text(
+                      'Metode Pasca-Panen (Proses)',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2D1F17)),
+                    ),
+                    const SizedBox(height: 6),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: processOptions.map((proc) {
+                          final isSelected = proc == selectedProcess;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: FilterChip(
+                              label: Text(proc.toUpperCase()),
+                              selected: isSelected,
+                              selectedColor: const Color(0xFF7C3AED).withValues(alpha: 0.16),
+                              checkmarkColor: const Color(0xFF7C3AED),
+                              labelStyle: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                color: isSelected ? const Color(0xFF7C3AED) : const Color(0xFF6B4423),
+                              ),
+                              onSelected: (_) {
+                                setSheetState(() => selectedProcess = proc);
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Color Palette Selector
+                    const Text(
+                      'Warna Tag Class',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2D1F17)),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: colorPalette.map((hex) {
+                        final color = _parseColor(hex);
+                        final isSelected = selectedColor == hex;
+                        return InkWell(
+                          onTap: () => setSheetState(() => selectedColor = hex),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isSelected ? const Color(0xFF2D1F17) : Colors.white,
+                                width: isSelected ? 2.5 : 1.5,
+                              ),
+                              boxShadow: [
+                                if (isSelected)
+                                  BoxShadow(
+                                    color: color.withValues(alpha: 0.4),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                              ],
+                            ),
+                            child: isSelected ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Live Slug Preview Card
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0EBE1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.auto_awesome, size: 14, color: Color(0xFFB45309)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Slug AI: $previewSlug',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontFamily: 'monospace',
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF2D1F17),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+
+                    // Submit Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 44,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF7C3AED),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                        icon: const Icon(Icons.check_rounded, size: 18),
+                        label: const Text('Simpan & Terapkan Class', style: TextStyle(fontWeight: FontWeight.bold)),
+                        onPressed: () async {
+                          if (brandController.text.trim().isEmpty || nameController.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Brand dan Nama Kopi wajib diisi.'),
+                                backgroundColor: Color(0xFFEF4444),
+                              ),
+                            );
+                            return;
+                          }
+
+                          await notifier.createAndAssignClass(
+                            brand: brandController.text.trim(),
+                            coffeeName: nameController.text.trim(),
+                            process: selectedProcess,
+                            colorHex: selectedColor,
+                          );
+
+                          if (ctx.mounted) {
+                            Navigator.of(ctx).pop();
+                          }
+
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Class "$previewSlug" berhasil dibuat dan diterapkan!'),
+                                backgroundColor: const Color(0xFF059669),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Color _parseColor(String hex) {
     try {
       final clean = hex.replaceAll('#', '');
@@ -285,7 +624,7 @@ class _MobileFullAnnotationStudioScreenState
     if (currentItem.classSlug != null) {
       final matched = state.classes.where((c) => c.classSlug == currentItem.classSlug);
       if (matched.isNotEmpty) {
-        activeClassColor = _parseColor(matched.first.colorHex);
+        activeClassColor = matched.first.color;
       }
     }
 
@@ -300,51 +639,23 @@ class _MobileFullAnnotationStudioScreenState
           icon: const Icon(CupertinoIcons.back, color: textDark),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: InkWell(
-          onTap: _showClassSelectorDialog,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(color: activeClassColor, shape: BoxShape.circle),
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              currentItem.classSlug?.replaceAll('_', ' ').toUpperCase() ?? 'COFFEE BAG',
-                              style: const TextStyle(color: textDark, fontSize: 13, fontWeight: FontWeight.bold),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const Icon(Icons.arrow_drop_down, color: textMuted, size: 18),
-                        ],
-                      ),
-                      Text(
-                        '${state.activePolygon.length} Titik Sudut Poligon • ${_toolDisplayName(state.activeTool)}',
-                        style: const TextStyle(color: textMuted, fontSize: 10.0),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Studio Anotasi AI',
+              style: TextStyle(
+                color: textDark,
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
+            Text(
+              'Roboflow Engine • On-Device Segmenter',
+              style: TextStyle(color: textMuted, fontSize: 10),
+            ),
+          ],
         ),
         actions: [
           // Undo Button
@@ -413,6 +724,9 @@ class _MobileFullAnnotationStudioScreenState
                 samPromptMode: state.samPromptMode,
                 samPromptPoints: state.samPromptPoints,
                 selectedVertexIndex: state.selectedVertexIndex,
+                isLayerVisible: state.isLayerVisible,
+                layerOpacity: state.layerOpacity,
+                isLayerLocked: state.isLayerLocked,
                 onSamPointTapped: (normPoint) {
                   notifier.addSamPoint(normPoint);
                 },
@@ -489,46 +803,60 @@ class _MobileFullAnnotationStudioScreenState
               ),
             ),
 
-          // Top Notice Instruction Pill
+          // Top Group: Instruction Pill + Top Class & Layer Ribbon
           Positioned(
-            top: 14,
-            left: 20,
-            right: 20,
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFEFE8DE), width: 1.2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF5C3A21).withValues(alpha: 0.06),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      _toolIcon(state.activeTool),
-                      size: 15,
-                      color: const Color(0xFF7C3AED),
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        _getInstructionText(state),
-                        style: const TextStyle(color: textDark, fontSize: 11, fontWeight: FontWeight.w500),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+            top: 10,
+            left: 14,
+            right: 14,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 1. Instruction Notice Pill
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFEFE8DE), width: 1.2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF5C3A21).withValues(alpha: 0.06),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _toolIcon(state.activeTool),
+                        size: 14,
+                        color: const Color(0xFF7C3AED),
+                      ),
+                      const SizedBox(width: 7),
+                      Flexible(
+                        child: Text(
+                          _getInstructionText(state),
+                          style: const TextStyle(color: textDark, fontSize: 10.5, fontWeight: FontWeight.w500),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+                const SizedBox(height: 8),
+
+                // 2. Class & Layer Control Hub (Right Above Image Canvas)
+                _buildClassAndLayerHeaderRibbon(
+                  context: context,
+                  state: state,
+                  notifier: notifier,
+                  currentItem: currentItem,
+                  activeClassColor: activeClassColor,
+                ),
+              ],
             ),
           ),
 
@@ -546,6 +874,279 @@ class _MobileFullAnnotationStudioScreenState
 
                 // Main Bottom Floating Tool Selector Pill
                 _buildMainToolBar(context, state, notifier, activeClassColor),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Top Class & Layer Control Ribbon positioned right below instruction pill and above image
+  Widget _buildClassAndLayerHeaderRibbon({
+    required BuildContext context,
+    required AnnotationStudioState state,
+    required AnnotationStudioController notifier,
+    required StudioImageItem currentItem,
+    required Color activeClassColor,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFEFE8DE), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF5C3A21).withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ROW 1: Class Selector & Creator Strip
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 7, 8, 5),
+            child: Row(
+              children: [
+                // + Tambah Class Button
+                InkWell(
+                  onTap: () => _showAddNewClassSheet(context, notifier),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF7C3AED).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFF7C3AED), width: 1),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.add_rounded, size: 14, color: Color(0xFF7C3AED)),
+                        SizedBox(width: 3),
+                        Text(
+                          'Class',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF7C3AED),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(width: 1, height: 18, color: Colors.black12),
+                const SizedBox(width: 6),
+
+                // Horizontal Scrollable Class Pills
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    child: Row(
+                      children: state.classes.map((cls) {
+                        final bool isSelected = cls.classSlug == currentItem.classSlug;
+                        final Color tagColor = cls.color;
+
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: InkWell(
+                            onTap: () => notifier.selectClass(cls.classSlug),
+                            borderRadius: BorderRadius.circular(10),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? tagColor.withValues(alpha: 0.14)
+                                    : const Color(0xFFF9F6F0),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: isSelected ? tagColor : Colors.black.withValues(alpha: 0.08),
+                                  width: isSelected ? 1.6 : 1.0,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: tagColor,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    cls.displayName,
+                                    style: TextStyle(
+                                      fontSize: 10.5,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                      color: isSelected ? const Color(0xFF2D1F17) : const Color(0xFF6B4423),
+                                    ),
+                                  ),
+                                  if (isSelected) ...[
+                                    const SizedBox(width: 4),
+                                    Icon(Icons.check_rounded, size: 12, color: tagColor),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+
+                // More classes icon button (opens full list sheet)
+                InkWell(
+                  onTap: _showClassSelectorDialog,
+                  borderRadius: BorderRadius.circular(8),
+                  child: const Padding(
+                    padding: EdgeInsets.all(4),
+                    child: Icon(Icons.tune_rounded, size: 16, color: Color(0xFF8F857D)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const Divider(height: 1, thickness: 0.8, color: Color(0xFFF0EAE2)),
+
+          // ROW 2: Layer Management Strip (Visibility, Opacity, Lock, Layer Info)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 5),
+            child: Row(
+              children: [
+                // Visibility Toggle (Eye)
+                InkWell(
+                  onTap: () => notifier.toggleLayerVisibility(),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+                    decoration: BoxDecoration(
+                      color: state.isLayerVisible
+                          ? const Color(0xFF059669).withValues(alpha: 0.10)
+                          : const Color(0xFFEF4444).withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          state.isLayerVisible ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                          size: 13,
+                          color: state.isLayerVisible ? const Color(0xFF059669) : const Color(0xFFEF4444),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          state.isLayerVisible ? 'Layer Aktif' : 'Tersembunyi',
+                          style: TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.bold,
+                            color: state.isLayerVisible ? const Color(0xFF059669) : const Color(0xFFEF4444),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+
+                // Opacity Stepper
+                InkWell(
+                  onTap: () => notifier.cycleLayerOpacity(),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF9F6F0),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.opacity_rounded, size: 13, color: Color(0xFF7C3AED)),
+                        const SizedBox(width: 3),
+                        Text(
+                          '${(state.layerOpacity * 100).round()}% Opacity',
+                          style: const TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF2D1F17),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+
+                // Lock Toggle
+                InkWell(
+                  onTap: () => notifier.toggleLayerLock(),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+                    decoration: BoxDecoration(
+                      color: state.isLayerLocked
+                          ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
+                          : const Color(0xFFF9F6F0),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: state.isLayerLocked ? const Color(0xFFD4AF37) : Colors.black.withValues(alpha: 0.08),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          state.isLayerLocked ? Icons.lock_rounded : Icons.lock_open_rounded,
+                          size: 13,
+                          color: state.isLayerLocked ? const Color(0xFFB45309) : const Color(0xFF8F857D),
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          state.isLayerLocked ? 'Terkunci' : 'Buka Kunci',
+                          style: TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w600,
+                            color: state.isLayerLocked ? const Color(0xFFB45309) : const Color(0xFF2D1F17),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const Spacer(),
+
+                // Layer Info Badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+                  decoration: BoxDecoration(
+                    color: activeClassColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    state.activePolygon.length >= 3
+                        ? '${state.activePolygon.length} Titik'
+                        : (state.activeBbox != null ? 'BBox' : '0 Layer'),
+                    style: TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.bold,
+                      color: activeClassColor,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -807,7 +1408,7 @@ class _MobileFullAnnotationStudioScreenState
               onTap: () => notifier.setTool(StudioTool.panZoom),
             ),
             Container(width: 1, height: 22, color: Colors.black12, margin: const EdgeInsets.symmetric(horizontal: 4)),
-            // Class Picker Button
+            // Class Manager Button
             TextButton.icon(
               style: TextButton.styleFrom(
                 foregroundColor: const Color(0xFF2D1F17),
@@ -866,23 +1467,6 @@ class _MobileFullAnnotationStudioScreenState
         ),
       ),
     );
-  }
-
-  String _toolDisplayName(StudioTool tool) {
-    switch (tool) {
-      case StudioTool.samPoints:
-        return 'SAM 3 Interactive';
-      case StudioTool.smartBox:
-        return 'Box SAM Prompt';
-      case StudioTool.boundingBox:
-        return 'Bounding Box';
-      case StudioTool.polygon:
-        return 'Manual Poligon';
-      case StudioTool.vertexEdit:
-        return 'Edit Sudut';
-      case StudioTool.panZoom:
-        return 'Pan & Zoom';
-    }
   }
 
   IconData _toolIcon(StudioTool tool) {
