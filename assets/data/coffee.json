@@ -8,7 +8,13 @@
     "origin": "Gunung Halu, West Java",
     "variety": "Sigararutang, Lini S795",
     "color_hex": "#8B5CF6",
-    "tasting_notes": ["Banana", "Winey", "Red Grape", "Sweet Caramel", "Rum"],
+    "tasting_notes": [
+      "Banana",
+      "Winey",
+      "Red Grape",
+      "Sweet Caramel",
+      "Rum"
+    ],
     "altitude": "1350 - 1650 MDPL",
     "recommended_temp": 91
   },
@@ -21,7 +27,12 @@
     "origin": "Takengon, Aceh Tengah",
     "variety": "TimTim, Bourbon, Ateng Super",
     "color_hex": "#F59E0B",
-    "tasting_notes": ["Jackfruit", "Dried Fig", "Brown Sugar", "Dark Chocolate"],
+    "tasting_notes": [
+      "Jackfruit",
+      "Dried Fig",
+      "Brown Sugar",
+      "Dark Chocolate"
+    ],
     "altitude": "1400 - 1700 MDPL",
     "recommended_temp": 90
   },
@@ -34,7 +45,12 @@
     "origin": "Kamojang, Garut, West Java",
     "variety": "Mixed Variety, Typica, Kartika",
     "color_hex": "#EF4444",
-    "tasting_notes": ["Watermelon", "Strawberry", "Mandarin Orange", "Syrupy"],
+    "tasting_notes": [
+      "Watermelon",
+      "Strawberry",
+      "Mandarin Orange",
+      "Syrupy"
+    ],
     "altitude": "1500 MDPL",
     "recommended_temp": 92
   },
@@ -47,7 +63,12 @@
     "origin": "Sapan, Toraja Utara, Sulawesi Selatan",
     "variety": "S795, Typica",
     "color_hex": "#10B981",
-    "tasting_notes": ["Lime Citrus", "Herbal", "Black Tea", "Cane Sugar"],
+    "tasting_notes": [
+      "Lime Citrus",
+      "Herbal",
+      "Black Tea",
+      "Cane Sugar"
+    ],
     "altitude": "1600 - 1900 MDPL",
     "recommended_temp": 92
   },
@@ -60,7 +81,12 @@
     "origin": "Kintamani, Bangli, Bali",
     "variety": "Kopyol, S795",
     "color_hex": "#EC4899",
-    "tasting_notes": ["Orange Peel", "Wild Honey", "Jasmine", "Sweet Lemon"],
+    "tasting_notes": [
+      "Orange Peel",
+      "Wild Honey",
+      "Jasmine",
+      "Sweet Lemon"
+    ],
     "altitude": "1200 - 1450 MDPL",
     "recommended_temp": 91
   },
@@ -73,7 +99,12 @@
     "origin": "Gunung Malabar, Pangalengan, Jawa Barat",
     "variety": "Typica, Sigararutang, Ateng Super",
     "color_hex": "#6366F1",
-    "tasting_notes": ["Winey", "Red Grape", "Dark Chocolate", "Fermented Strawberry"],
+    "tasting_notes": [
+      "Winey",
+      "Red Grape",
+      "Dark Chocolate",
+      "Fermented Strawberry"
+    ],
     "altitude": "1400 - 1800 MDPL",
     "recommended_temp": 91
   },
@@ -86,7 +117,12 @@
     "origin": "Gunung Halu, Jawa Barat",
     "variety": "Sigararutang",
     "color_hex": "#FBBF24",
-    "tasting_notes": ["Ripe Banana", "Sweet Caramel", "Low Body", "Smooth Honey"],
+    "tasting_notes": [
+      "Ripe Banana",
+      "Sweet Caramel",
+      "Low Body",
+      "Smooth Honey"
+    ],
     "altitude": "1350 - 1650 MDPL",
     "recommended_temp": 90
   },
@@ -99,7 +135,12 @@
     "origin": "Bajawa, Ngada, Flores, NTT",
     "variety": "Kartika, Juria",
     "color_hex": "#14B8A6",
-    "tasting_notes": ["Nutty", "Tobacco Sweet", "Dark Cocoa", "Red Apple"],
+    "tasting_notes": [
+      "Nutty",
+      "Tobacco Sweet",
+      "Dark Cocoa",
+      "Red Apple"
+    ],
     "altitude": "1300 - 1600 MDPL",
     "recommended_temp": 90
   },
@@ -112,7 +153,12 @@
     "origin": "Pangalengan, Bandung, Jawa Barat",
     "variety": "Ateng, Typica",
     "color_hex": "#3B82F6",
-    "tasting_notes": ["Guava", "Passionfruit", "Lactic Creamy", "Molasses"],
+    "tasting_notes": [
+      "Guava",
+      "Passionfruit",
+      "Lactic Creamy",
+      "Molasses"
+    ],
     "altitude": "1450 - 1750 MDPL",
     "recommended_temp": 91
   },
@@ -125,8 +171,4880 @@
     "origin": "Gunung Kerinci, Jambi, Sumatra",
     "variety": "Andung Sari, Sigararutang",
     "color_hex": "#D946EF",
-    "tasting_notes": ["Pomegranate", "Bubblegum", "Hibiscus Tea", "Dark Plum"],
+    "tasting_notes": [
+      "Pomegranate",
+      "Bubblegum",
+      "Hibiscus Tea",
+      "Dark Plum"
+    ],
     "altitude": "1400 - 1700 MDPL",
     "recommended_temp": 92
+  },
+  {
+    "class_slug": "kiara_roastery_blackcurrant_bloom_natural",
+    "display_name": "Kiara Roastery Blackcurrant Bloom",
+    "brand": "kiara_roastery",
+    "coffee_name": "blackcurrant_bloom",
+    "process": "natural",
+    "origin": "Gunung Tujuh, Kerinci",
+    "variety": "Arabika Specialty",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Blackcurrant"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "kiara_roastery_gayo_anaerob_natural_natural",
+    "display_name": "Kiara Roastery Gayo Anaerob Natural",
+    "brand": "kiara_roastery",
+    "coffee_name": "gayo_anaerob_natural",
+    "process": "natural",
+    "origin": "Takengon, Aceh",
+    "variety": "Arabika Specialty",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Dried Fruit",
+      "Hibiscus",
+      "Wine",
+      "Honey"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "kiara_roastery_golden_osmanthus_wet_hulled_giling_basah",
+    "display_name": "Kiara Roastery Golden Osmanthus",
+    "brand": "kiara_roastery",
+    "coffee_name": "golden_osmanthus",
+    "process": "wet_hulled_giling_basah",
+    "origin": "Karo, Sumatera Utara",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Osmanthus Tea",
+      "Floral",
+      "Apricot",
+      "Chamomile"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "fugol_coffee_roasters_watermelon_smash_natural",
+    "display_name": "Fugol Coffee Roasters Watermelon Smash",
+    "brand": "fugol_coffee_roasters",
+    "coffee_name": "watermelon_smash",
+    "process": "natural",
+    "origin": "Kamojang, Jawa Barat",
+    "variety": "Mix (Arabika Single Origin)",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Watermelon",
+      "Strawberry",
+      "Mandarin Orange"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "fugol_coffee_roasters_arabika_berry_smash_natural",
+    "display_name": "Fugol Coffee Roasters Arabika Berry Smash",
+    "brand": "fugol_coffee_roasters",
+    "coffee_name": "arabika_berry_smash",
+    "process": "natural",
+    "origin": "Kamojang, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Berries",
+      "Orange",
+      "Brown Sugar"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "fugol_coffee_roasters_kamojang_water_guava_honey",
+    "display_name": "Fugol Coffee Roasters Kamojang Water Guava",
+    "brand": "fugol_coffee_roasters",
+    "coffee_name": "kamojang_water_guava",
+    "process": "honey",
+    "origin": "Single Origin, Kota Bandung, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Water Guava",
+      "Berries",
+      "Spice"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "space_coffee_roastery_bombe_flower_bomb_natural_21_days_drying",
+    "display_name": "Space Coffee Roastery Bombe Flower Bomb",
+    "brand": "space_coffee_roastery",
+    "coffee_name": "bombe_flower_bomb",
+    "process": "natural_21_days_drying",
+    "origin": "Sidama, Ethiopia",
+    "variety": "",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Jasmine",
+      "Red Apple",
+      "Lime",
+      "Rosewater"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "space_coffee_roastery_yunnan_china_anaerobic_natural",
+    "display_name": "Space Coffee Roastery Yunnan China",
+    "brand": "space_coffee_roastery",
+    "coffee_name": "yunnan_china",
+    "process": "anaerobic_natural",
+    "origin": "Dehong, Valley Coffee",
+    "variety": "Catimor",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Dried Dates",
+      "Wild Strawberry",
+      "Passion Fruit",
+      "White Grape"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "space_coffee_roastery_aji_bourbon_tropical_symphony_anaerobic_natural_with_mosto",
+    "display_name": "Space Coffee Roastery Aji Bourbon Tropical Symphony",
+    "brand": "space_coffee_roastery",
+    "coffee_name": "aji_bourbon_tropical_symphony",
+    "process": "anaerobic_natural_with_mosto",
+    "origin": "Hedonist Series",
+    "variety": "Aji Bourbon",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Tropical Fruit Forward Lush",
+      "Rich Cherry",
+      "White Grape"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "three_wheels_coffee_roaster_biji_kopi_arabika_sunda_geisha_typica_natural_natural",
+    "display_name": "Three Wheels Coffee Roaster Biji Kopi Arabika Sunda Geisha Typica Natural",
+    "brand": "three_wheels_coffee_roaster",
+    "coffee_name": "biji_kopi_arabika_sunda_geisha_typica_natural",
+    "process": "natural",
+    "origin": "Puntang",
+    "variety": "Sunda Typica",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Jasmine",
+      "Orange",
+      "Red Plum"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "three_wheels_coffee_roaster_gayo_blueberry_natural",
+    "display_name": "Three Wheels Coffee Roaster Gayo Blueberry",
+    "brand": "three_wheels_coffee_roaster",
+    "coffee_name": "gayo_blueberry",
+    "process": "natural",
+    "origin": "Single Origin, Kota Bekasi, Jawa Barat",
+    "variety": "Mix Varietas",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Blueberries",
+      "Plum",
+      "Chocolate"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "three_wheels_coffee_roaster_karo_flower_natural",
+    "display_name": "Three Wheels Coffee Roaster Karo Flower",
+    "brand": "three_wheels_coffee_roaster",
+    "coffee_name": "karo_flower",
+    "process": "natural",
+    "origin": "Sumatera Utara",
+    "variety": "Arabika Specialty",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Floral",
+      "Jasmine",
+      "Strawberry"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "cofelty_coffee_roastery_ijen_lestari_carbonic_maceration_natural",
+    "display_name": "Cofelty Coffee Roastery Ijen Lestari Carbonic Maceration",
+    "brand": "cofelty_coffee_roastery",
+    "coffee_name": "ijen_lestari_carbonic_maceration",
+    "process": "natural",
+    "origin": "Winner #1 CoE 2023/2024",
+    "variety": "USDA 762, Cobra",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Tropical Fruit",
+      "Kiwi",
+      "Mango",
+      "Strawberry",
+      "Peach",
+      "Floral",
+      "Cocoa"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "cofelty_coffee_roastery_aceh_bener_meriah_natural",
+    "display_name": "Cofelty Coffee Roastery Aceh Bener Meriah",
+    "brand": "cofelty_coffee_roastery",
+    "coffee_name": "aceh_bener_meriah",
+    "process": "natural",
+    "origin": "Single Origin, Kota Bandung, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Strawberry",
+      "Raisin",
+      "Milk",
+      "Chocolate"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "cofelty_coffee_roastery_kerinci_aziz_mossto_wash_fully_washed_mossto",
+    "display_name": "Cofelty Coffee Roastery Kerinci Aziz Mossto Wash",
+    "brand": "cofelty_coffee_roastery",
+    "coffee_name": "kerinci_aziz_mossto_wash",
+    "process": "fully_washed_mossto",
+    "origin": "Single Origin, Kota Bandung, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Berries",
+      "Sweet Longan",
+      "Pear"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "koeslan_coffee_roastery_filter_blend_kalcer_blend",
+    "display_name": "Koeslan Coffee Roastery Filter Blend Kalcer",
+    "brand": "koeslan_coffee_roastery",
+    "coffee_name": "filter_blend_kalcer",
+    "process": "blend",
+    "origin": "Gayo, Arjuna, Gayo",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Guava",
+      "Berries",
+      "Caramel"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "koeslan_coffee_roastery_yolan_tirta_enrekang_washed_mossto_fully_washed",
+    "display_name": "Koeslan Coffee Roastery Yolan Tirta Enrekang Washed Mossto",
+    "brand": "koeslan_coffee_roastery",
+    "coffee_name": "yolan_tirta_enrekang_washed_mossto",
+    "process": "fully_washed",
+    "origin": "Sulawesi Selatan",
+    "variety": "Arabika Specialty",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Navel Orange",
+      "Green Apple",
+      "Honeysuckle"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "koeslan_coffee_roastery_koeslan_signature_blend_blend",
+    "display_name": "Koeslan Coffee Roastery Koeslan Signature Blend",
+    "brand": "koeslan_coffee_roastery",
+    "coffee_name": "koeslan_signature_blend",
+    "process": "blend",
+    "origin": "Kerinci, Kalibening",
+    "variety": "Arabika Specialty",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Red Apple",
+      "Orange",
+      "Brown Sugar",
+      "Sweet Chocolate"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "smoking_barrels_craft_coffee_west_java_kamojang_natural_natural_28_days",
+    "display_name": "Smoking Barrels Craft Coffee West Java Kamojang Natural",
+    "brand": "smoking_barrels_craft_coffee",
+    "coffee_name": "west_java_kamojang_natural",
+    "process": "natural_28_days",
+    "origin": "Garut",
+    "variety": "Yellow Caturra",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Dried Orange",
+      "Pineapple",
+      "Raisin",
+      "Wild Honey"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "smoking_barrels_craft_coffee_ethiopia_buku_abel_kebele_full_washed_full_washed",
+    "display_name": "Smoking Barrels Craft Coffee Ethiopia Buku Abel Kebele Full Washed",
+    "brand": "smoking_barrels_craft_coffee",
+    "coffee_name": "ethiopia_buku_abel_kebele_full_washed",
+    "process": "full_washed",
+    "origin": "Guji, Oromia",
+    "variety": "Heirloom (100% Arabica)",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Red Apple",
+      "Grapes",
+      "Honeysuckle",
+      "Berries",
+      "Bay Leaf"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "smoking_barrels_craft_coffee_aceh_takengon_full_washed_full_washed",
+    "display_name": "Smoking Barrels Craft Coffee Aceh Takengon Full Washed",
+    "brand": "smoking_barrels_craft_coffee",
+    "coffee_name": "aceh_takengon_full_washed",
+    "process": "full_washed",
+    "origin": "Single Origin, Jakarta Selatan, DKI Jakarta",
+    "variety": "Arabica Specialty",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "kopikina_toraja_makale_washed_washed",
+    "display_name": "Kopikina Toraja Makale Washed",
+    "brand": "kopikina",
+    "coffee_name": "toraja_makale_washed",
+    "process": "washed",
+    "origin": "Single Origin, Jakarta Selatan, DKI Jakarta",
+    "variety": "Typica, Lini S",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Orange",
+      "Black Tea",
+      "Brown Spices"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "kopikina_toraja_pulu_pulu_typica_washed_fully_washed",
+    "display_name": "Kopikina Toraja Pulu-Pulu Typica Washed",
+    "brand": "kopikina",
+    "coffee_name": "toraja_pulu_pulu_typica_washed",
+    "process": "fully_washed",
+    "origin": "Single Origin, Jakarta Selatan, DKI Jakarta",
+    "variety": "Typica",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Floral",
+      "Apple",
+      "Sugarcane"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "kopikina_ijen_lestari_mossto_natural_mosto_natural",
+    "display_name": "Kopikina Ijen Lestari Mossto Natural",
+    "brand": "kopikina",
+    "coffee_name": "ijen_lestari_mossto_natural",
+    "process": "mosto_natural",
+    "origin": "Single Origin, Jakarta Selatan, DKI Jakarta",
+    "variety": "USDA, Kartika",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Blood Orange",
+      "Grapes",
+      "Chocolate"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "brevia_coffee_roastery_arabika_gunung_halu_candy_cloud_natural",
+    "display_name": "Brevia Coffee Roastery Arabika Gunung Halu Candy Cloud",
+    "brand": "brevia_coffee_roastery",
+    "coffee_name": "arabika_gunung_halu_candy_cloud",
+    "process": "natural",
+    "origin": "Single Origin, Jakarta Timur, DKI Jakarta",
+    "variety": "Typica, Sigarar Utang",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Ripe Banana",
+      "Fruity",
+      "Chocolaty",
+      "Sweet"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "brevia_coffee_roastery_puntang_red_apple_honey",
+    "display_name": "Brevia Coffee Roastery Puntang Red Apple",
+    "brand": "brevia_coffee_roastery",
+    "coffee_name": "puntang_red_apple",
+    "process": "honey",
+    "origin": "Single Origin, Jakarta Timur, DKI Jakarta",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Mango",
+      "Red Apple",
+      "Brown Sugar",
+      "Sweet"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "brevia_coffee_roastery_arabika_wanoja_luminous_natural",
+    "display_name": "Brevia Coffee Roastery Arabika Wanoja Luminous",
+    "brand": "brevia_coffee_roastery",
+    "coffee_name": "arabika_wanoja_luminous",
+    "process": "natural",
+    "origin": "Kamojang",
+    "variety": "Arabika Specialty",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Strawberry",
+      "Mango",
+      "Pineapple",
+      "Watermelon"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "janjian_roastery_aceh_gayo_isadora_natural",
+    "display_name": "Janjian Roastery Aceh Gayo Isadora",
+    "brand": "janjian_roastery",
+    "coffee_name": "aceh_gayo_isadora",
+    "process": "natural",
+    "origin": "Jagong Jeget",
+    "variety": "Arabika Specialty",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "janjian_roastery_aceh_abyssinia_darkroom_natural",
+    "display_name": "Janjian Roastery Aceh Abyssinia Darkroom",
+    "brand": "janjian_roastery",
+    "coffee_name": "aceh_abyssinia_darkroom",
+    "process": "natural",
+    "origin": "Jagong Jeget",
+    "variety": "Abyssinia",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "janjian_roastery_bukan_teh_botol_blend",
+    "display_name": "Janjian Roastery Bukan Teh Botol",
+    "brand": "janjian_roastery",
+    "coffee_name": "bukan_teh_botol",
+    "process": "blend",
+    "origin": "Ijen 50%, Aceh Gayo 50%",
+    "variety": "Arabika Specialty",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Jasmine",
+      "Black Tea",
+      "Granadilla"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "serkop_coffee_company_kerinci_honey_anaerob_process_afternoon_bless_honey",
+    "display_name": "Serkop Coffee Company Kerinci Honey Anaerob Process \"Afternoon Bless\"",
+    "brand": "serkop_coffee_company",
+    "coffee_name": "kerinci_honey_anaerob_process_afternoon_bless",
+    "process": "honey",
+    "origin": "Single Origin, Kota Bandung, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Lemon Tea",
+      "Apricot",
+      "Honey"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "serkop_coffee_company_halu_arabica_fullwash_process_green_dusk_fully_washed",
+    "display_name": "Serkop Coffee Company Halu Arabica Fullwash Process \"Green Dusk\"",
+    "brand": "serkop_coffee_company",
+    "coffee_name": "halu_arabica_fullwash_process_green_dusk",
+    "process": "fully_washed",
+    "origin": "Single Origin, Kota Bandung, Jawa Barat",
+    "variety": "Kartika, Typica, Lini S-795, Sigarar Utang",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Green Apple",
+      "Sugar Cane",
+      "Tea-Like"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "serkop_coffee_company_wanoja_natural_anaerob_natural",
+    "display_name": "Serkop Coffee Company Wanoja Natural Anaerob",
+    "brand": "serkop_coffee_company",
+    "coffee_name": "wanoja_natural_anaerob",
+    "process": "natural",
+    "origin": "Kamojang",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Grapefruit",
+      "Raspberry",
+      "Citrus"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "hana_roastery_limitless_blackcurrant_infused_filter_blend_fully_washed_infused",
+    "display_name": "Hana Roastery Limitless Blackcurrant - Infused Filter Blend",
+    "brand": "hana_roastery",
+    "coffee_name": "limitless_blackcurrant_infused_filter_blend",
+    "process": "fully_washed_infused",
+    "origin": "Kerinci & Toraja",
+    "variety": "Arabika Specialty",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Blackcurrant Candy",
+      "Blueberry",
+      "Orange"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "hana_roastery_kamojang_sixty_percent_nitro_maceration_natural_natural",
+    "display_name": "Hana Roastery Kamojang Sixty Percent - Nitro Maceration Natural",
+    "brand": "hana_roastery",
+    "coffee_name": "kamojang_sixty_percent_nitro_maceration_natural",
+    "process": "natural",
+    "origin": "Single Origin, Surabaya, Jawa Timur",
+    "variety": "Arabika Specialty",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Floral",
+      "Apricot",
+      "Mandarin Orange",
+      "White Tea"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "hana_roastery_kerinci_kayu_aro_lactic_natural_natural",
+    "display_name": "Hana Roastery Kerinci Kayu Aro - Lactic Natural",
+    "brand": "hana_roastery",
+    "coffee_name": "kerinci_kayu_aro_lactic_natural",
+    "process": "natural",
+    "origin": "Single Origin, Surabaya, Jawa Timur",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Strawberry Yoghurt",
+      "Grapes",
+      "Plum"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "mahugi_coffee_kerinci_caramella_honey",
+    "display_name": "Mahugi Coffee Kerinci Caramella",
+    "brand": "mahugi_coffee",
+    "coffee_name": "kerinci_caramella",
+    "process": "honey",
+    "origin": "Single Origin, Kuningan, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Green Grapes",
+      "Stone Fruits",
+      "Caramel"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "mahugi_coffee_papandayan_tropical_natural",
+    "display_name": "Mahugi Coffee Papandayan Tropical",
+    "brand": "mahugi_coffee",
+    "coffee_name": "papandayan_tropical",
+    "process": "natural",
+    "origin": "Garut",
+    "variety": "Arabika Specialty",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Tropical Fruits",
+      "Mangosteen",
+      "Black Tea"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "mahugi_coffee_argopuro_hermentic_waterflow_natural",
+    "display_name": "Mahugi Coffee Argopuro Hermentic Waterflow",
+    "brand": "mahugi_coffee",
+    "coffee_name": "argopuro_hermentic_waterflow",
+    "process": "natural",
+    "origin": "Situbondo",
+    "variety": "Arabika Specialty",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Raspberry",
+      "Longan",
+      "Rose Tea",
+      "Mild Body"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "tenun_coffee_roasters_leuser_wild_wash_fully_washed",
+    "display_name": "Tenun Coffee Roasters Leuser Wild Wash",
+    "brand": "tenun_coffee_roasters",
+    "coffee_name": "leuser_wild_wash",
+    "process": "fully_washed",
+    "origin": "Gayo Lues, Aceh",
+    "variety": "Catimor, P88, Abyssinia",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Lime",
+      "Red Cherry",
+      "Black Tea",
+      "Green Apple"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "tenun_coffee_roasters_kintamani_cm_natural_fruit_bomb_natural",
+    "display_name": "Tenun Coffee Roasters Kintamani CM Natural \"Fruit Bomb\"",
+    "brand": "tenun_coffee_roasters",
+    "coffee_name": "kintamani_cm_natural_fruit_bomb",
+    "process": "natural",
+    "origin": "Single Origin, Jakarta Selatan, DKI Jakarta",
+    "variety": "Cobra",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Pineapple",
+      "Raspberry",
+      "Dried Fruit"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "tenun_coffee_roasters_flores_red_honey_fully_washed",
+    "display_name": "Tenun Coffee Roasters Flores Red Honey",
+    "brand": "tenun_coffee_roasters",
+    "coffee_name": "flores_red_honey",
+    "process": "fully_washed",
+    "origin": "Mbohang, Manggarai",
+    "variety": "Arabika Specialty",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Black Cherry",
+      "Caramel",
+      "Black Tea"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "makmur_jaya_coffee_roasters_aceh_avatara_carbonic_maceration_natural",
+    "display_name": "Makmur Jaya Coffee Roasters Aceh Avatara Carbonic Maceration",
+    "brand": "makmur_jaya_coffee_roasters",
+    "coffee_name": "aceh_avatara_carbonic_maceration",
+    "process": "natural",
+    "origin": "Pantan Musara",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Apricot",
+      "Tropical Fruit"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "makmur_jaya_coffee_roasters_aceh_leuser_collective_anoxic_natural_natural",
+    "display_name": "Makmur Jaya Coffee Roasters Aceh Leuser Collective Anoxic Natural",
+    "brand": "makmur_jaya_coffee_roasters",
+    "coffee_name": "aceh_leuser_collective_anoxic_natural",
+    "process": "natural",
+    "origin": "Single Origin, Kota Bandung, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "makmur_jaya_coffee_roasters_halu_honey_banana_honey_anaerobic_processing",
+    "display_name": "Makmur Jaya Coffee Roasters Halu Honey Banana",
+    "brand": "makmur_jaya_coffee_roasters",
+    "coffee_name": "halu_honey_banana",
+    "process": "honey_anaerobic_processing",
+    "origin": "Single Origin, Kota Bandung, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Dried Dates",
+      "Chocolate",
+      "Banana"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "herd_coffee_roaster_sumatra_sidikalang_longberry_natural",
+    "display_name": "Herd Coffee Roaster Sumatra Sidikalang Longberry",
+    "brand": "herd_coffee_roaster",
+    "coffee_name": "sumatra_sidikalang_longberry",
+    "process": "natural",
+    "origin": "Single Origin, Bandung, Jawa Barat",
+    "variety": "Longberry",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Rose Apple",
+      "Snakefruit"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "herd_coffee_roaster_arabika_gayo_wine_natural",
+    "display_name": "Herd Coffee Roaster Arabika Gayo Wine",
+    "brand": "herd_coffee_roaster",
+    "coffee_name": "arabika_gayo_wine",
+    "process": "natural",
+    "origin": "Aceh Bener Meriah",
+    "variety": "Mix Red Arabika",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "herd_coffee_roaster_arabika_toraja_cherry_fully_washed",
+    "display_name": "Herd Coffee Roaster Arabika Toraja Cherry",
+    "brand": "herd_coffee_roaster",
+    "coffee_name": "arabika_toraja_cherry",
+    "process": "fully_washed",
+    "origin": "Single Origin, Bandung, Jawa Barat",
+    "variety": "Arabika",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Jasmine",
+      "Honey",
+      "Cherry"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "common_grounds_coffee_roasters_bali_kintamani_natural",
+    "display_name": "Common Grounds Coffee Roasters Bali Kintamani",
+    "brand": "common_grounds_coffee_roasters",
+    "coffee_name": "bali_kintamani",
+    "process": "natural",
+    "origin": "Batukaang",
+    "variety": "Kartika",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Plum"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "common_grounds_coffee_roasters_single_origin_coffee_aceh_pantan_musara_thermal_natural",
+    "display_name": "Common Grounds Coffee Roasters Single Origin Coffee: Aceh Pantan Musara Thermal",
+    "brand": "common_grounds_coffee_roasters",
+    "coffee_name": "single_origin_coffee_aceh_pantan_musara_thermal",
+    "process": "natural",
+    "origin": "Takengon, Pegasing",
+    "variety": "Arabika Specialty",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Green Apple",
+      "Raisins"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "common_grounds_coffee_roasters_single_origin_java_sumedang_excelsa_natural",
+    "display_name": "Common Grounds Coffee Roasters Single Origin: Java Sumedang Excelsa",
+    "brand": "common_grounds_coffee_roasters",
+    "coffee_name": "single_origin_java_sumedang_excelsa",
+    "process": "natural",
+    "origin": "Sukawangi",
+    "variety": "Excelsa",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "wheels_coffee_roasters_gayo_avatara_carbonic_maceration",
+    "display_name": "Wheels Coffee Roasters Gayo Avatara",
+    "brand": "wheels_coffee_roasters",
+    "coffee_name": "gayo_avatara",
+    "process": "carbonic_maceration",
+    "origin": "Pegasing, Aceh Tengah",
+    "variety": "Typica, Abyssinia, Catimor",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Passion Fruit",
+      "Pineapple",
+      "Papaya"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "wheels_coffee_roasters_puntang_lini_s_slow_drying_slow_drying",
+    "display_name": "Wheels Coffee Roasters Puntang Lini S Slow Drying",
+    "brand": "wheels_coffee_roasters",
+    "coffee_name": "puntang_lini_s_slow_drying",
+    "process": "slow_drying",
+    "origin": "Single Origin, Kota Bandung / Tangerang Selatan",
+    "variety": "Lini S",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "wheels_coffee_roasters_kello_wete_konga_1_washed",
+    "display_name": "Wheels Coffee Roasters Kello Wete Konga #1",
+    "brand": "wheels_coffee_roasters",
+    "coffee_name": "kello_wete_konga_1",
+    "process": "washed",
+    "origin": "Yirgacheffe, Ethiopia",
+    "variety": "Heirloom",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Plum",
+      "Apricot",
+      "Peach",
+      "Stone Fruit"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "uberall_roastery_ijen_namala_natural",
+    "display_name": "Uberall Roastery Ijen Namala",
+    "brand": "uberall_roastery",
+    "coffee_name": "ijen_namala",
+    "process": "natural",
+    "origin": "Bondowoso, Jawa Timur",
+    "variety": "Java, Typica",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Red Florals",
+      "Mandarin",
+      "Sugarcane"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "uberall_roastery_suroso_red_berries_fully_washed",
+    "display_name": "Uberall Roastery Suroso Red Berries",
+    "brand": "uberall_roastery",
+    "coffee_name": "suroso_red_berries",
+    "process": "fully_washed",
+    "origin": "Gunung Prau, Jawa Tengah",
+    "variety": "Typica, Sigarar Utang",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Red Berries",
+      "Tangerine",
+      "Lemongrass",
+      "Sunkist"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "uberall_roastery_bener_kelipah_burgundy_natural",
+    "display_name": "Uberall Roastery Bener Kelipah Burgundy",
+    "brand": "uberall_roastery",
+    "coffee_name": "bener_kelipah_burgundy",
+    "process": "natural",
+    "origin": "Bener Meriah, Aceh",
+    "variety": "Arabika Specialty",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Red Wine",
+      "Red Grapes",
+      "Mandarin Orange"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "sakha_coffee_roastery_arabika_what_the_froothies_honey",
+    "display_name": "Sakha Coffee Roastery Arabika What The Froothies",
+    "brand": "sakha_coffee_roastery",
+    "coffee_name": "arabika_what_the_froothies",
+    "process": "honey",
+    "origin": "Gunung Halu, Jawa Barat",
+    "variety": "Arabika",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Tropical Fruit",
+      "Grape"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "sakha_coffee_roastery_arabika_moonlime_jennifer_natural",
+    "display_name": "Sakha Coffee Roastery Arabika Moonlime Jennifer",
+    "brand": "sakha_coffee_roastery",
+    "coffee_name": "arabika_moonlime_jennifer",
+    "process": "natural",
+    "origin": "Kintamani",
+    "variety": "Arabika",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "sakha_coffee_roastery_arabika_blueberry_well_cream_fully_washed",
+    "display_name": "Sakha Coffee Roastery Arabika Blueberry Well Cream",
+    "brand": "sakha_coffee_roastery",
+    "coffee_name": "arabika_blueberry_well_cream",
+    "process": "fully_washed",
+    "origin": "Kerinci, Jambi",
+    "variety": "Arabika",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Blueberry Jam",
+      "Tropical Fruit"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "semekar_coffee_arabika_strawberry_garden_infused_natural",
+    "display_name": "Semekar Coffee Arabika Strawberry Garden Infused",
+    "brand": "semekar_coffee",
+    "coffee_name": "arabika_strawberry_garden_infused",
+    "process": "natural",
+    "origin": "Jawa Barat",
+    "variety": "Typica, Sigarar Utang",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Strawberry",
+      "Lemon"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "semekar_coffee_rambootan_natural_anerob_infused_natural",
+    "display_name": "Semekar Coffee Rambootan Natural Anerob Infused",
+    "brand": "semekar_coffee",
+    "coffee_name": "rambootan_natural_anerob_infused",
+    "process": "natural",
+    "origin": "Gayo",
+    "variety": "Arabika Specialty",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "semekar_coffee_jeumpa_natural_anaerob_natural",
+    "display_name": "Semekar Coffee Jeumpa Natural Anaerob",
+    "brand": "semekar_coffee",
+    "coffee_name": "jeumpa_natural_anaerob",
+    "process": "natural",
+    "origin": "Flores, Manggarai",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "koro_roasters_mango_burst_infused",
+    "display_name": "Koro Roasters Mango Burst",
+    "brand": "koro_roasters",
+    "coffee_name": "mango_burst",
+    "process": "infused",
+    "origin": "Arabika Gayo Mangga Infused",
+    "variety": "Arabika Gayo",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Mangga"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "koro_roasters_berry_pop_infused",
+    "display_name": "Koro Roasters Berry Pop",
+    "brand": "koro_roasters",
+    "coffee_name": "berry_pop",
+    "process": "infused",
+    "origin": "Arabika Gayo Blackcurrant Infused",
+    "variety": "Arabika Gayo",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Blackcurrant"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "koro_roasters_strawberry_crush_infused",
+    "display_name": "Koro Roasters Strawberry Crush",
+    "brand": "koro_roasters",
+    "coffee_name": "strawberry_crush",
+    "process": "infused",
+    "origin": "Arabika Gayo Stroberi Infused",
+    "variety": "Arabika Gayo",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Stroberi"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "odds_coffee_roaster_peach_tea_kamojang_supernatural",
+    "display_name": "Odds Coffee Roaster Peach Tea Kamojang",
+    "brand": "odds_coffee_roaster",
+    "coffee_name": "peach_tea_kamojang",
+    "process": "supernatural",
+    "origin": "Single Origin, Surakarta, Jawa Tengah",
+    "variety": "Arabica",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Peach Tea"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "odds_coffee_roaster_bali_shasika_kismis_kismis",
+    "display_name": "Odds Coffee Roaster Bali Shasika Kismis",
+    "brand": "odds_coffee_roaster",
+    "coffee_name": "bali_shasika_kismis",
+    "process": "kismis",
+    "origin": "Single Origin, Surakarta, Jawa Tengah",
+    "variety": "Arabica",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Kismis"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "odds_coffee_roaster_es_kopyor_arabica_infused",
+    "display_name": "Odds Coffee Roaster Es Kopyor Arabica",
+    "brand": "odds_coffee_roaster",
+    "coffee_name": "es_kopyor_arabica",
+    "process": "infused",
+    "origin": "Single Origin, Surakarta, Jawa Tengah",
+    "variety": "Arabica",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Es Kopyor"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "ippolito_coffee_aceh_gayo_wine_natural",
+    "display_name": "Ippolito Coffee Aceh Gayo Wine",
+    "brand": "ippolito_coffee",
+    "coffee_name": "aceh_gayo_wine",
+    "process": "natural",
+    "origin": "Single Origin, Medan / Jakarta Utara",
+    "variety": "Arabika Specialty",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Winey",
+      "Frozen Grapes",
+      "Berries"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "ippolito_coffee_taneh_karo_melon_infused_wet_hulled_giling_basah_infused",
+    "display_name": "Ippolito Coffee Taneh Karo Melon Infused",
+    "brand": "ippolito_coffee",
+    "coffee_name": "taneh_karo_melon_infused",
+    "process": "wet_hulled_giling_basah_infused",
+    "origin": "Single Origin, Medan / Jakarta Utara",
+    "variety": "Arabika Specialty",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Honeydew",
+      "Citrus",
+      "Brown Sugar"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "ippolito_coffee_ciwidey_rancabali_natural",
+    "display_name": "Ippolito Coffee Ciwidey Rancabali",
+    "brand": "ippolito_coffee",
+    "coffee_name": "ciwidey_rancabali",
+    "process": "natural",
+    "origin": "Single Origin, Medan / Jakarta Utara",
+    "variety": "Arabika Specialty",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Raspberry",
+      "Guava",
+      "Cedar"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "tanamera_coffee_toraja_sapan_semi_washed",
+    "display_name": "Tanamera Coffee Toraja Sapan",
+    "brand": "tanamera_coffee",
+    "coffee_name": "toraja_sapan",
+    "process": "semi_washed",
+    "origin": "Sulawesi",
+    "variety": "Arabica",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Lime Juice",
+      "Ginger",
+      "Blackcurrant"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "tanamera_coffee_aceh_gayo_washed_washed",
+    "display_name": "Tanamera Coffee Aceh Gayo Washed",
+    "brand": "tanamera_coffee",
+    "coffee_name": "aceh_gayo_washed",
+    "process": "washed",
+    "origin": "Single Origin, Jakarta / Bali",
+    "variety": "Arabica",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Tropical Fruits",
+      "Green Apple",
+      "Caramel"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "tanamera_coffee_bali_washed_bali_batukaru_washed",
+    "display_name": "Tanamera Coffee Bali Washed / Bali Batukaru",
+    "brand": "tanamera_coffee",
+    "coffee_name": "bali_washed_bali_batukaru",
+    "process": "washed",
+    "origin": "Single Origin, Jakarta / Bali",
+    "variety": "Arabica",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Sweet Citrus",
+      "Chocolate",
+      "Long Aftertaste"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "anomali_coffee_biji_kopi_bali_ulian_fullywash",
+    "display_name": "Anomali Coffee Biji Kopi Bali Ulian",
+    "brand": "anomali_coffee",
+    "coffee_name": "biji_kopi_bali_ulian",
+    "process": "fullywash",
+    "origin": "Desa Ulian, Kintamani",
+    "variety": "795 & Kartika",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Fruity",
+      "Black Tea",
+      "Dark Chocolate"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "anomali_coffee_sumatra_dolok_sanggul_natural",
+    "display_name": "Anomali Coffee Sumatra Dolok Sanggul",
+    "brand": "anomali_coffee",
+    "coffee_name": "sumatra_dolok_sanggul",
+    "process": "natural",
+    "origin": "Single Origin, Jakarta Selatan, DKI Jakarta",
+    "variety": "Arabika Specialty",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "anomali_coffee_toraja_mialo_natural",
+    "display_name": "Anomali Coffee Toraja Mialo",
+    "brand": "anomali_coffee",
+    "coffee_name": "toraja_mialo",
+    "process": "natural",
+    "origin": "Single Origin, Jakarta Selatan, DKI Jakarta",
+    "variety": "Arabika Specialty",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "otten_coffee_mt_kawi_natural",
+    "display_name": "Otten Coffee Mt. Kawi",
+    "brand": "otten_coffee",
+    "coffee_name": "mt_kawi",
+    "process": "natural",
+    "origin": "East Java",
+    "variety": "Typica, Lini S",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Green Apple",
+      "Black Tea"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "otten_coffee_arjuno_anaerobic_natural_anaerobic_natural",
+    "display_name": "Otten Coffee Arjuno Anaerobic Natural",
+    "brand": "otten_coffee",
+    "coffee_name": "arjuno_anaerobic_natural",
+    "process": "anaerobic_natural",
+    "origin": "Single Origin, Medan / Jakarta",
+    "variety": "Arabika",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Mix Berries",
+      "Sugarcane (Tebu)",
+      "Yellow Fruit"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "otten_coffee_wanoja_kamojang_natural_process_natural_process",
+    "display_name": "Otten Coffee Wanoja Kamojang Natural Process",
+    "brand": "otten_coffee",
+    "coffee_name": "wanoja_kamojang_natural_process",
+    "process": "natural_process",
+    "origin": "Single Origin, Medan / Jakarta",
+    "variety": "Arabica",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "arutala_coffee_arabica_gayo_wine_wine_natural",
+    "display_name": "Arutala Coffee Arabica Gayo Wine",
+    "brand": "arutala_coffee",
+    "coffee_name": "arabica_gayo_wine",
+    "process": "wine_natural",
+    "origin": "Single Origin, Tangerang, Banten",
+    "variety": "Arabica Gayo (100% Arabica)",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Strong Wine Notes and Aroma",
+      "Berry-like Fruit",
+      "Sweet Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "arutala_coffee_kopi_arabika_toraja_sapan_natural",
+    "display_name": "Arutala Coffee Kopi Arabika Toraja Sapan",
+    "brand": "arutala_coffee",
+    "coffee_name": "kopi_arabika_toraja_sapan",
+    "process": "natural",
+    "origin": "Single Origin, Tangerang, Banten",
+    "variety": "Arabika",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Brown Sugar",
+      "Milky",
+      "Chocolate Malt",
+      "Sweet",
+      "Tropical Fruit"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "arutala_coffee_kopi_arabika_aceh_gayo_natural",
+    "display_name": "Arutala Coffee Kopi Arabika Aceh Gayo",
+    "brand": "arutala_coffee",
+    "coffee_name": "kopi_arabika_aceh_gayo",
+    "process": "natural",
+    "origin": "Single Origin, Tangerang, Banten",
+    "variety": "Arabika",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Brown Sugar",
+      "Dark Chocolate",
+      "Dry Fruit",
+      "Sweet"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "tagetto_coffee_roastery_puntang_red_honey_red_honey",
+    "display_name": "Tagetto Coffee Roastery Puntang Red Honey",
+    "brand": "tagetto_coffee_roastery",
+    "coffee_name": "puntang_red_honey",
+    "process": "red_honey",
+    "origin": "Single Origin, Jakarta",
+    "variety": "Lini S-795, Typika",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Ripe Fruit Aroma",
+      "Medium Body",
+      "Sweet Finish",
+      "Clean After Taste"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "tagetto_coffee_roastery_flores_manggarai_black_honey_black_honey",
+    "display_name": "Tagetto Coffee Roastery Flores Manggarai Black Honey",
+    "brand": "tagetto_coffee_roastery",
+    "coffee_name": "flores_manggarai_black_honey",
+    "process": "black_honey",
+    "origin": "Single Origin, Jakarta",
+    "variety": "Specialty Arabica",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Medium Acid like Mango & Green Apple"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "tagetto_coffee_roastery_bali_kintamani_specialty_natural",
+    "display_name": "Tagetto Coffee Roastery Bali Kintamani Specialty",
+    "brand": "tagetto_coffee_roastery",
+    "coffee_name": "bali_kintamani_specialty",
+    "process": "natural",
+    "origin": "Single Origin, Jakarta",
+    "variety": "Katimor",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Sugar Browning",
+      "Green Apple and Citrus"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "kofind_coffee_co_bondowoso_orange_bourbon_anaerobic_natural_anaerobic_natural",
+    "display_name": "KOFIND Coffee Co. Bondowoso Orange Bourbon Anaerobic Natural",
+    "brand": "kofind_coffee_co",
+    "coffee_name": "bondowoso_orange_bourbon_anaerobic_natural",
+    "process": "anaerobic_natural",
+    "origin": "Single Origin, Surabaya, Jawa Timur",
+    "variety": "Orange Bourbon",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Tangerine",
+      "Melon"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "kofind_coffee_co_kerinci_jambi_full_wash_full_wash",
+    "display_name": "KOFIND Coffee Co. Kerinci Jambi Full Wash",
+    "brand": "kofind_coffee_co",
+    "coffee_name": "kerinci_jambi_full_wash",
+    "process": "full_wash",
+    "origin": "Single Origin, Surabaya, Jawa Timur",
+    "variety": "Arabica",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Orange",
+      "Nectarine",
+      "Brown Sugar"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "kofind_coffee_co_costa_rica_corazon_geo_natural_geo_natural",
+    "display_name": "KOFIND Coffee Co. Costa Rica Corazon Geo Natural",
+    "brand": "kofind_coffee_co",
+    "coffee_name": "costa_rica_corazon_geo_natural",
+    "process": "geo_natural",
+    "origin": "Single Origin, Surabaya, Jawa Timur",
+    "variety": "Typica",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Berry",
+      "Caramel"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "asvata_roastery_bali_raspberry_syrup_natural",
+    "display_name": "Asvata Roastery Bali Raspberry Syrup",
+    "brand": "asvata_roastery",
+    "coffee_name": "bali_raspberry_syrup",
+    "process": "natural",
+    "origin": "Banjar Sanda Desa Satra, Kintamani",
+    "variety": "Arabika Specialty",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Raspberry",
+      "Mandarin Orange"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "asvata_roastery_ciwidey_guava_natural",
+    "display_name": "Asvata Roastery Ciwidey Guava",
+    "brand": "asvata_roastery",
+    "coffee_name": "ciwidey_guava",
+    "process": "natural",
+    "origin": "Gunung Patuha, Bandung",
+    "variety": "Arabika Specialty",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Guava"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "asvata_roastery_kerinci_cherry_natural",
+    "display_name": "Asvata Roastery Kerinci Cherry",
+    "brand": "asvata_roastery",
+    "coffee_name": "kerinci_cherry",
+    "process": "natural",
+    "origin": "Gunung Tujuh, Jernih Jaya, Jambi",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "kopi_anjis_roastery_sukahurip_le_yoghurt_natural",
+    "display_name": "Kopi Anjis Roastery Sukahurip Le Yoghurt",
+    "brand": "kopi_anjis_roastery",
+    "coffee_name": "sukahurip_le_yoghurt",
+    "process": "natural",
+    "origin": "Garut, Jawa Barat",
+    "variety": "Typica, Sigarar Utang",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Tropical Fruits",
+      "Prune"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "kopi_anjis_roastery_kamojang_fruity_gum_natural",
+    "display_name": "Kopi Anjis Roastery Kamojang Fruity Gum",
+    "brand": "kopi_anjis_roastery",
+    "coffee_name": "kamojang_fruity_gum",
+    "process": "natural",
+    "origin": "Kamojang Ibun, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Grape Sensation",
+      "Rite Pineapple"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "kopi_anjis_roastery_rancabali_blue_raisin_natural",
+    "display_name": "Kopi Anjis Roastery Rancabali Blue Raisin",
+    "brand": "kopi_anjis_roastery",
+    "coffee_name": "rancabali_blue_raisin",
+    "process": "natural",
+    "origin": "Kab. Bandung",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Raisin",
+      "Kokonif"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "sanubari_roastery_kawi_natural_anaerob_kawi_series_natural",
+    "display_name": "Sanubari Roastery Kawi Natural Anaerob / Kawi Series",
+    "brand": "sanubari_roastery",
+    "coffee_name": "kawi_natural_anaerob_kawi_series",
+    "process": "natural",
+    "origin": "Gunung Kawi, Malang",
+    "variety": "Arabica",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Grape",
+      "Starfruit"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "sanubari_roastery_gayo_justjuice_watermelon_natural",
+    "display_name": "Sanubari Roastery Gayo JustJuice Watermelon",
+    "brand": "sanubari_roastery",
+    "coffee_name": "gayo_justjuice_watermelon",
+    "process": "natural",
+    "origin": "Pegasing, Gayo, Aceh",
+    "variety": "Arabika Specialty",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "sanubari_roastery_raspberry_rhapsody_natural",
+    "display_name": "Sanubari Roastery Raspberry Rhapsody",
+    "brand": "sanubari_roastery",
+    "coffee_name": "raspberry_rhapsody",
+    "process": "natural",
+    "origin": "Karo, Sumatera Utara",
+    "variety": "Arabika Specialty",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Raspberry",
+      "Red Currant"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "sia_coffee_roastery_ijen_extended_pink_natural",
+    "display_name": "SIA Coffee Roastery Ijen - Extended Pink",
+    "brand": "sia_coffee_roastery",
+    "coffee_name": "ijen_extended_pink",
+    "process": "natural",
+    "origin": "Gunung Ijen, Jawa Timur",
+    "variety": "Typica, Kartika, Lini S795, USDA",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Sunkist Orange",
+      "Plum"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "sia_coffee_roastery_berry_bliss_blend",
+    "display_name": "SIA Coffee Roastery Berry Bliss",
+    "brand": "sia_coffee_roastery",
+    "coffee_name": "berry_bliss",
+    "process": "blend",
+    "origin": "Pantan Musara, Ribang Gayo, Aceh",
+    "variety": "Arabika Specialty",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "serigunting_coffee_kopi_arabica_bali_fully_washed",
+    "display_name": "Serigunting Coffee Kopi Arabica Bali",
+    "brand": "serigunting_coffee",
+    "coffee_name": "kopi_arabica_bali",
+    "process": "fully_washed",
+    "origin": "Kintamani",
+    "variety": "Arabica",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "serigunting_coffee_kopi_arabica_java_fully_washed",
+    "display_name": "Serigunting Coffee Kopi Arabica Java",
+    "brand": "serigunting_coffee",
+    "coffee_name": "kopi_arabica_java",
+    "process": "fully_washed",
+    "origin": "Manglayang",
+    "variety": "Arabica",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Fruity",
+      "Sunkist",
+      "Caramel"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "serigunting_coffee_kopi_arabica_flores_honey",
+    "display_name": "Serigunting Coffee Kopi Arabica Flores",
+    "brand": "serigunting_coffee",
+    "coffee_name": "kopi_arabica_flores",
+    "process": "honey",
+    "origin": "Manggarai",
+    "variety": "Arabica",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Apple",
+      "Herb-like",
+      "Lime"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "nooa_homeroastery_bop_wash_reza_nurulla_other",
+    "display_name": "nooa.homeroastery BOP Wash Reza Nurulla",
+    "brand": "nooa_homeroastery",
+    "coffee_name": "bop_wash_reza_nurulla",
+    "process": "other",
+    "origin": "Temanggung",
+    "variety": "SL792, Lini S-795, Kartika",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "nooa_homeroastery_yellow_bourbon_natural_triple_yeast_other",
+    "display_name": "nooa.homeroastery Yellow Bourbon Natural Triple Yeast",
+    "brand": "nooa_homeroastery",
+    "coffee_name": "yellow_bourbon_natural_triple_yeast",
+    "process": "other",
+    "origin": "Batubalay, Garut",
+    "variety": "Yellow Bourbon",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Mangga Gincu Gedong",
+      "Peach"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "nooa_homeroastery_ethiopia_sidamo_natural_natural",
+    "display_name": "nooa.homeroastery Ethiopia Sidamo Natural",
+    "brand": "nooa_homeroastery",
+    "coffee_name": "ethiopia_sidamo_natural",
+    "process": "natural",
+    "origin": "Single Origin, Bantul, D.I. Yogyakarta",
+    "variety": "Arabika Specialty",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "pima_coffee_and_roastery_white_magician_blend_espresso_natural",
+    "display_name": "Pima Coffee and Roastery White Magician Blend Espresso",
+    "brand": "pima_coffee_and_roastery",
+    "coffee_name": "white_magician_blend_espresso",
+    "process": "natural",
+    "origin": "Dampit, Bajawa, Kebumen",
+    "variety": "Arabika Specialty",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Red Berries",
+      "Apple"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "pima_coffee_and_roastery_arabica_sumbing_wash_oxigenium_fully_washed_anaerobic",
+    "display_name": "Pima Coffee and Roastery Arabica Sumbing Wash Oxigenium",
+    "brand": "pima_coffee_and_roastery",
+    "coffee_name": "arabica_sumbing_wash_oxigenium",
+    "process": "fully_washed_anaerobic",
+    "origin": "Sumbing, Temanggung",
+    "variety": "Arabica",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "pima_coffee_and_roastery_ijenderfull_sweet_seven_natural",
+    "display_name": "Pima Coffee and Roastery Ijenderfull Sweet Seven",
+    "brand": "pima_coffee_and_roastery",
+    "coffee_name": "ijenderfull_sweet_seven",
+    "process": "natural",
+    "origin": "Gunung Ijen, Jawa Timur",
+    "variety": "Arabika Specialty",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "masak_pohon_roastery_starstruck_natural",
+    "display_name": "Masak Pohon Roastery Starstruck",
+    "brand": "masak_pohon_roastery",
+    "coffee_name": "starstruck",
+    "process": "natural",
+    "origin": "Gunung Cikuray, Kab. Garut",
+    "variety": "Arabika Specialty",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Star Fruit",
+      "Mango"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "masak_pohon_roastery_pongtiku_semi_washed",
+    "display_name": "Masak Pohon Roastery Pongtiku",
+    "brand": "masak_pohon_roastery",
+    "coffee_name": "pongtiku",
+    "process": "semi_washed",
+    "origin": "Toraja, Sulawesi",
+    "variety": "Arabika Specialty",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Orange",
+      "Brown Sugar",
+      "Caramel"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "masak_pohon_roastery_k_iwa_bali_kintamani_natural",
+    "display_name": "Masak Pohon Roastery K.IWA Bali Kintamani",
+    "brand": "masak_pohon_roastery",
+    "coffee_name": "k_iwa_bali_kintamani",
+    "process": "natural",
+    "origin": "Single Origin, Surabaya, Jawa Timur",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "pikul_coffee_roastery_bali_peach_fully_washed_infused",
+    "display_name": "Pikul Coffee Roastery Bali Peach",
+    "brand": "pikul_coffee_roastery",
+    "coffee_name": "bali_peach",
+    "process": "fully_washed_infused",
+    "origin": "Single Origin, Jakarta Timur, DKI Jakarta",
+    "variety": "Arabika Specialty",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Peach",
+      "Orange"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "pikul_coffee_roastery_arabika_single_origin_toba_simalem_other",
+    "display_name": "Pikul Coffee Roastery Arabika Single Origin Toba Simalem",
+    "brand": "pikul_coffee_roastery",
+    "coffee_name": "arabika_single_origin_toba_simalem",
+    "process": "other",
+    "origin": "Sumatera Utara",
+    "variety": "Mix (Arabika Single Origin)",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "pikul_coffee_roastery_trawas_excelsa_natural",
+    "display_name": "Pikul Coffee Roastery Trawas Excelsa",
+    "brand": "pikul_coffee_roastery",
+    "coffee_name": "trawas_excelsa",
+    "process": "natural",
+    "origin": "Jawa Timur",
+    "variety": "Excelsa",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "taraz_roastery_the_exotic_flower_blend",
+    "display_name": "Taraz Roastery The Exotic Flower",
+    "brand": "taraz_roastery",
+    "coffee_name": "the_exotic_flower",
+    "process": "blend",
+    "origin": "Yunnan, Ijen Bondowoso, Aceh Gayo",
+    "variety": "Typica, Sigarar Utang",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "taraz_roastery_arabika_gunung_halu_honey_honey",
+    "display_name": "Taraz Roastery Arabika Gunung Halu Honey",
+    "brand": "taraz_roastery",
+    "coffee_name": "arabika_gunung_halu_honey",
+    "process": "honey",
+    "origin": "Single Origin, Jakarta Selatan / Malang",
+    "variety": "Sigararutang, Lini S",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Banana",
+      "Maple",
+      "Sweet Orange"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "taraz_roastery_arabika_gunung_halu_banana_anaerob_natural",
+    "display_name": "Taraz Roastery Arabika Gunung Halu Banana Anaerob",
+    "brand": "taraz_roastery",
+    "coffee_name": "arabika_gunung_halu_banana_anaerob",
+    "process": "natural",
+    "origin": "Single Origin, Jakarta Selatan / Malang",
+    "variety": "Arabika",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "time_coffee_company_arabica_bukit_seni_natural",
+    "display_name": "Time Coffee Company Arabica Bukit Seni",
+    "brand": "time_coffee_company",
+    "coffee_name": "arabica_bukit_seni",
+    "process": "natural",
+    "origin": "Buleleng, Bali",
+    "variety": "Arabica",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "White Chocolate",
+      "Caramel"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "time_coffee_company_time_reserve_natural",
+    "display_name": "Time Coffee Company Time Reserve",
+    "brand": "time_coffee_company",
+    "coffee_name": "time_reserve",
+    "process": "natural",
+    "origin": "Buleleng, Bali",
+    "variety": "Arabika Specialty",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Dried Red Grape",
+      "Cane Sugar"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "time_coffee_company_arabica_manggarai_fully_washed",
+    "display_name": "Time Coffee Company Arabica Manggarai",
+    "brand": "time_coffee_company",
+    "coffee_name": "arabica_manggarai",
+    "process": "fully_washed",
+    "origin": "Flores, NTT",
+    "variety": "Arabica",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "kuji_coffee_roasters_biji_kopi_arabika_pasir_angling_natural",
+    "display_name": "Kuji Coffee Roasters Biji Kopi Arabika Pasir Angling",
+    "brand": "kuji_coffee_roasters",
+    "coffee_name": "biji_kopi_arabika_pasir_angling",
+    "process": "natural",
+    "origin": "Jawa Barat",
+    "variety": "Arabika",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Pineapple",
+      "Floral"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "kuji_coffee_roasters_biji_kopi_arabika_kayumas_other",
+    "display_name": "Kuji Coffee Roasters Biji Kopi Arabika Kayumas",
+    "brand": "kuji_coffee_roasters",
+    "coffee_name": "biji_kopi_arabika_kayumas",
+    "process": "other",
+    "origin": "Single Origin, Kota Bekasi, Jawa Barat",
+    "variety": "Arabika",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "kuji_coffee_roasters_biji_kopi_arabika_kerinci_natural",
+    "display_name": "Kuji Coffee Roasters Biji Kopi Arabika Kerinci",
+    "brand": "kuji_coffee_roasters",
+    "coffee_name": "biji_kopi_arabika_kerinci",
+    "process": "natural",
+    "origin": "Single Origin, Kota Bekasi, Jawa Barat",
+    "variety": "Arabika",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "collins_roasters_kerinci_blackcurrant_natural",
+    "display_name": "Collins Roasters Kerinci Blackcurrant",
+    "brand": "collins_roasters",
+    "coffee_name": "kerinci_blackcurrant",
+    "process": "natural",
+    "origin": "Single Origin, Kota Bekasi, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "collins_roasters_typica_gowa_topidi_natural",
+    "display_name": "Collins Roasters Typica Gowa Topidi",
+    "brand": "collins_roasters",
+    "coffee_name": "typica_gowa_topidi",
+    "process": "natural",
+    "origin": "Sulawesi Selatan",
+    "variety": "Typica",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "collins_roasters_karo_simalem_melon_natural",
+    "display_name": "Collins Roasters Karo Simalem Melon",
+    "brand": "collins_roasters",
+    "coffee_name": "karo_simalem_melon",
+    "process": "natural",
+    "origin": "Single Origin, Kota Bekasi, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "second_step_coffee_roastery_papua_wamena_fully_washed",
+    "display_name": "Second Step Coffee Roastery Papua Wamena",
+    "brand": "second_step_coffee_roastery",
+    "coffee_name": "papua_wamena",
+    "process": "fully_washed",
+    "origin": "Single Origin, Kota Bekasi, Jawa Barat",
+    "variety": "Typica, Sigarar Utang",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Caramel",
+      "Chocolatey",
+      "Brown Sugar"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "second_step_coffee_roastery_gayo_peaberry_semi_washed",
+    "display_name": "Second Step Coffee Roastery Gayo Peaberry",
+    "brand": "second_step_coffee_roastery",
+    "coffee_name": "gayo_peaberry",
+    "process": "semi_washed",
+    "origin": "Aceh",
+    "variety": "Typica, Sigarar Utang",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Brown Sugar",
+      "Earthy"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "second_step_coffee_roastery_toraja_semi_washed",
+    "display_name": "Second Step Coffee Roastery Toraja",
+    "brand": "second_step_coffee_roastery",
+    "coffee_name": "toraja",
+    "process": "semi_washed",
+    "origin": "Sulawesi",
+    "variety": "Arabika Specialty",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Brown Sugar",
+      "Chocolate",
+      "Milky"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "sunset_lotus_cranberry_blossom_fully_washed",
+    "display_name": "Sunset Lotus Cranberry Blossom",
+    "brand": "sunset_lotus",
+    "coffee_name": "cranberry_blossom",
+    "process": "fully_washed",
+    "origin": "Aceh Gayo, Bener Meriah",
+    "variety": "Arabika Specialty",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Cranberry",
+      "Lemon"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "sunset_lotus_winey_process_extended_natural",
+    "display_name": "Sunset Lotus Winey Process Extended",
+    "brand": "sunset_lotus",
+    "coffee_name": "winey_process_extended",
+    "process": "natural",
+    "origin": "Aceh Gayo",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "sunset_lotus_pink_honey_raspberry_honey",
+    "display_name": "Sunset Lotus Pink Honey Raspberry",
+    "brand": "sunset_lotus",
+    "coffee_name": "pink_honey_raspberry",
+    "process": "honey",
+    "origin": "Aceh Gayo, Bener Meriah",
+    "variety": "Arabika Specialty",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "coffest_roastery_abyssinia_natural_anaerobic_natural",
+    "display_name": "Coffest Roastery Abyssinia Natural Anaerobic",
+    "brand": "coffest_roastery",
+    "coffee_name": "abyssinia_natural_anaerobic",
+    "process": "natural",
+    "origin": "Panji Mulia, Bener Meriah",
+    "variety": "Abyssinia",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Strawberry"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "coffest_roastery_pakantan_natural_extended_natural",
+    "display_name": "Coffest Roastery Pakantan Natural Extended",
+    "brand": "coffest_roastery",
+    "coffee_name": "pakantan_natural_extended",
+    "process": "natural",
+    "origin": "Ulu Pungkut, Mandailing Natal",
+    "variety": "Typica",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Tartaric like Grape",
+      "Tropical Fruit"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "coffest_roastery_indragiri_thermalshock_natural_natural",
+    "display_name": "Coffest Roastery Indragiri Thermalshock Natural",
+    "brand": "coffest_roastery",
+    "coffee_name": "indragiri_thermalshock_natural",
+    "process": "natural",
+    "origin": "Rancabali",
+    "variety": "Arabika Specialty",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "mr_o_coffee_gayo_sweet_orange_honey",
+    "display_name": "Mr. O Coffee Gayo Sweet Orange",
+    "brand": "mr_o_coffee",
+    "coffee_name": "gayo_sweet_orange",
+    "process": "honey",
+    "origin": "Kelitung, Bintang, Aceh Tengah",
+    "variety": "Arabika Specialty",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Orange",
+      "Black Tea"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "mr_o_coffee_arabika_melon_musk_infused_natural",
+    "display_name": "Mr. O Coffee Arabika Melon Musk Infused",
+    "brand": "mr_o_coffee",
+    "coffee_name": "arabika_melon_musk_infused",
+    "process": "natural",
+    "origin": "Karaha Bodas, Tasikmalaya",
+    "variety": "Arabika",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "mr_o_coffee_florex_orange_natural",
+    "display_name": "Mr. O Coffee Florex Orange",
+    "brand": "mr_o_coffee",
+    "coffee_name": "florex_orange",
+    "process": "natural",
+    "origin": "Mbohang, Flores",
+    "variety": "Arabika Specialty",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Mandarin Orange"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "tadi_pagi_coffee_roastery_gayo_golden_wine_natural",
+    "display_name": "Tadi Pagi Coffee Roastery Gayo Golden Wine",
+    "brand": "tadi_pagi_coffee_roastery",
+    "coffee_name": "gayo_golden_wine",
+    "process": "natural",
+    "origin": "Gayo, Aceh",
+    "variety": "Arabika Specialty",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Winey",
+      "Caramel",
+      "Grapefruit"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "tadi_pagi_coffee_roastery_uwu_strawberry_anaerob_anaerob",
+    "display_name": "Tadi Pagi Coffee Roastery Uwu Strawberry Anaerob",
+    "brand": "tadi_pagi_coffee_roastery",
+    "coffee_name": "uwu_strawberry_anaerob",
+    "process": "anaerob",
+    "origin": "Manggarai, Flores",
+    "variety": "Arabika Specialty",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Strawberry",
+      "Ripe Pineapple"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "tadi_pagi_coffee_roastery_bali_kintamani_fullwash_fully_washed",
+    "display_name": "Tadi Pagi Coffee Roastery Bali Kintamani Fullwash",
+    "brand": "tadi_pagi_coffee_roastery",
+    "coffee_name": "bali_kintamani_fullwash",
+    "process": "fully_washed",
+    "origin": "Single Origin, Depok, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "say_something_coffee_mountwa_pineapple_cranberry_natural",
+    "display_name": "Say Something Coffee Mountwa Pineapple Cranberry",
+    "brand": "say_something_coffee",
+    "coffee_name": "mountwa_pineapple_cranberry",
+    "process": "natural",
+    "origin": "Gunung Wayang, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "say_something_coffee_macadamia_rancabali_apricot_tea_fully_washed",
+    "display_name": "Say Something Coffee Macadamia Rancabali Apricot Tea",
+    "brand": "say_something_coffee",
+    "coffee_name": "macadamia_rancabali_apricot_tea",
+    "process": "fully_washed",
+    "origin": "Gunung Wayang, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "say_something_coffee_sumatra_pink_bubble_gum_honey",
+    "display_name": "Say Something Coffee Sumatra Pink Bubble Gum",
+    "brand": "say_something_coffee",
+    "coffee_name": "sumatra_pink_bubble_gum",
+    "process": "honey",
+    "origin": "Single Origin, Jakarta Barat, DKI Jakarta",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "night_owl_roastery_red_daifuku_fully_washed",
+    "display_name": "Night Owl Roastery Red Daifuku",
+    "brand": "night_owl_roastery",
+    "coffee_name": "red_daifuku",
+    "process": "fully_washed",
+    "origin": "Rancabali, Jawa Barat",
+    "variety": "Ateng",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Strawberry",
+      "Candy"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "night_owl_roastery_apple_shot_natural",
+    "display_name": "Night Owl Roastery Apple Shot",
+    "brand": "night_owl_roastery",
+    "coffee_name": "apple_shot",
+    "process": "natural",
+    "origin": "Rancabali, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "night_owl_roastery_pisang_coklat_honey",
+    "display_name": "Night Owl Roastery Pisang Coklat",
+    "brand": "night_owl_roastery",
+    "coffee_name": "pisang_coklat",
+    "process": "honey",
+    "origin": "Puntang, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Honey",
+      "Banana"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "roemah_koffie_indonesia_bolelebo_anaerobic_honey",
+    "display_name": "Roemah Koffie Indonesia Bolelebo",
+    "brand": "roemah_koffie_indonesia",
+    "coffee_name": "bolelebo",
+    "process": "anaerobic_honey",
+    "origin": "Flores Manggarai, NTT",
+    "variety": "100% Arabica",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Red Apple",
+      "Blackberry",
+      "Jasmine Tea"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "roemah_koffie_indonesia_tondiku_wet_hulled_giling_basah",
+    "display_name": "Roemah Koffie Indonesia Tondiku",
+    "brand": "roemah_koffie_indonesia",
+    "coffee_name": "tondiku",
+    "process": "wet_hulled_giling_basah",
+    "origin": "Lintong Nihuta, Sumatera Utara",
+    "variety": "100% Arabica",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Almond",
+      "Spices",
+      "Black Tea",
+      "Tamarind"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "roemah_koffie_indonesia_laruik_sanjo_natural",
+    "display_name": "Roemah Koffie Indonesia Laruik Sanjo",
+    "brand": "roemah_koffie_indonesia",
+    "coffee_name": "laruik_sanjo",
+    "process": "natural",
+    "origin": "Kerinci, Jambi",
+    "variety": "Arabika Specialty",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Strawberry",
+      "Pineapple"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "manasa_coffee_java_geisha_natural",
+    "display_name": "Manasa Coffee Java Geisha",
+    "brand": "manasa_coffee",
+    "coffee_name": "java_geisha",
+    "process": "natural",
+    "origin": "Ijen, Jawa Timur",
+    "variety": "Geisha",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "manasa_coffee_arabika_garut_nanas_fully_washed",
+    "display_name": "Manasa Coffee Arabika Garut Nanas",
+    "brand": "manasa_coffee",
+    "coffee_name": "arabika_garut_nanas",
+    "process": "fully_washed",
+    "origin": "Garut, Jawa Barat",
+    "variety": "Arabika",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Pineapple",
+      "Berries",
+      "Black Tea"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "manasa_coffee_arabika_mekarwangi_natural",
+    "display_name": "Manasa Coffee Arabika Mekarwangi",
+    "brand": "manasa_coffee",
+    "coffee_name": "arabika_mekarwangi",
+    "process": "natural",
+    "origin": "Jawa Barat",
+    "variety": "Arabika",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "constant_roastery_puntang_gilbas_wet_hulled_giling_basah",
+    "display_name": "Constant Roastery Puntang Gilbas",
+    "brand": "constant_roastery",
+    "coffee_name": "puntang_gilbas",
+    "process": "wet_hulled_giling_basah",
+    "origin": "Bandung, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Fuji Apple"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "constant_roastery_calamansi_sunburst_natural",
+    "display_name": "Constant Roastery Calamansi Sunburst",
+    "brand": "constant_roastery",
+    "coffee_name": "calamansi_sunburst",
+    "process": "natural",
+    "origin": "Sumatera",
+    "variety": "Arabika Specialty",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "constant_roastery_banoffee_natural",
+    "display_name": "Constant Roastery Banoffee",
+    "brand": "constant_roastery",
+    "coffee_name": "banoffee",
+    "process": "natural",
+    "origin": "Ciwidey, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "woodlane_coffeevibes_arabica_blueberry_bubblegum_fully_washed_yeast",
+    "display_name": "Woodlane Coffeevibes Arabica Blueberry Bubblegum",
+    "brand": "woodlane_coffeevibes",
+    "coffee_name": "arabica_blueberry_bubblegum",
+    "process": "fully_washed_yeast",
+    "origin": "Single Origin, Bandung, Jawa Barat",
+    "variety": "Arabica",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Blueberry"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "woodlane_coffeevibes_arabica_strawberry_naked_candy_single_origin_natural",
+    "display_name": "Woodlane Coffeevibes Arabica Strawberry Naked Candy Single Origin",
+    "brand": "woodlane_coffeevibes",
+    "coffee_name": "arabica_strawberry_naked_candy_single_origin",
+    "process": "natural",
+    "origin": "Single Origin, Bandung, Jawa Barat",
+    "variety": "Arabica",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "woodlane_coffeevibes_dark_roast_arabica_semi_washed",
+    "display_name": "Woodlane Coffeevibes Dark Roast Arabica",
+    "brand": "woodlane_coffeevibes",
+    "coffee_name": "dark_roast_arabica",
+    "process": "semi_washed",
+    "origin": "Ciwidey, Jawa Barat",
+    "variety": "Typica, Sigarar Utang",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Orange",
+      "Dark Chocolate"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "doeloer_coffee_honey_arabika_manglayang_honey",
+    "display_name": "Doeloer Coffee Honey Arabika Manglayang",
+    "brand": "doeloer_coffee",
+    "coffee_name": "honey_arabika_manglayang",
+    "process": "honey",
+    "origin": "Bandung",
+    "variety": "Mix (Arabika)",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Peach",
+      "Apricot"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "doeloer_coffee_full_wash_arabika_manglayang_fully_washed",
+    "display_name": "Doeloer Coffee Full Wash Arabika Manglayang",
+    "brand": "doeloer_coffee",
+    "coffee_name": "full_wash_arabika_manglayang",
+    "process": "fully_washed",
+    "origin": "Bandung",
+    "variety": "Arabika",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Lime",
+      "Green Apple"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "doeloer_coffee_wine_arabika_manglayang_natural",
+    "display_name": "Doeloer Coffee Wine Arabika Manglayang",
+    "brand": "doeloer_coffee",
+    "coffee_name": "wine_arabika_manglayang",
+    "process": "natural",
+    "origin": "Bandung",
+    "variety": "Arabika",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "origena_coffee_ijen_natural_lactic_natural",
+    "display_name": "Origena Coffee Ijen Natural Lactic",
+    "brand": "origena_coffee",
+    "coffee_name": "ijen_natural_lactic",
+    "process": "natural",
+    "origin": "Ijen, Jawa Timur",
+    "variety": "Arabika Specialty",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "origena_coffee_patuha_nectar_washed_classic_fully_washed",
+    "display_name": "Origena Coffee Patuha Nectar Washed Classic",
+    "brand": "origena_coffee",
+    "coffee_name": "patuha_nectar_washed_classic",
+    "process": "fully_washed",
+    "origin": "Gunung Patuha, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "boco_coffee_roasters_arabika_cikoneng_fully_washed",
+    "display_name": "Boco Coffee Roasters Arabika Cikoneng",
+    "brand": "boco_coffee_roasters",
+    "coffee_name": "arabika_cikoneng",
+    "process": "fully_washed",
+    "origin": "Jawa Barat",
+    "variety": "Typica, Sigarar Utang",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "boco_coffee_roasters_aceh_gayo_wine_natural",
+    "display_name": "Boco Coffee Roasters Aceh Gayo Wine",
+    "brand": "boco_coffee_roasters",
+    "coffee_name": "aceh_gayo_wine",
+    "process": "natural",
+    "origin": "Single Origin, Kab. Bogor, Jawa Barat",
+    "variety": "Typica, Sigarar Utang",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "boco_coffee_roasters_robusta_paniisan_fully_washed",
+    "display_name": "Boco Coffee Roasters Robusta Paniisan",
+    "brand": "boco_coffee_roasters",
+    "coffee_name": "robusta_paniisan",
+    "process": "fully_washed",
+    "origin": "Jawa Barat",
+    "variety": "Robusta",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "wilcoff_kerinci_watermelon_natural",
+    "display_name": "Wilcoff Kerinci Watermelon",
+    "brand": "wilcoff",
+    "coffee_name": "kerinci_watermelon",
+    "process": "natural",
+    "origin": "Gunung Tujuh, Jambi",
+    "variety": "Andungsari, Lini S, Sigarar Utang",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Watermelon",
+      "Rose"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "wilcoff_java_wine_natural",
+    "display_name": "Wilcoff Java Wine",
+    "brand": "wilcoff",
+    "coffee_name": "java_wine",
+    "process": "natural",
+    "origin": "Gunung Sindoro, Jawa Tengah",
+    "variety": "Arabika Specialty",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "ukeba_coffee_roastery_arabica_natural_gunung_puntang_natural",
+    "display_name": "Ukeba Coffee Roastery Arabica Natural Gunung Puntang",
+    "brand": "ukeba_coffee_roastery",
+    "coffee_name": "arabica_natural_gunung_puntang",
+    "process": "natural",
+    "origin": "Jawa Barat",
+    "variety": "Typica, Sigarar Utang",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "ukeba_coffee_roastery_arabica_pangalengan_semi_washed",
+    "display_name": "Ukeba Coffee Roastery Arabica Pangalengan",
+    "brand": "ukeba_coffee_roastery",
+    "coffee_name": "arabica_pangalengan",
+    "process": "semi_washed",
+    "origin": "Jawa Barat",
+    "variety": "Arabica",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Sweet Orange",
+      "Caramel"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "ukeba_coffee_roastery_arabica_bali_kintamani_semi_washed",
+    "display_name": "Ukeba Coffee Roastery Arabica Bali Kintamani",
+    "brand": "ukeba_coffee_roastery",
+    "coffee_name": "arabica_bali_kintamani",
+    "process": "semi_washed",
+    "origin": "Single Origin, Kab. Bandung, Jawa Barat",
+    "variety": "Arabica",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "kord_coffee_roasters_kamojang_pichia_inoculation_other",
+    "display_name": "KORD Coffee Roasters Kamojang Pichia Inoculation",
+    "brand": "kord_coffee_roasters",
+    "coffee_name": "kamojang_pichia_inoculation",
+    "process": "other",
+    "origin": "Jawa Barat",
+    "variety": "Lini S-795, Catimor, Red Bourbon",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "kord_coffee_roasters_sukahurip_natural_anaerob_natural",
+    "display_name": "KORD Coffee Roasters Sukahurip Natural Anaerob",
+    "brand": "kord_coffee_roasters",
+    "coffee_name": "sukahurip_natural_anaerob",
+    "process": "natural",
+    "origin": "Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "afrolabel_coffee_roaster_gayo_kenawat_serinen_hybrid_natural",
+    "display_name": "AFROLABEL Coffee Roaster Gayo Kenawat Serinen Hybrid",
+    "brand": "afrolabel_coffee_roaster",
+    "coffee_name": "gayo_kenawat_serinen_hybrid",
+    "process": "natural",
+    "origin": "Kenawat, Aceh Tengah",
+    "variety": "Arabika Specialty",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Pineapple",
+      "Cacao Nibs"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "afrolabel_coffee_roaster_puntang_lychee_sweet_honey",
+    "display_name": "AFROLABEL Coffee Roaster Puntang Lychee Sweet",
+    "brand": "afrolabel_coffee_roaster",
+    "coffee_name": "puntang_lychee_sweet",
+    "process": "honey",
+    "origin": "Puntang, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Lychee"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "flo_coffee_roastery_cinaggela_natural_anaerobic_ec_1118_natural",
+    "display_name": "Flo. Coffee Roastery Cinaggela Natural Anaerobic EC 1118",
+    "brand": "flo_coffee_roastery",
+    "coffee_name": "cinaggela_natural_anaerobic_ec_1118",
+    "process": "natural",
+    "origin": "Cinanggela, Jawa Barat",
+    "variety": "Typica, Ateng",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "flo_coffee_roastery_bali_auman_natural_natural",
+    "display_name": "Flo. Coffee Roastery Bali Auman Natural",
+    "brand": "flo_coffee_roastery",
+    "coffee_name": "bali_auman_natural",
+    "process": "natural",
+    "origin": "Auman Pelaga, Bali",
+    "variety": "Typica, USDA, Kopyol",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Guava",
+      "Prune"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "flo_coffee_roastery_ratawali_redehidration_guava_olah_eksperimental_redehidration",
+    "display_name": "Flo. Coffee Roastery Ratawali Redehidration Guava",
+    "brand": "flo_coffee_roastery",
+    "coffee_name": "ratawali_redehidration_guava",
+    "process": "olah_eksperimental_redehidration",
+    "origin": "Single Origin, Yogyakarta, D.I. Yogyakarta",
+    "variety": "Typica",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "anjiru_coffee_tailor_saribudolok_fruit_punch_lot_natural",
+    "display_name": "Anjiru Coffee Tailor Saribudolok Fruit Punch Lot",
+    "brand": "anjiru_coffee_tailor",
+    "coffee_name": "saribudolok_fruit_punch_lot",
+    "process": "natural",
+    "origin": "Sumatera Utara",
+    "variety": "Arabika Specialty",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "anjiru_coffee_tailor_simpang_banyak_typica_rosella_natural",
+    "display_name": "Anjiru Coffee Tailor Simpang Banyak Typica Rosella",
+    "brand": "anjiru_coffee_tailor",
+    "coffee_name": "simpang_banyak_typica_rosella",
+    "process": "natural",
+    "origin": "Mandailing, Sumatera Utara",
+    "variety": "Typica",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Rosella",
+      "Apple"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "anjiru_coffee_tailor_flores_juria_melon_honey",
+    "display_name": "Anjiru Coffee Tailor Flores Juria Melon",
+    "brand": "anjiru_coffee_tailor",
+    "coffee_name": "flores_juria_melon",
+    "process": "honey",
+    "origin": "Single Origin, Sleman, D.I. Yogyakarta",
+    "variety": "Juria",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "mosto_coffee_roaster_sunda_garut_extended_natural_natural",
+    "display_name": "Mosto Coffee Roaster Sunda Garut Extended Natural",
+    "brand": "mosto_coffee_roaster",
+    "coffee_name": "sunda_garut_extended_natural",
+    "process": "natural",
+    "origin": "Single Origin, Surakarta, Jawa Tengah",
+    "variety": "Typica",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "mosto_coffee_roaster_malabar_bodjong_waroe_natural_darkroom_natural",
+    "display_name": "Mosto Coffee Roaster Malabar Bodjong Waroe Natural Darkroom",
+    "brand": "mosto_coffee_roaster",
+    "coffee_name": "malabar_bodjong_waroe_natural_darkroom",
+    "process": "natural",
+    "origin": "Single Origin, Surakarta, Jawa Tengah",
+    "variety": "Catimor",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "mosto_coffee_roaster_kerinci_sungai_penuh_hermetic_sealed_natural_natural",
+    "display_name": "Mosto Coffee Roaster Kerinci Sungai Penuh Hermetic Sealed Natural",
+    "brand": "mosto_coffee_roaster",
+    "coffee_name": "kerinci_sungai_penuh_hermetic_sealed_natural",
+    "process": "natural",
+    "origin": "Single Origin, Surakarta, Jawa Tengah",
+    "variety": "Arabika Specialty",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "kopi_kalkir_sigedong_cranberry_bloom_honey",
+    "display_name": "Kopi Kalkir Sigedong Cranberry Bloom",
+    "brand": "kopi_kalkir",
+    "coffee_name": "sigedong_cranberry_bloom",
+    "process": "honey",
+    "origin": "Prau, Temanggung",
+    "variety": "Sigarar Utang, Lini S",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Cranberry",
+      "Lychee"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "kopi_kalkir_arabika_girisenang_orchard_typica_fully_washed",
+    "display_name": "Kopi Kalkir Arabika Girisenang Orchard Typica",
+    "brand": "kopi_kalkir",
+    "coffee_name": "arabika_girisenang_orchard_typica",
+    "process": "fully_washed",
+    "origin": "Girimekar, Bandung",
+    "variety": "Typica",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Mandarin Orange",
+      "Black Tea"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "kopi_kalkir_garut_sintok_natural",
+    "display_name": "Kopi Kalkir Garut Sintok",
+    "brand": "kopi_kalkir",
+    "coffee_name": "garut_sintok",
+    "process": "natural",
+    "origin": "Leles, Garut",
+    "variety": "Arabika Specialty",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "duza_roastery_arabika_rancabali_natural",
+    "display_name": "Duza Roastery Arabika Rancabali",
+    "brand": "duza_roastery",
+    "coffee_name": "arabika_rancabali",
+    "process": "natural",
+    "origin": "Ciwidey, Jawa Barat",
+    "variety": "Typica, Sigarar Utang",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Funky Fruity",
+      "Sweet"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "duza_roastery_arabika_solok_natural",
+    "display_name": "Duza Roastery Arabika Solok",
+    "brand": "duza_roastery",
+    "coffee_name": "arabika_solok",
+    "process": "natural",
+    "origin": "Sumatera Barat",
+    "variety": "Typica",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "duza_roastery_arabika_bali_kintamani_natural",
+    "display_name": "Duza Roastery Arabika Bali Kintamani",
+    "brand": "duza_roastery",
+    "coffee_name": "arabika_bali_kintamani",
+    "process": "natural",
+    "origin": "Single Origin, Bantul, D.I. Yogyakarta",
+    "variety": "Arabika",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Soft Chocolate"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "rova_coffee_roaster_kerinci_natural_natural",
+    "display_name": "Rova Coffee Roaster Kerinci Natural",
+    "brand": "rova_coffee_roaster",
+    "coffee_name": "kerinci_natural",
+    "process": "natural",
+    "origin": "Jambi",
+    "variety": "Mix",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Red Berry"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "rova_coffee_roaster_garut_geisha_black_honey_fully_washed",
+    "display_name": "Rova Coffee Roaster Garut Geisha Black Honey",
+    "brand": "rova_coffee_roaster",
+    "coffee_name": "garut_geisha_black_honey",
+    "process": "fully_washed",
+    "origin": "Single Origin, Kota Semarang, Jawa Tengah",
+    "variety": "Geisha",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "rova_coffee_roaster_papua_wamena_natural",
+    "display_name": "Rova Coffee Roaster Papua Wamena",
+    "brand": "rova_coffee_roaster",
+    "coffee_name": "papua_wamena",
+    "process": "natural",
+    "origin": "Single Origin, Kota Semarang, Jawa Tengah",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "derivatif_roastery_arabika_toraja_pulu_pulu_natural",
+    "display_name": "Derivatif Roastery Arabika Toraja Pulu-Pulu",
+    "brand": "derivatif_roastery",
+    "coffee_name": "arabika_toraja_pulu_pulu",
+    "process": "natural",
+    "origin": "Toraja Utara",
+    "variety": "Arabika",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "derivatif_roastery_liberika_kebumen_natural",
+    "display_name": "Derivatif Roastery Liberika Kebumen",
+    "brand": "derivatif_roastery",
+    "coffee_name": "liberika_kebumen",
+    "process": "natural",
+    "origin": "Single Origin, Kebumen, Jawa Tengah",
+    "variety": "Liberika",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Jackfruit"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "derivatif_roastery_robusta_kebumen_fully_washed",
+    "display_name": "Derivatif Roastery Robusta Kebumen",
+    "brand": "derivatif_roastery",
+    "coffee_name": "robusta_kebumen",
+    "process": "fully_washed",
+    "origin": "Single Origin, Kebumen, Jawa Tengah",
+    "variety": "Robusta",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Dark Chocolate",
+      "Roasted..."
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "bhumi_roastery_ijen_cherry_splash_fully_washed",
+    "display_name": "Bhumi Roastery Ijen Cherry Splash",
+    "brand": "bhumi_roastery",
+    "coffee_name": "ijen_cherry_splash",
+    "process": "fully_washed",
+    "origin": "Gunung Ijen, Jawa Timur",
+    "variety": "Arabika Specialty",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Red Cherry",
+      "Red Apple"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "bhumi_roastery_gayo_wild_honey_honey",
+    "display_name": "Bhumi Roastery Gayo Wild Honey",
+    "brand": "bhumi_roastery",
+    "coffee_name": "gayo_wild_honey",
+    "process": "honey",
+    "origin": "Bener Meriah, Aceh",
+    "variety": "Arabika Specialty",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Wild Honey"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "bhumi_roastery_robusta_temanggung_natural",
+    "display_name": "Bhumi Roastery Robusta Temanggung",
+    "brand": "bhumi_roastery",
+    "coffee_name": "robusta_temanggung",
+    "process": "natural",
+    "origin": "Single Origin, Surabaya, Jawa Timur",
+    "variety": "Robusta",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Bold",
+      "Strong"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "seruni_coffee_arabika_ijen_natural_natural",
+    "display_name": "Seruni Coffee Arabika Ijen Natural",
+    "brand": "seruni_coffee",
+    "coffee_name": "arabika_ijen_natural",
+    "process": "natural",
+    "origin": "Banyuwangi, Jawa Timur",
+    "variety": "Arabika",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Fruity",
+      "Sweet Caramel"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "seruni_coffee_espresso_blend_espresso_base_natural",
+    "display_name": "Seruni Coffee Espresso Blend",
+    "brand": "seruni_coffee",
+    "coffee_name": "espresso_blend_espresso_base",
+    "process": "natural",
+    "origin": "Raung 60%, Ijen 40%",
+    "variety": "Arabika Specialty",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "labr_roastery_avatara_kupas_kismis_fully_washed",
+    "display_name": "LABR Roastery Avatara Kupas Kismis",
+    "brand": "labr_roastery",
+    "coffee_name": "avatara_kupas_kismis",
+    "process": "fully_washed",
+    "origin": "Pantan Musara, Takengon, Aceh",
+    "variety": "Arabika Specialty",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "labr_roastery_bondowoso_orange_bourbon_natural",
+    "display_name": "LABR Roastery Bondowoso Orange Bourbon",
+    "brand": "labr_roastery",
+    "coffee_name": "bondowoso_orange_bourbon",
+    "process": "natural",
+    "origin": "Single Origin, Kota Malang, Jawa Timur",
+    "variety": "Orange Bourbon",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "labr_roastery_mayangsari_natural_natural",
+    "display_name": "LABR Roastery Mayangsari Natural",
+    "brand": "labr_roastery",
+    "coffee_name": "mayangsari_natural",
+    "process": "natural",
+    "origin": "Single Origin, Kota Malang, Jawa Timur",
+    "variety": "Mix",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "brome_coffee_roastery_arabica_bromo_specialty_natural",
+    "display_name": "BROME COFFEE & ROASTERY Arabica Bromo Specialty",
+    "brand": "brome_coffee_roastery",
+    "coffee_name": "arabica_bromo_specialty",
+    "process": "natural",
+    "origin": "Gunung Bromo, Jawa Timur",
+    "variety": "Typica, Sigarar Utang",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Jasmine",
+      "Peach",
+      "Citrus",
+      "Brown Sugar",
+      "Tea Like Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "brome_coffee_roastery_arabica_arjuno_specialty_natural",
+    "display_name": "BROME COFFEE & ROASTERY Arabica Arjuno Specialty",
+    "brand": "brome_coffee_roastery",
+    "coffee_name": "arabica_arjuno_specialty",
+    "process": "natural",
+    "origin": "Gunung Arjuno",
+    "variety": "Arabica",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "brome_coffee_roastery_candru_golden_pulp_semi_washed",
+    "display_name": "BROME COFFEE & ROASTERY Candru Golden Pulp",
+    "brand": "brome_coffee_roastery",
+    "coffee_name": "candru_golden_pulp",
+    "process": "semi_washed",
+    "origin": "Candru, Jawa Timur",
+    "variety": "Arabika Specialty",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "deklase_roastery_bali_kala_patra_natural",
+    "display_name": "Deklase Roastery Bali Kala Patra",
+    "brand": "deklase_roastery",
+    "coffee_name": "bali_kala_patra",
+    "process": "natural",
+    "origin": "Buleleng, Bali",
+    "variety": "Kopyol, Lini-S",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Berries",
+      "Plum"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "deklase_roastery_toraja_awan_rantekarua_toraja_rantekarua_wet_hulled_giling_basah",
+    "display_name": "Deklase Roastery Toraja Awan Rantekarua / Toraja Rantekarua",
+    "brand": "deklase_roastery",
+    "coffee_name": "toraja_awan_rantekarua_toraja_rantekarua",
+    "process": "wet_hulled_giling_basah",
+    "origin": "Single Origin, Kota Blitar, Jawa Timur",
+    "variety": "Typica, Sigarar Utang",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "deklase_roastery_sumatera_karo_blueberry_wet_hulled_giling_basah_infused",
+    "display_name": "Deklase Roastery Sumatera Karo Blueberry",
+    "brand": "deklase_roastery",
+    "coffee_name": "sumatera_karo_blueberry",
+    "process": "wet_hulled_giling_basah_infused",
+    "origin": "Single Origin, Kota Blitar, Jawa Timur",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "mknd_coffee_roastery_halu_banana_honey_honey",
+    "display_name": "MKND Coffee Roastery Halu Banana Honey",
+    "brand": "mknd_coffee_roastery",
+    "coffee_name": "halu_banana_honey",
+    "process": "honey",
+    "origin": "Single Origin, Kota Bandung, Jawa Barat",
+    "variety": "Lini S975, Sigararutang",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "mknd_coffee_roastery_strawberry_manggarai_natural",
+    "display_name": "MKND Coffee Roastery Strawberry Manggarai",
+    "brand": "mknd_coffee_roastery",
+    "coffee_name": "strawberry_manggarai",
+    "process": "natural",
+    "origin": "Flores",
+    "variety": "Arabika Specialty",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "mknd_coffee_roastery_arabika_mandailing_semi_washed",
+    "display_name": "MKND Coffee Roastery Arabika Mandailing",
+    "brand": "mknd_coffee_roastery",
+    "coffee_name": "arabika_mandailing",
+    "process": "semi_washed",
+    "origin": "Sumatera Utara",
+    "variety": "Typica, Sigarar Utang",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "workroom_coffee_and_roastery_flores_manggarai_natural",
+    "display_name": "Workroom Coffee and Roastery Flores Manggarai",
+    "brand": "workroom_coffee_and_roastery",
+    "coffee_name": "flores_manggarai",
+    "process": "natural",
+    "origin": "Single Origin, Jakarta Pusat, DKI Jakarta",
+    "variety": "Arabika Specialty",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "workroom_coffee_and_roastery_gayo_wine_fully_washed",
+    "display_name": "Workroom Coffee and Roastery Gayo Wine",
+    "brand": "workroom_coffee_and_roastery",
+    "coffee_name": "gayo_wine",
+    "process": "fully_washed",
+    "origin": "Aceh",
+    "variety": "Arabika Specialty",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Strong Wine",
+      "Berry"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "workroom_coffee_and_roastery_niskala_bloom_natural",
+    "display_name": "Workroom Coffee and Roastery Niskala Bloom",
+    "brand": "workroom_coffee_and_roastery",
+    "coffee_name": "niskala_bloom",
+    "process": "natural",
+    "origin": "Single Origin, Jakarta Pusat, DKI Jakarta",
+    "variety": "Typica, Sigarar Utang",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "me_onkopi_by_vusiuz_arabica_apple_tea_x_kedondong_fully_washed_infused",
+    "display_name": "Me.onkopi By Vusiuz Arabica Apple Tea x Kedondong",
+    "brand": "me_onkopi_by_vusiuz",
+    "coffee_name": "arabica_apple_tea_x_kedondong",
+    "process": "fully_washed_infused",
+    "origin": "Papandayan",
+    "variety": "Arabica",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "me_onkopi_by_vusiuz_excelsa_temanggung_zesty_x_cinnamon_natural",
+    "display_name": "Me.onkopi By Vusiuz Excelsa Temanggung Zesty x Cinnamon",
+    "brand": "me_onkopi_by_vusiuz",
+    "coffee_name": "excelsa_temanggung_zesty_x_cinnamon",
+    "process": "natural",
+    "origin": "Single Origin, Kota Bekasi, Jawa Barat",
+    "variety": "Excelsa",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "me_onkopi_by_vusiuz_robusta_ciremai_wine_x_bubblegum_vapor_blend",
+    "display_name": "Me.onkopi By Vusiuz Robusta Ciremai Wine x Bubblegum Vapor",
+    "brand": "me_onkopi_by_vusiuz",
+    "coffee_name": "robusta_ciremai_wine_x_bubblegum_vapor",
+    "process": "blend",
+    "origin": "Gunung Ciremai",
+    "variety": "Robusta",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "roastology_coffee_and_roasters_mandheling_mocha_fully_washed",
+    "display_name": "Roastology Coffee and Roasters Mandheling Mocha",
+    "brand": "roastology_coffee_and_roasters",
+    "coffee_name": "mandheling_mocha",
+    "process": "fully_washed",
+    "origin": "Single Origin, Jakarta Utara, DKI Jakarta",
+    "variety": "Catimor",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "roastology_coffee_and_roasters_mythical_papua_semi_washed",
+    "display_name": "Roastology Coffee and Roasters Mythical Papua",
+    "brand": "roastology_coffee_and_roasters",
+    "coffee_name": "mythical_papua",
+    "process": "semi_washed",
+    "origin": "Kamu Valley, Wamena, Papua",
+    "variety": "Arabika Specialty",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "noa_roastery_kerinci_honey_honey",
+    "display_name": "Noa Roastery Kerinci Honey",
+    "brand": "noa_roastery",
+    "coffee_name": "kerinci_honey",
+    "process": "honey",
+    "origin": "Jambi",
+    "variety": "Typica, Sigarar Utang",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Honey",
+      "Orange",
+      "Milk Chocolate"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "noa_roastery_bali_natural_natural",
+    "display_name": "Noa Roastery Bali Natural",
+    "brand": "noa_roastery",
+    "coffee_name": "bali_natural",
+    "process": "natural",
+    "origin": "Single Origin, Jakarta Selatan, DKI Jakarta",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Fruity"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "noa_roastery_gayo_peaberry_fully_washed",
+    "display_name": "Noa Roastery Gayo Peaberry",
+    "brand": "noa_roastery",
+    "coffee_name": "gayo_peaberry",
+    "process": "fully_washed",
+    "origin": "Aceh",
+    "variety": "Peaberry",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Intense",
+      "Sweet",
+      "Complex"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "before9_roastery_driva_indragiri_thermal_shock_natural_natural",
+    "display_name": "Before9 Roastery Driva Indragiri Thermal Shock Natural",
+    "brand": "before9_roastery",
+    "coffee_name": "driva_indragiri_thermal_shock_natural",
+    "process": "natural",
+    "origin": "Rancabali, Bandung Selatan",
+    "variety": "Arabika Specialty",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "before9_roastery_argopuro_hsn_hermetic_sealed_natural_natural",
+    "display_name": "Before9 Roastery Argopuro HSN - Hermetic Sealed Natural",
+    "brand": "before9_roastery",
+    "coffee_name": "argopuro_hsn_hermetic_sealed_natural",
+    "process": "natural",
+    "origin": "Argopuro, Jawa Timur",
+    "variety": "Arabika Specialty",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "before9_roastery_sunda_aromanis_natural",
+    "display_name": "Before9 Roastery Sunda Aromanis",
+    "brand": "before9_roastery",
+    "coffee_name": "sunda_aromanis",
+    "process": "natural",
+    "origin": "Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Fruity",
+      "Red Fruit"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "lini_kopi_roastery_liberica_merbabu_natural",
+    "display_name": "Lini Kopi Roastery Liberica Merbabu",
+    "brand": "lini_kopi_roastery",
+    "coffee_name": "liberica_merbabu",
+    "process": "natural",
+    "origin": "Boyolali, Jawa Tengah",
+    "variety": "Liberica",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Kulit Jeruk (Zest)"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "lini_kopi_roastery_excelsa_welirang_natural",
+    "display_name": "Lini Kopi Roastery Excelsa Welirang",
+    "brand": "lini_kopi_roastery",
+    "coffee_name": "excelsa_welirang",
+    "process": "natural",
+    "origin": "Trawas, Mojokerto",
+    "variety": "Excelsa",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "lini_kopi_roastery_flores_manggarai_natural",
+    "display_name": "Lini Kopi Roastery Flores Manggarai",
+    "brand": "lini_kopi_roastery",
+    "coffee_name": "flores_manggarai",
+    "process": "natural",
+    "origin": "Single Origin, Surabaya, Jawa Timur",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "ember_roastery_cak_kecak_bali_fully_washed",
+    "display_name": "Ember Roastery Cak Kecak Bali",
+    "brand": "ember_roastery",
+    "coffee_name": "cak_kecak_bali",
+    "process": "fully_washed",
+    "origin": "Single Origin, Jakarta Selatan, DKI Jakarta",
+    "variety": "Arabika Specialty",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Honey",
+      "Brown Sugar",
+      "Sweet Potato"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "ember_roastery_helaran_cisarua_natural",
+    "display_name": "Ember Roastery Helaran Cisarua",
+    "brand": "ember_roastery",
+    "coffee_name": "helaran_cisarua",
+    "process": "natural",
+    "origin": "Bogor",
+    "variety": "Arabika Specialty",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Citrus",
+      "Cane Sugar"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "ember_roastery_sajojo_papua_natural",
+    "display_name": "Ember Roastery Sajojo Papua",
+    "brand": "ember_roastery",
+    "coffee_name": "sajojo_papua",
+    "process": "natural",
+    "origin": "Wamena, Papua",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Fruity"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "kiyowo_coffee_gayo_berry_tastic_natural",
+    "display_name": "Kiyowo Coffee Gayo Berry Tastic",
+    "brand": "kiyowo_coffee",
+    "coffee_name": "gayo_berry_tastic",
+    "process": "natural",
+    "origin": "Aceh, Sumatera",
+    "variety": "Arabika Specialty",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "kiyowo_coffee_liberica_jack_daydream_natural",
+    "display_name": "Kiyowo Coffee Liberica Jack Daydream",
+    "brand": "kiyowo_coffee",
+    "coffee_name": "liberica_jack_daydream",
+    "process": "natural",
+    "origin": "Gunung Manglayang, Jawa Barat",
+    "variety": "Liberica",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "kiyowo_coffee_ijen_arunika_jiva_natural",
+    "display_name": "Kiyowo Coffee Ijen Arunika Jiva",
+    "brand": "kiyowo_coffee",
+    "coffee_name": "ijen_arunika_jiva",
+    "process": "natural",
+    "origin": "Ijen, Jawa Timur",
+    "variety": "Arabika Specialty",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Brown Sugar",
+      "Malt"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "himawari_roastery_gayo_red_honey_honey",
+    "display_name": "Himawari Roastery Gayo Red Honey",
+    "brand": "himawari_roastery",
+    "coffee_name": "gayo_red_honey",
+    "process": "honey",
+    "origin": "Single Origin, Aceh Tengah, Aceh",
+    "variety": "Arabika Specialty",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Brown Sugar",
+      "Floral"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "himawari_roastery_gayo_kering_gading_fully_washed",
+    "display_name": "Himawari Roastery Gayo Kering Gading",
+    "brand": "himawari_roastery",
+    "coffee_name": "gayo_kering_gading",
+    "process": "fully_washed",
+    "origin": "Single Origin, Aceh Tengah, Aceh",
+    "variety": "Arabika Specialty",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Citrus Fruit",
+      "Peach",
+      "Lime"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "himawari_roastery_gayo_tropical_fruit_natural",
+    "display_name": "Himawari Roastery Gayo Tropical Fruit",
+    "brand": "himawari_roastery",
+    "coffee_name": "gayo_tropical_fruit",
+    "process": "natural",
+    "origin": "Single Origin, Aceh Tengah, Aceh",
+    "variety": "Arabika Specialty",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Tropical Fruit",
+      "Jackfruits"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "rawdee_coffee_roastery_bajawa_balanced_apple_natural",
+    "display_name": "Rawdee Coffee Roastery Bajawa Balanced Apple",
+    "brand": "rawdee_coffee_roastery",
+    "coffee_name": "bajawa_balanced_apple",
+    "process": "natural",
+    "origin": "Walobobo, Bajawa",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "rawdee_coffee_roastery_peachfull_natural",
+    "display_name": "Rawdee Coffee Roastery Peachfull",
+    "brand": "rawdee_coffee_roastery",
+    "coffee_name": "peachfull",
+    "process": "natural",
+    "origin": "Buleleng, Bali",
+    "variety": "Arabika Specialty",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Peach",
+      "Jasmine"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "rawdee_coffee_roastery_winter_jasmine_fully_washed",
+    "display_name": "Rawdee Coffee Roastery Winter Jasmine",
+    "brand": "rawdee_coffee_roastery",
+    "coffee_name": "winter_jasmine",
+    "process": "fully_washed",
+    "origin": "Ijen, Jawa Timur",
+    "variety": "Arabika Specialty",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Jasmine Tea",
+      "Apple"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "instinct_roastery_gesha_village_oma_gva_natural_process",
+    "display_name": "Instinct Roastery Gesha Village Oma GVA",
+    "brand": "instinct_roastery",
+    "coffee_name": "gesha_village_oma_gva",
+    "process": "natural_process",
+    "origin": "Single Origin, Tangerang, Banten",
+    "variety": "Gesha",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Jasmine",
+      "Lemon Candy",
+      "Honey"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "instinct_roastery_finca_deborah_vivid_natural_process",
+    "display_name": "Instinct Roastery Finca Deborah Vivid",
+    "brand": "instinct_roastery",
+    "coffee_name": "finca_deborah_vivid",
+    "process": "natural_process",
+    "origin": "Single Origin, Tangerang, Banten",
+    "variety": "Arabika Specialty",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Bergamot",
+      "Nectarine",
+      "Sweet Tangerine"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "instinct_roastery_kerinci_washed_washed",
+    "display_name": "Instinct Roastery Kerinci Washed",
+    "brand": "instinct_roastery",
+    "coffee_name": "kerinci_washed",
+    "process": "washed",
+    "origin": "Single Origin, Tangerang, Banten",
+    "variety": "Arabika Specialty",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "klinik_kopi_kopi_pak_jarwo_natural",
+    "display_name": "Klinik Kopi Kopi Pak Jarwo",
+    "brand": "klinik_kopi",
+    "coffee_name": "kopi_pak_jarwo",
+    "process": "natural",
+    "origin": "Temanggung",
+    "variety": "Arabica",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Aprikot",
+      "Fruity",
+      "Chocolate"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "klinik_kopi_arabica_padusi_natural",
+    "display_name": "Klinik Kopi Arabica Padusi",
+    "brand": "klinik_kopi",
+    "coffee_name": "arabica_padusi",
+    "process": "natural",
+    "origin": "Sumatera Barat",
+    "variety": "Arabica",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "klinik_kopi_yellow_caturra_natural",
+    "display_name": "Klinik Kopi Yellow Caturra",
+    "brand": "klinik_kopi",
+    "coffee_name": "yellow_caturra",
+    "process": "natural",
+    "origin": "Flores",
+    "variety": "Yellow Caturra",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "two_hands_full_roastery_frinsa_ateng_super_natural",
+    "display_name": "Two Hands Full Roastery Frinsa Ateng Super",
+    "brand": "two_hands_full_roastery",
+    "coffee_name": "frinsa_ateng_super",
+    "process": "natural",
+    "origin": "Single Origin, Bandung, Jawa Barat",
+    "variety": "Ateng Super",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "two_hands_full_roastery_hendra_maulizar_aceh_gayo_lot_natural_olah_kering",
+    "display_name": "Two Hands Full Roastery Hendra Maulizar Aceh Gayo Lot",
+    "brand": "two_hands_full_roastery",
+    "coffee_name": "hendra_maulizar_aceh_gayo_lot",
+    "process": "natural_olah_kering",
+    "origin": "Single Origin, Bandung, Jawa Barat",
+    "variety": "Ateng (40%), Typica (15%), P-88 (25%)",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "two_hands_full_roastery_two_hands_full_house_blend_el_salvador_house_blend_blend",
+    "display_name": "Two Hands Full Roastery Two Hands Full House Blend / El Salvador House Blend",
+    "brand": "two_hands_full_roastery",
+    "coffee_name": "two_hands_full_house_blend_el_salvador_house_blend",
+    "process": "blend",
+    "origin": "Single Origin, Bandung, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Almond",
+      "Orange",
+      "Tropical Fruit",
+      "Chocolate"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "seniman_coffee_studio_bali_karana_madu_honey_proses",
+    "display_name": "Seniman Coffee Studio Bali Karana Madu",
+    "brand": "seniman_coffee_studio",
+    "coffee_name": "bali_karana_madu",
+    "process": "honey_proses",
+    "origin": "Kintamani",
+    "variety": "Arabika Specialty",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Bitter Sweet Chocolate Malt",
+      "Caramel",
+      "Brown Sugar"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "seniman_coffee_studio_karana_special_edition_define_time_define_matter_natural",
+    "display_name": "Seniman Coffee Studio Karana Special Edition Define Time / Define Matter",
+    "brand": "seniman_coffee_studio",
+    "coffee_name": "karana_special_edition_define_time_define_matter",
+    "process": "natural",
+    "origin": "Single Origin, Gianyar / Denpasar, Bali",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "seniman_coffee_studio_big_bang_blend_fully_washed_process",
+    "display_name": "Seniman Coffee Studio Big Bang Blend",
+    "brand": "seniman_coffee_studio",
+    "coffee_name": "big_bang_blend",
+    "process": "fully_washed_process",
+    "origin": "Single Origin, Gianyar / Denpasar, Bali",
+    "variety": "Mix Variety (Mostly Kartika & S7178)",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Gritty",
+      "Nutty",
+      "Bold Chocolate Notes"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "expat_roasters_bali_kintamani_natural_filter_roast_natural",
+    "display_name": "Expat. Roasters Bali Kintamani Natural Filter Roast",
+    "brand": "expat_roasters",
+    "coffee_name": "bali_kintamani_natural_filter_roast",
+    "process": "natural",
+    "origin": "Single Origin, Badung / Denpasar, Bali",
+    "variety": "Arabika",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Sweet Rockmelon",
+      "Peanut & Jackfruit",
+      "Hint of Dates and Biscuits"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "expat_roasters_bali_kintamani_single_origin_natural",
+    "display_name": "Expat. Roasters Bali Kintamani Single Origin",
+    "brand": "expat_roasters",
+    "coffee_name": "bali_kintamani_single_origin",
+    "process": "natural",
+    "origin": "Single Origin, Badung / Denpasar, Bali",
+    "variety": "Arabika Specialty",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Citrus",
+      "Red Fruit",
+      "Pear and Grapefruit"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "expat_roasters_j_z_espresso_blend_natural",
+    "display_name": "Expat. Roasters Jōzō Espresso Blend",
+    "brand": "expat_roasters",
+    "coffee_name": "j_z_espresso_blend",
+    "process": "natural",
+    "origin": "Ethiopia & Bali Kintamani",
+    "variety": "Arabica",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Orange Mandarine",
+      "Floral",
+      "Dark Cherry",
+      "Chocolate",
+      "Nutty",
+      "Strawberry Milk"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "hungry_bird_coffee_roaster_rwanda_buf_remera_natural",
+    "display_name": "Hungry Bird Coffee Roaster Rwanda Buf Remera",
+    "brand": "hungry_bird_coffee_roaster",
+    "coffee_name": "rwanda_buf_remera",
+    "process": "natural",
+    "origin": "Single Origin, Canggu, Badung, Bali",
+    "variety": "100% Bourbon",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "hungry_bird_coffee_roaster_indo_blend_espresso_blend",
+    "display_name": "Hungry Bird Coffee Roaster Indo Blend Espresso",
+    "brand": "hungry_bird_coffee_roaster",
+    "coffee_name": "indo_blend_espresso",
+    "process": "blend",
+    "origin": "Single Origin, Canggu, Badung, Bali",
+    "variety": "Full Arabica",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Medium Body",
+      "Citrus",
+      "Brown Sugar",
+      "Cacao",
+      "Herb & Spice"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "strada_coffee_wildflower_nectar_72_h_anaerobic_pulp_natural",
+    "display_name": "Strada Coffee Wildflower Nectar",
+    "brand": "strada_coffee",
+    "coffee_name": "wildflower_nectar",
+    "process": "72_h_anaerobic_pulp_natural",
+    "origin": "Ijen, East Java",
+    "variety": "USDA 762 (100% Arabica)",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Honey",
+      "Stone Fruit",
+      "Black Tea"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "strada_coffee_toraja_pango_pango_full_wash_dry_hull",
+    "display_name": "Strada Coffee Toraja Pango Pango",
+    "brand": "strada_coffee",
+    "coffee_name": "toraja_pango_pango",
+    "process": "full_wash_dry_hull",
+    "origin": "Tana Toraja",
+    "variety": "Lini S (100% Arabica)",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "coffeenensis_sunset_kopi_arabika_gunung_kawi_wash_wash",
+    "display_name": "Coffeenensis Sunset - Kopi Arabika Gunung Kawi Wash",
+    "brand": "coffeenensis",
+    "coffee_name": "sunset_kopi_arabika_gunung_kawi_wash",
+    "process": "wash",
+    "origin": "Single Origin, Malang, Jawa Timur",
+    "variety": "Arabika",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Sunkist Orange",
+      "Bergamot",
+      "Complex Citric",
+      "Floral Finish",
+      "Spice",
+      "Palm..."
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "coffeenensis_bawana_kopi_arabika_gunung_kawi_single_variety_ateng_honey_semianaerob_honey_semianaerob",
+    "display_name": "Coffeenensis Bawana - Kopi Arabika Gunung Kawi Single Variety Ateng / Honey Semianaerob",
+    "brand": "coffeenensis",
+    "coffee_name": "bawana_kopi_arabika_gunung_kawi_single_variety_ateng_honey_semianaerob",
+    "process": "honey_semianaerob",
+    "origin": "Single Origin, Malang, Jawa Timur",
+    "variety": "Ateng Single Var.",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Hot: Malic Apple",
+      "Floral",
+      "Sparkling Citric",
+      "Medium: Apple",
+      "Bergamot"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "coffeenensis_mother_tongue_arabika_gunung_kawi_natural_natural",
+    "display_name": "Coffeenensis Mother Tongue - Arabika Gunung Kawi Natural",
+    "brand": "coffeenensis",
+    "coffee_name": "mother_tongue_arabika_gunung_kawi_natural",
+    "process": "natural",
+    "origin": "Single Origin, Malang, Jawa Timur",
+    "variety": "P",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "noah_s_barn_peru_andy_llanos_washed",
+    "display_name": "Noah's Barn Peru Andy Llanos",
+    "brand": "noah_s_barn",
+    "coffee_name": "peru_andy_llanos",
+    "process": "washed",
+    "origin": "Single Origin, Bandung, Jawa Barat",
+    "variety": "Tabi",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Toasted Coconut",
+      "Milk..."
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "noah_s_barn_peru_luis_abarca_washed",
+    "display_name": "Noah's Barn Peru Luis Abarca",
+    "brand": "noah_s_barn",
+    "coffee_name": "peru_luis_abarca",
+    "process": "washed",
+    "origin": "Single Origin, Bandung, Jawa Barat",
+    "variety": "Caturra",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "noah_s_barn_white_honey_golden_honey_lot_white_honey_golden_honey",
+    "display_name": "Noah's Barn White Honey / Golden Honey Lot",
+    "brand": "noah_s_barn",
+    "coffee_name": "white_honey_golden_honey_lot",
+    "process": "white_honey_golden_honey",
+    "origin": "Single Origin, Bandung, Jawa Barat",
+    "variety": "Caturra, Catuai",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Caramel",
+      "Peanut Butter"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "black_potion_coffee_roaster_marshmelon_specialty_wine_process",
+    "display_name": "Black Potion Coffee Roaster Marshmelon Specialty",
+    "brand": "black_potion_coffee_roaster",
+    "coffee_name": "marshmelon_specialty",
+    "process": "wine_process",
+    "origin": "Single Origin, Bandung, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Cranberry Juice",
+      "Apple Cider",
+      "Wine"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "black_potion_coffee_roaster_blend_strawberry_land_natural_x_fullwash_process",
+    "display_name": "Black Potion Coffee Roaster Blend Strawberry Land",
+    "brand": "black_potion_coffee_roaster",
+    "coffee_name": "blend_strawberry_land",
+    "process": "natural_x_fullwash_process",
+    "origin": "Single Origin, Bandung, Jawa Barat",
+    "variety": "Arabika",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "black_potion_coffee_roaster_burundi_kibingo_finca_la_bolsa_fully_washed_yeast_inoculated",
+    "display_name": "Black Potion Coffee Roaster Burundi Kibingo / Finca La Bolsa",
+    "brand": "black_potion_coffee_roaster",
+    "coffee_name": "burundi_kibingo_finca_la_bolsa",
+    "process": "fully_washed_yeast_inoculated",
+    "origin": "Guatemala",
+    "variety": "Red Bourbon / Bourbon, Caturra",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Bright Berries",
+      "Honey",
+      "Black Tea Body",
+      "Citrus / Bubble Gum",
+      "Marzipan",
+      "Apple",
+      "Caramel",
+      "Biscuit"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "blue_lion_coffee_papua_yahukimo_semi_washed",
+    "display_name": "Blue Lion Coffee Papua Yahukimo",
+    "brand": "blue_lion_coffee",
+    "coffee_name": "papua_yahukimo",
+    "process": "semi_washed",
+    "origin": "Wamena",
+    "variety": "Arabika Specialty",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Dark Chocolatey",
+      "Floral",
+      "Caramel",
+      "Honey"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "blue_lion_coffee_aceh_golden_gayo_natural",
+    "display_name": "Blue Lion Coffee Aceh Golden Gayo",
+    "brand": "blue_lion_coffee",
+    "coffee_name": "aceh_golden_gayo",
+    "process": "natural",
+    "origin": "Single Origin, Jakarta Barat, DKI Jakarta",
+    "variety": "Single Origin Arabica",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "blue_lion_coffee_toraja_tongkonan_natural",
+    "display_name": "Blue Lion Coffee Toraja Tongkonan",
+    "brand": "blue_lion_coffee",
+    "coffee_name": "toraja_tongkonan",
+    "process": "natural",
+    "origin": "Single Origin, Jakarta Barat, DKI Jakarta",
+    "variety": "Kopi Arabika",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "gesha_coffee_roastery_single_varietas_caturra_natural",
+    "display_name": "Gesha Coffee Roastery Single Varietas Caturra",
+    "brand": "gesha_coffee_roastery",
+    "coffee_name": "single_varietas_caturra",
+    "process": "natural",
+    "origin": "Single Origin, Banyuwangi / Tangerang",
+    "variety": "Caturra",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "gesha_coffee_roastery_arabika_java_ijen_fully_washed",
+    "display_name": "Gesha Coffee Roastery Arabika Java Ijen",
+    "brand": "gesha_coffee_roastery",
+    "coffee_name": "arabika_java_ijen",
+    "process": "fully_washed",
+    "origin": "Gunung Ijen, Jawa Timur",
+    "variety": "Arabika",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "gesha_coffee_roastery_biscotti_alla_fragolla_natural",
+    "display_name": "Gesha Coffee Roastery Biscotti Alla Fragolla",
+    "brand": "gesha_coffee_roastery",
+    "coffee_name": "biscotti_alla_fragolla",
+    "process": "natural",
+    "origin": "Single Origin, Banyuwangi / Tangerang",
+    "variety": "Arabika Specialty",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "calopsia_coffee_ijen_blue_mountain_arabica_single_origin_single_origin",
+    "display_name": "CALOPSIA Coffee Ijen Blue Mountain Arabica Single Origin",
+    "brand": "calopsia_coffee",
+    "coffee_name": "ijen_blue_mountain_arabica_single_origin",
+    "process": "single_origin",
+    "origin": "Single Origin, Surabaya, Jawa Timur",
+    "variety": "Arabica",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Peach",
+      "Tea"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "calopsia_coffee_sumatera_mandailing_arabica_single_origin_fully_washed",
+    "display_name": "CALOPSIA Coffee Sumatera Mandailing Arabica Single Origin",
+    "brand": "calopsia_coffee",
+    "coffee_name": "sumatera_mandailing_arabica_single_origin",
+    "process": "fully_washed",
+    "origin": "Single Origin, Surabaya, Jawa Timur",
+    "variety": "Arabica",
+    "color_hex": "#8B5CF6",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "calopsia_coffee_jawa_temanggung_robusta_single_origin_single_origin",
+    "display_name": "CALOPSIA Coffee Jawa Temanggung Robusta Single Origin",
+    "brand": "calopsia_coffee",
+    "coffee_name": "jawa_temanggung_robusta_single_origin",
+    "process": "single_origin",
+    "origin": "Single Origin, Surabaya, Jawa Timur",
+    "variety": "Robusta",
+    "color_hex": "#F59E0B",
+    "tasting_notes": [
+      "Dark Chocolate",
+      "Caramelized"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "azzabrew_coffee_roastery_ciwidey_hybrid_de_timor_natural",
+    "display_name": "AZZABREW Coffee Roastery Ciwidey Hybrid De Timor",
+    "brand": "azzabrew_coffee_roastery",
+    "coffee_name": "ciwidey_hybrid_de_timor",
+    "process": "natural",
+    "origin": "Jawa Barat",
+    "variety": "Hybrid De Timor",
+    "color_hex": "#EF4444",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "azzabrew_coffee_roastery_bener_meriah_purple_punch_wet_hulled_giling_basah_infused",
+    "display_name": "AZZABREW Coffee Roastery Bener Meriah Purple Punch",
+    "brand": "azzabrew_coffee_roastery",
+    "coffee_name": "bener_meriah_purple_punch",
+    "process": "wet_hulled_giling_basah_infused",
+    "origin": "Gayo, Aceh",
+    "variety": "Arabika Specialty",
+    "color_hex": "#10B981",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "incloth_coffee_roastery_golden_bloom_natural",
+    "display_name": "Incloth Coffee Roastery Golden Bloom",
+    "brand": "incloth_coffee_roastery",
+    "coffee_name": "golden_bloom",
+    "process": "natural",
+    "origin": "Ethiopia Yirgacheffe",
+    "variety": "Arabika Specialty",
+    "color_hex": "#3B82F6",
+    "tasting_notes": [
+      "Jasmine",
+      "Chrysanthemum"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "incloth_coffee_roastery_tropical_rhythm_natural",
+    "display_name": "Incloth Coffee Roastery Tropical Rhythm",
+    "brand": "incloth_coffee_roastery",
+    "coffee_name": "tropical_rhythm",
+    "process": "natural",
+    "origin": "Argopuro, Papandayan",
+    "variety": "Arabika Specialty",
+    "color_hex": "#EC4899",
+    "tasting_notes": [
+      "Tropical Fruit",
+      "Berry"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "incloth_coffee_roastery_golden_valley_fully_washed",
+    "display_name": "Incloth Coffee Roastery Golden Valley",
+    "brand": "incloth_coffee_roastery",
+    "coffee_name": "golden_valley",
+    "process": "fully_washed",
+    "origin": "Single Origin, Kab. Bogor, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "color_hex": "#6366F1",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "jaad_coffee_indonesia_lemon_red_natural",
+    "display_name": "Jaad Coffee Indonesia Lemon & Red",
+    "brand": "jaad_coffee_indonesia",
+    "coffee_name": "lemon_red",
+    "process": "natural",
+    "origin": "Gunung Halu",
+    "variety": "Arabika Specialty",
+    "color_hex": "#14B8A6",
+    "tasting_notes": [
+      "Orange",
+      "Lemonade"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "jaad_coffee_indonesia_tropical_mango_natural",
+    "display_name": "Jaad Coffee Indonesia Tropical Mango",
+    "brand": "jaad_coffee_indonesia",
+    "coffee_name": "tropical_mango",
+    "process": "natural",
+    "origin": "Gunung Cikuray, Sukahurip",
+    "variety": "Arabika Specialty",
+    "color_hex": "#D97706",
+    "tasting_notes": [
+      "Mango",
+      "Sunkist"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
+  },
+  {
+    "class_slug": "jaad_coffee_indonesia_arabika_mantesa_bengkulu_natural",
+    "display_name": "Jaad Coffee Indonesia Arabika Mantesa Bengkulu",
+    "brand": "jaad_coffee_indonesia",
+    "coffee_name": "arabika_mantesa_bengkulu",
+    "process": "natural",
+    "origin": "Single Origin, Kota Bandung, Jawa Barat",
+    "variety": "Arabika",
+    "color_hex": "#84CC16",
+    "tasting_notes": [
+      "Sweet Fruit",
+      "Brown Sugar",
+      "Clean Finish"
+    ],
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91
   }
 ]

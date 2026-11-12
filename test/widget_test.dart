@@ -252,9 +252,9 @@ void main() {
     expect(AppUpdateService.isShorebirdAvailable, isFalse);
   });
 
-  test('RoasteryCatalog has 50 rich roasteries and zero null lineup fields', () {
+  test('RoasteryCatalog has 100+ rich roasteries and zero null lineup fields', () {
     final list = RoasteryCatalog.list;
-    expect(list.length, equals(50));
+    expect(list.length, equals(127));
 
     int totalLineups = 0;
     for (final r in list) {

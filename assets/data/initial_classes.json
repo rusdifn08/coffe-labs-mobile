@@ -52,5 +52,267 @@
     ],
     "sample_count": 15,
     "notes_source": "INITIAL_SEED_MODEL"
+  },
+  {
+    "class_slug": "kiara_roastery_blackcurrant_bloom_natural",
+    "roastery": "Kiara",
+    "coffee_name": "Blackcurrant Bloom",
+    "origin": "Gunung Tujuh, Kerinci",
+    "variety": "Arabika Specialty",
+    "process": "Natural",
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91,
+    "tasting_notes": [
+      "Blackcurrant"
+    ],
+    "sample_count": 15,
+    "notes_source": "INITIAL_SEED_MODEL"
+  },
+  {
+    "class_slug": "kiara_roastery_gayo_anaerob_natural_natural",
+    "roastery": "Kiara",
+    "coffee_name": "Gayo Anaerob Natural",
+    "origin": "Takengon, Aceh",
+    "variety": "Arabika Specialty",
+    "process": "Natural",
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91,
+    "tasting_notes": [
+      "Dried Fruit",
+      "Hibiscus",
+      "Wine",
+      "Honey"
+    ],
+    "sample_count": 15,
+    "notes_source": "INITIAL_SEED_MODEL"
+  },
+  {
+    "class_slug": "kiara_roastery_golden_osmanthus_wet_hulled_giling_basah",
+    "roastery": "Kiara",
+    "coffee_name": "Golden Osmanthus",
+    "origin": "Karo, Sumatera Utara",
+    "variety": "Arabika Specialty",
+    "process": "Wet Hulled Giling Basah",
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91,
+    "tasting_notes": [
+      "Osmanthus Tea",
+      "Floral",
+      "Apricot",
+      "Chamomile"
+    ],
+    "sample_count": 15,
+    "notes_source": "INITIAL_SEED_MODEL"
+  },
+  {
+    "class_slug": "fugol_coffee_roasters_watermelon_smash_natural",
+    "roastery": "Fugol",
+    "coffee_name": "Watermelon Smash",
+    "origin": "Kamojang, Jawa Barat",
+    "variety": "Mix (Arabika Single Origin)",
+    "process": "Natural",
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91,
+    "tasting_notes": [
+      "Watermelon",
+      "Strawberry",
+      "Mandarin Orange"
+    ],
+    "sample_count": 15,
+    "notes_source": "INITIAL_SEED_MODEL"
+  },
+  {
+    "class_slug": "fugol_coffee_roasters_arabika_berry_smash_natural",
+    "roastery": "Fugol",
+    "coffee_name": "Arabika Berry Smash",
+    "origin": "Kamojang, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "process": "Natural",
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91,
+    "tasting_notes": [
+      "Berries",
+      "Orange",
+      "Brown Sugar"
+    ],
+    "sample_count": 15,
+    "notes_source": "INITIAL_SEED_MODEL"
+  },
+  {
+    "class_slug": "fugol_coffee_roasters_kamojang_water_guava_honey",
+    "roastery": "Fugol",
+    "coffee_name": "Kamojang Water Guava",
+    "origin": "Single Origin, Kota Bandung, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "process": "Honey",
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91,
+    "tasting_notes": [
+      "Water Guava",
+      "Berries",
+      "Spice"
+    ],
+    "sample_count": 15,
+    "notes_source": "INITIAL_SEED_MODEL"
+  },
+  {
+    "class_slug": "space_coffee_roastery_bombe_flower_bomb_natural_21_days_drying",
+    "roastery": "Space",
+    "coffee_name": "Bombe Flower Bomb",
+    "origin": "Sidama, Ethiopia",
+    "variety": "",
+    "process": "Natural 21 Days Drying",
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91,
+    "tasting_notes": [
+      "Jasmine",
+      "Red Apple",
+      "Lime",
+      "Rosewater"
+    ],
+    "sample_count": 15,
+    "notes_source": "INITIAL_SEED_MODEL"
+  },
+  {
+    "class_slug": "space_coffee_roastery_yunnan_china_anaerobic_natural",
+    "roastery": "Space",
+    "coffee_name": "Yunnan China",
+    "origin": "Dehong, Valley Coffee",
+    "variety": "Catimor",
+    "process": "Anaerobic Natural",
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91,
+    "tasting_notes": [
+      "Dried Dates",
+      "Wild Strawberry",
+      "Passion Fruit",
+      "White Grape"
+    ],
+    "sample_count": 15,
+    "notes_source": "INITIAL_SEED_MODEL"
+  },
+  {
+    "class_slug": "space_coffee_roastery_aji_bourbon_tropical_symphony_anaerobic_natural_with_mosto",
+    "roastery": "Space",
+    "coffee_name": "Aji Bourbon Tropical Symphony",
+    "origin": "Hedonist Series",
+    "variety": "Aji Bourbon",
+    "process": "Anaerobic Natural With Mosto",
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91,
+    "tasting_notes": [
+      "Tropical Fruit Forward Lush",
+      "Rich Cherry",
+      "White Grape"
+    ],
+    "sample_count": 15,
+    "notes_source": "INITIAL_SEED_MODEL"
+  },
+  {
+    "class_slug": "three_wheels_coffee_roaster_biji_kopi_arabika_sunda_geisha_typica_natural_natural",
+    "roastery": "Three",
+    "coffee_name": "Biji Kopi Arabika Sunda Geisha Typica Natural",
+    "origin": "Puntang",
+    "variety": "Sunda Typica",
+    "process": "Natural",
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91,
+    "tasting_notes": [
+      "Jasmine",
+      "Orange",
+      "Red Plum"
+    ],
+    "sample_count": 15,
+    "notes_source": "INITIAL_SEED_MODEL"
+  },
+  {
+    "class_slug": "three_wheels_coffee_roaster_gayo_blueberry_natural",
+    "roastery": "Three",
+    "coffee_name": "Gayo Blueberry",
+    "origin": "Single Origin, Kota Bekasi, Jawa Barat",
+    "variety": "Mix Varietas",
+    "process": "Natural",
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91,
+    "tasting_notes": [
+      "Blueberries",
+      "Plum",
+      "Chocolate"
+    ],
+    "sample_count": 15,
+    "notes_source": "INITIAL_SEED_MODEL"
+  },
+  {
+    "class_slug": "three_wheels_coffee_roaster_karo_flower_natural",
+    "roastery": "Three",
+    "coffee_name": "Karo Flower",
+    "origin": "Sumatera Utara",
+    "variety": "Arabika Specialty",
+    "process": "Natural",
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91,
+    "tasting_notes": [
+      "Floral",
+      "Jasmine",
+      "Strawberry"
+    ],
+    "sample_count": 15,
+    "notes_source": "INITIAL_SEED_MODEL"
+  },
+  {
+    "class_slug": "cofelty_coffee_roastery_ijen_lestari_carbonic_maceration_natural",
+    "roastery": "Cofelty",
+    "coffee_name": "Ijen Lestari Carbonic Maceration",
+    "origin": "Winner #1 CoE 2023/2024",
+    "variety": "USDA 762, Cobra",
+    "process": "Natural",
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91,
+    "tasting_notes": [
+      "Tropical Fruit",
+      "Kiwi",
+      "Mango",
+      "Strawberry",
+      "Peach",
+      "Floral",
+      "Cocoa"
+    ],
+    "sample_count": 15,
+    "notes_source": "INITIAL_SEED_MODEL"
+  },
+  {
+    "class_slug": "cofelty_coffee_roastery_aceh_bener_meriah_natural",
+    "roastery": "Cofelty",
+    "coffee_name": "Aceh Bener Meriah",
+    "origin": "Single Origin, Kota Bandung, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "process": "Natural",
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91,
+    "tasting_notes": [
+      "Strawberry",
+      "Raisin",
+      "Milk",
+      "Chocolate"
+    ],
+    "sample_count": 15,
+    "notes_source": "INITIAL_SEED_MODEL"
+  },
+  {
+    "class_slug": "cofelty_coffee_roastery_kerinci_aziz_mossto_wash_fully_washed_mossto",
+    "roastery": "Cofelty",
+    "coffee_name": "Kerinci Aziz Mossto Wash",
+    "origin": "Single Origin, Kota Bandung, Jawa Barat",
+    "variety": "Arabika Specialty",
+    "process": "Fully Washed Mossto",
+    "altitude": "1350 - 1750 MDPL",
+    "recommended_temp": 91,
+    "tasting_notes": [
+      "Berries",
+      "Sweet Longan",
+      "Pear"
+    ],
+    "sample_count": 15,
+    "notes_source": "INITIAL_SEED_MODEL"
   }
 ]

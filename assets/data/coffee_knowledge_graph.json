@@ -12,12 +12,42 @@
       "region_province": "Gunung Malabar / Pangalengan, Jawa Barat",
       "default_altitude": "1400 - 1800 MDPL",
       "default_varieties": "Sigararutang, Lini S795, Kartika",
-      "aliases": ["malabar", "mlabr", "malbar", "gn malabar", "mb", "pangalengan", "ciwidey", "preanger"],
-      "keywords": ["malabar", "pangalengan", "ciwidey", "preanger"],
+      "aliases": [
+        "malabar",
+        "mlabr",
+        "malbar",
+        "gn malabar",
+        "mb",
+        "pangalengan",
+        "ciwidey",
+        "preanger"
+      ],
+      "keywords": [
+        "malabar",
+        "pangalengan",
+        "ciwidey",
+        "preanger"
+      ],
       "process_notes_map": {
-        "Wine Process": ["Winey", "Red Grape", "Blackcurrant", "Fermented Berry", "Dark Cocoa"],
-        "Natural": ["Strawberry Jam", "Tropical Fruit", "Milk Chocolate", "Caramel"],
-        "Full Washed": ["Citrus", "Black Tea", "Brown Sugar", "Clean Finish"]
+        "Wine Process": [
+          "Winey",
+          "Red Grape",
+          "Blackcurrant",
+          "Fermented Berry",
+          "Dark Cocoa"
+        ],
+        "Natural": [
+          "Strawberry Jam",
+          "Tropical Fruit",
+          "Milk Chocolate",
+          "Caramel"
+        ],
+        "Full Washed": [
+          "Citrus",
+          "Black Tea",
+          "Brown Sugar",
+          "Clean Finish"
+        ]
       }
     },
     {
@@ -26,12 +56,39 @@
       "region_province": "Gunung Puntang, Bandung Selatan, Jawa Barat",
       "default_altitude": "1200 - 1600 MDPL",
       "default_varieties": "Java Typica, Sigararutang, Lini S795",
-      "aliases": ["puntang", "gunung puntang", "gn puntang", "puntan", "puntng", "mb puntang"],
-      "keywords": ["puntang", "gunung puntang", "gn puntang"],
+      "aliases": [
+        "puntang",
+        "gunung puntang",
+        "gn puntang",
+        "puntan",
+        "puntng",
+        "mb puntang"
+      ],
+      "keywords": [
+        "puntang",
+        "gunung puntang",
+        "gn puntang"
+      ],
       "process_notes_map": {
-        "Wine Process": ["Winey", "Red Grape", "Blackcurrant", "Fermented Berry", "Dark Cocoa"],
-        "Natural": ["Strawberry Jam", "Tropical Fruit", "Milk Chocolate", "Caramel"],
-        "Full Washed": ["Citrus", "Black Tea", "Brown Sugar", "Clean Finish"]
+        "Wine Process": [
+          "Winey",
+          "Red Grape",
+          "Blackcurrant",
+          "Fermented Berry",
+          "Dark Cocoa"
+        ],
+        "Natural": [
+          "Strawberry Jam",
+          "Tropical Fruit",
+          "Milk Chocolate",
+          "Caramel"
+        ],
+        "Full Washed": [
+          "Citrus",
+          "Black Tea",
+          "Brown Sugar",
+          "Clean Finish"
+        ]
       }
     },
     {
@@ -40,13 +97,52 @@
       "region_province": "Gunung Halu, Bandung Barat, Jawa Barat",
       "default_altitude": "1350 - 1650 MDPL",
       "default_varieties": "Sigararutang, Lini S795, Ateng Super",
-      "aliases": ["gunung halu", "halu", "gn halu", "gununghalu", "haloe", "west java halu", "sindangkerta", "kopi gunung halu", "halu banana"],
-      "keywords": ["gunung halu", "halu", "gn halu", "gununghalu", "haloe", "sindangkerta", "banana"],
+      "aliases": [
+        "gunung halu",
+        "halu",
+        "gn halu",
+        "gununghalu",
+        "haloe",
+        "west java halu",
+        "sindangkerta",
+        "kopi gunung halu",
+        "halu banana"
+      ],
+      "keywords": [
+        "gunung halu",
+        "halu",
+        "gn halu",
+        "gununghalu",
+        "haloe",
+        "sindangkerta",
+        "banana"
+      ],
       "process_notes_map": {
-        "Natural": ["Sweet Caramel", "Banana", "Blueberry", "Strawberry Jam", "Milk Chocolate"],
-        "Wine Process": ["Winey", "Red Grape", "Fermented Cherry", "Dark Chocolate"],
-        "Honey Process": ["Wild Honey", "Sweet Peach", "Brown Sugar", "Caramel"],
-        "Full Washed": ["Lime Citrus", "Jasmine", "Black Tea", "Cane Sugar"]
+        "Natural": [
+          "Sweet Caramel",
+          "Banana",
+          "Blueberry",
+          "Strawberry Jam",
+          "Milk Chocolate"
+        ],
+        "Wine Process": [
+          "Winey",
+          "Red Grape",
+          "Fermented Cherry",
+          "Dark Chocolate"
+        ],
+        "Honey Process": [
+          "Wild Honey",
+          "Sweet Peach",
+          "Brown Sugar",
+          "Caramel"
+        ],
+        "Full Washed": [
+          "Lime Citrus",
+          "Jasmine",
+          "Black Tea",
+          "Cane Sugar"
+        ]
       }
     },
     {
@@ -55,12 +151,45 @@
       "region_province": "Kamojang, Garut, Jawa Barat",
       "default_altitude": "1400 - 1750 MDPL",
       "default_varieties": "Typica, Sigararutang, Mixed Variety",
-      "aliases": ["kamojang", "garut", "amojang", "wanoja", "wanoja coffee", "papandayan", "cikuray", "kamojang garut", "west java kamojang"],
-      "keywords": ["kamojang", "garut", "amojang", "wanoja", "papandayan", "cikuray"],
+      "aliases": [
+        "kamojang",
+        "garut",
+        "amojang",
+        "wanoja",
+        "wanoja coffee",
+        "papandayan",
+        "cikuray",
+        "kamojang garut",
+        "west java kamojang"
+      ],
+      "keywords": [
+        "kamojang",
+        "garut",
+        "amojang",
+        "wanoja",
+        "papandayan",
+        "cikuray"
+      ],
       "process_notes_map": {
-        "Anaerobic Natural": ["Watermelon", "Strawberry", "Mandarin Orange", "Sweet Candy", "Tropical Mango"],
-        "Natural": ["Strawberry", "Tropical Fruit", "Caramel", "Milk Chocolate"],
-        "Full Washed": ["Jasmine", "Citrus", "Black Tea", "Cane Sugar"]
+        "Anaerobic Natural": [
+          "Watermelon",
+          "Strawberry",
+          "Mandarin Orange",
+          "Sweet Candy",
+          "Tropical Mango"
+        ],
+        "Natural": [
+          "Strawberry",
+          "Tropical Fruit",
+          "Caramel",
+          "Milk Chocolate"
+        ],
+        "Full Washed": [
+          "Jasmine",
+          "Citrus",
+          "Black Tea",
+          "Cane Sugar"
+        ]
       }
     },
     {
@@ -69,13 +198,53 @@
       "region_province": "Dataran Tinggi Gayo, Aceh",
       "default_altitude": "1400 - 1750 MDPL",
       "default_varieties": "Abyssinia, Timtim, Bourbon, Ateng Super",
-      "aliases": ["gayo", "gayoe", "aceh gayo", "takengon", "bener meriah", "pantan musara", "kenawat", "ateng", "jagong jeget", "pegasing"],
-      "keywords": ["gayo", "aceh", "takengon", "bener meriah", "pantan musara", "kenawat", "ateng", "pegasing"],
+      "aliases": [
+        "gayo",
+        "gayoe",
+        "aceh gayo",
+        "takengon",
+        "bener meriah",
+        "pantan musara",
+        "kenawat",
+        "ateng",
+        "jagong jeget",
+        "pegasing"
+      ],
+      "keywords": [
+        "gayo",
+        "aceh",
+        "takengon",
+        "bener meriah",
+        "pantan musara",
+        "kenawat",
+        "ateng",
+        "pegasing"
+      ],
       "process_notes_map": {
-        "Natural": ["Tropical Fruit", "Jackfruit", "Brown Sugar", "Milk Chocolate"],
-        "Wine Process": ["Red Wine", "Dark Plum", "Blackcurrant", "Spiced Rum"],
-        "Wet Hulled (Giling Basah)": ["Dark Cocoa", "Earthy Spice", "Herbal Tea", "Caramel"],
-        "Full Washed": ["Green Apple", "Black Tea", "Citrus", "Floral"]
+        "Natural": [
+          "Tropical Fruit",
+          "Jackfruit",
+          "Brown Sugar",
+          "Milk Chocolate"
+        ],
+        "Wine Process": [
+          "Red Wine",
+          "Dark Plum",
+          "Blackcurrant",
+          "Spiced Rum"
+        ],
+        "Wet Hulled (Giling Basah)": [
+          "Dark Cocoa",
+          "Earthy Spice",
+          "Herbal Tea",
+          "Caramel"
+        ],
+        "Full Washed": [
+          "Green Apple",
+          "Black Tea",
+          "Citrus",
+          "Floral"
+        ]
       }
     },
     {
@@ -84,12 +253,44 @@
       "region_province": "Kintamani, Bangli, Bali",
       "default_altitude": "1200 - 1550 MDPL",
       "default_varieties": "Kartika, Kopyol, USDA 762",
-      "aliases": ["kintamani", "bali", "ulian", "batur", "mengani", "belok", "plaga", "sukawana"],
-      "keywords": ["kintamani", "bali", "ulian", "batur", "mengani", "belok", "plaga"],
+      "aliases": [
+        "kintamani",
+        "bali",
+        "ulian",
+        "batur",
+        "mengani",
+        "belok",
+        "plaga",
+        "sukawana"
+      ],
+      "keywords": [
+        "kintamani",
+        "bali",
+        "ulian",
+        "batur",
+        "mengani",
+        "belok",
+        "plaga"
+      ],
       "process_notes_map": {
-        "Natural": ["Orange Citrus", "Sweet Tangerine", "Milk Chocolate", "Brown Sugar"],
-        "Anaerobic Natural": ["Strawberry Candy", "Passion Fruit", "Juicy Orange", "Floral"],
-        "Full Washed": ["Lemon Citrus", "Black Tea", "Floral Jasmine", "Clean Cane Sugar"]
+        "Natural": [
+          "Orange Citrus",
+          "Sweet Tangerine",
+          "Milk Chocolate",
+          "Brown Sugar"
+        ],
+        "Anaerobic Natural": [
+          "Strawberry Candy",
+          "Passion Fruit",
+          "Juicy Orange",
+          "Floral"
+        ],
+        "Full Washed": [
+          "Lemon Citrus",
+          "Black Tea",
+          "Floral Jasmine",
+          "Clean Cane Sugar"
+        ]
       }
     },
     {
@@ -98,12 +299,42 @@
       "region_province": "Tana Toraja & Toraja Utara, Sulawesi Selatan",
       "default_altitude": "1500 - 1900 MDPL",
       "default_varieties": "Lini S795 (Jember), Typica",
-      "aliases": ["toraja", "sapan", "pulu pulu", "enrekang", "mamasa", "rantepao", "gandangbatu"],
-      "keywords": ["toraja", "sapan", "pulu pulu", "enrekang", "mamasa", "rantepao"],
+      "aliases": [
+        "toraja",
+        "sapan",
+        "pulu pulu",
+        "enrekang",
+        "mamasa",
+        "rantepao",
+        "gandangbatu"
+      ],
+      "keywords": [
+        "toraja",
+        "sapan",
+        "pulu pulu",
+        "enrekang",
+        "mamasa",
+        "rantepao"
+      ],
       "process_notes_map": {
-        "Full Washed": ["Dark Chocolate", "Cinnamon", "Cardamom Spice", "Grapefruit"],
-        "Natural": ["Blackberry", "Dried Plum", "Brown Sugar", "Cacao Nibs"],
-        "Wet Hulled (Giling Basah)": ["Heavy Body", "Cedar Wood", "Dark Cocoa", "Caramel"]
+        "Full Washed": [
+          "Dark Chocolate",
+          "Cinnamon",
+          "Cardamom Spice",
+          "Grapefruit"
+        ],
+        "Natural": [
+          "Blackberry",
+          "Dried Plum",
+          "Brown Sugar",
+          "Cacao Nibs"
+        ],
+        "Wet Hulled (Giling Basah)": [
+          "Heavy Body",
+          "Cedar Wood",
+          "Dark Cocoa",
+          "Caramel"
+        ]
       }
     },
     {
@@ -112,11 +343,37 @@
       "region_province": "Ngada / Bajawa, Flores, NTT",
       "default_altitude": "1300 - 1650 MDPL",
       "default_varieties": "Juria (Typica), Kartika, Lini S795",
-      "aliases": ["flores", "bajawa", "manggarai", "jurang", "wae rebo", "ngada", "colol"],
-      "keywords": ["flores", "bajawa", "manggarai", "jurang", "wae rebo", "ngada", "colol"],
+      "aliases": [
+        "flores",
+        "bajawa",
+        "manggarai",
+        "jurang",
+        "wae rebo",
+        "ngada",
+        "colol"
+      ],
+      "keywords": [
+        "flores",
+        "bajawa",
+        "manggarai",
+        "jurang",
+        "wae rebo",
+        "ngada",
+        "colol"
+      ],
       "process_notes_map": {
-        "Full Washed": ["Milk Chocolate", "Sweet Lemon", "Floral", "Vanilla Finish"],
-        "Natural": ["Caramel", "Hazelnut", "Yellow Peach", "Milk Chocolate"]
+        "Full Washed": [
+          "Milk Chocolate",
+          "Sweet Lemon",
+          "Floral",
+          "Vanilla Finish"
+        ],
+        "Natural": [
+          "Caramel",
+          "Hazelnut",
+          "Yellow Peach",
+          "Milk Chocolate"
+        ]
       }
     },
     {
@@ -125,12 +382,42 @@
       "region_province": "Gunung Kerinci, Jambi / Sumatera Barat",
       "default_altitude": "1400 - 1750 MDPL",
       "default_varieties": "Andungsari, Sigararutang, Typica",
-      "aliases": ["kerinci", "koerintji", "solok", "jambi", "kayu aro", "sungai penuh", "alahan panjang"],
-      "keywords": ["kerinci", "solok", "koerintji", "jambi", "kayu aro", "sungai penuh"],
+      "aliases": [
+        "kerinci",
+        "koerintji",
+        "solok",
+        "jambi",
+        "kayu aro",
+        "sungai penuh",
+        "alahan panjang"
+      ],
+      "keywords": [
+        "kerinci",
+        "solok",
+        "koerintji",
+        "jambi",
+        "kayu aro",
+        "sungai penuh"
+      ],
       "process_notes_map": {
-        "Natural Anaerobic": ["Tropical Mango", "Passion Fruit", "Ripe Banana", "Wild Honey"],
-        "Honey Process": ["Brown Sugar", "Red Apple", "Caramel", "Almond"],
-        "Full Washed": ["Citrus Lime", "Black Tea", "Lemongrass", "Clean Finish"]
+        "Natural Anaerobic": [
+          "Tropical Mango",
+          "Passion Fruit",
+          "Ripe Banana",
+          "Wild Honey"
+        ],
+        "Honey Process": [
+          "Brown Sugar",
+          "Red Apple",
+          "Caramel",
+          "Almond"
+        ],
+        "Full Washed": [
+          "Citrus Lime",
+          "Black Tea",
+          "Lemongrass",
+          "Clean Finish"
+        ]
       }
     },
     {
@@ -139,11 +426,33 @@
       "region_province": "Gunung Sindoro & Sumbing, Temanggung, Jawa Tengah",
       "default_altitude": "1300 - 1650 MDPL",
       "default_varieties": "Kartika, Lini S795",
-      "aliases": ["temanggung", "sindoro", "sumbing", "wonosobo", "posong"],
-      "keywords": ["temanggung", "sindoro", "sumbing", "wonosobo", "posong"],
+      "aliases": [
+        "temanggung",
+        "sindoro",
+        "sumbing",
+        "wonosobo",
+        "posong"
+      ],
+      "keywords": [
+        "temanggung",
+        "sindoro",
+        "sumbing",
+        "wonosobo",
+        "posong"
+      ],
       "process_notes_map": {
-        "Full Washed": ["Sweet Tobacco", "Brown Sugar", "Nutty Almond", "Citrus"],
-        "Natural": ["Blackcurrant", "Caramel", "Dark Cocoa", "Red Apple"]
+        "Full Washed": [
+          "Sweet Tobacco",
+          "Brown Sugar",
+          "Nutty Almond",
+          "Citrus"
+        ],
+        "Natural": [
+          "Blackcurrant",
+          "Caramel",
+          "Dark Cocoa",
+          "Red Apple"
+        ]
       }
     },
     {
@@ -152,11 +461,36 @@
       "region_province": "Dataran Tinggi Ijen / Raung, Jawa Timur",
       "default_altitude": "1300 - 1650 MDPL",
       "default_varieties": "USDA 762, Kartika, Blue Mountain, Cobig",
-      "aliases": ["ijen", "raung", "argopuro", "wonosalam", "bondowoso", "banyuwangi", "jember"],
-      "keywords": ["ijen", "raung", "argopuro", "wonosalam", "bondowoso", "banyuwangi"],
+      "aliases": [
+        "ijen",
+        "raung",
+        "argopuro",
+        "wonosalam",
+        "bondowoso",
+        "banyuwangi",
+        "jember"
+      ],
+      "keywords": [
+        "ijen",
+        "raung",
+        "argopuro",
+        "wonosalam",
+        "bondowoso",
+        "banyuwangi"
+      ],
       "process_notes_map": {
-        "Full Washed": ["Spiced Citrus", "Brown Sugar", "Clean Black Tea", "Dark Cocoa"],
-        "Natural": ["Sweet Tamarind", "Dried Fruit", "Milk Chocolate", "Toffee"]
+        "Full Washed": [
+          "Spiced Citrus",
+          "Brown Sugar",
+          "Clean Black Tea",
+          "Dark Cocoa"
+        ],
+        "Natural": [
+          "Sweet Tamarind",
+          "Dried Fruit",
+          "Milk Chocolate",
+          "Toffee"
+        ]
       }
     },
     {
@@ -165,11 +499,37 @@
       "region_province": "Lembah Baliem & Distrik Bpiri, Jayawijaya, Papua",
       "default_altitude": "1600 - 2100 MDPL",
       "default_varieties": "Typica, Bourbon, Blue Mountain",
-      "aliases": ["wamena", "bpiri", "jayawijaya", "papua", "moanemani", "tiom", "baliem", "kurima"],
-      "keywords": ["wamena", "bpiri", "jayawijaya", "papua", "moanemani", "baliem"],
+      "aliases": [
+        "wamena",
+        "bpiri",
+        "jayawijaya",
+        "papua",
+        "moanemani",
+        "tiom",
+        "baliem",
+        "kurima"
+      ],
+      "keywords": [
+        "wamena",
+        "bpiri",
+        "jayawijaya",
+        "papua",
+        "moanemani",
+        "baliem"
+      ],
       "process_notes_map": {
-        "Full Washed": ["Palm Sugar", "Red Fruit", "Chestnut", "Floral Chamomile"],
-        "Natural": ["Sweet Plum", "Chocolate Truffle", "Wild Honey", "Dark Berry"]
+        "Full Washed": [
+          "Palm Sugar",
+          "Red Fruit",
+          "Chestnut",
+          "Floral Chamomile"
+        ],
+        "Natural": [
+          "Sweet Plum",
+          "Chocolate Truffle",
+          "Wild Honey",
+          "Dark Berry"
+        ]
       }
     },
     {
@@ -178,11 +538,48 @@
       "region_province": "Sidama, Yirgacheffe & Guji, Ethiopia",
       "default_altitude": "1850 - 2250 MDPL",
       "default_varieties": "Ethiopian Heirloom (74110, 74112, 74158)",
-      "aliases": ["ethiopia", "yirgacheffe", "guji", "sidamo", "chelbesa", "hambela", "aricha", "kochere", "bedhatu", "bombe", "uraga", "dumerso", "worka"],
-      "keywords": ["ethiopia", "yirgacheffe", "guji", "sidamo", "chelbesa", "hambela", "aricha", "kochere", "bombe", "uraga"],
+      "aliases": [
+        "ethiopia",
+        "yirgacheffe",
+        "guji",
+        "sidamo",
+        "chelbesa",
+        "hambela",
+        "aricha",
+        "kochere",
+        "bedhatu",
+        "bombe",
+        "uraga",
+        "dumerso",
+        "worka"
+      ],
+      "keywords": [
+        "ethiopia",
+        "yirgacheffe",
+        "guji",
+        "sidamo",
+        "chelbesa",
+        "hambela",
+        "aricha",
+        "kochere",
+        "bombe",
+        "uraga"
+      ],
       "process_notes_map": {
-        "Full Washed": ["Jasmine Floral", "Bergamot", "Lemon Tea", "Peach", "Cane Sugar"],
-        "Natural": ["Blueberry", "Ripe Strawberry", "Sweet Peach", "Milk Chocolate", "Lavender"]
+        "Full Washed": [
+          "Jasmine Floral",
+          "Bergamot",
+          "Lemon Tea",
+          "Peach",
+          "Cane Sugar"
+        ],
+        "Natural": [
+          "Blueberry",
+          "Ripe Strawberry",
+          "Sweet Peach",
+          "Milk Chocolate",
+          "Lavender"
+        ]
       }
     },
     {
@@ -191,11 +588,38 @@
       "region_province": "Huila, Cauca & Tolima, Colombia",
       "default_altitude": "1600 - 2050 MDPL",
       "default_varieties": "Pink Bourbon, Caturra, Castillo, Geisha",
-      "aliases": ["colombia", "huila", "cauca", "tolima", "narino", "antioquia", "quindio", "san adolfo", "pitalito"],
-      "keywords": ["colombia", "huila", "cauca", "tolima", "narino", "quindio"],
+      "aliases": [
+        "colombia",
+        "huila",
+        "cauca",
+        "tolima",
+        "narino",
+        "antioquia",
+        "quindio",
+        "san adolfo",
+        "pitalito"
+      ],
+      "keywords": [
+        "colombia",
+        "huila",
+        "cauca",
+        "tolima",
+        "narino",
+        "quindio"
+      ],
       "process_notes_map": {
-        "Anaerobic Thermal Shock": ["Strawberry Candy", "Passion Fruit", "Tropical Mango", "Rose Water"],
-        "Full Washed": ["Red Apple", "Caramel", "Orange Citrus", "Milk Chocolate"]
+        "Anaerobic Thermal Shock": [
+          "Strawberry Candy",
+          "Passion Fruit",
+          "Tropical Mango",
+          "Rose Water"
+        ],
+        "Full Washed": [
+          "Red Apple",
+          "Caramel",
+          "Orange Citrus",
+          "Milk Chocolate"
+        ]
       }
     },
     {
@@ -204,11 +628,38 @@
       "region_province": "Chiriquí / Boquete / Volcán, Panama",
       "default_altitude": "1650 - 2000 MDPL",
       "default_varieties": "Panama Geisha, Catuai, Typica",
-      "aliases": ["panama", "boquete", "volcan", "geisha", "gesha", "elida", "janson", "hacienda la esmeralda"],
-      "keywords": ["panama", "boquete", "volcan", "geisha", "gesha"],
+      "aliases": [
+        "panama",
+        "boquete",
+        "volcan",
+        "geisha",
+        "gesha",
+        "elida",
+        "janson",
+        "hacienda la esmeralda"
+      ],
+      "keywords": [
+        "panama",
+        "boquete",
+        "volcan",
+        "geisha",
+        "gesha"
+      ],
       "process_notes_map": {
-        "Full Washed": ["Jasmine Blossom", "Bergamot", "White Peach", "Lemongrass", "Earl Grey"],
-        "Natural": ["Papaya", "Mango", "Strawberry Wine", "Milk Chocolate", "Violet"]
+        "Full Washed": [
+          "Jasmine Blossom",
+          "Bergamot",
+          "White Peach",
+          "Lemongrass",
+          "Earl Grey"
+        ],
+        "Natural": [
+          "Papaya",
+          "Mango",
+          "Strawberry Wine",
+          "Milk Chocolate",
+          "Violet"
+        ]
       }
     }
   ],
@@ -247,7 +698,100 @@
     "Tim Wendelboe",
     "Sey Coffee",
     "Onyx Coffee Lab",
-    "Gardelli Specialty Coffee"
+    "Gardelli Specialty Coffee",
+    "Kiara Roastery / Kiara Coffee Goods",
+    "Space Coffee Roastery / Space Roastery",
+    "Three Wheels Coffee Roaster",
+    "Cofelty Coffee Roastery",
+    "Koeslan Coffee Roastery",
+    "Kopikina",
+    "Brevia Coffee Roastery",
+    "Janjian Roastery",
+    "Serkop Coffee Company / SCC Roastery",
+    "Hana Roastery",
+    "Mahugi Coffee",
+    "Tenun Coffee Roasters",
+    "Makmur Jaya Coffee Roasters",
+    "Herd Coffee Roaster",
+    "Wheels Coffee Roasters",
+    "Uberall Roastery",
+    "Sakha Coffee Roastery",
+    "Semekar Coffee",
+    "Koro Roasters",
+    "Odds Coffee Roaster",
+    "Ippolito Coffee",
+    "Arutala Coffee",
+    "Tagetto Coffee Roastery",
+    "KOFIND Coffee Co.",
+    "Asvata Roastery",
+    "Kopi Anjis Roastery",
+    "Sanubari Roastery",
+    "SIA Coffee Roastery",
+    "Serigunting Coffee",
+    "nooa.homeroastery",
+    "Pima Coffee and Roastery",
+    "Masak Pohon Roastery",
+    "Pikul Coffee Roastery",
+    "Taraz Roastery",
+    "Time Coffee Company",
+    "Kuji Coffee Roasters",
+    "Collins Roasters",
+    "Second Step Coffee Roastery",
+    "Sunset Lotus",
+    "Coffest Roastery",
+    "Mr. O Coffee",
+    "Tadi Pagi Coffee Roastery",
+    "Say Something Coffee",
+    "Night Owl Roastery",
+    "Roemah Koffie Indonesia",
+    "Manasa Coffee",
+    "Constant Roastery",
+    "Woodlane Coffeevibes",
+    "Doeloer Coffee",
+    "Origena Coffee",
+    "Boco Coffee Roasters",
+    "Wilcoff",
+    "Ukeba Coffee Roastery",
+    "KORD Coffee Roasters",
+    "AFROLABEL Coffee Roaster",
+    "Flo. Coffee Roastery",
+    "Anjiru Coffee Tailor",
+    "Mosto Coffee Roaster",
+    "Kopi Kalkir",
+    "Duza Roastery",
+    "Rova Coffee Roaster",
+    "Derivatif Roastery",
+    "Bhumi Roastery",
+    "Seruni Coffee",
+    "LABR Roastery",
+    "BROME COFFEE & ROASTERY",
+    "Deklase Roastery",
+    "MKND Coffee Roastery",
+    "Workroom Coffee and Roastery",
+    "Me.onkopi By Vusiuz",
+    "Roastology Coffee and Roasters",
+    "Noa Roastery",
+    "Before9 Roastery",
+    "Lini Kopi Roastery",
+    "Ember Roastery",
+    "Kiyowo Coffee",
+    "Himawari Roastery",
+    "Rawdee Coffee Roastery",
+    "Klinik Kopi",
+    "Two Hands Full Roastery",
+    "Seniman Coffee Studio",
+    "Expat. Roasters",
+    "Hungry Bird Coffee Roaster",
+    "Strada Coffee",
+    "Coffeenensis",
+    "Noah's Barn",
+    "Black Potion Coffee Roaster",
+    "Blue Lion Coffee",
+    "Gesha Coffee Roastery",
+    "CALOPSIA Coffee",
+    "AZZABREW Coffee Roastery",
+    "Incloth Coffee Roastery",
+    "Jaad Coffee Indonesia"
   ],
   "known_varieties": [
     "Sigararutang",
@@ -278,7 +822,92 @@
     "Blue Mountain",
     "Heirloom",
     "Ethiopian Heirloom",
-    "Java Typica"
+    "Java Typica",
+    "Mix (Arabika Single Origin)",
+    "Arabika",
+    "Arabusta (Arabika",
+    "Robusta)",
+    "Catimor",
+    "Aji Bourbon",
+    "Java",
+    "Sidra Bourbon",
+    "Cobra",
+    "Wolisho",
+    "Kurume",
+    "Wush Wush (Heirloom)",
+    "Arabika Single Origin",
+    "Blend",
+    "Arabika Gayo",
+    "Arabika Blend",
+    "Sunda Typica",
+    "Mix Varietas",
+    "Lini S",
+    "Red Bourbon",
+    "Liberica",
+    "Sigarar Utang",
+    "Yellow Caturra",
+    "Heirloom (100% Arabica)",
+    "Arabica Specialty",
+    "USDA",
+    "Lini-S",
+    "Mix Varietals",
+    "Ateng",
+    "Yellow Bourbon",
+    "Lini S-795",
+    "Robusta",
+    "P88",
+    "Batian",
+    "Liberika",
+    "Longberry",
+    "Mix Red Arabika",
+    "Specialty Arabica",
+    "Excelsa",
+    "Arabica",
+    "Arabica Coffee",
+    "SL-",
+    "50% Arabica Pangalengan FW",
+    "50% Robusta Java Organic",
+    "25% Arabica 75% Robusta",
+    "100% Arabica Blend",
+    "75% Arabica",
+    "Mix Variety",
+    "Arabika Sulawesi",
+    "795",
+    "Arabica Sigararutang",
+    "Arabica Gayo (100% Arabica)",
+    "Mixed",
+    "Typika",
+    "Katimor",
+    "Specialty Arabika",
+    "Orange Bourbon",
+    "Yellow Catuai",
+    "100% Arabica",
+    "Arabica (70%)",
+    "Robusta (30%)",
+    "SL792",
+    "Full Arabica",
+    "Mix Variety (Robusta)",
+    "Full Arabika",
+    "JARC",
+    "100% Robusta",
+    "Mix (Arabika)",
+    "Juria",
+    "Mix",
+    "Lini S975",
+    "Peaberry",
+    "Ateng (40%)",
+    "Typica (15%)",
+    "P-88 (25%)",
+    "Mix Variety (Mostly Kartika",
+    "S7178)",
+    "100% Bourbon",
+    "USDA 762 (100% Arabica)",
+    "Lini S (100% Arabica)",
+    "Ateng Single Var.",
+    "Tabi",
+    "Single Origin Arabica",
+    "Kopi Arabika",
+    "Hybrid De Timor"
   ],
   "known_processes": [
     "Wine Process",
@@ -299,32 +928,1310 @@
     "Koji Fermentation",
     "Yeast Inoculated",
     "Wet Hulled (Giling Basah)",
-    "Semi Washed"
+    "Semi Washed",
+    "Dry Processed",
+    "Anaerobic",
+    "Infused",
+    "Co-Fermented",
+    "Wet-Hulled (Giling Basah)",
+    "Fully Washed",
+    "Extended",
+    "Controlled Fermentation",
+    "Yeast",
+    "Honey",
+    "Pulped Natural",
+    "Fully Washed (Anaerobic)",
+    "Semi-Washed",
+    "Blend",
+    "Multi-Process",
+    "Natural (21 Days Drying)",
+    "Anaerobic Natural with Mosto",
+    "Thermal Shock Anaerobic Natural",
+    "Duo Cherry Velvet (Anaerobic)",
+    "Single Origin",
+    "Extended Yeast Cherry Fermentation",
+    "Washed",
+    "Anaerobic Natural Inoculated",
+    "Fully Washed (Mossto)",
+    "Multi-Process (Yeast",
+    "Anaerobic)",
+    "Other Experimental (Mossto)",
+    "Mossto Malic",
+    "Natural 28 Days",
+    "Multi-Process (Wet-Hulled",
+    "Fully Washed)",
+    "Sugarcane Decaf",
+    "Mosto Natural",
+    "Supernatural",
+    "Nitro Maceration Natural",
+    "Natural Anaerobic Slow Dry",
+    "Caramella (Honey Anaerobic)",
+    "Hyper Washed",
+    "Natural Anaerobic",
+    "Hybrid Washed",
+    "Controlled Fermentation (Wine)",
+    "Natural Process",
+    "Banana Honey Anaerob",
+    "Fully Washed (Infused)",
+    "Other Experimental",
+    "Lactic",
+    "LAB",
+    "Dry Processed (Dark Room)",
+    "Other Experimental (HSN 120h)",
+    "Dry Processed (Carbonic Maceration)",
+    "Dry Processed (Anoxic Natural)",
+    "Honey Anaerobic Processing",
+    "Anaerobic Natural 216 Hours",
+    "Hermetically Sealed Natural",
+    "Full Washed Processing",
+    "Anaerobic Natural Processing",
+    "Natural Processing",
+    "JH Natural Dark Room Processing",
+    "Depulped (Lab Process)",
+    "Multi-Process (Anaerobic)",
+    "Washed Processing",
+    "Dry Processed (Extended",
+    "Controlled)",
+    "Dry Processed (Thermal)",
+    "Dry Processed (Thermal Shock)",
+    "Dry Processed (Wine)",
+    "Slow Drying",
+    "Organic Single Origin",
+    "Limited Release",
+    "Organic",
+    "Other Experimental (Fruit Enzyme)",
+    "Wash Fermentation",
+    "Wet-Hulled (Giling Basah) Infused",
+    "Dry Processed (Infused",
+    "Co-Fermented)",
+    "Dry Processed (Anaerobic)",
+    "Infused Kayu Manis",
+    "Co-Ferment",
+    "Ginger Washed",
+    "Natural Anaerob",
+    "Post Blend (Natural)",
+    "Wine Yeast",
+    "Other",
+    "Experimental (Carbonic Maceration)",
+    "Kismis",
+    "Wet-Hulled (Giling Basah) (Infused)",
+    "Wet-Hulled (Giling Basah) (Infused",
+    "HSN",
+    "Washed Slow",
+    "Fullywash",
+    "Funky Natural",
+    "Wine (Natural)",
+    "Full Wash",
+    "Geo Natural",
+    "Wash Anaerobic",
+    "Wash",
+    "Dry Processed (Anaerob)",
+    "Dry Processed (Infused)",
+    "Dry Processed Blend",
+    "Experimental (Yeast)",
+    "Experimental",
+    "Fully Washed (Anaerobic",
+    "Yeast)",
+    "Fully Washed (Infused",
+    "Experimental (Infused",
+    "Multi-Process (Anaerobic",
+    "Fully Washed Blend",
+    "Controlled Fermentation)",
+    "Dry Processed (Thermalshock)",
+    "Fermentasi (Wine)",
+    "Anaerob",
+    "Pulped Natural (Yeast)",
+    "Anaerobic Honey",
+    "Fully Washed (Yeast)",
+    "Dry Processed (Yeast)",
+    "Dry Processed (Lactic",
+    "LAB)",
+    "Experimental (Anaerobic",
+    "Olah Eksperimental (Redehidration)",
+    "Dry Processed (Extended)",
+    "Dry Processed (Other Experimental)",
+    "Pulped Natural (Other Experimental)",
+    "Dry Processed (Hermetic Sealed Natural)",
+    "Natural (Olah Kering)",
+    "Honey Proses",
+    "Fully Washed Process",
+    "Mix",
+    "72 H Anaerobic Pulp Natural",
+    "Full Wash Dry Hull",
+    "Honey Semianaerob",
+    "Golden Honey",
+    "Maceration Process",
+    "Natural x Fullwash Process",
+    "Fully Washed Yeast Inoculated"
   ],
   "flavor_lexicon": {
-    "Blueberry": ["blueberry", "bluberry", "bluebery", "beri", "berries", "bluberri"],
-    "Strawberry": ["strawberry", "starberry", "strawbery", "stroberi", "strobery"],
-    "Strawberry Jam": ["strawberry jam", "selai stroberi", "strawberry compote"],
-    "Jasmine": ["jasmine", "jasmin", "jasmne", "melati", "bunga melati"],
-    "Black Tea": ["tea", "blacktea", "earlgrey", "teh", "black tea", "floral tea", "earl grey"],
-    "Winey": ["wine", "winey", "winery", "red wine", "fermented", "wine process", "anggur fermentasi"],
-    "Red Grape": ["grape", "red grape", "anggur merah", "anggur", "concord grape"],
-    "Blackcurrant": ["blackcurrant", "currant", "kismis", "black currant"],
-    "Peach": ["peach", "apricot", "persik", "stone fruit", "white peach", "yellow peach"],
-    "Mango": ["mango", "mangga", "tropical mango", "ripe mango"],
-    "Pineapple": ["pineapple", "nanas", "sweet pineapple", "caramelized pineapple"],
-    "Passion Fruit": ["passion fruit", "markisa", "passionfruit", "lilikoi"],
-    "Lemon Citrus": ["lemon", "lime", "citrus", "jeruk", "bergamot", "orange", "lemonade", "mandarin orange", "tangerine"],
-    "Milk Chocolate": ["milk chocolate", "chocolate", "choco", "cokelat", "cokelat susu", "creamy chocolate"],
-    "Dark Cocoa": ["dark cocoa", "cacao", "dark chocolate", "cocoa nibs", "cacao nibs", "bittersweet chocolate"],
-    "Caramel": ["caramel", "karamel", "toffee", "butterscotch"],
-    "Brown Sugar": ["brown sugar", "gula aren", "palm sugar", "cane sugar", "gula kelapa", "muscovado"],
-    "Wild Honey": ["honey", "madu", "wild honey", "clover honey"],
-    "Chestnut": ["chestnut", "almond", "hazelnut", "kacang", "roasted peanut", "walnut"],
-    "Red Fruit": ["red fruit", "buah merah", "plum", "cherry", "red cherry", "dark cherry"],
-    "Cinnamon": ["cinnamon", "kayu manis", "spice", "clove", "cengkeh", "rempah"],
-    "Vanilla": ["vanilla", "vanila", "vanilla bean"],
-    "Floral": ["floral", "flower", "bunga", "rose", "chamomile", "lavender", "elderflower", "hibiscus", "rosella"]
+    "Blueberry": [
+      "blueberry",
+      "bluberry",
+      "bluebery",
+      "beri",
+      "berries",
+      "bluberri"
+    ],
+    "Strawberry": [
+      "strawberry",
+      "starberry",
+      "strawbery",
+      "stroberi",
+      "strobery"
+    ],
+    "Strawberry Jam": [
+      "strawberry jam",
+      "selai stroberi",
+      "strawberry compote"
+    ],
+    "Jasmine": [
+      "jasmine",
+      "jasmin",
+      "jasmne",
+      "melati",
+      "bunga melati"
+    ],
+    "Black Tea": [
+      "tea",
+      "blacktea",
+      "earlgrey",
+      "teh",
+      "black tea",
+      "floral tea",
+      "earl grey"
+    ],
+    "Winey": [
+      "wine",
+      "winey",
+      "winery",
+      "red wine",
+      "fermented",
+      "wine process",
+      "anggur fermentasi"
+    ],
+    "Red Grape": [
+      "grape",
+      "red grape",
+      "anggur merah",
+      "anggur",
+      "concord grape"
+    ],
+    "Blackcurrant": [
+      "blackcurrant",
+      "currant",
+      "kismis",
+      "black currant"
+    ],
+    "Peach": [
+      "peach",
+      "apricot",
+      "persik",
+      "stone fruit",
+      "white peach",
+      "yellow peach"
+    ],
+    "Mango": [
+      "mango",
+      "mangga",
+      "tropical mango",
+      "ripe mango"
+    ],
+    "Pineapple": [
+      "pineapple",
+      "nanas",
+      "sweet pineapple",
+      "caramelized pineapple"
+    ],
+    "Passion Fruit": [
+      "passion fruit",
+      "markisa",
+      "passionfruit",
+      "lilikoi"
+    ],
+    "Lemon Citrus": [
+      "lemon",
+      "lime",
+      "citrus",
+      "jeruk",
+      "bergamot",
+      "orange",
+      "lemonade",
+      "mandarin orange",
+      "tangerine"
+    ],
+    "Milk Chocolate": [
+      "milk chocolate",
+      "chocolate",
+      "choco",
+      "cokelat",
+      "cokelat susu",
+      "creamy chocolate"
+    ],
+    "Dark Cocoa": [
+      "dark cocoa",
+      "cacao",
+      "dark chocolate",
+      "cocoa nibs",
+      "cacao nibs",
+      "bittersweet chocolate"
+    ],
+    "Caramel": [
+      "caramel",
+      "karamel",
+      "toffee",
+      "butterscotch"
+    ],
+    "Brown Sugar": [
+      "brown sugar",
+      "gula aren",
+      "palm sugar",
+      "cane sugar",
+      "gula kelapa",
+      "muscovado"
+    ],
+    "Wild Honey": [
+      "honey",
+      "madu",
+      "wild honey",
+      "clover honey"
+    ],
+    "Chestnut": [
+      "chestnut",
+      "almond",
+      "hazelnut",
+      "kacang",
+      "roasted peanut",
+      "walnut"
+    ],
+    "Red Fruit": [
+      "red fruit",
+      "buah merah",
+      "plum",
+      "cherry",
+      "red cherry",
+      "dark cherry"
+    ],
+    "Cinnamon": [
+      "cinnamon",
+      "kayu manis",
+      "spice",
+      "clove",
+      "cengkeh",
+      "rempah"
+    ],
+    "Vanilla": [
+      "vanilla",
+      "vanila",
+      "vanilla bean"
+    ],
+    "Floral": [
+      "floral",
+      "flower",
+      "bunga",
+      "rose",
+      "chamomile",
+      "lavender",
+      "elderflower",
+      "hibiscus",
+      "rosella"
+    ],
+    "Dried Fruit": [
+      "dried fruit"
+    ],
+    "Hibiscus": [
+      "hibiscus"
+    ],
+    "Wine": [
+      "wine"
+    ],
+    "Honey": [
+      "honey"
+    ],
+    "Osmanthus Tea": [
+      "osmanthus tea"
+    ],
+    "Apricot": [
+      "apricot"
+    ],
+    "Chamomile": [
+      "chamomile"
+    ],
+    "Red Apple": [
+      "red apple"
+    ],
+    "Orange": [
+      "orange"
+    ],
+    "Tea Like": [
+      "tea like"
+    ],
+    "Cotton Candy": [
+      "cotton candy"
+    ],
+    "Cookies": [
+      "cookies"
+    ],
+    "Passionfruit": [
+      "passionfruit"
+    ],
+    "Mandarin Orange": [
+      "mandarin orange"
+    ],
+    "Jasmine Tea": [
+      "jasmine tea"
+    ],
+    "Chocolate Milk": [
+      "chocolate milk"
+    ],
+    "Cocoa": [
+      "cocoa"
+    ],
+    "Biscuit": [
+      "biscuit"
+    ],
+    "Cherry": [
+      "cherry"
+    ],
+    "Watermelon": [
+      "watermelon"
+    ],
+    "Berries": [
+      "berries"
+    ],
+    "Water Guava": [
+      "water guava"
+    ],
+    "Spice": [
+      "spice"
+    ],
+    "White Grape": [
+      "white grape"
+    ],
+    "Kiwi": [
+      "kiwi"
+    ],
+    "Tamarind": [
+      "tamarind"
+    ],
+    "Lemon": [
+      "lemon"
+    ],
+    "Plum": [
+      "plum"
+    ],
+    "Berry": [
+      "berry"
+    ],
+    "Choco": [
+      "choco"
+    ],
+    "Lemon Peel": [
+      "lemon peel"
+    ],
+    "Lime": [
+      "lime"
+    ],
+    "Rosewater": [
+      "rosewater"
+    ],
+    "Dried Dates": [
+      "dried dates"
+    ],
+    "Wild Strawberry": [
+      "wild strawberry"
+    ],
+    "Tropical Fruit Forward Lush": [
+      "tropical fruit forward lush"
+    ],
+    "Rich Cherry": [
+      "rich cherry"
+    ],
+    "Berry Ensemble": [
+      "berry ensemble"
+    ],
+    "Sakura Aroma": [
+      "sakura aroma"
+    ],
+    "Lavender": [
+      "lavender"
+    ],
+    "Pomelo": [
+      "pomelo"
+    ],
+    "Fruity Flavor (Honey Lemon)": [
+      "fruity flavor (honey lemon)"
+    ],
+    "Delicate Floral": [
+      "delicate floral"
+    ],
+    "Fruity": [
+      "fruity"
+    ],
+    "Citrus": [
+      "citrus"
+    ],
+    "Red Plum": [
+      "red plum"
+    ],
+    "Blueberries": [
+      "blueberries"
+    ],
+    "Chocolate": [
+      "chocolate"
+    ],
+    "Tropical Fruit": [
+      "tropical fruit"
+    ],
+    "Apple Cider": [
+      "apple cider"
+    ],
+    "Tangerine": [
+      "tangerine"
+    ],
+    "Raisin": [
+      "raisin"
+    ],
+    "Milk": [
+      "milk"
+    ],
+    "Sweet Longan": [
+      "sweet longan"
+    ],
+    "Pear": [
+      "pear"
+    ],
+    "Apple": [
+      "apple"
+    ],
+    "Sugar Cane": [
+      "sugar cane"
+    ],
+    "Jackfruit": [
+      "jackfruit"
+    ],
+    "Tea": [
+      "tea"
+    ],
+    "Pomegranate": [
+      "pomegranate"
+    ],
+    "Green Grape": [
+      "green grape"
+    ],
+    "Guava": [
+      "guava"
+    ],
+    "Navel Orange": [
+      "navel orange"
+    ],
+    "Green Apple": [
+      "green apple"
+    ],
+    "Honeysuckle": [
+      "honeysuckle"
+    ],
+    "Sweet Chocolate": [
+      "sweet chocolate"
+    ],
+    "Pandan": [
+      "pandan"
+    ],
+    "Malt": [
+      "malt"
+    ],
+    "Orange Marmalade": [
+      "orange marmalade"
+    ],
+    "Grapes": [
+      "grapes"
+    ],
+    "Citrusy": [
+      "citrusy"
+    ],
+    "Dried Orange": [
+      "dried orange"
+    ],
+    "Bay Leaf": [
+      "bay leaf"
+    ],
+    "Dark Fruits": [
+      "dark fruits"
+    ],
+    "Sweet": [
+      "sweet"
+    ],
+    "Complex": [
+      "complex"
+    ],
+    "Grilled Pineapple": [
+      "grilled pineapple"
+    ],
+    "Rosemary": [
+      "rosemary"
+    ],
+    "Molasses": [
+      "molasses"
+    ],
+    "Peanut": [
+      "peanut"
+    ],
+    "Dark Chocolate": [
+      "dark chocolate"
+    ],
+    "Palm Sugar": [
+      "palm sugar"
+    ],
+    "Cacao Nibs": [
+      "cacao nibs"
+    ],
+    "Roasted Peanut": [
+      "roasted peanut"
+    ],
+    "Grapefruit": [
+      "grapefruit"
+    ],
+    "Prunes": [
+      "prunes"
+    ],
+    "Walnut": [
+      "walnut"
+    ],
+    "Brown Spices": [
+      "brown spices"
+    ],
+    "Sugarcane": [
+      "sugarcane"
+    ],
+    "Blood Orange": [
+      "blood orange"
+    ],
+    "Nectarine": [
+      "nectarine"
+    ],
+    "Tropical Fruits": [
+      "tropical fruits"
+    ],
+    "Sarsaparilla": [
+      "sarsaparilla"
+    ],
+    "Single Malt Whisky": [
+      "single malt whisky"
+    ],
+    "Herbal": [
+      "herbal"
+    ],
+    "Orange Milk": [
+      "orange milk"
+    ],
+    "Tropical Fruit / Slight Citrus": [
+      "tropical fruit / slight citrus"
+    ],
+    "Roasted Nuts": [
+      "roasted nuts"
+    ],
+    "Ripe Banana": [
+      "ripe banana"
+    ],
+    "Chocolaty": [
+      "chocolaty"
+    ],
+    "Concord Grape": [
+      "concord grape"
+    ],
+    "Prune": [
+      "prune"
+    ],
+    "Ripe Guava": [
+      "ripe guava"
+    ],
+    "Red Berries": [
+      "red berries"
+    ],
+    "Sweetness": [
+      "sweetness"
+    ],
+    "Lychee": [
+      "lychee"
+    ],
+    "Raspberry": [
+      "raspberry"
+    ],
+    "Granadilla": [
+      "granadilla"
+    ],
+    "Dark Cherry": [
+      "dark cherry"
+    ],
+    "Demerara": [
+      "demerara"
+    ],
+    "Rambutan": [
+      "rambutan"
+    ],
+    "Silky": [
+      "silky"
+    ],
+    "Nectar": [
+      "nectar"
+    ],
+    "Lemon Tea": [
+      "lemon tea"
+    ],
+    "Tea-Like": [
+      "tea-like"
+    ],
+    "Red Wine": [
+      "red wine"
+    ],
+    "Nutty": [
+      "nutty"
+    ],
+    "Slightly Spicy": [
+      "slightly spicy"
+    ],
+    "Earthy": [
+      "earthy"
+    ],
+    "Subtle Dried Fruit": [
+      "subtle dried fruit"
+    ],
+    "Blackcurrant Candy": [
+      "blackcurrant candy"
+    ],
+    "White Tea": [
+      "white tea"
+    ],
+    "Strawberry Yoghurt": [
+      "strawberry yoghurt"
+    ],
+    "Sunkist Orange": [
+      "sunkist orange"
+    ],
+    "Red Grapes": [
+      "red grapes"
+    ],
+    "Hint of Chocolate": [
+      "hint of chocolate"
+    ],
+    "Herbaceous": [
+      "herbaceous"
+    ],
+    "Ripe Fruits": [
+      "ripe fruits"
+    ],
+    "Green Grapes": [
+      "green grapes"
+    ],
+    "Stone Fruits": [
+      "stone fruits"
+    ],
+    "Mangosteen": [
+      "mangosteen"
+    ],
+    "Longan": [
+      "longan"
+    ],
+    "Rose Tea": [
+      "rose tea"
+    ],
+    "Mild Body": [
+      "mild body"
+    ],
+    "Slide Wine": [
+      "slide wine"
+    ],
+    "Honeydew": [
+      "honeydew"
+    ],
+    "Melon": [
+      "melon"
+    ],
+    "Honey Aroma": [
+      "honey aroma"
+    ],
+    "Starfruits": [
+      "starfruits"
+    ],
+    "Hibiscus Tea": [
+      "hibiscus tea"
+    ],
+    "Passion Fruits": [
+      "passion fruits"
+    ],
+    "Lemongrass": [
+      "lemongrass"
+    ],
+    "Hint Berries": [
+      "hint berries"
+    ],
+    "Banana": [
+      "banana"
+    ],
+    "Hint Vanilla": [
+      "hint vanilla"
+    ],
+    "Red Cherry": [
+      "red cherry"
+    ],
+    "Black Cherry": [
+      "black cherry"
+    ],
+    "Orange Blossom": [
+      "orange blossom"
+    ],
+    "Maple Syrup": [
+      "maple syrup"
+    ],
+    "Orange Peel": [
+      "orange peel"
+    ],
+    "Dried Mango": [
+      "dried mango"
+    ],
+    "Dried Apricot": [
+      "dried apricot"
+    ],
+    "Grape": [
+      "grape"
+    ],
+    "Raspberry Jam": [
+      "raspberry jam"
+    ],
+    "Orange Zest": [
+      "orange zest"
+    ],
+    "Sale Pisang": [
+      "sale pisang"
+    ],
+    "Cane Sugar": [
+      "cane sugar"
+    ],
+    "Clementine": [
+      "clementine"
+    ],
+    "Oolong Tea": [
+      "oolong tea"
+    ],
+    "Black: Lemon": [
+      "black: lemon"
+    ],
+    "Roasted Hazelnut": [
+      "roasted hazelnut"
+    ],
+    "Sweet Spice": [
+      "sweet spice"
+    ],
+    "Milk-based: Hazelnut Cake": [
+      "milk-based: hazelnut cake"
+    ],
+    "Rose Apple": [
+      "rose apple"
+    ],
+    "Snakefruit": [
+      "snakefruit"
+    ],
+    "Almond": [
+      "almond"
+    ],
+    "Cloves": [
+      "cloves"
+    ],
+    "Nutty and Caramelized Banana": [
+      "nutty and caramelized banana"
+    ],
+    "Clove": [
+      "clove"
+    ],
+    "Raisins": [
+      "raisins"
+    ],
+    "Blackcherry": [
+      "blackcherry"
+    ],
+    "Brown Spice": [
+      "brown spice"
+    ],
+    "Papaya": [
+      "papaya"
+    ],
+    "Stone Fruit": [
+      "stone fruit"
+    ],
+    "Yellow Plum": [
+      "yellow plum"
+    ],
+    "Rhubarb": [
+      "rhubarb"
+    ],
+    "Strawberry Yogurt": [
+      "strawberry yogurt"
+    ],
+    "Apricot Jam": [
+      "apricot jam"
+    ],
+    "Bergamot": [
+      "bergamot"
+    ],
+    "Kanuka Honey": [
+      "kanuka honey"
+    ],
+    "Cherry Juice": [
+      "cherry juice"
+    ],
+    "Toasted Almond": [
+      "toasted almond"
+    ],
+    "Juicy Stone Fruit": [
+      "juicy stone fruit"
+    ],
+    "Mixed Berries": [
+      "mixed berries"
+    ],
+    "Maple Sweetness": [
+      "maple sweetness"
+    ],
+    "Choco Hazelnut": [
+      "choco hazelnut"
+    ],
+    "Vanilla Bean": [
+      "vanilla bean"
+    ],
+    "Red Florals": [
+      "red florals"
+    ],
+    "Mandarin": [
+      "mandarin"
+    ],
+    "Sunkist": [
+      "sunkist"
+    ],
+    "Red Floral": [
+      "red floral"
+    ],
+    "Aromatic Floral": [
+      "aromatic floral"
+    ],
+    "Red Apples": [
+      "red apples"
+    ],
+    "Blueberry Jam": [
+      "blueberry jam"
+    ],
+    "Mangga": [
+      "mangga"
+    ],
+    "Stroberi": [
+      "stroberi"
+    ],
+    "Peach Tea": [
+      "peach tea"
+    ],
+    "Kismis": [
+      "kismis"
+    ],
+    "Es Kopyor": [
+      "es kopyor"
+    ],
+    "Kue Putu": [
+      "kue putu"
+    ],
+    "Strawberry Sundae": [
+      "strawberry sundae"
+    ],
+    "Creamy Watermelon": [
+      "creamy watermelon"
+    ],
+    "Milkita Melon Candy": [
+      "milkita melon candy"
+    ],
+    "Frozen Grapes": [
+      "frozen grapes"
+    ],
+    "Cedar": [
+      "cedar"
+    ],
+    "Hazelnut": [
+      "hazelnut"
+    ],
+    "Banana Pudding": [
+      "banana pudding"
+    ],
+    "Caramel Tart": [
+      "caramel tart"
+    ],
+    "Bright Finish": [
+      "bright finish"
+    ],
+    "Lime Juice": [
+      "lime juice"
+    ],
+    "Ginger": [
+      "ginger"
+    ],
+    "Sweet Citrus": [
+      "sweet citrus"
+    ],
+    "Long Aftertaste": [
+      "long aftertaste"
+    ],
+    "Palm Sugar Sweetness": [
+      "palm sugar sweetness"
+    ],
+    "Bold Body": [
+      "bold body"
+    ],
+    "Delicate Acid": [
+      "delicate acid"
+    ],
+    "Cacao": [
+      "cacao"
+    ],
+    "Lime Acidity": [
+      "lime acidity"
+    ],
+    "Dry Date / Chocolaty": [
+      "dry date / chocolaty"
+    ],
+    "Nutty / Malty": [
+      "nutty / malty"
+    ],
+    "Mix Berries": [
+      "mix berries"
+    ],
+    "Sugarcane (Tebu)": [
+      "sugarcane (tebu)"
+    ],
+    "Yellow Fruit": [
+      "yellow fruit"
+    ],
+    "Rempah Herbal": [
+      "rempah herbal"
+    ],
+    "Sweet Cedar": [
+      "sweet cedar"
+    ],
+    "Warm Spice": [
+      "warm spice"
+    ],
+    "Lemon Zest": [
+      "lemon zest"
+    ],
+    "Smooth": [
+      "smooth"
+    ],
+    "Syrupy Body": [
+      "syrupy body"
+    ],
+    "Herbal Notes": [
+      "herbal notes"
+    ],
+    "Selai Blueberry": [
+      "selai blueberry"
+    ],
+    "Madu Manis": [
+      "madu manis"
+    ],
+    "Bunga Liar": [
+      "bunga liar"
+    ],
+    "Tea-like Body / Winey Tropical": [
+      "tea-like body / winey tropical"
+    ],
+    "Strong Wine Notes and Aroma": [
+      "strong wine notes and aroma"
+    ],
+    "Berry-like Fruit": [
+      "berry-like fruit"
+    ],
+    "Sweet Finish": [
+      "sweet finish"
+    ],
+    "Milky": [
+      "milky"
+    ],
+    "Chocolate Malt": [
+      "chocolate malt"
+    ],
+    "Dry Fruit": [
+      "dry fruit"
+    ],
+    "Hint of Green...": [
+      "hint of green..."
+    ],
+    "Ripe Fruit Aroma": [
+      "ripe fruit aroma"
+    ],
+    "Medium Body": [
+      "medium body"
+    ],
+    "Clean After Taste": [
+      "clean after taste"
+    ],
+    "Medium Acid like Mango & Green Apple": [
+      "medium acid like mango & green apple"
+    ],
+    "Sugar Browning": [
+      "sugar browning"
+    ],
+    "Green Apple and Citrus": [
+      "green apple and citrus"
+    ],
+    "Dark Fruit": [
+      "dark fruit"
+    ],
+    "Caramel in Aromas": [
+      "caramel in aromas"
+    ],
+    "Low Acid": [
+      "low acid"
+    ],
+    "High Body": [
+      "high body"
+    ],
+    "Butterscotch": [
+      "butterscotch"
+    ],
+    "Cokelat Susu": [
+      "cokelat susu"
+    ],
+    "Rose": [
+      "rose"
+    ],
+    "Chrysanthemum Tea": [
+      "chrysanthemum tea"
+    ],
+    "Blackberries": [
+      "blackberries"
+    ],
+    "Grape Sensation": [
+      "grape sensation"
+    ],
+    "Rite Pineapple": [
+      "rite pineapple"
+    ],
+    "Kokonif": [
+      "kokonif"
+    ],
+    "Starfruit": [
+      "starfruit"
+    ],
+    "Red Currant": [
+      "red currant"
+    ],
+    "Clean Aftertaste": [
+      "clean aftertaste"
+    ],
+    "Herb-like": [
+      "herb-like"
+    ],
+    "Spicy": [
+      "spicy"
+    ],
+    "Mangga Gincu Gedong": [
+      "mangga gincu gedong"
+    ],
+    "Star Fruit": [
+      "star fruit"
+    ],
+    "Maple": [
+      "maple"
+    ],
+    "Sweet Orange": [
+      "sweet orange"
+    ],
+    "White Chocolate": [
+      "white chocolate"
+    ],
+    "Dried Red Grape": [
+      "dried red grape"
+    ],
+    "Chocolatey": [
+      "chocolatey"
+    ],
+    "Cranberry": [
+      "cranberry"
+    ],
+    "Bold": [
+      "bold"
+    ],
+    "Berry-Cocoa": [
+      "berry-cocoa"
+    ],
+    "Spicey": [
+      "spicey"
+    ],
+    "Extra Bold": [
+      "extra bold"
+    ],
+    "Tartaric like Grape": [
+      "tartaric like grape"
+    ],
+    "Vanilla Candy": [
+      "vanilla candy"
+    ],
+    "Sweet Cocoa": [
+      "sweet cocoa"
+    ],
+    "Milky Mango": [
+      "milky mango"
+    ],
+    "Ripe Pineapple": [
+      "ripe pineapple"
+    ],
+    "Candy": [
+      "candy"
+    ],
+    "Blackberry": [
+      "blackberry"
+    ],
+    "Spices": [
+      "spices"
+    ],
+    "Fuji Apple": [
+      "fuji apple"
+    ],
+    "Rosella": [
+      "rosella"
+    ],
+    "Funky Fruity": [
+      "funky fruity"
+    ],
+    "Soft Chocolate": [
+      "soft chocolate"
+    ],
+    "Red Berry": [
+      "red berry"
+    ],
+    "Roasted...": [
+      "roasted..."
+    ],
+    "Strong": [
+      "strong"
+    ],
+    "Sweet Caramel": [
+      "sweet caramel"
+    ],
+    "Tea Like Finish": [
+      "tea like finish"
+    ],
+    "Strong Wine": [
+      "strong wine"
+    ],
+    "Intense": [
+      "intense"
+    ],
+    "Kulit Jeruk (Zest)": [
+      "kulit jeruk (zest)"
+    ],
+    "Sweet Potato": [
+      "sweet potato"
+    ],
+    "Citrus Fruit": [
+      "citrus fruit"
+    ],
+    "Jackfruits": [
+      "jackfruits"
+    ],
+    "Lemon Candy": [
+      "lemon candy"
+    ],
+    "Sweet Tangerine": [
+      "sweet tangerine"
+    ],
+    "Aprikot": [
+      "aprikot"
+    ],
+    "Bitter Sweet Chocolate Malt": [
+      "bitter sweet chocolate malt"
+    ],
+    "Gritty": [
+      "gritty"
+    ],
+    "Bold Chocolate Notes": [
+      "bold chocolate notes"
+    ],
+    "Citrus Acidity": [
+      "citrus acidity"
+    ],
+    "Creamy Honey Nougat Body": [
+      "creamy honey nougat body"
+    ],
+    "Sweet Rockmelon": [
+      "sweet rockmelon"
+    ],
+    "Peanut & Jackfruit": [
+      "peanut & jackfruit"
+    ],
+    "Hint of Dates and Biscuits": [
+      "hint of dates and biscuits"
+    ],
+    "Pear and Grapefruit": [
+      "pear and grapefruit"
+    ],
+    "Orange Mandarine": [
+      "orange mandarine"
+    ],
+    "Strawberry Milk": [
+      "strawberry milk"
+    ],
+    "Herb & Spice": [
+      "herb & spice"
+    ],
+    "Complex Citric": [
+      "complex citric"
+    ],
+    "Floral Finish": [
+      "floral finish"
+    ],
+    "Palm...": [
+      "palm..."
+    ],
+    "Hot: Malic Apple": [
+      "hot: malic apple"
+    ],
+    "Sparkling Citric": [
+      "sparkling citric"
+    ],
+    "Medium: Apple": [
+      "medium: apple"
+    ],
+    "Toasted Coconut": [
+      "toasted coconut"
+    ],
+    "Milk...": [
+      "milk..."
+    ],
+    "Peanut Butter": [
+      "peanut butter"
+    ],
+    "Cranberry Juice": [
+      "cranberry juice"
+    ],
+    "Bright Berries": [
+      "bright berries"
+    ],
+    "Black Tea Body": [
+      "black tea body"
+    ],
+    "Citrus / Bubble Gum": [
+      "citrus / bubble gum"
+    ],
+    "Marzipan": [
+      "marzipan"
+    ],
+    "Dark Chocolatey": [
+      "dark chocolatey"
+    ],
+    "Caramelized": [
+      "caramelized"
+    ],
+    "Chrysanthemum": [
+      "chrysanthemum"
+    ],
+    "Lemonade": [
+      "lemonade"
+    ]
   },
   "noise_patterns": [
     "fresh bean",
