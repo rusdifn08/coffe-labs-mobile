@@ -377,20 +377,22 @@ List<Map<String, dynamic>> getSeedsPart2(String now) => [
         "authorImageUrl": "assets/images/avatars/covers/bayu_prawiro.jpg",
         "beanName": "Gesha & Excelsa Indonesia",
         "variety": "Geisha & Excelsa Wonosalam",
-        "process": "Washed Process",
+        "process": "Washed & Anaerobic Hybrid",
         "method": "Hario Switch + Drip Assist",
         "category": "Hybrid",
         "waterTempCelsius": 93,
-        "grindSize": "Medium",
+        "grindSize": "Medium (25 - 28 Klik Comandante)",
         "coffeeWeightGrams": 15,
         "totalWaterWeightGrams": 220,
         "totalTimeSeconds": 140,
-        "description": "Bayu menggunakan kerangka narasi 'Segitiga Eksposur' kamera mekanis. Agitasi sebagai aperture (lensa), aliran (flow rate) sebagai shutter speed, dan durasi sebagai ISO. Perpaduan biji kopi Excelsa dan Gesha dikelola menggunakan Drip Assist di atas Hario Switch, mengunci rasa asam kompleks ke dalam wadah cairan yang lambat memudar di ujung lidah.",
+        "description": "Resep resmi Segitiga Eksposur (Runner-Up World Brewers Cup 2025). Mengadopsi prinsip fotografi: Agitasi sebagai Aperture (Drip Assist untuk aliran tetes seragam rendah turbulensi), Debit aliran sebagai Shutter Speed (manipulasi buka-tutup katup Switch), dan Waktu kontak sebagai ISO. Menggunakan teknik suhu bertingkat 93°C ke 88°C dalam 4 langkah terukur untuk mengunci keasaman buah aromatik dan kemanisan tebal.",
         "isCustom": false,
         "createdAt": now,
         "steps": [
-          {"stepOrder": 1, "title": "Aperture Bloom", "durationSeconds": 40, "waterAddedGrams": 60},
-          {"stepOrder": 2, "title": "Shutter Pour", "durationSeconds": 100, "waterAddedGrams": 160}
+          {"stepOrder": 1, "title": "0:00 (Buka) 40g Air 93°C - Aperture Bloom", "durationSeconds": 40, "waterAddedGrams": 40},
+          {"stepOrder": 2, "title": "0:40 (Tutup) +80g Air 88°C - Shutter Immersion I", "durationSeconds": 40, "waterAddedGrams": 80},
+          {"stepOrder": 3, "title": "1:20 (Tutup) +100g Air 88°C - ISO Immersion II", "durationSeconds": 40, "waterAddedGrams": 100},
+          {"stepOrder": 4, "title": "2:00 (Buka) Tiris Drawdown s/d 2:20 - Release", "durationSeconds": 20, "waterAddedGrams": 0}
         ]
       },
 ];

@@ -26,22 +26,28 @@ void main() {
       'iceWeightGrams': 0,
       'steps': [
         {
-          'title': 'Tahap 1: Perkolasi Terbuka (Aperture)',
-          'durationSeconds': 80,
-          'waterAddedGrams': 120,
-          'instruction': 'Katup Switch OPEN. Tuang 60g + 60g air 93°C via Hario Drip Assist.',
+          'title': '0:00 (Buka) 40g Air 93°C - Aperture Bloom',
+          'durationSeconds': 40,
+          'waterAddedGrams': 40,
+          'instruction': 'Katup Switch OPEN. Tuang 40g air 93°C via Drip Assist untuk ekstraksi asam bunga.',
         },
         {
-          'title': 'Tahap 2: Imersi Tertutup (Shutter & ISO)',
+          'title': '0:40 (Tutup) +80g Air 88°C - Shutter Immersion I',
+          'durationSeconds': 40,
+          'waterAddedGrams': 80,
+          'instruction': 'Katup Switch CLOSED. Tuang +80g air 88°C (total 120g). Rendam imersi hingga 1:20.',
+        },
+        {
+          'title': '1:20 (Tutup) +100g Air 88°C - ISO Immersion II',
           'durationSeconds': 40,
           'waterAddedGrams': 100,
-          'instruction': 'Tutup katup ke CLOSED. Tuang 100g air 88°C. Imersi rendam hingga 2:00.',
+          'instruction': 'Katup Switch CLOSED. Tuang +100g air 88°C (total 220g). Imersi hingga 2:00 kunci sweetness.',
         },
         {
-          'title': 'Tahap 3: Drawdown Akhir (Total 2:20)',
+          'title': '2:00 (Buka) Tiris Drawdown s/d 2:20 - Release',
           'durationSeconds': 20,
           'waterAddedGrams': 0,
-          'instruction': 'Buka katup Switch ke OPEN di 2:00. Tiriskan tuntas hingga 2:20.',
+          'instruction': 'Buka katup Switch ke OPEN di 2:00. Tiriskan tuntas ke server hingga 2:20.',
         },
       ],
     };
