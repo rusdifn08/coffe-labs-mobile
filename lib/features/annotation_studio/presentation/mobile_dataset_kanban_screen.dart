@@ -257,31 +257,51 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
           ],
         ),
         actions: [
-          // Demo Dataset Button
-          IconButton(
-            tooltip: 'Muat Contoh Kemasan Demo',
-            padding: const EdgeInsets.all(7),
+          // More Utilities Menu (Muat Demo & Import coffee.json) - prevents header overflow
+          PopupMenuButton<String>(
+            tooltip: 'Menu Opsi Dataset',
+            icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF6B4423), size: 21),
+            padding: const EdgeInsets.all(4),
             constraints: const BoxConstraints(),
-            icon: const Icon(Icons.auto_awesome, color: Color(0xFFD97706), size: 19),
-            onPressed: _loadDemoDataset,
-          ),
-          // Import coffee.json Button
-          IconButton(
-            tooltip: 'Import coffee.json',
-            padding: const EdgeInsets.all(7),
-            constraints: const BoxConstraints(),
-            icon: const Icon(Icons.file_download_outlined, color: Color(0xFF6B4423), size: 19),
-            onPressed: () async {
-              final count = await notifier.importCoffeeJson();
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('$count class katalog berhasil diimpor dari coffee.json.'),
-                    backgroundColor: const Color(0xFF10B981),
-                  ),
-                );
+            color: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            onSelected: (value) async {
+              if (value == 'demo') {
+                await _loadDemoDataset();
+              } else if (value == 'import') {
+                final count = await notifier.importCoffeeJson();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('$count class katalog berhasil diimpor dari coffee.json.'),
+                      backgroundColor: const Color(0xFF10B981),
+                    ),
+                  );
+                }
               }
             },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'demo',
+                child: Row(
+                  children: [
+                    Icon(Icons.auto_awesome, color: Color(0xFFD97706), size: 18),
+                    SizedBox(width: 10),
+                    Text('Muat Contoh Demo', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500)),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'import',
+                child: Row(
+                  children: [
+                    Icon(Icons.file_download_outlined, color: Color(0xFF6B4423), size: 18),
+                    SizedBox(width: 10),
+                    Text('Import coffee.json', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500)),
+                  ],
+                ),
+              ),
+            ],
           ),
           // Auto-Label Batch Button
           Padding(
@@ -583,8 +603,28 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
                   fit: StackFit.expand,
                   children: [
                     fileExists
-                        ? Image.file(file, fit: BoxFit.cover)
-                        : Container(
+                        ? Image.file(
+                            file,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              color: const Color(0xFFF3EDE6),
+                              child: const Center(
+                                child: Icon(Icons.image_not_supported_rounded, color: Color(0xFF8F857D), size: 28),
+                              ),
+                            ),
+                          )
+                        : item.filePath.startsWith('assets/')
+                            ? Image.asset(
+                                item.filePath,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  color: const Color(0xFFF3EDE6),
+                                  child: const Center(
+                                    child: Icon(Icons.broken_image_rounded, color: Color(0xFFEF4444), size: 28),
+                                  ),
+                                ),
+                              )
+                            : Container(
                             color: const Color(0xFFF3EDE6),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,

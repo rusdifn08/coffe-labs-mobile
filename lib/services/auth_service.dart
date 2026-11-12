@@ -522,8 +522,16 @@ class AuthService {
     changeNotifier.value++;
   }
 
+  static DateTime? _lastSyncTime;
+
   /// Sinkronisasi data profil pengguna terkini dari server backend (Ground Truth RBAC)
-  static Future<AuthUser?> syncProfile() async {
+  static Future<AuthUser?> syncProfile({bool force = false}) async {
+    final now = DateTime.now();
+    if (!force && _lastSyncTime != null && now.difference(_lastSyncTime!) < const Duration(seconds: 15)) {
+      return getCurrentUser();
+    }
+    _lastSyncTime = now;
+
     try {
       final token = await getToken();
       if (token == null || token.isEmpty) return null;
@@ -547,7 +555,11 @@ class AuthService {
         if (rawUser != null) {
           final user = AuthUser.fromJson(rawUser as Map<String, dynamic>);
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(_userKey, json.encode(user.toJson()));
+          final oldUserJson = prefs.getString(_userKey);
+          final newUserJson = json.encode(user.toJson());
+          final hasChanged = oldUserJson != newUserJson;
+
+          await prefs.setString(_userKey, newUserJson);
 
           if (user.isBusiness || user.isAdmin) {
             await SubscriptionService.activatePlan(
@@ -567,7 +579,9 @@ class AuthService {
             await TrialService.setTrialMode(true);
           }
 
-          changeNotifier.value++;
+          if (hasChanged) {
+            changeNotifier.value++;
+          }
           return user;
         }
       }

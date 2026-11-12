@@ -108,6 +108,10 @@ class SubscriptionService {
     String paymentMethod = 'QRIS Instant',
   }) async {
     final prefs = await SharedPreferences.getInstance();
+    final currentPlanStr = prefs.getString(_planKey);
+    final isPrem = prefs.getBool(_premiumKey) ?? false;
+    final isAlreadySame = (currentPlanStr == plan.id && isPrem);
+
     await prefs.setString(_planKey, plan.id);
     await prefs.setString(_activatedAtKey, DateTime.now().toIso8601String());
     await prefs.setString(_paymentMethodKey, paymentMethod);
@@ -116,12 +120,18 @@ class SubscriptionService {
     // Nonaktifkan batasan kuota trial
     await TrialService.setTrialMode(false);
 
-    changeNotifier.value++;
+    if (!isAlreadySame) {
+      changeNotifier.value++;
+    }
   }
 
   /// Reset akun kembali ke mode Trial (misal saat logout / demo)
   static Future<void> resetToTrial() async {
     final prefs = await SharedPreferences.getInstance();
+    final currentPlanStr = prefs.getString(_planKey);
+    final isPrem = prefs.getBool(_premiumKey) ?? false;
+    final isAlreadyTrial = (currentPlanStr == null && !isPrem);
+
     await prefs.remove(_planKey);
     await prefs.remove(_activatedAtKey);
     await prefs.remove(_paymentMethodKey);
@@ -129,7 +139,9 @@ class SubscriptionService {
 
     await TrialService.setTrialMode(true);
 
-    changeNotifier.value++;
+    if (!isAlreadyTrial) {
+      changeNotifier.value++;
+    }
   }
 
   /// Dapatkan tanggal aktivasi paket

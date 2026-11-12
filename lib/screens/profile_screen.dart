@@ -38,6 +38,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   int _pendingFeedbackCount = 0;
   GamificationStats? _gamificationStats;
   bool _isLoading = true;
+  bool _isSyncing = false;
+  DateTime? _lastAdminStatsFetch;
 
   @override
   void initState() {
@@ -63,101 +65,116 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _loadProfileData() async {
-    // 1. Sinkronisasi status profil terbaru dari backend server di background (jika online)
-    AuthUser? user = await AuthService.getCurrentUser();
-    if (user != null) {
-      AuthService.syncProfile().then((synced) {
-        if (synced != null && mounted && synced.tier != user.tier) {
-          _loadProfileData();
-        }
-      }).catchError((_) {});
-    }
+    if (_isSyncing) return;
+    _isSyncing = true;
 
-    final plan = await SubscriptionService.getCurrentPlan();
-    final isTrial = await TrialService.isTrialMode();
-    final name = await ProfileService.getUserName();
-    final avatar = await ProfileService.getUserImagePath();
-    final gStats = await GamificationService.instance.getStats();
-
-    // Validasi RBAC tingkat tinggi: deteksi status Business atau Pro secara ketat
-    // Jika ada akun login resmi, OTORITAS TERTINGGI adalah akun tersebut, BUKAN preferensi lokal!
-    final bool isBusinessUser = user != null
-        ? (user.isAdmin || user.isBusiness || user.username.toLowerCase() == 'bisnis123')
-        : (plan.tier == SubscriptionTier.business);
-
-    final bool isProUser = user != null
-        ? (user.isPro || isBusinessUser)
-        : (plan.tier == SubscriptionTier.pro || isBusinessUser);
-
-    final effectivePlan = isBusinessUser
-        ? SubscriptionPlan.business
-        : (isProUser ? SubscriptionPlan.pro : SubscriptionPlan.trial);
-
-    // Auto-repair & auto-heal persistensi lokal
-    if (isBusinessUser || isProUser) {
-      if (isTrial || plan.tier == SubscriptionTier.trial) {
-        await TrialService.setTrialMode(false);
-        await SubscriptionService.activatePlan(
-          effectivePlan,
-          paymentMethod: isBusinessUser ? 'Business Commercial License' : 'Pro Lifetime License',
-        );
+    try {
+      // 1. Sinkronisasi status profil terbaru dari backend server di background (jika online)
+      AuthUser? user = await AuthService.getCurrentUser();
+      if (user != null) {
+        AuthService.syncProfile().then((synced) {
+          if (synced != null && mounted && synced.tier != user.tier) {
+            setState(() {
+              _currentUser = synced;
+            });
+          }
+        }).catchError((_) {});
       }
-    } else if (user != null) {
-      // Auto-heal: Akun terdaftar biasa (trial) yang sebelumnya tercemar lisensi lokal direset tuntas!
-      if (plan.tier != SubscriptionTier.trial) {
-        await SubscriptionService.resetToTrial();
-      }
-      if (!isTrial) {
-        await TrialService.setTrialMode(true);
-      }
-    }
 
-    int totalUsers = 0;
-    int newRegistrations = 0;
-    int pendingFbCount = 0;
-    if (user != null && user.isAdmin) {
-      try {
-        final stats = await AuthService.getAdminUserStats();
-        if (stats.totalUsers > 0) {
-          totalUsers = stats.totalUsers;
-          newRegistrations = stats.newRegistrations7d;
-        } else {
-          final users = await AuthService.getAdminUsers();
-          totalUsers = users.length;
-          newRegistrations = users.where((u) {
-            if (u.status == 'pending') return true;
-            if (u.createdAt == null) return false;
-            try {
-              return DateTime.now().difference(DateTime.parse(u.createdAt!)).inDays <= 7;
-            } catch (_) {
-              return false;
-            }
-          }).length;
+      final plan = await SubscriptionService.getCurrentPlan();
+      final isTrial = await TrialService.isTrialMode();
+      final name = await ProfileService.getUserName();
+      final avatar = await ProfileService.getUserImagePath();
+      final gStats = await GamificationService.instance.getStats();
+
+      // Validasi RBAC tingkat tinggi: deteksi status Business atau Pro secara ketat
+      // Jika ada akun login resmi, OTORITAS TERTINGGI adalah akun tersebut, BUKAN preferensi lokal!
+      final bool isBusinessUser = user != null
+          ? (user.isAdmin || user.isBusiness || user.username.toLowerCase() == 'bisnis123')
+          : (plan.tier == SubscriptionTier.business);
+
+      final bool isProUser = user != null
+          ? (user.isPro || isBusinessUser)
+          : (plan.tier == SubscriptionTier.pro || isBusinessUser);
+
+      final effectivePlan = isBusinessUser
+          ? SubscriptionPlan.business
+          : (isProUser ? SubscriptionPlan.pro : SubscriptionPlan.trial);
+
+      // Auto-repair & auto-heal persistensi lokal
+      if (isBusinessUser || isProUser) {
+        if (isTrial || plan.tier == SubscriptionTier.trial) {
+          await TrialService.setTrialMode(false);
+          await SubscriptionService.activatePlan(
+            effectivePlan,
+            paymentMethod: isBusinessUser ? 'Business Commercial License' : 'Pro Lifetime License',
+          );
         }
-      } catch (_) {}
-
-      try {
-        final fbStats = await FeedbackService.getFeedbackStats();
-        if (fbStats != null) {
-          pendingFbCount = fbStats.pending;
+      } else if (user != null) {
+        // Auto-heal: Akun terdaftar biasa (trial) yang sebelumnya tercemar lisensi lokal direset tuntas!
+        if (plan.tier != SubscriptionTier.trial) {
+          await SubscriptionService.resetToTrial();
         }
-      } catch (_) {}
-    }
+        if (!isTrial) {
+          await TrialService.setTrialMode(true);
+        }
+      }
 
-    if (!mounted) return;
-    setState(() {
-      _currentUser = user;
-      _currentPlan = effectivePlan;
-      // Pengguna adalah trial jika bukan admin, bukan business, dan bukan pro
-      _isTrial = !isProUser && !isBusinessUser && (user == null || !user.isAdmin);
-      _displayName = user?.fullName ?? name;
-      _avatarPath = user?.avatarUrl.isNotEmpty == true ? user!.avatarUrl : avatar;
-      _totalUsersCount = totalUsers;
-      _newRegistrationsCount = newRegistrations;
-      _pendingFeedbackCount = pendingFbCount;
-      _gamificationStats = gStats;
-      _isLoading = false;
-    });
+      int totalUsers = _totalUsersCount;
+      int newRegistrations = _newRegistrationsCount;
+      int pendingFbCount = _pendingFeedbackCount;
+
+      final now = DateTime.now();
+      final shouldFetchStats = _lastAdminStatsFetch == null ||
+          now.difference(_lastAdminStatsFetch!) > const Duration(seconds: 30);
+
+      if (user != null && user.isAdmin && shouldFetchStats) {
+        _lastAdminStatsFetch = now;
+        try {
+          final stats = await AuthService.getAdminUserStats();
+          if (stats.totalUsers > 0) {
+            totalUsers = stats.totalUsers;
+            newRegistrations = stats.newRegistrations7d;
+          } else {
+            final users = await AuthService.getAdminUsers();
+            totalUsers = users.length;
+            newRegistrations = users.where((u) {
+              if (u.status == 'pending') return true;
+              if (u.createdAt == null) return false;
+              try {
+                return DateTime.now().difference(DateTime.parse(u.createdAt!)).inDays <= 7;
+              } catch (_) {
+                return false;
+              }
+            }).length;
+          }
+        } catch (_) {}
+
+        try {
+          final fbStats = await FeedbackService.getFeedbackStats();
+          if (fbStats != null) {
+            pendingFbCount = fbStats.pending;
+          }
+        } catch (_) {}
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _currentUser = user;
+        _currentPlan = effectivePlan;
+        // Pengguna adalah trial jika bukan admin, bukan business, dan bukan pro
+        _isTrial = !isProUser && !isBusinessUser && (user == null || !user.isAdmin);
+        _displayName = user?.fullName ?? name;
+        _avatarPath = user?.avatarUrl.isNotEmpty == true ? user!.avatarUrl : avatar;
+        _totalUsersCount = totalUsers;
+        _newRegistrationsCount = newRegistrations;
+        _pendingFeedbackCount = pendingFbCount;
+        _gamificationStats = gStats;
+        _isLoading = false;
+      });
+    } finally {
+      _isSyncing = false;
+    }
   }
 
   Future<void> _handleLogout() async {

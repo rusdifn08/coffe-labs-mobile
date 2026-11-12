@@ -7,6 +7,11 @@ import 'auth_service.dart';
 
 class FeedbackService {
   static final ValueNotifier<int> changeNotifier = ValueNotifier<int>(0);
+  static final http.Client _client = http.Client();
+
+  static FeedbackStatsData? _cachedStats;
+  static DateTime? _cachedStatsTime;
+  static const Duration _statsCacheTtl = Duration(seconds: 30);
 
   static const List<String> commonFeatures = [
     'Brew Timer & Stopwatch',
@@ -63,10 +68,12 @@ class FeedbackService {
         'device_info': devicePlatform,
       });
 
-      final response = await http.post(uri, headers: headers, body: body)
+      final response = await _client.post(uri, headers: headers, body: body)
           .timeout(const Duration(seconds: 25));
 
       if (response.statusCode == 201) {
+        _cachedStats = null;
+        _cachedStatsTime = null;
         changeNotifier.value++;
         return true;
       }
@@ -95,7 +102,7 @@ class FeedbackService {
         urlStr += 'category=$category&';
       }
 
-      final response = await http.get(
+      final response = await _client.get(
         Uri.parse(urlStr),
         headers: {
           'Content-Type': 'application/json',
@@ -115,16 +122,23 @@ class FeedbackService {
     }
   }
 
-  /// Mengambil ringkasan statistik feedback untuk Admin
-  static Future<FeedbackStatsData?> getFeedbackStats() async {
+  /// Mengambil ringkasan statistik feedback untuk Admin (dengan cache TTL 30s)
+  static Future<FeedbackStatsData?> getFeedbackStats({bool forceRefresh = false}) async {
+    final now = DateTime.now();
+    if (!forceRefresh && _cachedStats != null && _cachedStatsTime != null) {
+      if (now.difference(_cachedStatsTime!) < _statsCacheTtl) {
+        return _cachedStats;
+      }
+    }
+
     try {
       final token = await AuthService.getToken();
-      if (token == null) return null;
+      if (token == null) return _cachedStats;
 
       final baseUrl = await AuthService.getBaseUrl();
       final uri = Uri.parse('$baseUrl/api/admin/feedbacks/stats');
 
-      final response = await http.get(
+      final response = await _client.get(
         uri,
         headers: {
           'Content-Type': 'application/json',
@@ -135,13 +149,19 @@ class FeedbackService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
         if (data['data'] != null) {
-          return FeedbackStatsData.fromJson(data['data'] as Map<String, dynamic>);
+          _cachedStats = FeedbackStatsData.fromJson(data['data'] as Map<String, dynamic>);
+          _cachedStatsTime = DateTime.now();
+          return _cachedStats;
         }
       }
-      return null;
+      return _cachedStats;
+    } on SocketException catch (e) {
+      // Gracefully handle socket/offline exception without spamming console
+      debugPrint('FeedbackService: network unavailable (${e.message})');
+      return _cachedStats;
     } catch (e) {
       debugPrint('Error fetching feedback stats: $e');
-      return null;
+      return _cachedStats;
     }
   }
 
@@ -158,7 +178,7 @@ class FeedbackService {
       final baseUrl = await AuthService.getBaseUrl();
       final uri = Uri.parse('$baseUrl/api/admin/feedbacks/$feedbackId/status');
 
-      final response = await http.post(
+      final response = await _client.post(
         uri,
         headers: {
           'Content-Type': 'application/json',
@@ -171,6 +191,8 @@ class FeedbackService {
       ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
+        _cachedStats = null;
+        _cachedStatsTime = null;
         changeNotifier.value++;
         return true;
       }
@@ -190,7 +212,7 @@ class FeedbackService {
       final baseUrl = await AuthService.getBaseUrl();
       final uri = Uri.parse('$baseUrl/api/admin/feedbacks/$feedbackId');
 
-      final response = await http.delete(
+      final response = await _client.delete(
         uri,
         headers: {
           'Content-Type': 'application/json',
@@ -199,6 +221,8 @@ class FeedbackService {
       ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
+        _cachedStats = null;
+        _cachedStatsTime = null;
         changeNotifier.value++;
         return true;
       }

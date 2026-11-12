@@ -647,13 +647,17 @@ class _MobileFullAnnotationStudioScreenState
               'Studio Anotasi AI',
               style: TextStyle(
                 color: textDark,
-                fontSize: 15,
+                fontSize: 14.5,
                 fontWeight: FontWeight.bold,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             Text(
               'Roboflow Engine • On-Device Segmenter',
-              style: TextStyle(color: textMuted, fontSize: 10),
+              style: TextStyle(color: textMuted, fontSize: 9.5),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -661,9 +665,11 @@ class _MobileFullAnnotationStudioScreenState
           // Undo Button
           IconButton(
             tooltip: 'Undo (Urungkan)',
+            padding: const EdgeInsets.all(4),
+            constraints: const BoxConstraints(),
             icon: Icon(
               Icons.undo_rounded,
-              size: 20,
+              size: 19,
               color: state.canUndo ? textDark : textMuted.withValues(alpha: 0.35),
             ),
             onPressed: state.canUndo ? () => notifier.undo() : null,
@@ -672,9 +678,11 @@ class _MobileFullAnnotationStudioScreenState
           // Redo Button
           IconButton(
             tooltip: 'Redo (Ulangi)',
+            padding: const EdgeInsets.all(4),
+            constraints: const BoxConstraints(),
             icon: Icon(
               Icons.redo_rounded,
-              size: 20,
+              size: 19,
               color: state.canRedo ? textDark : textMuted.withValues(alpha: 0.35),
             ),
             onPressed: state.canRedo ? () => notifier.redo() : null,
@@ -682,12 +690,12 @@ class _MobileFullAnnotationStudioScreenState
 
           // Auto-Label + OCR Button
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 foregroundColor: Colors.white,
                 backgroundColor: const Color(0xFF7C3AED),
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 0),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
                 minimumSize: const Size(0, 32),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 elevation: 0,
@@ -701,7 +709,9 @@ class _MobileFullAnnotationStudioScreenState
           // Save / Done Button
           IconButton(
             tooltip: 'Simpan Anotasi',
-            icon: const Icon(Icons.check_circle_rounded, color: Color(0xFF059669), size: 24),
+            padding: const EdgeInsets.all(4),
+            constraints: const BoxConstraints(),
+            icon: const Icon(Icons.check_circle_rounded, color: Color(0xFF059669), size: 22),
             onPressed: () {
               Navigator.of(context).pop();
             },

@@ -24,6 +24,9 @@ class TrialService {
   /// Aktifkan / nonaktifkan mode trial
   static Future<void> setTrialMode(bool isTrial) async {
     final prefs = await SharedPreferences.getInstance();
+    final current = prefs.getBool(_trialModeKey);
+    if (current == isTrial) return;
+
     await prefs.setBool(_trialModeKey, isTrial);
     if (isTrial) {
       // Jika baru masuk trial, pastikan ada nama tamu
