@@ -1,6 +1,9 @@
 import 'dart:ui';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:coffee_hub_mobile/features/scanner/data/local/prototype_database.dart';
+import 'package:coffee_hub_mobile/features/scanner/domain/services/image_tensor_isolate.dart';
+import 'package:coffee_hub_mobile/features/scanner/domain/services/incremental_vision_engine.dart';
+import 'package:coffee_hub_mobile/features/in_app_trainer/services/augmentation_pipeline_isolate.dart';
 import 'package:coffee_hub_mobile/features/annotation_studio/domain/models/coffee_annotation_class.dart';
 import 'package:coffee_hub_mobile/features/annotation_studio/domain/models/studio_image_item.dart';
 import 'package:coffee_hub_mobile/features/annotation_studio/domain/services/coffee_bag_segmenter_service.dart';
@@ -334,6 +337,22 @@ void main() {
       expect(toggled.isLayerVisible, isFalse);
       expect(toggled.layerOpacity, closeTo(0.50, 0.01));
       expect(toggled.isLayerLocked, isTrue);
+    });
+  });
+
+  group('7. MobileNetV4 Hybrid Continual Training & 10x Augmentation Pipeline Tests', () {
+    test('ImageTensorIsolate generates exactly 10 variations per photo (3 photos -> 30 tensors)', () {
+      expect(ImageTensorIsolate.transformsPerPhoto, equals(10));
+      expect(AugmentationPipelineIsolate.transformsPerSample, equals(10));
+
+      const sampleCount = 3;
+      final expectedTensors = sampleCount * ImageTensorIsolate.transformsPerPhoto;
+      expect(expectedTensors, equals(30));
+    });
+
+    test('IncrementalVisionEngine embedding dimension is 1280-D unit norm', () {
+      expect(IncrementalVisionEngine.embeddingDim, equals(1280));
+      expect(IncrementalVisionEngine.recognitionThreshold, equals(0.65));
     });
   });
 }

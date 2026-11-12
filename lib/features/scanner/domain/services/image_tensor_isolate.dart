@@ -39,9 +39,10 @@ class PreprocessInputDto {
   });
 }
 
-/// Pure Dart background Isolate preprocessing and 15x augmentation pipeline
+/// Pure Dart background Isolate preprocessing and 10x augmentation pipeline (3 photos -> 30 tensors)
 class ImageTensorIsolate {
   static const int targetSize = 256;
+  static const int transformsPerPhoto = 10;
   static const double meanR = 0.485;
   static const double meanG = 0.456;
   static const double meanB = 0.406;
@@ -86,13 +87,13 @@ class ImageTensorIsolate {
     });
   }
 
-  /// Runs multi-sample augmentation in Isolate: generates 5 augmented variations per photo
-  /// (e.g. 3 photos -> 15 tensors, 5 photos -> 25 tensors)
+  /// Runs multi-sample augmentation in Isolate: generates exactly 10 augmented variations per photo
+  /// (e.g. 3 photos -> 30 distinct tensors, 5 photos -> 50 tensors)
   static Future<List<ImageTensorSample>> augmentPhotos({
     required List<PreprocessInputDto> inputs,
-    void Function(int current, int total)? onProgress,
+    void Function(int current, int total, String transformName, Uint8List? previewBytes)? onProgress,
   }) async {
-    final expectedTotal = inputs.length * 5;
+    final expectedTotal = inputs.length * transformsPerPhoto;
     final allResults = <ImageTensorSample>[];
 
     for (final dto in inputs) {
@@ -107,9 +108,14 @@ class ImageTensorIsolate {
           tensor: item.tensor,
           previewJpegBytes: item.previewBytes,
         ));
-      }
 
-      onProgress?.call(allResults.length, expectedTotal);
+        onProgress?.call(
+          allResults.length,
+          expectedTotal,
+          item.transformName,
+          item.previewBytes,
+        );
+      }
     }
 
     return allResults;
@@ -144,32 +150,55 @@ class ImageTensorIsolate {
 
     final results = <_AugmentedBatchDto>[];
 
-    // 1. Original 256x256
-    results.add(_toBatchDto(input.sampleId, 'original', base256));
+    // 1. Original 256x256 Base Normalized Pouch
+    results.add(_toBatchDto(input.sampleId, 'original_crop', base256));
 
-    // 2. Horizontal Flip (Mirrored Invariance)
+    // 2. Horizontal Flip (Package Symmetry Invariance)
     final flipped = img.flipHorizontal(img.Image.from(base256));
-    results.add(_toBatchDto(input.sampleId, 'horizontal_flip', flipped));
+    results.add(_toBatchDto(input.sampleId, 'mirror_flip', flipped));
 
-    // 3. Rotation (+8 deg) + 90% Center Zoom Crop
-    final rotated = img.copyRotate(base256, angle: 8, interpolation: img.Interpolation.linear);
-    final zoomW = (rotated.width * 0.90).toInt();
-    final zoomH = (rotated.height * 0.90).toInt();
-    final zoomX = (rotated.width - zoomW) ~/ 2;
-    final zoomY = (rotated.height - zoomH) ~/ 2;
-    final zoomCrop = img.copyCrop(rotated, x: zoomX, y: zoomY, width: zoomW, height: zoomH);
-    final zoomResized = img.copyResize(zoomCrop, width: targetSize, height: targetSize);
-    results.add(_toBatchDto(input.sampleId, 'rotate_zoom', zoomResized));
+    // 3. Rotation (+8 deg) + 92% Center Zoom Crop
+    final rotPos = img.copyRotate(base256, angle: 8, interpolation: img.Interpolation.linear);
+    results.add(_toBatchDto(input.sampleId, 'rotate_cw_8', _centerZoomCrop(rotPos, 0.92)));
 
-    // 4. Warm Cafe Lighting Jitter (+8% brightness, +10% contrast)
-    final warm = _adjustBrightnessContrast(base256, brightnessMul: 1.08, contrastMul: 1.10, warmFilter: true);
-    results.add(_toBatchDto(input.sampleId, 'warm_lighting', warm));
+    // 4. Rotation (-8 deg) + 92% Center Zoom Crop
+    final rotNeg = img.copyRotate(base256, angle: -8, interpolation: img.Interpolation.linear);
+    results.add(_toBatchDto(input.sampleId, 'rotate_ccw_8', _centerZoomCrop(rotNeg, 0.92)));
 
-    // 5. Dim Shadow Simulation (-8% brightness)
-    final dim = _adjustBrightnessContrast(base256, brightnessMul: 0.92, contrastMul: 1.02, warmFilter: false);
-    results.add(_toBatchDto(input.sampleId, 'dim_shadow', dim));
+    // 5. Warm Cafe Ambient Lighting (+12% Red, -6% Blue, +8% Contrast)
+    final warm = _adjustLightingTone(base256, rMul: 1.12, gMul: 1.02, bMul: 0.94, brightness: 1.05, contrast: 1.08);
+    results.add(_toBatchDto(input.sampleId, 'warm_cafe_ambient', warm));
+
+    // 6. Cool Fluorescent Supermarket Lighting (+10% Blue, -5% Red, +5% Brightness)
+    final cool = _adjustLightingTone(base256, rMul: 0.95, gMul: 1.01, bMul: 1.10, brightness: 1.05, contrast: 1.02);
+    results.add(_toBatchDto(input.sampleId, 'cool_fluorescent', cool));
+
+    // 7. Dim Shadow Crease Simulation (-14% brightness, +10% contrast)
+    final dim = _adjustLightingTone(base256, rMul: 1.0, gMul: 1.0, bMul: 1.0, brightness: 0.86, contrast: 1.10);
+    results.add(_toBatchDto(input.sampleId, 'dim_shadow_crease', dim));
+
+    // 8. Bright Window Glare (Soft radial highlight simulation)
+    final glare = _applyWindowGlare(base256);
+    results.add(_toBatchDto(input.sampleId, 'bright_window_glare', glare));
+
+    // 9. Directional Motion Blur (Simulating slight hand tremor)
+    final blur = _applyMotionBlur(base256);
+    results.add(_toBatchDto(input.sampleId, 'hand_held_motion_blur', blur));
+
+    // 10. Sensor Noise & Corner Occlusion (High ISO sensor grain + subtle barista thumb/sticker cutout)
+    final noise = _applySensorNoiseAndCutout(base256);
+    results.add(_toBatchDto(input.sampleId, 'sensor_noise_cutout', noise));
 
     return results;
+  }
+
+  static img.Image _centerZoomCrop(img.Image src, double scaleRatio) {
+    final zoomW = (src.width * scaleRatio).toInt().clamp(1, src.width);
+    final zoomH = (src.height * scaleRatio).toInt().clamp(1, src.height);
+    final zoomX = (src.width - zoomW) ~/ 2;
+    final zoomY = (src.height - zoomH) ~/ 2;
+    final zoomCrop = img.copyCrop(src, x: zoomX, y: zoomY, width: zoomW, height: zoomH);
+    return img.copyResize(zoomCrop, width: targetSize, height: targetSize, interpolation: img.Interpolation.linear);
   }
 
   static _AugmentedBatchDto _toBatchDto(String sampleId, String name, img.Image image) {
@@ -183,11 +212,13 @@ class ImageTensorIsolate {
     );
   }
 
-  static img.Image _adjustBrightnessContrast(
+  static img.Image _adjustLightingTone(
     img.Image src, {
-    required double brightnessMul,
-    required double contrastMul,
-    required bool warmFilter,
+    required double rMul,
+    required double gMul,
+    required double bMul,
+    required double brightness,
+    required double contrast,
   }) {
     final out = img.Image(width: src.width, height: src.height);
     for (int y = 0; y < src.height; y++) {
@@ -198,15 +229,9 @@ class ImageTensorIsolate {
         var b = pixel.b.toDouble();
 
         // Brightness & Contrast adjustment
-        r = ((r - 128.0) * contrastMul + 128.0) * brightnessMul;
-        g = ((g - 128.0) * contrastMul + 128.0) * brightnessMul;
-        b = ((b - 128.0) * contrastMul + 128.0) * brightnessMul;
-
-        // Warm tint simulation (tungsten shift)
-        if (warmFilter) {
-          r = r * 1.05;
-          b = b * 0.95;
-        }
+        r = ((r - 128.0) * contrast + 128.0) * brightness * rMul;
+        g = ((g - 128.0) * contrast + 128.0) * brightness * gMul;
+        b = ((b - 128.0) * contrast + 128.0) * brightness * bMul;
 
         out.setPixelRgb(
           x,
@@ -217,6 +242,78 @@ class ImageTensorIsolate {
         );
       }
     }
+    return out;
+  }
+
+  static img.Image _applyWindowGlare(img.Image src) {
+    final out = img.Image.from(src);
+    const cx = targetSize * 0.35;
+    const cy = targetSize * 0.30;
+    const radius = targetSize * 0.40;
+
+    for (int y = 0; y < targetSize; y++) {
+      for (int x = 0; x < targetSize; x++) {
+        final dx = x - cx;
+        final dy = y - cy;
+        final dist = (dx * dx + dy * dy) / (radius * radius);
+        if (dist < 1.0) {
+          final factor = (1.0 - dist) * 0.35;
+          final p = out.getPixel(x, y);
+          final r = (p.r * (1.0 - factor) + 255 * factor).clamp(0, 255).toInt();
+          final g = (p.g * (1.0 - factor) + 255 * factor).clamp(0, 255).toInt();
+          final b = (p.b * (1.0 - factor) + 255 * factor).clamp(0, 255).toInt();
+          out.setPixelRgb(x, y, r, g, b);
+        }
+      }
+    }
+    return out;
+  }
+
+  static img.Image _applyMotionBlur(img.Image src) {
+    final out = img.Image(width: src.width, height: src.height);
+    for (int y = 0; y < src.height; y++) {
+      for (int x = 0; x < src.width; x++) {
+        // Horizontal 3-tap box filter
+        final p0 = src.getPixel(x > 0 ? x - 1 : x, y);
+        final p1 = src.getPixel(x, y);
+        final p2 = src.getPixel(x < src.width - 1 ? x + 1 : x, y);
+
+        final r = ((p0.r + p1.r * 2 + p2.r) ~/ 4).clamp(0, 255);
+        final g = ((p0.g + p1.g * 2 + p2.g) ~/ 4).clamp(0, 255);
+        final b = ((p0.b + p1.b * 2 + p2.b) ~/ 4).clamp(0, 255);
+
+        out.setPixelRgb(x, y, r, g, b);
+      }
+    }
+    return out;
+  }
+
+  static img.Image _applySensorNoiseAndCutout(img.Image src) {
+    final out = img.Image.from(src);
+    // 1. Subtle high-ISO noise
+    for (int y = 0; y < src.height; y += 2) {
+      for (int x = 0; x < src.width; x += 2) {
+        final noise = ((x * 13 + y * 17) % 19) - 9;
+        final p = out.getPixel(x, y);
+        out.setPixelRgb(
+          x,
+          y,
+          (p.r + noise).clamp(0, 255).toInt(),
+          (p.g + noise).clamp(0, 255).toInt(),
+          (p.b + noise).clamp(0, 255).toInt(),
+        );
+      }
+    }
+
+    // 2. Subtle corner thumb occlusion (bottom-right 12%)
+    final startX = (targetSize * 0.88).toInt();
+    final startY = (targetSize * 0.88).toInt();
+    for (int y = startY; y < targetSize; y++) {
+      for (int x = startX; x < targetSize; x++) {
+        out.setPixelRgb(x, y, 55, 42, 33);
+      }
+    }
+
     return out;
   }
 

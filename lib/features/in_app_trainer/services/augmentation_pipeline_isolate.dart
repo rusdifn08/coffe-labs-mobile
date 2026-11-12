@@ -37,10 +37,10 @@ class AugmentationTelemetry {
   });
 }
 
-/// Pipeline 15x Augmentasi Data Profesional Berjalan di Background Isolate.
+/// Pipeline 10x Augmentasi Data Profesional Berjalan di Background Isolate.
 class AugmentationPipelineIsolate {
   /// Mengeksekusi augmentasi data dari sampel foto asli:
-  /// Minimal 3 foto x 15 variasi = 45 foto training bervariasi tinggi.
+  /// Minimal 3 foto x 10 variasi = 30 foto training bervariasi tinggi.
   static Future<List<AugmentedImageTensor>> runPipeline({
     required List<AnnotatedTrainingSample> samples,
     void Function(AugmentationTelemetry)? onProgress,
@@ -82,7 +82,7 @@ class AugmentationPipelineIsolate {
     return results;
   }
 
-  static const int transformsPerSample = 15;
+  static const int transformsPerSample = 10;
 
   static List<_RawIsolateResult> _executeIsolateWork(List<_SampleInputDto> samples) {
     final outputList = <_RawIsolateResult>[];
@@ -109,8 +109,8 @@ class AugmentationPipelineIsolate {
       final baseCrop = img.copyCrop(fullImage, x: cropX, y: cropY, width: cropW, height: cropH);
       final base224 = img.copyResize(baseCrop, width: 224, height: 224, interpolation: img.Interpolation.linear);
 
-      // 2. Jalankan 15 Transformasi Augmentasi Profesional
-      final variations = generate15Transforms(base224);
+      // 2. Jalankan 10 Transformasi Augmentasi Profesional (3 Foto -> 30 Citra)
+      final variations = generate10Transforms(base224);
 
       for (final entry in variations.entries) {
         final transformed224 = entry.value;
@@ -128,57 +128,45 @@ class AugmentationPipelineIsolate {
     return outputList;
   }
 
-  /// Menghasilkan 15 variasi citra dari 1 base crop 224x224
-  static Map<String, img.Image> generate15Transforms(img.Image base) {
+  /// Menghasilkan 10 variasi citra dari 1 base crop 224x224 (3 sampel x 10 = 30 variasi)
+  static Map<String, img.Image> generate10Transforms(img.Image base) {
     final transforms = <String, img.Image>{};
 
     // 1. Base Clean Crop
     transforms['orig_clean'] = img.Image.from(base);
 
-    // 2. Clockwise Tilt (+15 derajat)
-    transforms['rot_pos_15'] = _rotateSafe(base, 15);
+    // 2. Clockwise Tilt (+8 derajat)
+    transforms['rot_pos_8'] = _rotateSafe(base, 8);
 
-    // 3. Counter-Clockwise Tilt (-15 derajat)
-    transforms['rot_neg_15'] = _rotateSafe(base, -15);
+    // 3. Counter-Clockwise Tilt (-8 derajat)
+    transforms['rot_neg_8'] = _rotateSafe(base, -8);
 
     // 4. Top-Down Perspective Warp (Simulasi kemasan di atas meja bar)
-    transforms['persp_top_down'] = _skewVertical(base, 0.14);
+    transforms['persp_top_down'] = _skewVertical(base, 0.12);
 
-    // 5. Side-Angle Perspective Warp (Simulasi kemasan cembung CO2)
-    transforms['persp_side_skew'] = _skewHorizontal(base, 0.14);
+    // 5. Side-Angle Perspective Warp (Simulasi kemasan cembung)
+    transforms['persp_side_skew'] = _skewHorizontal(base, 0.12);
 
     // 6. Warm Café Lamp 2700K (Tungsten Warm Ambient)
     transforms['warm_cafe_2700k'] = _shiftRgbGamma(base, rMul: 1.14, gMul: 1.05, bMul: 0.86, gamma: 1.10);
 
-    // 7. Low-Light Dim Bar (-28% brightness, +15% contrast, gamma 1.3)
-    transforms['dim_bar_lowlight'] = _adjustLight(base, brightness: -0.28, contrast: 1.15, gamma: 1.30);
+    // 7. Cool Retail Daylight (Fluorescent Supermarket)
+    transforms['cool_retail_daylight'] = _shiftRgbGamma(base, rMul: 0.94, gMul: 1.02, bMul: 1.12, gamma: 0.95);
 
-    // 8. Bright Window Overexposed (+22% brightness, gamma 0.78)
-    transforms['bright_window_overexposed'] = _adjustLight(base, brightness: 0.22, contrast: 0.95, gamma: 0.78);
+    // 8. Low-Light Dim Bar & Crease (-22% brightness, +15% contrast)
+    transforms['dim_bar_crease'] = _adjustLight(base, brightness: -0.22, contrast: 1.15, gamma: 1.20);
 
-    // 9. Foil Specular Glare 1 (Pantulan lampu foil di kuadran kiri-atas)
-    transforms['foil_specular_glare_1'] = _applyFoilGlare(base, cxRatio: 0.32, cyRatio: 0.30);
+    // 9. Bright Window Glare (Pantulan cahaya jendela cafe)
+    transforms['bright_window_glare'] = _applyFoilGlare(base, cxRatio: 0.35, cyRatio: 0.30);
 
-    // 10. Foil Specular Glare 2 (Pantulan lampu foil di tengah-kanan)
-    transforms['foil_specular_glare_2'] = _applyFoilGlare(base, cxRatio: 0.70, cyRatio: 0.55);
-
-    // 11. Finger Cutout Occlusion (Sebagian bungkus tertutup jari barista)
-    transforms['finger_cutout_occlusion'] = _applyFingerOcclusion(base);
-
-    // 12. Crop Jitter (88% crop bergeser ke kanan-bawah, di-upscale ke 224x224)
-    transforms['crop_jitter_88'] = _zoomIn(base, 0.88, shift: 10);
-
-    // 13. Wide Context Zoom (112% scaled down dengan neutral frame)
-    transforms['zoom_out_112'] = _zoomOut(base, 0.88);
-
-    // 14. Motion Blur 3x3 (Getaran tangan barista saat memotret)
+    // 10. Motion Blur 3x3 (Getaran tangan barista saat memotret)
     transforms['motion_blur_3x3'] = _applyMotionBlur(base);
-
-    // 15. Compound Hard Augmentation (Rotasi +6° + Warm Light + Sensor Noise)
-    transforms['iso_gaussian_noise_combo'] = _applyCompoundHard(base);
 
     return transforms;
   }
+
+  // Alias kompatibilitas
+  static Map<String, img.Image> generate15Transforms(img.Image base) => generate10Transforms(base);
 
   // --- Helper Operasi Transformasi Matematika Citra ---
 
@@ -263,40 +251,6 @@ class AugmentationPipelineIsolate {
     return out;
   }
 
-  static img.Image _applyFingerOcclusion(img.Image src) {
-    final out = img.Image.from(src);
-    // Tutup 14% pojok kanan-bawah dengan blok warna netral/kulit gelap
-    const startX = 160;
-    const startY = 165;
-    for (int y = startY; y < 224; y++) {
-      for (int x = startX; x < 224; x++) {
-        final p = out.getPixel(x, y);
-        p.r = 65;
-        p.g = 48;
-        p.b = 38;
-      }
-    }
-    return out;
-  }
-
-  static img.Image _zoomIn(img.Image src, double factor, {int shift = 0}) {
-    final cropSize = (224 * factor).toInt();
-    final offset = ((224 - cropSize) ~/ 2 + shift).clamp(0, 224 - cropSize);
-    final cropped = img.copyCrop(src, x: offset, y: offset, width: cropSize, height: cropSize);
-    return img.copyResize(cropped, width: 224, height: 224);
-  }
-
-  static img.Image _zoomOut(img.Image src, double factor) {
-    final targetSize = (224 * factor).toInt();
-    final resized = img.copyResize(src, width: targetSize, height: targetSize);
-    final out = img.Image(width: 224, height: 224);
-    // Background netral
-    img.fill(out, color: img.ColorRgb8(24, 18, 14));
-    final offset = (224 - targetSize) ~/ 2;
-    img.compositeImage(out, resized, dstX: offset, dstY: offset);
-    return out;
-  }
-
   static img.Image _applyMotionBlur(img.Image src) {
     final out = img.Image(width: 224, height: 224);
     for (int y = 0; y < 224; y++) {
@@ -317,20 +271,6 @@ class AugmentationPipelineIsolate {
     }
     return out;
   }
-
-  static img.Image _applyCompoundHard(img.Image src) {
-    final rotated = _rotateSafe(src, 6);
-    final warm = _shiftRgbGamma(rotated, rMul: 1.10, gMul: 1.03, bMul: 0.90, gamma: 1.05);
-    final rng = math.Random(42);
-    for (final p in warm) {
-      final noise = (rng.nextDouble() - 0.5) * 18.0;
-      p.r = (p.r + noise).clamp(0, 255);
-      p.g = (p.g + noise).clamp(0, 255);
-      p.b = (p.b + noise).clamp(0, 255);
-    }
-    return warm;
-  }
-
 }
 
 class _SampleInputDto {

@@ -52,7 +52,7 @@ class OnDeviceTransferLearner {
   /// Stage 0 scanner: cosine visual minimum untuk dianggap kemasan yang sama.
   static const double visualMatchThreshold = 0.80;
 
-  /// Melatih Head Adaptif untuk Kelas Kopi Baru menggunakan 45 sampel hasil augmentasi.
+  /// Melatih Head Adaptif untuk Kelas Kopi Baru menggunakan 30 sampel hasil augmentasi 10x.
   static Future<TransferLearningTrainingResult> trainNewClass({
     required String classSlug,
     required List<AugmentedImageTensor> augmentedSamples,
@@ -61,7 +61,7 @@ class OnDeviceTransferLearner {
   }) async {
     final stopwatch = Stopwatch()..start();
 
-    // 1. Embedding L2-normalized (45 citra -> [45 x 512]) sudah dihitung di isolate augmentasi
+    // 1. Embedding L2-normalized (30 citra -> [30 x 512]) sudah dihitung di isolate augmentasi
     final embeddings = <Vector>[];
     final sampleMapByAngle = <String, List<Vector>>{};
 

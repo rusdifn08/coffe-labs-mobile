@@ -28,7 +28,7 @@ class TrainingTelemetryModal extends StatelessWidget {
     required this.statusMessage,
     required this.overallProgress,
     this.currentAugmentation = 0,
-    this.totalAugmentations = 45,
+    this.totalAugmentations = 30,
     this.latestThumbnailBytes,
     this.currentEpoch = 0,
     this.totalEpochs = 60,
@@ -237,11 +237,11 @@ class TrainingTelemetryModal extends StatelessWidget {
   String get _phaseTitle {
     switch (phase) {
       case TrainingPhase.preprocessing:
-        return 'Fase 1: Pre-Processing Citra';
+        return 'Fase 1: Pre-Processing Citra & CLAHE';
       case TrainingPhase.augmenting:
-        return 'Fase 2: 15x Data Augmentation';
+        return 'Fase 2: 10x Data Augmentation (30 Variasi)';
       case TrainingPhase.trainingHead:
-        return 'Fase 3: Transfer Learning Head';
+        return 'Fase 3: MobileNetV4 Hybrid 1280-D Training';
       case TrainingPhase.completed:
         return 'Model AI Berhasil Dilatih!';
       case TrainingPhase.failed:

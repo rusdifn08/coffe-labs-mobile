@@ -194,27 +194,31 @@ class IncrementalVisionEngine {
     required List<PreprocessInputDto> photoInputs,
     void Function(int current, int total, String status)? onProgress,
   }) async {
-    final totalExpected = photoInputs.length * 5;
+    final totalExpected = photoInputs.length * ImageTensorIsolate.transformsPerPhoto;
 
-    // 1. Run Isolate Augmentation
-    onProgress?.call(0, totalExpected, 'Menyiapkan augmentasi multi-sudut di background Isolate...');
+    // 1. Run Isolate 10x Augmentation (e.g. 3 photos -> 30 varied tensors)
+    onProgress?.call(0, totalExpected, 'Menyiapkan pipeline augmentasi 10x di background Isolate...');
     final augmentedSamples = await ImageTensorIsolate.augmentPhotos(
       inputs: photoInputs,
-      onProgress: (cur, tot) {
-        onProgress?.call(cur ~/ 2, totalExpected, 'Mengaugmentasi citra sampel $cur/$tot...');
+      onProgress: (cur, tot, transformName, previewBytes) {
+        onProgress?.call(
+          (cur * totalExpected) ~/ (tot > 0 ? tot * 2 : 1),
+          totalExpected,
+          'Augmentasi $cur/$tot: $transformName',
+        );
       },
     );
 
-    // 2. Extract 1280-D Embeddings
+    // 2. Extract 1280-D Embeddings using MobileNetV4 Hybrid Architecture
     final embeddings = <Float32List>[];
     for (int i = 0; i < augmentedSamples.length; i++) {
       final sample = augmentedSamples[i];
       final emb = extractEmbedding(sample.tensor);
       embeddings.add(emb);
       onProgress?.call(
-        (totalExpected ~/ 2) + ((i + 1) * (totalExpected ~/ 2) ~/ augmentedSamples.length),
+        (totalExpected ~/ 2) + ((i + 1) * (totalExpected ~/ 2) ~/ (augmentedSamples.isNotEmpty ? augmentedSamples.length : 1)),
         totalExpected,
-        'Mengekstrak fitur MobileNetV4 (1280-D) sampel ${i + 1}/${augmentedSamples.length}...',
+        'Mengekstrak fitur MobileNetV4 (1280-D) sampel ${i + 1}/${augmentedSamples.length} (${sample.transformName})...',
       );
     }
 

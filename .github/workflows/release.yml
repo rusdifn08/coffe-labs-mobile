@@ -142,7 +142,7 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             TAG="${GITHUB_REF#refs/tags/}"
           else
-            TAG="v2.1.1-$(date +'%Y%m%d-%H%M')"
+            TAG="v2.2.0-$(date +'%Y%m%d-%H%M')"
           fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "title=Coffee Labs App Release $TAG" >> $GITHUB_OUTPUT
@@ -155,7 +155,7 @@ jobs:
           draft: false
           prerelease: false
           body: |
-            ## ☕ Coffee Labs Mobile Release v2.1.1
+            ## ☕ Coffee Labs Mobile Release v2.2.0
             
             Unduh file aplikasi secara langsung tanpa kompresi `.zip`:
             
@@ -168,11 +168,12 @@ jobs:
             ### 🍏 iOS (.ipa):
             - **`CoffeeLabs-iOS-Release.ipa`** *(Format `.ipa` terkompresi untuk sideloading via AltStore, Sideloadly, TrollStore, atau Scarlet)*
 
-            ### ✨ Apa yang Baru di v2.1.1:
-            - 🎯 **Stage 0 Trained AI Model Prioritization**: Pemindaian kemasan langsung mendeteksi model hasil pelatihan lokal (`🎯 Trained AI Model Match (99%)`) dengan embedding 512-D deterministik offline dan fusi sidik jari OCR.
-            - 📐 **Fix Bounding-Box & Sensory Classification**: Menghilangkan bug catch-all kotak biru "Tasting Note" pada teks sembarang. Klasifikasi Origin (`Malabar`, `Gunung Halu`) presisi dan tidak lagi tertukar menjadi Roastery.
-            - 🛡️ **Slogan Misread Elimination**: Slogan pemasaran kemasan seperti *"Dari Gunung, Untuk Cita Rasa Terbaik"* disaring bersih agar tidak lagi keliru terbaca sebagai nama kopi.
-            - 📚 **Coffee Knowledge Graph Runtime Sync**: Integrasi ontologi global terroir, roastery, varietas, dan SCA flavor lexicon yang tersinkronisasi otomatis dengan database aplikasi.
+            ### ✨ Apa yang Baru di v2.2.0 (Studio AI & MobileNetV4 Hybrid):
+            - 🧠 **Hybrid MobileNetV4 On-Device Continual Training**: Arsitektur transfer learning on-device yang menggabungkan ekstraksi embedding MobileNetV4 1280-D dengan Spatial Pyramid Pooling dan K=2 Sub-Centroids untuk zero catastrophic forgetting.
+            - 🔄 **10x Isolate Data Augmentation Pipeline**: Dari 3 foto sumber kemasan kopi (depan, kiri, kanan), sistem otomatis menghasilkan 30 variasi citra fotorealistik (rotasi, tilt perspektif, warm cafe ambient, cool retail, shadow crease, window glare, motion blur, sensor noise).
+            - ⚡ **Background Preprocessing & CLAHE**: Normalisasi orientasi EXIF, isolasi poligon kemasan, dan pemerataan kontras CLAHE untuk mengatasi pantulan cahaya foil/plastik.
+            - 🎨 **Roboflow Studio v5.0 Mobile Upgrade**: Kanvas sentuh presisi SAM 3, Bounding Box, Poligon RDP, Ribbon pemilihan/pembuatan class di bagian atas kanvas, serta Undo/Redo.
+            - 🛡️ **Non-Coffee Gatekeeper & Robust Socket Pooling**: Penyaringan foto non-kopi otomatis dan eliminasi socket exhaustion.
           files: release-files/*.*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

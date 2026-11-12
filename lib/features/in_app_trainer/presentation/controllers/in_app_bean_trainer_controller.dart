@@ -37,7 +37,7 @@ class InAppTrainerState {
     this.statusMessage = 'Siap melatih model baru',
     this.progress = 0.0,
     this.currentAugmentation = 0,
-    this.totalAugmentations = 45,
+    this.totalAugmentations = 30,
     this.latestThumbnailBytes,
     this.currentEpoch = 0,
     this.totalEpochs = 60,
@@ -194,18 +194,18 @@ class InAppTrainerController extends Notifier<InAppTrainerState> {
         process: state.draft.process,
       );
 
-      // 2. Fase B: 15x Pipeline Data Augmentation di Background Isolate
+      // 2. Fase B: 10x Pipeline Data Augmentation di Background Isolate (3 foto -> 30 variasi)
       state = state.copyWith(
         phase: TrainingPhase.augmenting,
-        statusMessage: 'Melipatgandakan 3 foto menjadi 45 variasi profesional...',
+        statusMessage: 'Melipatgandakan 3 foto menjadi 30 variasi profesional...',
         progress: 0.25,
-        totalAugmentations: state.draft.samples.length * 15,
+        totalAugmentations: state.draft.samples.length * 10,
       );
 
       final augmentedTensors = await AugmentationPipelineIsolate.runPipeline(
         samples: state.draft.samples,
         onProgress: (telemetry) {
-          final ratio = telemetry.current / telemetry.total;
+          final ratio = telemetry.current / (telemetry.total > 0 ? telemetry.total : 1);
           state = state.copyWith(
             currentAugmentation: telemetry.current,
             totalAugmentations: telemetry.total,
@@ -220,10 +220,10 @@ class InAppTrainerController extends Notifier<InAppTrainerState> {
         throw StateError('Gagal melakukan augmentasi citra.');
       }
 
-      // 3. Fase C: On-Device Transfer Learning (MobileNetV3 + Trainable Cosine Head)
+      // 3. Fase C: On-Device Hybrid MobileNetV4 Transfer Learning
       state = state.copyWith(
         phase: TrainingPhase.trainingHead,
-        statusMessage: 'Melatih Cosine-Margin Head (AdamW 60 Epochs)...',
+        statusMessage: 'Melatih Hybrid MobileNetV4 Cosine-Margin Head (AdamW 60 Epochs)...',
         progress: 0.75,
         totalEpochs: 60,
       );

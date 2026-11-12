@@ -1149,13 +1149,21 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Tasting Notes:',
-                style: TextStyle(color: textDark, fontSize: 12, fontWeight: FontWeight.w600),
+              const Flexible(
+                child: Text(
+                  'Tasting Notes:',
+                  style: TextStyle(color: textDark, fontSize: 12, fontWeight: FontWeight.w600),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               TextButton.icon(
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
                 onPressed: _showAddNoteDialog,
-                icon: const Icon(Icons.add, size: 14, color: accentCoffee),
+                icon: const Icon(Icons.add, size: 13, color: accentCoffee),
                 label: const Text(
                   '+ Tambah Kustom',
                   style: TextStyle(color: accentCoffee, fontSize: 11, fontWeight: FontWeight.bold),

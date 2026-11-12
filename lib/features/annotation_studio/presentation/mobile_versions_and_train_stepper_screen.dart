@@ -376,11 +376,11 @@ class _MobileVersionsAndTrainStepperScreenState
               ),
             ),
 
-            // STEP 4: AUGMENTATION
+            // STEP 4: AUGMENTATION (10X EXPANSION: 3 FOTO -> 30 VARIASI)
             Step(
-              title: const Text('4. Isolate Augmentation', style: TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 13)),
+              title: const Text('4. Isolate 10x Data Augmentation', style: TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 13)),
               subtitle: const Text(
-                '15x variasi per foto di background Isolate (Multi-Angle, Foil Sheen)',
+                '10x variasi fotorealistik per foto di background Isolate (3 foto = 30 variasi)',
                 style: TextStyle(color: textMuted, fontSize: 11),
               ),
               isActive: _currentStep >= 3,
@@ -392,9 +392,30 @@ class _MobileVersionsAndTrainStepperScreenState
                   border: Border.all(color: const Color(0xFFEFE8DE), width: 1.1),
                 ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFBF8F3),
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.auto_awesome, size: 16, color: Color(0xFFD97706)),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Multiplikasi 10x: Dari 3 foto kemasan menjadi 30 tensor berbobot tinggi',
+                              style: TextStyle(color: Color(0xFF92400E), fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(color: Color(0xFFEFE8DE), height: 1),
                     CheckboxListTile(
-                      title: const Text('Horizontal Flip & Jitter', style: TextStyle(color: textDark, fontSize: 12)),
+                      title: const Text('Mirroring Simetris (Horizontal Flip)', style: TextStyle(color: textDark, fontSize: 12)),
                       value: _augFlip,
                       activeColor: const Color(0xFF6B4423),
                       dense: true,
@@ -402,7 +423,7 @@ class _MobileVersionsAndTrainStepperScreenState
                     ),
                     const Divider(color: Color(0xFFEFE8DE), height: 1),
                     CheckboxListTile(
-                      title: const Text('Rotasi ±12° & Perspektif', style: TextStyle(color: textDark, fontSize: 12)),
+                      title: const Text('Rotasi ±8° & Perspektif Meja Cafe (Tilt)', style: TextStyle(color: textDark, fontSize: 12)),
                       value: _augRotate,
                       activeColor: const Color(0xFF6B4423),
                       dense: true,
@@ -410,7 +431,7 @@ class _MobileVersionsAndTrainStepperScreenState
                     ),
                     const Divider(color: Color(0xFFEFE8DE), height: 1),
                     CheckboxListTile(
-                      title: const Text('Simulasi Kilau Foil / Pantulan Plastik', style: TextStyle(color: textDark, fontSize: 12)),
+                      title: const Text('Simulasi Kilau Pantulan Foil / Window Glare', style: TextStyle(color: textDark, fontSize: 12)),
                       value: _augFoilSheen,
                       activeColor: const Color(0xFF6B4423),
                       dense: true,
@@ -418,7 +439,7 @@ class _MobileVersionsAndTrainStepperScreenState
                     ),
                     const Divider(color: Color(0xFFEFE8DE), height: 1),
                     CheckboxListTile(
-                      title: const Text('Variasi Pencahayaan Kafe (CCT 2700K - 6500K)', style: TextStyle(color: textDark, fontSize: 12)),
+                      title: const Text('Pencahayaan Hangat Cafe (2700K) vs Cool Daylight (6500K)', style: TextStyle(color: textDark, fontSize: 12)),
                       value: _augLighting,
                       activeColor: const Color(0xFF6B4423),
                       dense: true,
@@ -429,11 +450,11 @@ class _MobileVersionsAndTrainStepperScreenState
               ),
             ),
 
-            // STEP 5: TRAIN MOBILENETV4 NCM
+            // STEP 5: TRAIN MOBILENETV4 HYBRID NCM
             Step(
-              title: const Text('5. Train & Update MobileNetV4 NCM', style: TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 13)),
+              title: const Text('5. Train MobileNetV4 Hybrid NCM', style: TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 13)),
               subtitle: const Text(
-                'Ekstraksi 1280-D L2-norm, Centroid & K=2 Sub-Centroids ke SQLite',
+                'Ekstraksi 1280-D L2-norm, Centroid & Sub-Centroids ke SQLite',
                 style: TextStyle(color: textMuted, fontSize: 11),
               ),
               isActive: _currentStep >= 4,
@@ -441,6 +462,35 @@ class _MobileVersionsAndTrainStepperScreenState
               content: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFEFE8DE), width: 1.1),
+                    ),
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.memory, size: 16, color: Color(0xFF7C3AED)),
+                            SizedBox(width: 8),
+                            Text(
+                              'Arsitektur Hybrid MobileNetV4 (1280-D NCM)',
+                              style: TextStyle(color: Color(0xFF2D1F17), fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          'Menggabungkan representasi fitur MobileNetV4 dengan K=2 Sub-Centroids spatial pooling. Mencegah catastrophic forgetting secara on-device dengan latensi < 12 ms.',
+                          style: TextStyle(color: Color(0xFF8F857D), fontSize: 10.5, height: 1.3),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   if (_isTraining || _trainingProgress > 0) ...[
                     ClipRRect(
                       borderRadius: BorderRadius.circular(6),
@@ -459,7 +509,7 @@ class _MobileVersionsAndTrainStepperScreenState
                     const SizedBox(height: 10),
                   ],
                   if (_completedClasses.isNotEmpty) ...[
-                    const Text('Class Berhasil Dilatih:', style: TextStyle(color: textDark, fontSize: 12, fontWeight: FontWeight.bold)),
+                    const Text('Class Berhasil Dilatih (Memori NCM):', style: TextStyle(color: textDark, fontSize: 12, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 6),
                     Wrap(
                       spacing: 6,
@@ -468,7 +518,7 @@ class _MobileVersionsAndTrainStepperScreenState
                         return Chip(
                           backgroundColor: const Color(0xFFECFDF5),
                           side: const BorderSide(color: Color(0xFF059669)),
-                          label: Text(c, style: const TextStyle(color: Color(0xFF059669), fontSize: 10, fontWeight: FontWeight.bold)),
+                          label: Text('$c (30 variasi)', style: const TextStyle(color: Color(0xFF059669), fontSize: 10, fontWeight: FontWeight.bold)),
                         );
                       }).toList(),
                     ),
