@@ -45,19 +45,19 @@ class TrainingTelemetryModal extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E1714),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: phase == TrainingPhase.completed
                 ? const Color(0xFF10B981)
-                : const Color(0xFFF59E0B).withValues(alpha: 0.4),
+                : const Color(0xFFEADBCE),
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.6),
-              blurRadius: 28,
-              spreadRadius: 6,
+              color: const Color(0xFF5C3A21).withValues(alpha: 0.12),
+              blurRadius: 24,
+              spreadRadius: 2,
             ),
           ],
         ),
@@ -74,7 +74,7 @@ class TrainingTelemetryModal extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Color(0xFF2D1F17),
                 letterSpacing: 0.2,
               ),
               textAlign: TextAlign.center,
@@ -84,9 +84,9 @@ class TrainingTelemetryModal extends StatelessWidget {
             // 3. Deskripsi Pesan
             Text(
               statusMessage,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 12.5,
-                color: Colors.white.withValues(alpha: 0.72),
+                color: Color(0xFF7A6858),
                 height: 1.35,
               ),
               textAlign: TextAlign.center,
@@ -100,10 +100,10 @@ class TrainingTelemetryModal extends StatelessWidget {
                 height: 100,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFF59E0B), width: 1.5),
+                  border: Border.all(color: const Color(0xFFD97706), width: 1.5),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFF59E0B).withValues(alpha: 0.25),
+                      color: const Color(0xFFD97706).withValues(alpha: 0.2),
                       blurRadius: 10,
                     ),
                   ],
@@ -117,9 +117,9 @@ class TrainingTelemetryModal extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
-                'Variasi #$currentAugmentation / $totalAugmentations',
-                style: const TextStyle(fontSize: 11, color: Color(0xFFF59E0B), fontWeight: FontWeight.bold),
+              const Text(
+                'Variasi Augmentasi Citra',
+                style: TextStyle(fontSize: 11, color: Color(0xFFD97706), fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
             ],
@@ -129,21 +129,21 @@ class TrainingTelemetryModal extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.35),
+                  color: const Color(0xFFFAF7F2),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.white10),
+                  border: Border.all(color: const Color(0xFFE5DDD3)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     _buildStatCol('EPOCH', '$currentEpoch / $totalEpochs'),
-                    Container(width: 1, height: 28, color: Colors.white12),
+                    Container(width: 1, height: 28, color: const Color(0xFFE0D5C7)),
                     _buildStatCol('LOSS', currentLoss.toStringAsFixed(3)),
-                    Container(width: 1, height: 28, color: Colors.white12),
+                    Container(width: 1, height: 28, color: const Color(0xFFE0D5C7)),
                     _buildStatCol(
                       'AKURASI',
                       '${(currentAccuracy * 100).toStringAsFixed(1)}%',
-                      valueColor: const Color(0xFF10B981),
+                      valueColor: const Color(0xFF059669),
                     ),
                   ],
                 ),
@@ -157,10 +157,10 @@ class TrainingTelemetryModal extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: overallProgress.clamp(0.0, 1.0),
                 minHeight: 8,
-                backgroundColor: Colors.white12,
+                backgroundColor: const Color(0xFFEFE8DE),
                 color: phase == TrainingPhase.completed
-                    ? const Color(0xFF10B981)
-                    : const Color(0xFFF59E0B),
+                    ? const Color(0xFF059669)
+                    : const Color(0xFFD97706),
               ),
             ),
             const SizedBox(height: 8),
@@ -168,7 +168,7 @@ class TrainingTelemetryModal extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: Text(
                 '${(overallProgress * 100).toInt()}%',
-                style: const TextStyle(fontSize: 11, color: Colors.white60, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 11, color: Color(0xFF8F857D), fontWeight: FontWeight.bold),
               ),
             ),
 
@@ -181,7 +181,7 @@ class TrainingTelemetryModal extends StatelessWidget {
                   onPressed: onDismiss,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: phase == TrainingPhase.completed
-                        ? const Color(0xFF10B981)
+                        ? const Color(0xFF059669)
                         : const Color(0xFFEF4444),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -254,14 +254,14 @@ class TrainingTelemetryModal extends StatelessWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(fontSize: 9.5, color: Colors.white38, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 9.5, color: Color(0xFF8F857D), fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 4),
         Text(
           val,
           style: TextStyle(
             fontSize: 13,
-            color: valueColor ?? Colors.white,
+            color: valueColor ?? const Color(0xFF2D1F17),
             fontWeight: FontWeight.bold,
           ),
         ),

@@ -302,7 +302,7 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
   void _showSequentialCaptureOptions() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1E1714),
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -316,7 +316,7 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: const Color(0xFFD4C8BC),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -324,7 +324,7 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
               const Text(
                 'Ambil 3 Foto Berurutan',
                 style: TextStyle(
-                  color: Color(0xFFF9F5EE),
+                  color: Color(0xFF2D1F17),
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
@@ -332,23 +332,37 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
               const SizedBox(height: 6),
               const Text(
                 'Alur otomatis: Depan ➔ Sisi Kiri (~25°) ➔ Sisi Kanan (~25°)',
-                style: TextStyle(color: Colors.white60, fontSize: 12),
+                style: TextStyle(color: Color(0xFF7A6858), fontSize: 12),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               ListTile(
-                leading: const Icon(CupertinoIcons.camera_fill, color: Color(0xFFD4AF37)),
-                title: const Text('Buka Kamera (Berurutan Langsung)', style: TextStyle(color: Colors.white)),
-                subtitle: const Text('Rekomendasi barista untuk akurasi terbaik', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF7ED),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(CupertinoIcons.camera_fill, color: Color(0xFFB45309), size: 20),
+                ),
+                title: const Text('Buka Kamera (Berurutan Langsung)', style: TextStyle(color: Color(0xFF2D1F17), fontWeight: FontWeight.w600)),
+                subtitle: const Text('Rekomendasi barista untuk akurasi terbaik', style: TextStyle(color: Color(0xFF8F857D), fontSize: 11)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _startSequentialCapture(ImageSource.camera);
                 },
               ),
               ListTile(
-                leading: const Icon(CupertinoIcons.photo_fill, color: Color(0xFFD4AF37)),
-                title: const Text('Pilih dari Galeri (Berurutan)', style: TextStyle(color: Colors.white)),
-                subtitle: const Text('Pilih 3 foto dari galeri HP satu per satu', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF7ED),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(CupertinoIcons.photo_fill, color: Color(0xFFB45309), size: 20),
+                ),
+                title: const Text('Pilih dari Galeri (Berurutan)', style: TextStyle(color: Color(0xFF2D1F17), fontWeight: FontWeight.w600)),
+                subtitle: const Text('Pilih 3 foto dari galeri HP satu per satu', style: TextStyle(color: Color(0xFF8F857D), fontSize: 11)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _startSequentialCapture(ImageSource.gallery);
@@ -365,7 +379,7 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
     final label = _slotLabels[slotIndex.clamp(0, 2)];
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1E1714),
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -379,7 +393,7 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: const Color(0xFFD4C8BC),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -387,23 +401,37 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
               Text(
                 'Ambil Foto $label',
                 style: const TextStyle(
-                  color: Color(0xFFF9F5EE),
+                  color: Color(0xFF2D1F17),
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 16),
               ListTile(
-                leading: const Icon(CupertinoIcons.camera_fill, color: Color(0xFFD4AF37)),
-                title: const Text('Kamera', style: TextStyle(color: Colors.white)),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF7ED),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(CupertinoIcons.camera_fill, color: Color(0xFFB45309), size: 20),
+                ),
+                title: const Text('Kamera', style: TextStyle(color: Color(0xFF2D1F17), fontWeight: FontWeight.w600)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickImage(slotIndex, ImageSource.camera);
                 },
               ),
               ListTile(
-                leading: const Icon(CupertinoIcons.photo_fill, color: Color(0xFFD4AF37)),
-                title: const Text('Galeri Foto', style: TextStyle(color: Colors.white)),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF7ED),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(CupertinoIcons.photo_fill, color: Color(0xFFB45309), size: 20),
+                ),
+                title: const Text('Galeri Foto', style: TextStyle(color: Color(0xFF2D1F17), fontWeight: FontWeight.w600)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickImage(slotIndex, ImageSource.gallery);
@@ -465,21 +493,27 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1714),
-        title: const Text('Tambah Tasting Note', style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text('Tambah Tasting Note', style: TextStyle(color: Color(0xFF2D1F17), fontWeight: FontWeight.bold, fontSize: 16)),
         content: TextField(
           controller: _newNoteCtrl,
           autofocus: true,
-          style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
+          style: const TextStyle(color: Color(0xFF2D1F17)),
+          decoration: InputDecoration(
             hintText: 'Misal: Lavender, Earl Grey...',
-            hintStyle: TextStyle(color: Colors.white38),
+            hintStyle: const TextStyle(color: Color(0xFFA89F95), fontSize: 13),
+            filled: true,
+            fillColor: const Color(0xFFFAF7F2),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE5DDD3))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF6B4423), width: 1.4)),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal', style: TextStyle(color: Colors.white54)),
+            child: const Text('Batal', style: TextStyle(color: Color(0xFF8F857D))),
           ),
           ElevatedButton(
             onPressed: () {
@@ -498,8 +532,9 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
               Navigator.pop(ctx);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD4AF37),
-              foregroundColor: Colors.black,
+              backgroundColor: const Color(0xFF6B4423),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             child: const Text('Tambah'),
           ),
@@ -522,13 +557,18 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
       process: draft.process,
     );
 
+    const bgCream = Color(0xFFF9F6F0);
+    const textDark = Color(0xFF2D1F17);
+    const accentCoffee = Color(0xFF6B4423);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF14100E),
+      backgroundColor: bgCream,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1412),
+        backgroundColor: bgCream,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(CupertinoIcons.chevron_left, color: Color(0xFFD4AF37)),
+          icon: const Icon(CupertinoIcons.back, color: textDark),
           onPressed: () => context.pop(),
         ),
         title: const Column(
@@ -537,7 +577,7 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
             Text(
               'Studio Pelatihan AI',
               style: TextStyle(
-                color: Color(0xFFF9F5EE),
+                color: textDark,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -545,32 +585,32 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
             Text(
               'On-Device Few-Shot Transfer Learning',
               style: TextStyle(
-                color: Color(0xFFD4AF37),
+                color: accentCoffee,
                 fontSize: 11,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(CupertinoIcons.info_circle, color: Colors.white70),
+            icon: const Icon(CupertinoIcons.info_circle, color: accentCoffee),
             onPressed: _showExplanationSheet,
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Card 1: 3 Foto Kemasan & Smart Annotation Canvas
             _buildAnnotationSection(state, activeSample, selectedIdx),
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
 
             // Card 2: Metadata Biji Kopi
             _buildMetadataFormSection(draft, slug),
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
 
             // Card 3: Preview ML Class Head
             _buildMlHeadPreview(slug, draft),
@@ -586,27 +626,45 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
     dynamic activeSample,
     int selectedIdx,
   ) {
+    const textDark = Color(0xFF2D1F17);
+    const textMuted = Color(0xFF8F857D);
+    const accentAmber = Color(0xFFD97706);
+    const accentCoffee = Color(0xFF6B4423);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1B1513),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white10),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFEFE8DE), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF5C3A21).withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header tanpa "(Min. 3 Sudut)" dan menggunakan Expanded agar tidak overflow
           Row(
             children: [
-              const Icon(CupertinoIcons.camera_viewfinder, color: Color(0xFFD4AF37), size: 18),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7ED),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(CupertinoIcons.camera_viewfinder, color: accentAmber, size: 17),
+              ),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
                   '1. Foto Kemasan',
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
+                    color: textDark,
+                    fontSize: 14.5,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -615,16 +673,22 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: state.draft.samples.length >= 3
-                      ? const Color(0xFF10B981).withValues(alpha: 0.2)
-                      : const Color(0xFFF59E0B).withValues(alpha: 0.2),
+                      ? const Color(0xFFECFDF5)
+                      : const Color(0xFFFFFBEB),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: state.draft.samples.length >= 3
+                        ? const Color(0xFFA7F3D0)
+                        : const Color(0xFFFDE68A),
+                    width: 0.8,
+                  ),
                 ),
                 child: Text(
                   '${state.draft.samples.length}/3 Foto',
                   style: TextStyle(
                     color: state.draft.samples.length >= 3
-                        ? const Color(0xFF10B981)
-                        : const Color(0xFFF59E0B),
+                        ? const Color(0xFF059669)
+                        : const Color(0xFFD97706),
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
@@ -634,7 +698,7 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
           ),
           const SizedBox(height: 12),
 
-          // Tombol Alur Cepat: Ambil 3 Foto Sekaligus Berurutan (Depan ➔ Kiri ➔ Kanan)
+          // Tombol Alur Cepat: Ambil 3 Foto Sekaligus Berurutan
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -645,19 +709,20 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
                 style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF422B1D),
-                foregroundColor: const Color(0xFFF9F5EE),
+                backgroundColor: const Color(0xFFFFF7ED),
+                foregroundColor: const Color(0xFFB45309),
+                elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                  side: const BorderSide(color: Color(0xFFD4AF37), width: 1.1),
+                  side: const BorderSide(color: Color(0xFFFDE68A), width: 1.2),
                 ),
               ),
             ),
           ),
           const SizedBox(height: 12),
 
-          // 3 Thumbnail Slot Selector (Hanya label Depan, Kiri, Kanan)
+          // 3 Thumbnail Slot Selector (Depan, Kiri, Kanan)
           Row(
             children: [
               _buildPhotoSlot(
@@ -708,22 +773,22 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
             const SizedBox(height: 10),
             Row(
               children: [
-                const Icon(Icons.touch_app_outlined, size: 14, color: Color(0xFFD4AF37)),
+                const Icon(Icons.touch_app_outlined, size: 14, color: accentAmber),
                 const SizedBox(width: 4),
                 const Expanded(
                   child: Text(
                     'Tap kemasan untuk Auto-Snap • Geser sudut untuk fine-tune',
-                    style: TextStyle(color: Colors.white54, fontSize: 10.5),
+                    style: TextStyle(color: textMuted, fontSize: 10.5),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 4),
                 TextButton.icon(
                   onPressed: () => _showImagePickerSheet(selectedIdx),
-                  icon: const Icon(Icons.refresh, size: 14, color: Color(0xFFD4AF37)),
+                  icon: const Icon(Icons.refresh, size: 14, color: accentCoffee),
                   label: const Text(
                     'Ganti Foto',
-                    style: TextStyle(color: Color(0xFFD4AF37), fontSize: 11),
+                    style: TextStyle(color: accentCoffee, fontSize: 11, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -735,10 +800,10 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
               child: Container(
                 height: 180,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF241D1A),
+                  color: const Color(0xFFFAF7F2),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: const Color(0xFFD4AF37).withValues(alpha: 0.4),
+                    color: const Color(0xFFE5DDD3),
                     style: BorderStyle.solid,
                   ),
                 ),
@@ -749,20 +814,21 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
                       Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
+                          color: const Color(0xFFFFF7ED),
                           shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFFFDE68A)),
                         ),
                         child: const Icon(
                           CupertinoIcons.camera_fill,
-                          color: Color(0xFFD4AF37),
-                          size: 30,
+                          color: accentAmber,
+                          size: 28,
                         ),
                       ),
                       const SizedBox(height: 10),
                       Text(
                         'Ambil Foto ${_slotLabels[selectedIdx.clamp(0, 2)]}',
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: textDark,
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),
@@ -770,7 +836,7 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
                       const SizedBox(height: 4),
                       const Text(
                         'Ketuk di sini untuk buka Kamera / Galeri',
-                        style: TextStyle(color: Colors.white54, fontSize: 11),
+                        style: TextStyle(color: textMuted, fontSize: 11),
                       ),
                     ],
                   ),
@@ -805,14 +871,14 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
         child: Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF2C221D) : const Color(0xFF221A17),
+            color: isSelected ? const Color(0xFFFFFBEB) : const Color(0xFFFAF7F2),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected
-                  ? const Color(0xFFD4AF37)
+                  ? const Color(0xFFD97706)
                   : hasPhoto
                       ? const Color(0xFF10B981)
-                      : Colors.white12,
+                      : const Color(0xFFE5DDD3),
               width: isSelected ? 1.8 : 1.0,
             ),
           ),
@@ -829,10 +895,10 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
                           fit: BoxFit.cover,
                         )
                       : Container(
-                          color: const Color(0xFF181210),
+                          color: const Color(0xFFEFE8DE),
                           child: const Icon(
                             Icons.add_a_photo_outlined,
-                            color: Colors.white30,
+                            color: Color(0xFFA89F95),
                             size: 22,
                           ),
                         ),
@@ -842,9 +908,9 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
               Text(
                 label,
                 style: TextStyle(
-                  color: isSelected ? const Color(0xFFD4AF37) : Colors.white70,
+                  color: isSelected ? const Color(0xFF92400E) : const Color(0xFF5C4F44),
                   fontSize: 11,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -858,26 +924,43 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
 
   Widget _buildMetadataFormSection(dynamic draft, String slug) {
     final ctrl = ref.read(inAppTrainerControllerProvider.notifier);
+    const textDark = Color(0xFF2D1F17);
+    const textSecondary = Color(0xFF5C4F44);
+    const accentCoffee = Color(0xFF6B4423);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1B1513),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white10),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFEFE8DE), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF5C3A21).withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(CupertinoIcons.tag_fill, color: Color(0xFFD4AF37), size: 18),
-              SizedBox(width: 8),
-              Text(
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5EFE6),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(CupertinoIcons.tag_fill, color: accentCoffee, size: 17),
+              ),
+              const SizedBox(width: 8),
+              const Text(
                 '2. Metadata Kopi',
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
+                  color: textDark,
+                  fontSize: 14.5,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -902,11 +985,11 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
               itemBuilder: (context, idx) {
                 final b = _roasteryPresets[idx];
                 return ActionChip(
-                  backgroundColor: const Color(0xFF221A17),
-                  side: const BorderSide(color: Colors.white12),
+                  backgroundColor: const Color(0xFFFAF7F2),
+                  side: const BorderSide(color: Color(0xFFE5DDD3)),
                   padding: EdgeInsets.zero,
                   labelPadding: const EdgeInsets.symmetric(horizontal: 8),
-                  label: Text(b, style: const TextStyle(color: Colors.white60, fontSize: 10.5)),
+                  label: Text(b, style: const TextStyle(color: textSecondary, fontSize: 10.5, fontWeight: FontWeight.w500)),
                   onPressed: () {
                     setState(() {
                       _brandCtrl.text = b;
@@ -937,11 +1020,11 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
               itemBuilder: (context, idx) {
                 final o = _originPresets[idx];
                 return ActionChip(
-                  backgroundColor: const Color(0xFF221A17),
-                  side: const BorderSide(color: Colors.white12),
+                  backgroundColor: const Color(0xFFFAF7F2),
+                  side: const BorderSide(color: Color(0xFFE5DDD3)),
                   padding: EdgeInsets.zero,
                   labelPadding: const EdgeInsets.symmetric(horizontal: 8),
-                  label: Text(o, style: const TextStyle(color: Colors.white60, fontSize: 10.5)),
+                  label: Text(o, style: const TextStyle(color: textSecondary, fontSize: 10.5, fontWeight: FontWeight.w500)),
                   onPressed: () {
                     setState(() {
                       _nameCtrl.text = o;
@@ -961,14 +1044,14 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
             children: [
               const Text(
                 'Varietas:',
-                style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+                style: TextStyle(color: textDark, fontSize: 12, fontWeight: FontWeight.w600),
               ),
               if (_varietalCtrl.text.isNotEmpty)
                 Flexible(
                   child: Text(
                     _varietalCtrl.text,
                     style: const TextStyle(
-                      color: Color(0xFFD4AF37),
+                      color: accentCoffee,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
@@ -991,15 +1074,15 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
                 return ChoiceChip(
                   label: Text(v),
                   selected: isSel,
-                  selectedColor: const Color(0xFFD4AF37),
-                  backgroundColor: const Color(0xFF251D1A),
+                  selectedColor: accentCoffee,
+                  backgroundColor: const Color(0xFFFAF7F2),
                   labelStyle: TextStyle(
-                    color: isSel ? Colors.black : Colors.white70,
+                    color: isSel ? Colors.white : textSecondary,
                     fontSize: 11,
                     fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
                   ),
                   side: BorderSide(
-                    color: isSel ? const Color(0xFFD4AF37) : Colors.white12,
+                    color: isSel ? accentCoffee : const Color(0xFFE5DDD3),
                   ),
                   onSelected: (val) {
                     if (val) {
@@ -1026,7 +1109,7 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
           // Proses Pascapanen Filter Chips
           const Text(
             'Proses Pascapanen:',
-            style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+            style: TextStyle(color: textDark, fontSize: 12, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
           Wrap(
@@ -1037,15 +1120,15 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
               return ChoiceChip(
                 label: Text(proc),
                 selected: isSel,
-                selectedColor: const Color(0xFFD4AF37),
-                backgroundColor: const Color(0xFF28201C),
+                selectedColor: accentCoffee,
+                backgroundColor: const Color(0xFFFAF7F2),
                 labelStyle: TextStyle(
-                  color: isSel ? Colors.black : Colors.white70,
+                  color: isSel ? Colors.white : textSecondary,
                   fontSize: 11.5,
                   fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
                 ),
                 side: BorderSide(
-                  color: isSel ? const Color(0xFFD4AF37) : Colors.white12,
+                  color: isSel ? accentCoffee : const Color(0xFFE5DDD3),
                 ),
                 onSelected: (val) {
                   if (val) {
@@ -1068,14 +1151,14 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
             children: [
               const Text(
                 'Tasting Notes:',
-                style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+                style: TextStyle(color: textDark, fontSize: 12, fontWeight: FontWeight.w600),
               ),
               TextButton.icon(
                 onPressed: _showAddNoteDialog,
-                icon: const Icon(Icons.add, size: 14, color: Color(0xFFD4AF37)),
+                icon: const Icon(Icons.add, size: 14, color: accentCoffee),
                 label: const Text(
                   '+ Tambah Kustom',
-                  style: TextStyle(color: Color(0xFFD4AF37), fontSize: 11),
+                  style: TextStyle(color: accentCoffee, fontSize: 11, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -1087,13 +1170,13 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
               children: [
                 ...draft.tastingNotes.map((note) {
                   return Chip(
-                    backgroundColor: const Color(0xFF2C221D),
-                    side: const BorderSide(color: Color(0xFF5C3A21)),
+                    backgroundColor: const Color(0xFFFFF7ED),
+                    side: const BorderSide(color: Color(0xFFFDE68A)),
                     label: Text(
                       note,
-                      style: const TextStyle(color: Color(0xFFF9F5EE), fontSize: 11),
+                      style: const TextStyle(color: Color(0xFF92400E), fontSize: 11, fontWeight: FontWeight.w600),
                     ),
-                    deleteIcon: const Icon(Icons.close, size: 13, color: Colors.white54),
+                    deleteIcon: const Icon(Icons.close, size: 13, color: Color(0xFFB45309)),
                     onDeleted: () {
                       final updated = List<String>.from(draft.tastingNotes)..remove(note);
                       ctrl.updateMetadata(tastingNotes: updated);
@@ -1107,7 +1190,7 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
           ],
           const Text(
             'Pilih dari World Recipe (Tap untuk Tambah / Hapus):',
-            style: TextStyle(color: Colors.white38, fontSize: 10.5),
+            style: TextStyle(color: Color(0xFF8F857D), fontSize: 10.5),
           ),
           const SizedBox(height: 6),
           Wrap(
@@ -1117,16 +1200,16 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
               final isSelected = draft.tastingNotes.contains(note);
               return FilterChip(
                 selected: isSelected,
-                selectedColor: const Color(0xFFD4AF37),
-                backgroundColor: const Color(0xFF221A17),
-                checkmarkColor: Colors.black,
+                selectedColor: accentCoffee,
+                backgroundColor: const Color(0xFFFAF7F2),
+                checkmarkColor: Colors.white,
                 side: BorderSide(
-                  color: isSelected ? const Color(0xFFD4AF37) : Colors.white10,
+                  color: isSelected ? accentCoffee : const Color(0xFFE5DDD3),
                 ),
                 label: Text(
                   note,
                   style: TextStyle(
-                    color: isSelected ? Colors.black : Colors.white70,
+                    color: isSelected ? Colors.white : textSecondary,
                     fontSize: 11,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
@@ -1151,26 +1234,31 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
 
   /// Interactive Stepper Ketinggian dengan tombol + 50 dan - 50 (Format: MDPL).
   Widget _buildAltitudeStepperSection() {
+    const textDark = Color(0xFF2D1F17);
+    const textMuted = Color(0xFF8F857D);
+    const accentAmber = Color(0xFFD97706);
+    const accentCoffee = Color(0xFF6B4423);
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF221A17),
+        color: const Color(0xFFFAF7F2),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: const Color(0xFFE5DDD3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.terrain, color: Color(0xFFD4AF37), size: 16),
+              const Icon(Icons.terrain, color: accentAmber, size: 16),
               const SizedBox(width: 6),
               const Expanded(
                 child: Text(
                   'Ketinggian (Altitude)',
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.white70,
+                    color: textDark,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1180,14 +1268,14 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
+                  color: const Color(0xFFFFF7ED),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.4)),
+                  border: Border.all(color: const Color(0xFFFDE68A)),
                 ),
                 child: Text(
                   '$_altitudeMin - $_altitudeMax MDPL',
                   style: const TextStyle(
-                    color: Color(0xFFD4AF37),
+                    color: Color(0xFFB45309),
                     fontSize: 11.5,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'monospace',
@@ -1206,22 +1294,22 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1B1513),
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.white12),
+                    border: Border.all(color: const Color(0xFFE5DDD3)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'Batas Bawah',
-                        style: TextStyle(color: Colors.white38, fontSize: 10),
+                        style: TextStyle(color: textMuted, fontSize: 10),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '$_altitudeMin MDPL',
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: textDark,
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                         ),
@@ -1251,22 +1339,22 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1B1513),
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.white12),
+                    border: Border.all(color: const Color(0xFFE5DDD3)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'Batas Atas',
-                        style: TextStyle(color: Colors.white38, fontSize: 10),
+                        style: TextStyle(color: textMuted, fontSize: 10),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '$_altitudeMax MDPL',
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: textDark,
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                         ),
@@ -1303,12 +1391,12 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
                     newMax: _altitudeMax - 50,
                   ),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white70,
-                    side: const BorderSide(color: Colors.white24),
+                    foregroundColor: const Color(0xFF5C4F44),
+                    side: const BorderSide(color: Color(0xFFE5DDD3)),
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('Geser - 50 MDPL', style: TextStyle(fontSize: 11)),
+                  child: const Text('Geser - 50 MDPL', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
                 ),
               ),
               const SizedBox(width: 8),
@@ -1319,12 +1407,12 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
                     newMax: _altitudeMax + 50,
                   ),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFFD4AF37),
-                    side: const BorderSide(color: Color(0xFFD4AF37)),
+                    foregroundColor: accentCoffee,
+                    side: const BorderSide(color: accentCoffee),
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('Geser + 50 MDPL', style: TextStyle(fontSize: 11)),
+                  child: const Text('Geser + 50 MDPL', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
@@ -1342,15 +1430,15 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFF2C221D),
+            color: const Color(0xFFFAF7F2),
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: const Color(0xFF5C3A21)),
+            border: Border.all(color: const Color(0xFFE5DDD3)),
           ),
           alignment: Alignment.center,
           child: Text(
             label,
             style: const TextStyle(
-              color: Color(0xFFF9F5EE),
+              color: Color(0xFF2D1F17),
               fontSize: 11.5,
               fontWeight: FontWeight.bold,
             ),
@@ -1371,18 +1459,18 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
       children: [
         Text(
           label,
-          style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+          style: const TextStyle(color: Color(0xFF2D1F17), fontSize: 12, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 6),
         TextField(
           controller: controller,
-          style: const TextStyle(color: Colors.white, fontSize: 13.5),
+          style: const TextStyle(color: Color(0xFF2D1F17), fontSize: 13.5),
           onChanged: onChanged,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: Colors.white24, fontSize: 12),
+            hintStyle: const TextStyle(color: Color(0xFFA89F95), fontSize: 12),
             filled: true,
-            fillColor: const Color(0xFF251D1A),
+            fillColor: const Color(0xFFFAF7F2),
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -1390,11 +1478,11 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.white10),
+              borderSide: const BorderSide(color: Color(0xFFE5DDD3)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFD4AF37), width: 1.2),
+              borderSide: const BorderSide(color: Color(0xFF6B4423), width: 1.4),
             ),
           ),
         ),
@@ -1406,13 +1494,27 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF161311),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.25)),
+        border: Border.all(color: const Color(0xFFEFE8DE), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF5C3A21).withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          const Icon(Icons.qr_code_scanner, color: Color(0xFFD4AF37), size: 22),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF7ED),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.qr_code_scanner, color: Color(0xFFD97706), size: 20),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -1420,14 +1522,14 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
               children: [
                 const Text(
                   'Deterministic ML Class Identifier:',
-                  style: TextStyle(color: Colors.white38, fontSize: 10),
+                  style: TextStyle(color: Color(0xFF8F857D), fontSize: 10),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   slug.isEmpty ? 'brand_beanname_process' : slug,
                   style: const TextStyle(
                     fontFamily: 'monospace',
-                    color: Color(0xFFD4AF37),
+                    color: Color(0xFF6B4423),
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1436,15 +1538,16 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
+              color: const Color(0xFFECFDF5),
               borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: const Color(0xFFA7F3D0)),
             ),
             child: const Text(
               '45 Tensors',
               style: TextStyle(
-                color: Color(0xFFD4AF37),
+                color: Color(0xFF059669),
                 fontSize: 9.5,
                 fontWeight: FontWeight.bold,
               ),
@@ -1461,8 +1564,15 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       decoration: const BoxDecoration(
-        color: Color(0xFF1A1412),
-        border: Border(top: BorderSide(color: Colors.white10)),
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Color(0xFFEADBCE), width: 1.0)),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x0F5C3A21),
+            blurRadius: 10,
+            offset: Offset(0, -2),
+          ),
+        ],
       ),
       child: SafeArea(
         top: false,
@@ -1472,14 +1582,14 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
           child: ElevatedButton(
             onPressed: canTrain ? _startTrainingProcess : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD4AF37),
-              disabledBackgroundColor: Colors.white12,
-              foregroundColor: Colors.black,
-              disabledForegroundColor: Colors.white24,
+              backgroundColor: const Color(0xFF6B4423),
+              disabledBackgroundColor: const Color(0xFFEBE5DF),
+              foregroundColor: Colors.white,
+              disabledForegroundColor: const Color(0xFFA89F95),
+              elevation: canTrain ? 4 : 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
-              elevation: canTrain ? 6 : 0,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1487,7 +1597,7 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
                 Icon(
                   Icons.model_training,
                   size: 20,
-                  color: canTrain ? Colors.black : Colors.white24,
+                  color: canTrain ? Colors.white : const Color(0xFFA89F95),
                 ),
                 const SizedBox(width: 10),
                 Text(
@@ -1496,8 +1606,8 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
                       : 'Lengkapi 3 Foto & Nama Kopi (${state.draft.samples.length}/3)',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: canTrain ? Colors.black : Colors.white38,
+                    fontSize: 13.5,
+                    color: canTrain ? Colors.white : const Color(0xFFA89F95),
                   ),
                 ),
               ],
@@ -1511,7 +1621,7 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
   void _showExplanationSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1E1714),
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -1522,14 +1632,21 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.psychology, color: Color(0xFFD4AF37), size: 24),
-                  SizedBox(width: 10),
-                  Text(
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF7ED),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.psychology, color: Color(0xFFB45309), size: 22),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text(
                     'Arsitektur Transfer Learning',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Color(0xFF2D1F17),
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1544,7 +1661,7 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
                 '3 foto diekspansi menjadi 45 tensor dengan rotasi, perspektif 3D, pencahayaan kafe 2700K, dan specular glares.\n\n'
                 '3. Cosine-Margin Head (AdamW):\n'
                 'Melatih head klasifikasi 960-dimensi langsung di memori HP dalam 60 epoch tanpa panas berlebih atau jank UI.',
-                style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.4),
+                style: TextStyle(color: Color(0xFF5C4F44), fontSize: 12, height: 1.45),
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -1552,10 +1669,12 @@ class _InAppBeanTrainerScreenState extends ConsumerState<InAppBeanTrainerScreen>
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(ctx),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD4AF37),
-                    foregroundColor: Colors.black,
+                    backgroundColor: const Color(0xFF6B4423),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  child: const Text('Mengerti'),
+                  child: const Text('Mengerti', style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
