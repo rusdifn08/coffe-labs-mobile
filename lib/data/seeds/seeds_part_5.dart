@@ -315,10 +315,10 @@ List<Map<String, dynamic>> getSeedsPart5(String now) => [
         "isCustom": false,
         "createdAt": now,
         "steps": [
-          {"stepOrder": 1, "title": "1. Katup Terbuka: Bloom (93°C)", "durationSeconds": 30, "waterAddedGrams": 60, "instruction": "Biarkan switch TERBUKA. Tuang 60g air 93°C hingga mengalir langsung ke server."},
-          {"stepOrder": 2, "title": "2. Katup Terbuka: Pour Kedua (93°C)", "durationSeconds": 45, "waterAddedGrams": 60, "instruction": "Di detik 0:30, tuang lagi 60g air 93°C (total 120g) dengan switch masih terbuka."},
-          {"stepOrder": 3, "title": "3. TUTUP Katup: Imersi Suhu Rendah (70°C)", "durationSeconds": 40, "waterAddedGrams": 160, "instruction": "Di menit 01:15, TUTUP switch! Tambahkan air dingin ke ketel hingga suhu turun ke 70°C, tuang 160g (total 280g), aduk ringan dan rendam 30 detik."},
-          {"stepOrder": 4, "title": "4. BUKA Katup (01:45) & Drawdown", "durationSeconds": 65, "waterAddedGrams": 0, "instruction": "Pada menit 01:45, BUKA switch dan biarkan seluruh air turun hingga menit 03:00."}
+          {"stepOrder": 1, "title": "1. Katup Terbuka: Bloom 60g (93°C)", "durationSeconds": 30, "waterAddedGrams": 60, "instruction": "0:00 Biarkan switch TERBUKA. Tuang 60g air 93°C hingga mengalir langsung ke server."},
+          {"stepOrder": 2, "title": "2. Katup Terbuka: Pour Kedua +60g (93°C)", "durationSeconds": 45, "waterAddedGrams": 60, "instruction": "0:30 Tuang lagi 60g air 93°C (total 120g) dengan switch masih terbuka. Langsung turunkan suhu ketel ke 70°C dengan sedikit air dingin."},
+          {"stepOrder": 3, "title": "3. TUTUP Katup: Imersi Suhu Rendah +160g (70°C)", "durationSeconds": 30, "waterAddedGrams": 160, "instruction": "1:15 TUTUP switch! Tuang 160g air 70°C (total 280g), aduk ringan dan rendam 30 detik hingga menit 01:45."},
+          {"stepOrder": 4, "title": "4. BUKA Katup (01:45) & Drawdown s/d 03:00", "durationSeconds": 75, "waterAddedGrams": 0, "instruction": "1:45 BUKA switch dan biarkan seluruh air turun tuntas hingga menit 03:00."}
         ]
       },
   {

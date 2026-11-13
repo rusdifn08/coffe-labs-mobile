@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../features/notifications/data/services/device_token_lifecycle_service.dart';
+
 class AodDisplayState {
   final Offset pixelShiftOffset;
   final double currentBrightness;
@@ -63,6 +65,9 @@ class AodDisplayEngineController extends Notifier<AodDisplayState> {
     bool enablePixelShift = true,
   }) async {
     state = state.copyWith(isActive: true, currentBrightness: activeBrightness);
+    unawaited(
+      ref.read(deviceTokenLifecycleServiceProvider).syncKioskAodLockState(true),
+    );
 
     // 1. Kunci layar agar tidak sleep / lock otomatis
     try {
@@ -127,6 +132,9 @@ class AodDisplayEngineController extends Notifier<AodDisplayState> {
     _stopTimers();
     await _restoreHardware();
     state = const AodDisplayState(isActive: false);
+    unawaited(
+      ref.read(deviceTokenLifecycleServiceProvider).syncKioskAodLockState(false),
+    );
   }
 
   void _stopTimers() {

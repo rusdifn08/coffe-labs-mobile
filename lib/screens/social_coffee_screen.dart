@@ -1,6 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import '../core/router/app_router.dart';
+import '../features/notifications/presentation/widgets/notification_bell_button.dart';
 import '../features/social/widgets/social_comments_sheet.dart';
 import '../features/social/widgets/social_community_banner.dart';
 import '../features/social/widgets/social_create_post_sheet.dart';
@@ -143,6 +146,34 @@ class _SocialCoffeeScreenState extends State<SocialCoffeeScreen> {
         ),
         centerTitle: true,
         actions: [
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: NotificationBellButton(compact: true),
+          ),
+          IconButton(
+            tooltip: 'Profil Publik Saya',
+            icon: const Icon(
+              CupertinoIcons.person_crop_circle_fill,
+              color: AppTheme.primaryBrown,
+            ),
+            onPressed: () => context.push('/social/profile/me'),
+          ),
+          IconButton(
+            tooltip: 'Jelajah & Stalking Barista',
+            icon: const Icon(
+              CupertinoIcons.compass,
+              color: AppTheme.primaryBrown,
+            ),
+            onPressed: () => context.push(AppRoutes.socialProfiles),
+          ),
+          IconButton(
+            tooltip: 'Direct & Group Chat',
+            icon: const Icon(
+              CupertinoIcons.paperplane_fill,
+              color: AppTheme.primaryBrown,
+            ),
+            onPressed: () => context.push(AppRoutes.socialChat),
+          ),
           IconButton(
             tooltip: 'Basecamp Komunitas',
             icon: const Icon(CupertinoIcons.person_3_fill, color: AppTheme.primaryBrown),
@@ -180,6 +211,204 @@ class _SocialCoffeeScreenState extends State<SocialCoffeeScreen> {
               child: Padding(
                 padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
                 child: SocialCommunityBanner(),
+              ),
+            ),
+
+            // Quick Entry Coffee Clubs, For You & Trending (Modul 3.5)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Material(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () => context.push(AppRoutes.socialExplore),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppTheme.borderWarm),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(9),
+                            decoration: BoxDecoration(
+                              color: AppTheme.accentAmber.withValues(alpha: 0.16),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              CupertinoIcons.sparkles,
+                              color: AppTheme.primaryBrown,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Explore For You, Trending & Clubs',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13.5,
+                                    color: AppTheme.textDark,
+                                  ),
+                                ),
+                                Text(
+                                  'Temukan resep cocok selera & gabung club via Secret ID',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: AppTheme.textMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            CupertinoIcons.chevron_forward,
+                            size: 16,
+                            color: AppTheme.primaryBrown,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Quick Entry Direct & Group Messaging (Real-Time)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Material(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () => context.push(AppRoutes.socialChat),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppTheme.borderWarm),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(9),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryBrown.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              CupertinoIcons.bubble_left_bubble_right_fill,
+                              color: AppTheme.primaryBrown,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Direct & Group Chat Barista',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13.5,
+                                    color: AppTheme.textDark,
+                                  ),
+                                ),
+                                Text(
+                                  'Kirim kartu resep V60 & profil biji real-time',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: AppTheme.textMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            CupertinoIcons.chevron_forward,
+                            size: 16,
+                            color: AppTheme.primaryBrown,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Quick Entry Jelajah & Stalking Profil Barista (Modul 3.2)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Material(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () => context.push(AppRoutes.socialProfiles),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppTheme.borderWarm),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(9),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFD97706).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              CupertinoIcons.person_crop_circle_badge_checkmark,
+                              color: Color(0xFFD97706),
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Jelajah & Stalking Profil Barista',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13.5,
+                                    color: AppTheme.textDark,
+                                  ),
+                                ),
+                                Text(
+                                  'Intip log seduhan, rank barista, badge, & thread terbaru',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: AppTheme.textMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            CupertinoIcons.chevron_forward,
+                            size: 16,
+                            color: AppTheme.primaryBrown,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
 

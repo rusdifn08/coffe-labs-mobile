@@ -62,7 +62,7 @@ final class ActiveBrewControllerProvider
 }
 
 String _$activeBrewControllerHash() =>
-    r'66c5e7d333690d047d94090fe63e9f55e0aacbc5';
+    r'82f6032210cfa7b2af0c6f644980d8a3212b4333';
 
 /// Notifier untuk mengontrol sesi seduh dan timer aktif dengan integrasi Barista TTS.
 

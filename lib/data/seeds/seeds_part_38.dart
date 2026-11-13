@@ -75,82 +75,75 @@ List<Map<String, dynamic>> getSeedsPart38(String now) => [
     "steps": [
       {
         "stepOrder": 1,
-        "title": "Katup Terbuka: Tuang 60g Air 90°C (Bloom)",
-        "durationSeconds": 40,
+        "title": "0:00 (Buka): Bloom 60g Air 90°C",
+        "durationSeconds": 30,
         "waterAddedGrams": 60,
-        "instruction": "Buka tuas switch ke bawah. Tuang 60g air panas 90°C untuk mekar dan biarkan air mengalir bebas ke server."
+        "instruction": "Pastikan tuas switch TERBUKA (posisi bawah). Tuang 60g air panas 90°C untuk bloom hingga detik 0:30."
       },
       {
         "stepOrder": 2,
-        "title": "Katup Masih Terbuka: Tuang 60g Air 90°C",
-        "durationSeconds": 30,
+        "title": "0:30 (Buka): Tuang +60g Air 90°C (Total 120g)",
+        "durationSeconds": 45,
         "waterAddedGrams": 60,
-        "instruction": "Tuang 60g air panas kedua untuk menyelesaikan ekstraksi nada asam buah dan aroma floral melati."
+        "instruction": "Tuang 60g air panas kedua pada 0:30, lalu segera tambahkan sedikit air dingin ke ketel agar suhu turun ke 70°C sambil menunggu hingga 1:15."
       },
       {
         "stepOrder": 3,
-        "title": "TUTUP KATUP: Tuang 160g Air Suhu 70°C",
-        "durationSeconds": 50,
+        "title": "1:15 (TUTUP): Imersi +160g Air Suhu 70°C",
+        "durationSeconds": 30,
         "waterAddedGrams": 160,
-        "instruction": "Tarik tuas switch ke atas (katup tertutup). Tuangkan 160g air dengan suhu yang telah diturunkan ke 70°C, rendam selama 40 detik."
+        "instruction": "Tarik tuas switch ke atas (katup TERTUTUP). Tuangkan 160g air suhu 70°C (total 280g), rendam selama 30 detik hingga 1:45."
       },
       {
         "stepOrder": 4,
-        "title": "TEKAN SWITCH: Aliran Penutup Manis",
-        "durationSeconds": 60,
+        "title": "1:45 (BUKA): Aliran Penutup s/d 3:00",
+        "durationSeconds": 75,
         "waterAddedGrams": 0,
-        "instruction": "Tekan tuas switch ke bawah untuk membuka katup. Nikmati kopi dengan rasa manis legit ekstrem tanpa sedikitpun rasa sepat."
+        "instruction": "Tekan tuas switch ke bawah (katup TERBUKA) pada 1:45 dan biarkan drawdown selesai sekitar 3:00."
       }
     ]
   },
   {
     "id": 645,
-    "title": "World Brewers Cup Switch Champion 2021",
-    "author": "Matt Winton 🇨🇭",
+    "title": "Matt Winton Signature Hario Switch Full Immersion",
+    "author": "Matt Winton 🇨🇭 (Juara WBrC 2021)",
     "coverImageUrl": "assets/images/avatars/covers/matt_winton.jpg",
     "authorAvatarUrl": "assets/images/avatars/portraits/matt_winton.jpg",
     "authorImageUrl": "assets/images/avatars/covers/matt_winton.jpg",
-    "beanName": "Blend Eugenioides & Catucai",
-    "variety": "Coffea Eugenioides & Catucai",
-    "process": "Natural & Washed",
+    "beanName": "Washed Gesha / Sweet Specialty Arabica",
+    "variety": "Geisha / Bourbon",
+    "process": "Washed Process",
     "method": "Hario Switch",
     "category": "Clever Dripper / Switch",
     "waterTempCelsius": 93,
-    "grindSize": "Coarse (32 Klik Comandante)",
+    "grindSize": "Medium-Coarse (26-28 Klik Comandante)",
     "coffeeWeightGrams": 16,
     "totalWaterWeightGrams": 240,
-    "totalTimeSeconds": 180,
-    "description": "Matt Winton memenangkan World Brewers Cup 2021 di Milan dengan memadukan spesies langka Coffea Eugenioides yang manis alami tinggi dengan alat Hario Switch. Menggunakan fase perkolasi V60 di awal dan penutupan katup imersi di akhir.",
+    "totalTimeSeconds": 300,
+    "description": "Resep resmi kolaborasi Matt Winton (Juara WBrC 2021 — yang memenangkan trofi dunia dengan Hario V60 Metal, lalu merilis protokol harian Hario Switch ini). Mengandalkan metode Full Immersion tanpa aduk: katup tertutup rapat sejak awal, tuang 240g air 93°C secara tenang dalam satu aliran, rendam penuh 4 menit, lalu buka katup untuk drawdown manis selembut sutra.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
       {
         "stepOrder": 1,
-        "title": "Katup Buka: Blooming 50g Air 93°C",
-        "durationSeconds": 45,
-        "waterAddedGrams": 50,
-        "instruction": "Biarkan tuas terbuka. Tuang 50g air untuk memicu pelepasan gas CO2 secara lancar ke decanter."
+        "title": "0:00 (Tutup): Tuang Tunggal 240g Air 93°C",
+        "durationSeconds": 40,
+        "waterAddedGrams": 240,
+        "instruction": "Pastikan katup Switch TERTUTUP rapat. Masukkan 16g kopi, lalu tuang seluruh 240g air 93°C dengan aliran stabil memutar membasahi seluruh bubuk."
       },
       {
         "stepOrder": 2,
-        "title": "Katup Buka: Tuangan Aliran Perkolasi 50g",
-        "durationSeconds": 30,
-        "waterAddedGrams": 50,
-        "instruction": "Tuang 50g air kedua dengan gerakan melingkar lambat untuk membangun keasaman buah tropis."
+        "title": "0:40 (Tutup): Rendam Tenang Tanpa Aduk s/d 4:00",
+        "durationSeconds": 200,
+        "waterAddedGrams": 0,
+        "instruction": "Biarkan kopi berimersi penuh tanpa pengadukan tambahan hingga menit ke-04:00 agar partikel halus tidak menyumbat kertas."
       },
       {
         "stepOrder": 3,
-        "title": "Tutup Katup: Tuang 140g Air 88°C (Imersi Penuh)",
+        "title": "4:00 (Buka): Tekan Switch & Drawdown s/d 5:00",
         "durationSeconds": 60,
-        "waterAddedGrams": 140,
-        "instruction": "Tutup tuas switch. Tuang 140g air bersuhu 88°C, biarkan terendam penuh selama 1 menit untuk melarutkan sukrosa murni."
-      },
-      {
-        "stepOrder": 4,
-        "title": "Tekan Tuas Buka & Drawdown Bersih",
-        "durationSeconds": 45,
         "waterAddedGrams": 0,
-        "instruction": "Buka katup switch, biarkan seluruh cairan mengalir turun menghasilkan tekstur selembut sutra dengan rasa manis marshmallow."
+        "instruction": "Buka katup Switch pada menit 04:00, biarkan seluruh ekstrak mengalir turun menghasilkan kejernihan dan kemanisan bersih."
       }
     ]
   },

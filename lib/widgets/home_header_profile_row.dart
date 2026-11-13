@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../features/gamification/models/coffee_level.dart';
 import '../features/gamification/services/gamification_service.dart';
 import '../features/gamification/widgets/gamified_avatar.dart';
+import '../features/notifications/presentation/widgets/notification_bell_button.dart';
 import '../theme/app_theme.dart';
 import 'professional_running_text.dart';
 
@@ -104,6 +105,8 @@ class HomeHeaderProfileRow extends StatelessWidget {
                       ),
                     ),
                   ),
+                  const SizedBox(width: 6),
+                  const NotificationBellButton(compact: true),
                   const SizedBox(width: 6),
                   // Tombol Love Favorit di Pojok Kanan Atas (Memberi ruang bebas di Baris 2)
                   Container(

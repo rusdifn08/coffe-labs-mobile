@@ -213,8 +213,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     if (confirm != true) return;
 
-    await AuthService.logout();
     await ref.read(authControllerProvider.notifier).logout();
+    await AuthService.logout();
     if (!mounted) return;
 
     context.go(AppRoutes.onboarding);

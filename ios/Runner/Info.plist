@@ -49,6 +49,23 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>app.coffeelabs.club</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>coffeelabs</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>Coffee Labs memerlukan akses kamera untuk memindai kemasan biji kopi secara otomatis.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

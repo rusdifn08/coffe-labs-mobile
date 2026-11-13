@@ -3,9 +3,12 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  app_links
   audioplayers_windows
   file_selector_windows
+  firebase_core
   flutter_blue_plus_winrt
+  flutter_secure_storage_windows
   flutter_tts
   printing
   rive_native
@@ -15,6 +18,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  flutter_local_notifications_windows
   jni
   tflite_flutter
 )

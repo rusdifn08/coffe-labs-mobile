@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../repositories/auth_repository.dart';
 import '../../../services/auth_service.dart';
+import '../../notifications/data/services/device_token_lifecycle_service.dart';
+import '../../notifications/presentation/controllers/notification_center_controller.dart';
+import '../../social_chat/presentation/controllers/chat_controllers.dart';
 
 part 'auth_controller.g.dart';
 
@@ -19,6 +24,15 @@ class AuthController extends _$AuthController {
     final result = await repo.login(username: username, password: password);
     if (result.success && result.user != null) {
       state = AsyncValue.data(result.user);
+      unawaited(
+        ref
+            .read(deviceTokenLifecycleServiceProvider)
+            .initializeAndSyncToken(requestPermission: true),
+      );
+      unawaited(ref.read(chatWsServiceProvider).connectIfAuthenticated());
+      unawaited(
+        ref.read(unreadNotificationsCountProvider.notifier).refresh(),
+      );
     }
     return result;
   }
@@ -39,14 +53,33 @@ class AuthController extends _$AuthController {
     );
     if (result.success && result.user != null) {
       state = AsyncValue.data(result.user);
+      unawaited(
+        ref
+            .read(deviceTokenLifecycleServiceProvider)
+            .initializeAndSyncToken(requestPermission: true),
+      );
+      unawaited(ref.read(chatWsServiceProvider).connectIfAuthenticated());
+      unawaited(
+        ref.read(unreadNotificationsCountProvider.notifier).refresh(),
+      );
     }
     return result;
   }
 
   /// Logout akun pengguna.
   Future<void> logout() async {
+    try {
+      await ref.read(deviceTokenLifecycleServiceProvider).unregisterOnLogout();
+    } catch (_) {}
+    try {
+      final ws = ref.read(chatWsServiceProvider);
+      await ws.setActiveRoom(null);
+      await ws.disconnect();
+    } catch (_) {}
+
     final repo = ref.read(authRepositoryProvider);
     await repo.logout();
+    ref.read(unreadNotificationsCountProvider.notifier).setCount(0);
     state = const AsyncValue.data(null);
   }
 

@@ -8,6 +8,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../../core/services/kiosk_engine_service.dart';
 import '../../../../models/business_pos_models.dart';
+import '../../../notifications/data/services/device_token_lifecycle_service.dart';
 
 class AodKioskState {
   final bool isKioskLocked;
@@ -111,6 +112,10 @@ class AodKioskController extends Notifier<AodKioskState> {
       isIdle: false,
     );
 
+    unawaited(
+      ref.read(deviceTokenLifecycleServiceProvider).syncKioskAodLockState(true),
+    );
+
     // 4. Jalankan Lissajous OLED Pixel-Shift Timer (setiap 120 detik, amplitude 2.5px)
     if (config.pixelShiftEnabled) {
       _startLissajousTimer();
@@ -147,6 +152,11 @@ class AodKioskController extends Notifier<AodKioskState> {
         lockTierMode: 'NONE',
         pixelShiftOffset: Offset.zero,
         isIdle: false,
+      );
+      unawaited(
+        ref
+            .read(deviceTokenLifecycleServiceProvider)
+            .syncKioskAodLockState(false),
       );
       return true;
     }

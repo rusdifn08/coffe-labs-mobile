@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../models/social_coffee.dart';
 import '../../../../theme/app_theme.dart';
 import '../utils/social_time_formatter.dart';
@@ -40,62 +41,77 @@ class SocialPostCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Author Profile Header
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: AppTheme.bgCream,
-                backgroundImage: post.authorAvatar.startsWith('assets/')
-                    ? AssetImage(post.authorAvatar) as ImageProvider
-                    : NetworkImage(post.authorAvatar),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            post.authorName,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.textDark,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryBrown.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            post.authorRole,
-                            style: const TextStyle(
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.primaryBrown,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      SocialTimeFormatter.formatRelative(post.createdAt),
-                      style: const TextStyle(fontSize: 10.5, color: AppTheme.textMuted),
-                    ),
-                  ],
+          // Author Profile Header (Tap to stalk public barista profile)
+          InkWell(
+            onTap: () {
+              final target = (post.userId != null && post.userId!.isNotEmpty)
+                  ? post.userId!
+                  : post.authorName.trim();
+              if (target.isEmpty) return;
+              context.push('/social/profile/${Uri.encodeComponent(target)}');
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: AppTheme.bgCream,
+                  backgroundImage: post.authorAvatar.startsWith('assets/')
+                      ? AssetImage(post.authorAvatar) as ImageProvider
+                      : NetworkImage(post.authorAvatar),
                 ),
-              ),
-            ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              post.authorName,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.textDark,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryBrown.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              post.authorRole,
+                              style: const TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.primaryBrown,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        SocialTimeFormatter.formatRelative(post.createdAt),
+                        style: const TextStyle(fontSize: 10.5, color: AppTheme.textMuted),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  CupertinoIcons.chevron_forward,
+                  size: 14,
+                  color: AppTheme.textMuted,
+                ),
+              ],
+            ),
           ),
 
           const SizedBox(height: 12),

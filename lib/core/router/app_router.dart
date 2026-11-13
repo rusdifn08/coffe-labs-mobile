@@ -24,6 +24,16 @@ import '../../services/auth_service.dart';
 import '../../services/trial_service.dart';
 import '../../features/business_pos/screens/aod_kiosk_showcase_route_wrapper.dart';
 import '../../features/annotation_studio/presentation/studio_ai_hub_screen.dart';
+import '../../features/communities/presentation/screens/community_workspace_screen.dart';
+import '../../features/communities/presentation/screens/invite_token_join_screen.dart';
+import '../../features/explore_feed/presentation/screens/social_explore_and_feed_screen.dart';
+import '../../features/notifications/presentation/screens/notification_center_screen.dart';
+import '../../features/social_chat/presentation/screens/social_coffee_chat_list_screen.dart';
+import '../../features/social_chat/presentation/screens/social_coffee_chat_room_screen.dart';
+import '../../features/social_profile_feed/presentation/screens/barista_directory_screen.dart';
+import '../../features/social_profile_feed/presentation/screens/social_user_profile_screen.dart';
+import '../../features/social_profile_feed/presentation/screens/thread_detail_screen.dart';
+import '../../features/social_graph/presentation/screens/social_connections_tab_screen.dart';
 import '../../models/business_pos_models.dart';
 import '../services/kiosk_engine_service.dart';
 
@@ -42,6 +52,18 @@ class AppRoutes {
   static const String favorites = '/favorites';
   static const String settings = '/settings';
   static const String social = '/social';
+  static const String socialProfiles = '/social/profiles';
+  static const String socialExplore = '/social/explore';
+  static const String socialClubs = '/social/clubs';
+  static const String socialClubWorkspace = '/social/clubs/:clubId';
+  static const String socialClubInviteToken = '/c/:token';
+  static const String socialUserProfile = '/social/profile/:target';
+  static const String socialUserConnections =
+      '/social/profile/:target/connections';
+  static const String socialThreadDetail = '/social/thread/:threadId';
+  static const String socialChat = '/social/chat';
+  static const String socialChatRoom = '/social/chat/:conversationId';
+  static const String notifications = '/notifications';
   static const String smartScale = '/smart-scale';
   static const String marketplace = '/marketplace';
   static const String beanRadar = '/bean-radar';
@@ -228,6 +250,103 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: AppRoutes.social,
         builder: (context, state) => const SocialCoffeeScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.socialProfiles,
+        builder: (context, state) => const BaristaDirectoryScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.socialUserProfile,
+        builder: (context, state) {
+          final rawTarget = state.pathParameters['target'] ?? 'me';
+          final target = Uri.decodeComponent(rawTarget);
+          return SocialUserProfileScreen(targetUserOrUsername: target);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.socialUserConnections,
+        builder: (context, state) {
+          final target = Uri.decodeComponent(
+            state.pathParameters['target'] ?? 'me',
+          );
+          final tab = state.uri.queryParameters['tab'] ?? 'followers';
+          final initialTabIndex =
+              tab == 'mutual' ? 0 : (tab == 'following' ? 2 : 1);
+          final displayName = state.uri.queryParameters['name'] ?? '';
+          final isOwn = state.uri.queryParameters['own'] == '1';
+          return SocialConnectionsTabScreen(
+            targetUserOrUsername: target,
+            displayName: displayName,
+            initialTabIndex: initialTabIndex,
+            isOwnProfile: isOwn,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.socialThreadDetail,
+        builder: (context, state) {
+          final threadId = state.pathParameters['threadId'] ?? '';
+          return ThreadDetailScreen(threadId: threadId);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.socialChat,
+        builder: (context, state) => const SocialCoffeeChatListScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.socialChatRoom,
+        builder: (context, state) {
+          final convId = state.pathParameters['conversationId'] ?? '';
+          return SocialCoffeeChatRoomScreen(conversationId: convId);
+        },
+      ),
+      GoRoute(
+        path: '/social/chat/room/:conversationId',
+        builder: (context, state) {
+          final convId = state.pathParameters['conversationId'] ?? '';
+          return SocialCoffeeChatRoomScreen(conversationId: convId);
+        },
+      ),
+      GoRoute(
+        path: '/social/threads/:threadId',
+        builder: (context, state) {
+          final threadId = state.pathParameters['threadId'] ?? '';
+          return ThreadDetailScreen(threadId: threadId);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.socialExplore,
+        builder: (context, state) => const SocialExploreAndFeedScreen(initialTabIndex: 0),
+      ),
+      GoRoute(
+        path: AppRoutes.socialClubs,
+        builder: (context, state) => const SocialExploreAndFeedScreen(initialTabIndex: 2),
+      ),
+      GoRoute(
+        path: AppRoutes.socialClubWorkspace,
+        builder: (context, state) {
+          final clubId = state.pathParameters['clubId'] ?? '';
+          return CommunityWorkspaceScreen(communityId: clubId);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.socialClubInviteToken,
+        builder: (context, state) {
+          final token = state.pathParameters['token'] ?? '';
+          return InviteTokenJoinScreen(token: token);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.notifications,
+        builder: (context, state) => const NotificationCenterScreen(),
+      ),
+      GoRoute(
+        path: '/settings/subscription',
+        builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/brew/timer',
+        builder: (context, state) => BrewTimerScreen(recipeData: state.extra),
       ),
       GoRoute(
         path: AppRoutes.smartScale,

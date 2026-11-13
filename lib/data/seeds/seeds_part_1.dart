@@ -275,20 +275,21 @@ List<Map<String, dynamic>> getSeedsPart1(String now) => [
         "beanName": "Laurina, Daterra Farm (Brasil, Semi-CM)",
         "variety": "Laurina (Bourbon Pointu)",
         "process": "Semi-Carbonic Maceration",
-        "method": "GINA",
+        "method": "GINA Smart Brewer",
         "category": "Hybrid",
-        "waterTempCelsius": 80, // Using lowest start temp for simplicity
-        "grindSize": "Medium",
+        "waterTempCelsius": 80,
+        "grindSize": "Coarse",
         "coffeeWeightGrams": 17,
         "totalWaterWeightGrams": 220,
-        "totalTimeSeconds": 150,
-        "description": "Fukahori mengguncang tatanan dengan varietas Laurina, sebuah mutasi dari pohon Bourbon yang memiliki kandungan kafein dan asam klorogenat 50% lebih rendah. Hal ini membuatnya hampir mustahil diekstraksi menjadi pahit. Ia menggunakan alat seduh GINA. Ia menutup katup bawah untuk fase imersi dengan air 80°C selama 45 detik (menarik molekul gula), lalu membuka katup dengan air 95°C (menarik asam buah), dan menutupnya kembali di tahap akhir untuk menambah bobot tekstur.",
+        "totalTimeSeconds": 175,
+        "description": "Fukahori mengguncang tatanan WBrC 2018 dengan varietas Laurina (kafein & asam klorogenat 50% lebih rendah) di alat hibrida GINA by Goat Story. Teknik resmi katup 4-fase: 0:00 (Katup Tutup) imersi 50g air 80°C selama 45 detik untuk mengunci rasa manis, 0:45 (Katup Buka) perkolasi 100g air panas 95°C hingga 1:45 untuk membuka keasaman buah, 1:45 (Katup Tutup) imersi kedua 70g air 80°C selama 45 detik membangun body juicy, dan 2:30 (Katup Buka) tiris penuh hingga 2:55.",
         "isCustom": false,
         "createdAt": now,
         "steps": [
-          {"stepOrder": 1, "title": "Immersion (80°C)", "durationSeconds": 45, "waterAddedGrams": 50},
-          {"stepOrder": 2, "title": "Percolation (95°C)", "durationSeconds": 75, "waterAddedGrams": 120},
-          {"stepOrder": 3, "title": "Final Immersion", "durationSeconds": 30, "waterAddedGrams": 50}
+          {"stepOrder": 1, "title": "0:00 (Tutup) 50g Air 80°C - Imersi I (Sweetness)", "durationSeconds": 45, "waterAddedGrams": 50},
+          {"stepOrder": 2, "title": "0:45 (Buka) +100g Air 95°C - Perkolasi Tengah", "durationSeconds": 60, "waterAddedGrams": 100},
+          {"stepOrder": 3, "title": "1:45 (Tutup) +70g Air 80°C - Imersi II (Body)", "durationSeconds": 45, "waterAddedGrams": 70},
+          {"stepOrder": 4, "title": "2:30 (Buka) Tiris Drawdown s/d 2:55 - Release", "durationSeconds": 25, "waterAddedGrams": 0}
         ]
       },
   {
@@ -362,9 +363,9 @@ List<Map<String, dynamic>> getSeedsPart1(String now) => [
         "isCustom": false,
         "createdAt": now,
         "steps": [
-          {"stepOrder": 1, "title": "Bloom (6g/s)", "durationSeconds": 30, "waterAddedGrams": 60},
-          {"stepOrder": 2, "title": "Slow Pour (4g/s)", "durationSeconds": 40, "waterAddedGrams": 80},
-          {"stepOrder": 3, "title": "Fast Pour (5g/s)", "durationSeconds": 30, "waterAddedGrams": 100}
+          {"stepOrder": 1, "title": "0:00 Bloom 60g (Laju 6g/s selama 10s + Jeda 8s)", "durationSeconds": 18, "waterAddedGrams": 60},
+          {"stepOrder": 2, "title": "0:18 Slow Pour +80g (Laju 4g/s selama 20s + Jeda 18s)", "durationSeconds": 38, "waterAddedGrams": 80},
+          {"stepOrder": 3, "title": "0:56 Fast Pour +100g (Laju 5g/s) & Tiris s/d 1:40", "durationSeconds": 44, "waterAddedGrams": 100}
         ]
       },
   {

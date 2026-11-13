@@ -128,10 +128,10 @@ List<Map<String, dynamic>> getSeedsPart2(String now) => [
         "isCustom": false,
         "createdAt": now,
         "steps": [
-          {"stepOrder": 1, "title": "Cold Bloom (70°C)", "durationSeconds": 40, "waterAddedGrams": 50},
-          {"stepOrder": 2, "title": "Hot Pour 1 (95°C)", "durationSeconds": 33, "waterAddedGrams": 50},
-          {"stepOrder": 3, "title": "Hot Pour 2 (95°C)", "durationSeconds": 33, "waterAddedGrams": 50},
-          {"stepOrder": 4, "title": "Hot Pour 3 (95°C)", "durationSeconds": 34, "waterAddedGrams": 50}
+          {"stepOrder": 1, "title": "0:00 Cold Bloom 50g (70°C)", "durationSeconds": 30, "waterAddedGrams": 50},
+          {"stepOrder": 2, "title": "0:30 Hot Pour I +50g (95°C)", "durationSeconds": 30, "waterAddedGrams": 50},
+          {"stepOrder": 3, "title": "1:00 Hot Pour II +50g (95°C)", "durationSeconds": 30, "waterAddedGrams": 50},
+          {"stepOrder": 4, "title": "1:30 Hot Pour III +50g (95°C) & Tiris", "durationSeconds": 50, "waterAddedGrams": 50}
         ]
       },
   {
@@ -282,7 +282,7 @@ List<Map<String, dynamic>> getSeedsPart2(String now) => [
         "coffeeWeightGrams": 17,
         "totalWaterWeightGrams": 270,
         "totalTimeSeconds": 140,
-        "description": "Metode Wölfl adalah purwarupa penuangan ultra-modern di mana agitasi fisik secara konseptual 'dibunuh'. Ia menggunakan Orea V4 dengan kertas saring lab Sibarist, dan mendistribusikan kopi (490 mikron seragam) dengan jarum WDT. Aliran cerek dipecah oleh penyebar air Theo Shower Screen. Bubuk kopinya dapat menelan air ekstraksi secepat 2 menit 20 detik tanpa ada celah pelarutan asimetris, mengekstraksi tingkat gula paling murni dan menolak senyawa beraroma kayu.",
+        "description": "Metode Wölfl adalah purwarupa penuangan ultra-modern di mana agitasi fisik secara konseptual 'dibunuh'. Ia menggunakan Orea V4 (Fast Base) dengan kertas saring lab Sibarist FAST, dan mendistribusikan kopi (490–630 mikron seragam) dengan jarum WDT. Aliran cerek dipecah oleh penyebar air Melodrip dalam 4 pulsa (60ml, 60ml, 50ml, 100ml). Bubuk kopinya menyelesaikan drawdown secepat 2 menit 20 detik tanpa celah pelarutan asimetris, mengekstraksi kemanisan murni.",
         "isCustom": false,
         "createdAt": now,
         "steps": [
@@ -324,22 +324,24 @@ List<Map<String, dynamic>> getSeedsPart2(String now) => [
         "coverImageUrl": "assets/images/avatars/covers/ryan_wibawa.jpg",
         "authorAvatarUrl": "assets/images/avatars/portraits/ryan_wibawa.jpg",
         "authorImageUrl": "assets/images/avatars/covers/ryan_wibawa.jpg",
-        "beanName": "Gesha, Ombligon, Excelsa Sumedang",
+        "beanName": "Windy Ridge Gesha, El Diviso Ombligon & Excelsa Sukawangi Sumedang",
         "variety": "Geisha, Ombligon & Excelsa Sumedang",
-        "process": "Washed Process",
-        "method": "Hario Switch + Drip Assist",
+        "process": "Washed & Anaerobic Blend",
+        "method": "Hario Switch 02 (Sibarist Filter)",
         "category": "Hybrid",
         "waterTempCelsius": 86,
-        "grindSize": "Coarse",
+        "grindSize": "Medium-Coarse (25 Klik Comandante / ~750-800µm)",
         "coffeeWeightGrams": 15,
         "totalWaterWeightGrams": 220,
-        "totalTimeSeconds": 140,
-        "description": "Ryan Wibawa mengunci posisi ketiga lewat pendekatan Bhinneka Tunggal Ika dengan Hario Switch. Ia memasukkan kopi Excelsa dari Sumedang sebagai pengikat tebal (body matrix) untuk spesies Ombligon dan Gesha. Wibawa meniadakan turbulensi dengan penuangan melalui Drip Assist. Pada tuas katup tertutup, ia memberikan imersi suhu 86°C selama 40 detik. Cairan kedua menyusul di 92°C direndam sebelum dilepas bebas. Ini meredam agresi keasaman menjadi harmoni rasa sempurna.",
+        "totalTimeSeconds": 160,
+        "description": "Resep resmi Double Immersion Ryan Wibawa ('Bhinneka Tunggal Ika' — Juara 3 World Brewers Cup 2024 Chicago). Memadukan Windy Ridge Geisha Panama, El Diviso Ombligon Kolombia, dan Excelsa Sukawangi Sumedang di Hario Switch 02 kaca + kertas Sibarist. Protokol 4 langkah katup: 0:00 (Katup Tutup) imersi bloom 100g air 86°C s/d 0:40, 0:40 (Katup Buka) kuras habis hingga 1:05, 1:05 (Katup Tutup) tuang +120g air 92°C untuk imersi kedua hingga 2:00, lalu 2:00 (Katup Buka) tiris drawdown tuntas di 2:35–2:45.",
         "isCustom": false,
         "createdAt": now,
         "steps": [
-          {"stepOrder": 1, "title": "Imersi Tertutup (86°C)", "durationSeconds": 40, "waterAddedGrams": 100},
-          {"stepOrder": 2, "title": "Perkolasi Terbuka (92°C)", "durationSeconds": 100, "waterAddedGrams": 120}
+          {"stepOrder": 1, "title": "0:00 (Tutup) 100g Air 86°C - Imersi I (Bloom)", "durationSeconds": 40, "waterAddedGrams": 100},
+          {"stepOrder": 2, "title": "0:40 (Buka) Drain Fase I s/d 1:05", "durationSeconds": 25, "waterAddedGrams": 0},
+          {"stepOrder": 3, "title": "1:05 (Tutup) +120g Air 92°C - Imersi II", "durationSeconds": 55, "waterAddedGrams": 120},
+          {"stepOrder": 4, "title": "2:00 (Buka) Tiris Drawdown s/d 2:40 - Release", "durationSeconds": 40, "waterAddedGrams": 0}
         ]
       },
   {
@@ -349,23 +351,23 @@ List<Map<String, dynamic>> getSeedsPart2(String now) => [
         "coverImageUrl": "assets/images/avatars/covers/peng_jinyang.jpg",
         "authorAvatarUrl": "assets/images/avatars/portraits/peng_jinyang.jpg",
         "authorImageUrl": "assets/images/avatars/covers/peng_jinyang.jpg",
-        "beanName": "Mount Totumas Gesha",
+        "beanName": "Mount Totumas Gesha (3 Profil Roasting)",
         "variety": "Panama Geisha (Mount Totumas)",
         "process": "Washed Process",
-        "method": "Solo Dripper",
+        "method": "Solo Dripper + Melodrip",
         "category": "Cone",
         "waterTempCelsius": 96,
-        "grindSize": "Medium",
+        "grindSize": "Medium-Fine (26-27 Klik Comandante / ~800µm)",
         "coffeeWeightGrams": 15,
         "totalWaterWeightGrams": 210,
-        "totalTimeSeconds": 150,
-        "description": "Peng Jinyang merombak tradisi dengan menyangrai satu kopi dalam tiga delta suhu berbeda sebelum mencampurnya kembali. Ia menggunakan Solo Dripper dan membawa thermal probe ke meja juri untuk merekam penurunan suhu aktual. Tuangan awal di suhu 96°C mengekstraksi lapisan dasar, lalu tuangan terakhir dihancurkan suhunya menjadi 80°C yang dihantarkan lewat Melodrip untuk mencegah ekstraksi zat astringency (penyebab kering di mulut).",
+        "totalTimeSeconds": 105,
+        "description": "George Jinyang Peng memenangkan WBrC 2025 Jakarta dengan konsep 'Temperature is a Story', menyangrai Gesha Mount Totumas dalam 3 kurva suhu lalu menggabungkannya. Memakai Solo Dripper (dipanaskan intensif dengan ~80ml air 96°C) + filter Sibarist FAST dan air 40 ppm: 0:00 bloom 30g @ 96°C, 0:30 tuangan tengah +90g @ 96°C (total 120g), dan 1:10 tuangan akhir +90g @ 80°C melalui Melodrip agar tanpa agitasi dan bebas astringency, drawdown cepat tuntas di 1:45.",
         "isCustom": false,
         "createdAt": now,
         "steps": [
-          {"stepOrder": 1, "title": "Hot Bloom (96°C)", "durationSeconds": 40, "waterAddedGrams": 50},
-          {"stepOrder": 2, "title": "Hot Pour (96°C)", "durationSeconds": 50, "waterAddedGrams": 80},
-          {"stepOrder": 3, "title": "Cold Melodrip (80°C)", "durationSeconds": 60, "waterAddedGrams": 80}
+          {"stepOrder": 1, "title": "0:00 Bloom 30g Air 96°C", "durationSeconds": 30, "waterAddedGrams": 30},
+          {"stepOrder": 2, "title": "0:30 Pour II +90g Air 96°C (Total 120g)", "durationSeconds": 40, "waterAddedGrams": 90},
+          {"stepOrder": 3, "title": "1:10 Melodrip +90g Air 80°C & Tiris s/d 1:45", "durationSeconds": 35, "waterAddedGrams": 90}
         ]
       },
   {
