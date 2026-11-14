@@ -20,6 +20,7 @@
 -keep class com.google.mlkit.vision.objects.** { *; }
 -dontwarn com.google.mlkit.vision.common.**
 -keep class com.google.mlkit.vision.common.** { *; }
+-dontwarn com.google.firebase.iid.**
 
 # Rive native & other plugins
 -dontwarn app.rive.runtime.kotlin.**

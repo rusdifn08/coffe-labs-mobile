@@ -88,8 +88,8 @@ class AppUpdateService {
       };
     } catch (_) {
       return {
-        'version': '2.0.0',
-        'buildNumber': 2,
+        'version': '2.3.0',
+        'buildNumber': 6,
         'patchNumber': 0,
         'appName': 'Coffee Labs',
       };
@@ -159,11 +159,11 @@ class AppUpdateService {
     return const VersionCheckResult(
       actionCode: 'UP_TO_DATE',
       targetPatch: null,
-      latestBaseVersion: '2.0.0',
-      latestBuildNumber: 2,
+      latestBaseVersion: '2.3.0',
+      latestBuildNumber: 6,
       isForceUpdate: false,
       releaseNotes: 'Aplikasi berjalan normal dengan versi stabil saat ini.',
-      downloadUrl: 'https://github.com/rusdi-labs/coffee-hub-mobile/releases/latest',
+      downloadUrl: 'https://github.com/rusdifn08/coffe-labs-mobile/releases/latest',
     );
   }
 

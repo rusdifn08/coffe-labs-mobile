@@ -771,7 +771,7 @@ class _BusinessSettingsScreenState
           const SizedBox(height: 14),
           _buildInfoRow(
             label: 'Versi Aplikasi POS',
-            value: 'v2.0.0 (Build #2)',
+            value: 'v2.3.0 (Build #6)',
             icon: CupertinoIcons.info_circle_fill,
             valueColor: Colors.white,
           ),

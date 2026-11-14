@@ -86,7 +86,14 @@ class ReceiptPreviewModal extends StatelessWidget {
                   child: Column(
                     children: [
                       // Coffee Labs Emblem
-                      const Icon(Icons.local_cafe, size: 36, color: Color(0xFF3E2723)),
+                      Image.asset(
+                        'assets/images/coffee_labs_emblem.png',
+                        width: 48,
+                        height: 48,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.local_cafe, size: 36, color: Color(0xFF3E2723)),
+                      ),
                       const SizedBox(height: 10),
                       SelectableText(
                         receiptText,

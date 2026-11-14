@@ -142,7 +142,7 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             TAG="${GITHUB_REF#refs/tags/}"
           else
-            TAG="v2.2.0-$(date +'%Y%m%d-%H%M')"
+            TAG="v2.3.0-$(date +'%Y%m%d-%H%M')"
           fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "title=Coffee Labs App Release $TAG" >> $GITHUB_OUTPUT
@@ -155,12 +155,12 @@ jobs:
           draft: false
           prerelease: false
           body: |
-            ## ☕ Coffee Labs Mobile Release v2.2.0
+            ## ☕ Coffee Labs Mobile Release v2.3.0
             
             Unduh file aplikasi secara langsung tanpa kompresi `.zip`:
             
             ### 📱 Android (.apk):
-            - **`CoffeeLabs-arm64-v8a.apk`** *(Direkomendasikan - Ukuran Terkompresi ~80MB Lebih Hemat untuk Smartphone Modern)*
+            - **`CoffeeLabs-arm64-v8a.apk`** *(Direkomendasikan - Ukuran Terkompresi Lebih Hemat untuk Smartphone Modern)*
             - **`CoffeeLabs-Universal.apk`** *(Universal - Kompatibel dengan Semua Arsitektur Android)*
             - **`CoffeeLabs-armeabi-v7a.apk`** *(Perangkat Android 32-bit)*
             - **`CoffeeLabs-x86_64.apk`** *(Emulator Android & Perangkat x86_64)*
@@ -168,12 +168,10 @@ jobs:
             ### 🍏 iOS (.ipa):
             - **`CoffeeLabs-iOS-Release.ipa`** *(Format `.ipa` terkompresi untuk sideloading via AltStore, Sideloadly, TrollStore, atau Scarlet)*
 
-            ### ✨ Apa yang Baru di v2.2.0 (Studio AI & MobileNetV4 Hybrid):
-            - 🧠 **Hybrid MobileNetV4 On-Device Continual Training**: Arsitektur transfer learning on-device yang menggabungkan ekstraksi embedding MobileNetV4 1280-D dengan Spatial Pyramid Pooling dan K=2 Sub-Centroids untuk zero catastrophic forgetting.
-            - 🔄 **10x Isolate Data Augmentation Pipeline**: Dari 3 foto sumber kemasan kopi (depan, kiri, kanan), sistem otomatis menghasilkan 30 variasi citra fotorealistik (rotasi, tilt perspektif, warm cafe ambient, cool retail, shadow crease, window glare, motion blur, sensor noise).
-            - ⚡ **Background Preprocessing & CLAHE**: Normalisasi orientasi EXIF, isolasi poligon kemasan, dan pemerataan kontras CLAHE untuk mengatasi pantulan cahaya foil/plastik.
-            - 🎨 **Roboflow Studio v5.0 Mobile Upgrade**: Kanvas sentuh presisi SAM 3, Bounding Box, Poligon RDP, Ribbon pemilihan/pembuatan class di bagian atas kanvas, serta Undo/Redo.
-            - 🛡️ **Non-Coffee Gatekeeper & Robust Socket Pooling**: Penyaringan foto non-kopi otomatis dan eliminasi socket exhaustion.
+            ### ✨ Apa yang Baru di v2.3.0:
+            - 🎨 **Identitas Brand & Animasi Splash Screen Profesional**: Pembaruan penuh ikon peluncur lintas platform (Android Adaptive, iOS, macOS, Windows, Web), logo transparan bebas latar putih di seluruh aplikasi, dan animasi splash screen telemetri orbital & Chemex berkonsep Warm Cream Coffee Labs.
+            - 💬 **Social Coffee Ecosystem 3.1–3.5**: Real-Time Direct Chat (WebSocket + Drift SQLite offline cache), Profil Publik & Activity Thread Feed, Asymmetric Follow/Follback/Mutual Social Graph, Push Notification Engine (FCM + In-App Deep Link), serta Komunitas Coffee Club & Feed For You / Trending.
+            - ☕ **100+ Indonesian Roastery & WBrC 2025 Precision**: Katalog 100 roastery Nusantara, pembaruan kelas deteksi AI, dan penyempurnaan resep WBrC 2025.
           files: release-files/*.*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

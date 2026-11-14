@@ -27,7 +27,7 @@ class NotificationApiService {
     required String platform,
     required String fcmToken,
     String? apnsToken,
-    String appVersion = '2.2.0',
+    String appVersion = '2.3.0',
     String? deviceModel,
     bool isKioskAodActive = false,
   }) async {

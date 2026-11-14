@@ -422,8 +422,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 24),
+            Center(
+              child: Image.asset(
+                'assets/images/coffee_labs_logo.png',
+                width: 112,
+                height: 112,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+              ),
+            ),
+            const SizedBox(height: 8),
             const Text(
-              'Coffee Labs v2.0.0\nPowered by Rust Axum & Shorebird Engine',
+              'v2.3.0 • Powered by Rust Axum & Shorebird Engine',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 11, color: AppTheme.textMuted, height: 1.4),
             ),

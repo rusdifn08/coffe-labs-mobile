@@ -10,10 +10,11 @@ import '../services/auth_service.dart';
 import '../services/trial_service.dart';
 import '../widgets/splash_brew_animation.dart';
 
-/// Halaman pembuka (Splash Screen) dengan animasi sinematik bertaraf profesional:
-/// - Logo emblem modern (bejana laboratorium & biji kopi emas) tanpa lingkaran kaku.
-/// - Efek uap aroma melayang, riak ekstraksi emas, dan kilau cahaya dinamis.
-/// - Tipografi modern luxury dengan transisi halus deklaratif GoRouter.
+/// Halaman pembuka (Splash Screen) Coffee Labs beranimasi koreografis profesional:
+/// - Kanvas Warm Cream Atelier (#FFFDF9 -> #F6EDE0 -> #EADBC6) selaras ikon & tema terang resmi.
+/// - Emblem orbital-atom & Chemex transparan bebas latar putih dengan kilau emas menyapu.
+/// - Cincin telemetri orbital & partikel satelit berputar halus di belakang emblem.
+/// - Staggered typography entrance menuju transisi rute GoRouter deklaratif.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -25,41 +26,67 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
   late AnimationController _introCtrl;
   late AnimationController _aromaCtrl;
 
-  late Animation<double> _scale;
-  late Animation<double> _fade;
+  late Animation<double> _logoScale;
+  late Animation<double> _logoRotate;
+  late Animation<double> _logoFade;
+  late Animation<double> _textFade;
   late Animation<double> _textSlide;
+  late Animation<double> _subtitleFade;
   late Animation<double> _auraPulse;
 
   @override
   void initState() {
     super.initState();
 
-    // 1. Controller untuk intro reveal (kemunculan awal 1000ms)
+    // 1. Koreografi masuk bertahap (1150ms)
     _introCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 1150),
     );
 
-    _scale = Tween<double>(begin: 0.82, end: 1.0).animate(
-      CurvedAnimation(parent: _introCtrl, curve: Curves.easeOutCubic),
+    _logoFade = CurvedAnimation(
+      parent: _introCtrl,
+      curve: const Interval(0.0, 0.50, curve: Curves.easeOut),
     );
 
-    _fade = CurvedAnimation(parent: _introCtrl, curve: Curves.easeOut);
-
-    _textSlide = Tween<double>(begin: 18.0, end: 0.0).animate(
+    _logoScale = Tween<double>(begin: 0.74, end: 1.0).animate(
       CurvedAnimation(
         parent: _introCtrl,
-        curve: const Interval(0.25, 1.0, curve: Curves.easeOutQuart),
+        curve: const Interval(0.0, 0.78, curve: Curves.easeOutBack),
       ),
     );
 
-    // 2. Controller looping untuk uap aroma & kilau cahaya
+    _logoRotate = Tween<double>(begin: -0.10, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _introCtrl,
+        curve: const Interval(0.0, 0.74, curve: Curves.easeOutQuart),
+      ),
+    );
+
+    _textFade = CurvedAnimation(
+      parent: _introCtrl,
+      curve: const Interval(0.32, 0.86, curve: Curves.easeOut),
+    );
+
+    _textSlide = Tween<double>(begin: 22.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _introCtrl,
+        curve: const Interval(0.32, 0.90, curve: Curves.easeOutQuart),
+      ),
+    );
+
+    _subtitleFade = CurvedAnimation(
+      parent: _introCtrl,
+      curve: const Interval(0.52, 1.0, curve: Curves.easeOut),
+    );
+
+    // 2. Siklus ambien orbital, uap aroma & kilau emas berkelanjutan
     _aromaCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2800),
+      duration: const Duration(milliseconds: 3000),
     )..repeat();
 
-    _auraPulse = Tween<double>(begin: 0.85, end: 1.15).animate(
+    _auraPulse = Tween<double>(begin: 0.90, end: 1.12).animate(
       CurvedAnimation(parent: _aromaCtrl, curve: Curves.easeInOut),
     );
 
@@ -68,12 +95,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
   }
 
   Future<void> _goNext() async {
-    // Warm up backend di Render secara senyap di background
+    // Warm up backend secara senyap di background sambil mengecek sesi
     AuthService.warmUpBackend();
     final authUser = await ref.read(authControllerProvider.future);
     final isAuthed = authUser != null || await AuthService.isLoggedIn();
     final isTrial = await TrialService.isTrialMode();
-    await Future.delayed(const Duration(milliseconds: 1400));
+    await Future.delayed(const Duration(milliseconds: 1450));
     if (!mounted) return;
     context.go((isAuthed || isTrial) ? AppRoutes.home : AppRoutes.onboarding);
   }
@@ -93,14 +120,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: RadialGradient(
-            center: Alignment(0.0, -0.12),
+            center: Alignment(0.0, -0.10),
             radius: 1.15,
             colors: [
-              Color(0xFF261A13), // Hangat di sekitar logo
-              Color(0xFF160E0A), // Espresso gelap
-              Color(0xFF0F0A07), // Obsidian pekat di tepian
+              Color(0xFFFFFCF7), // Sorotan krem hangat di belakang logo
+              Color(0xFFF6EDE0), // Krem signature Coffee Labs
+              Color(0xFFE9DAC4), // Parchment hangat di tepian
             ],
-            stops: [0.0, 0.55, 1.0],
+            stops: [0.0, 0.56, 1.0],
           ),
         ),
         child: SafeArea(
@@ -109,21 +136,20 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
             builder: (context, child) {
               return Stack(
                 children: [
-                  // Ambient warm spotlight di belakang logo
+                  // Sorotan ambien hangat di belakang logo transparan
                   Center(
                     child: Transform.translate(
-                      offset: const Offset(0, -32),
+                      offset: const Offset(0, -34),
                       child: Container(
-                        width: 220 * _auraPulse.value,
-                        height: 220 * _auraPulse.value,
+                        width: 210 * _auraPulse.value,
+                        height: 210 * _auraPulse.value,
                         decoration: BoxDecoration(
-                          shape: BoxShape.rectangle,
-                          borderRadius: BorderRadius.circular(110),
+                          shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFE5A93C).withValues(alpha: 0.12 * _fade.value),
-                              blurRadius: 70,
-                              spreadRadius: 20,
+                              color: const Color(0xFFD4AF37).withValues(alpha: 0.16 * _logoFade.value),
+                              blurRadius: 68,
+                              spreadRadius: 16,
                             ),
                           ],
                         ),
@@ -133,162 +159,202 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
 
                   // Konten Hero di Tengah
                   Center(
-                    child: FadeTransition(
-                      opacity: _fade,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // 1. Logo Emblem Bejana Lab Kopi Modern (Tanpa Lingkaran)
-                          ScaleTransition(
-                            scale: _scale,
-                            child: SizedBox(
-                              width: 170,
-                              height: 170,
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  // Partikel uap & riak ekstraksi (Custom Painter)
-                                  CustomPaint(
-                                    size: const Size(170, 170),
-                                    painter: SplashAromaPainter(
-                                      progress: _aromaCtrl.value,
-                                      steamColor: const Color(0xFFF7E7CE),
-                                      goldAccent: const Color(0xFFE5A93C),
-                                    ),
-                                  ),
-
-                                  // Emblem utama dengan efek kilau emas menyapu
-                                  ShimmerGlance(
-                                    animationValue: _aromaCtrl.value,
-                                    child: Image.asset(
-                                      'assets/images/coffee_labs_emblem.png',
-                                      width: 140,
-                                      height: 140,
-                                      fit: BoxFit.contain,
-                                      errorBuilder: (context, error, stackTrace) => const Icon(
-                                        CupertinoIcons.lab_flask_solid,
-                                        size: 72,
-                                        color: Color(0xFFD4AF37),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // 1. Panggung Emblem Orbital & Uap Kopi Transparan
+                        SizedBox(
+                          width: 216,
+                          height: 216,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              CustomPaint(
+                                size: const Size(216, 216),
+                                painter: SplashOrbitalTelemetryPainter(
+                                  introProgress: _introCtrl.value,
+                                  loopProgress: _aromaCtrl.value,
+                                  espressoColor: const Color(0xFF3D2313),
+                                  goldAccent: const Color(0xFFC8922E),
+                                  sageAccent: const Color(0xFF6D7B61),
+                                ),
+                              ),
+                              CustomPaint(
+                                size: const Size(216, 216),
+                                painter: SplashAromaPainter(
+                                  progress: _aromaCtrl.value,
+                                  steamColor: const Color(0xFF9A7B4F),
+                                  goldAccent: const Color(0xFFC8922E),
+                                ),
+                              ),
+                              FadeTransition(
+                                opacity: _logoFade,
+                                child: Transform.rotate(
+                                  angle: _logoRotate.value,
+                                  child: Transform.scale(
+                                    scale: _logoScale.value,
+                                    child: ShimmerGlance(
+                                      animationValue: _aromaCtrl.value,
+                                      child: Image.asset(
+                                        'assets/images/coffee_labs_emblem.png',
+                                        width: 152,
+                                        height: 152,
+                                        fit: BoxFit.contain,
+                                        errorBuilder: (context, error, stackTrace) => const Icon(
+                                          CupertinoIcons.lab_flask_solid,
+                                          size: 72,
+                                          color: Color(0xFF6B4423),
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ],
+                                ),
                               ),
-                            ),
+                            ],
                           ),
+                        ),
 
-                          const SizedBox(height: 28),
+                        const SizedBox(height: 18),
 
-                          // 2. Tipografi Judul 'Coffee Labs'
-                          Transform.translate(
+                        // 2. Tipografi Judul 'Coffee Labs' Espresso Modern
+                        FadeTransition(
+                          opacity: _textFade,
+                          child: Transform.translate(
                             offset: Offset(0, _textSlide.value),
                             child: Column(
                               children: [
                                 Text(
                                   'Coffee Labs',
                                   style: GoogleFonts.poppins(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFFFFF7ED),
-                                    letterSpacing: 2.2,
+                                    fontSize: 33,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF3D2313),
+                                    letterSpacing: 1.4,
                                     shadows: [
                                       Shadow(
-                                        color: Colors.black.withValues(alpha: 0.5),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 3),
-                                      ),
-                                      Shadow(
-                                        color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
-                                        blurRadius: 18,
+                                        color: const Color(0xFF3D2313).withValues(alpha: 0.08),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
                                       ),
                                     ],
                                   ),
                                 ),
-                                const SizedBox(height: 10),
+                                const SizedBox(height: 8),
 
-                                // 3. Subtitle 'Master Your Brew' dengan garis emas presisi
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      width: 24,
-                                      height: 1,
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            const Color(0xFFD4AF37).withValues(alpha: 0.0),
-                                            const Color(0xFFD4AF37).withValues(alpha: 0.7),
-                                          ],
+                                // 3. Subtitle 'Master Your Brew' dengan garis gradien emas
+                                FadeTransition(
+                                  opacity: _subtitleFade,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        width: 28,
+                                        height: 1.2,
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              const Color(0xFFC8922E).withValues(alpha: 0.0),
+                                              const Color(0xFFC8922E).withValues(alpha: 0.8),
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                                      child: Text(
-                                        'Master Your Brew',
-                                        style: GoogleFonts.poppins(
-                                          color: const Color(0xFFE5A93C),
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                          letterSpacing: 3.2,
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                                        child: Text(
+                                          'MASTER YOUR BREW',
+                                          style: GoogleFonts.poppins(
+                                            color: const Color(0xFF8C6220),
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: 3.0,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    Container(
-                                      width: 24,
-                                      height: 1,
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            const Color(0xFFD4AF37).withValues(alpha: 0.7),
-                                            const Color(0xFFD4AF37).withValues(alpha: 0.0),
-                                          ],
+                                      Container(
+                                        width: 28,
+                                        height: 1.2,
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              const Color(0xFFC8922E).withValues(alpha: 0.8),
+                                              const Color(0xFFC8922E).withValues(alpha: 0.0),
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
 
-                  // 4. Subtle Laboratory Calibrating Indicator di Bawah Layar
+                  // 4. Indikator Kalibrasi Presisi di Bagian Bawah
                   Positioned(
                     left: 0,
                     right: 0,
-                    bottom: 24,
+                    bottom: 28,
                     child: FadeTransition(
-                      opacity: _fade,
-                      child: Center(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE5A93C).withValues(
-                                  alpha: 0.4 + 0.6 * math.sin(_aromaCtrl.value * math.pi),
+                      opacity: _subtitleFade,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 112,
+                            height: 2.5,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF6B4423).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                            alignment: Alignment.centerLeft,
+                            child: FractionallySizedBox(
+                              widthFactor: _introCtrl.value.clamp(0.08, 1.0),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0xFF6D7B61),
+                                      Color(0xFFC8922E),
+                                      Color(0xFF6B4423),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(2),
                                 ),
-                                shape: BoxShape.circle,
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'SPECIALTY BREWING INTELLIGENCE',
-                              style: GoogleFonts.poppins(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 2.5,
-                                color: const Color(0xFF8F857D).withValues(alpha: 0.8),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF6D7B61).withValues(
+                                    alpha: 0.45 + 0.55 * math.sin(_aromaCtrl.value * math.pi),
+                                  ),
+                                  shape: BoxShape.circle,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'SPECIALTY BREWING INTELLIGENCE',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 2.3,
+                                  color: const Color(0xFF7A6A5C),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ),

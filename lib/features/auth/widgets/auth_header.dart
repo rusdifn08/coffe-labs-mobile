@@ -13,8 +13,8 @@ class AuthHeader extends StatelessWidget {
         Center(
           child: Image.asset(
             'assets/images/coffee_labs_emblem.png',
-            width: 86,
-            height: 86,
+            width: 112,
+            height: 112,
             fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) => const Icon(
               Icons.science_outlined,

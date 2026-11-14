@@ -89,6 +89,10 @@ dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
 }
 
+configurations.all {
+    exclude(group = "com.google.firebase", module = "firebase-iid")
+}
+
 flutter {
     source = "../.."
 }

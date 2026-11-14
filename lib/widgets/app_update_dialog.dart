@@ -62,7 +62,7 @@ class _AppUpdateDialogState extends State<AppUpdateDialog> {
 
   Future<void> _startApkDownload() async {
     final downloadUrl = widget.result.downloadUrl ??
-        'https://github.com/rusdi-labs/coffee-hub-mobile/releases/latest/download/app-arm64-v8a-release.apk';
+        'https://github.com/rusdifn08/coffe-labs-mobile/releases/latest/download/CoffeeLabs-arm64-v8a.apk';
 
     // Jika bukan Android, buka browser langsung
     if (kIsWeb || !Platform.isAndroid) {

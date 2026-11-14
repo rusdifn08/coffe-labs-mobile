@@ -106,16 +106,22 @@ class _MainLayoutState extends State<MainLayout> {
         child: Column(
           children: [
             const SizedBox(height: 12),
-            // Coffe Labs Emblem Header
+            // Coffee Labs Emblem Header
             Container(
-              width: 42,
-              height: 42,
+              width: 44,
+              height: 44,
+              padding: const EdgeInsets.all(5),
               decoration: BoxDecoration(
-                color: AppTheme.primaryBrown.withValues(alpha: 0.1),
+                color: AppTheme.primaryBrown.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
-              child: const BrewDripperGlassIcon(size: 22, color: AppTheme.primaryBrown),
+              child: Image.asset(
+                'assets/images/coffee_labs_emblem.png',
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) =>
+                    const BrewDripperGlassIcon(size: 22, color: AppTheme.primaryBrown),
+              ),
             ),
             const SizedBox(height: 18),
 
