@@ -31,7 +31,7 @@ class BeanAiCustomizerCard extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _AiTweakDoctorModal(onApplyTweak: onApplyTweak),
+      builder: (ctx) => AiTweakDoctorModal(onApplyTweak: onApplyTweak),
     );
   }
 
@@ -321,10 +321,10 @@ class _AiBadge extends StatelessWidget {
   }
 }
 
-class _AiTweakDoctorModal extends StatelessWidget {
+class AiTweakDoctorModal extends StatelessWidget {
   final ValueChanged<AiTweakAction> onApplyTweak;
 
-  const _AiTweakDoctorModal({required this.onApplyTweak});
+  const AiTweakDoctorModal({super.key, required this.onApplyTweak});
 
   @override
   Widget build(BuildContext context) {

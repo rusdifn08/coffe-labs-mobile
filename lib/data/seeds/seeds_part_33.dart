@@ -17,8 +17,8 @@ List<Map<String, dynamic>> getSeedsPart33(String now) => [
     "grindSize": "Coarse",
     "coffeeWeightGrams": 65,
     "totalWaterWeightGrams": 500,
-    "totalTimeSeconds": 130,
-    "description": "Menu signature Blue Bottle Coffee yang memadukan kopi sangrai medium-dark dengan akar chicory panggang Prancis. Disajikan dengan sirup tebu alami dan susu murni untuk rasa rempah manis karamel yang adiktif.",
+    "totalTimeSeconds": 50400,
+    "description": "Menu signature Blue Bottle Coffee yang memadukan kopi sangrai medium-dark dengan akar chicory panggang Prancis (steep 14 jam).",
     "isCustom": false,
     "createdAt": now,
     "steps": [
@@ -38,10 +38,10 @@ List<Map<String, dynamic>> getSeedsPart33(String now) => [
       },
       {
         "stepOrder": 3,
-        "title": "Steep Dingin 14 Jam & Decanting",
-        "durationSeconds": 35,
+        "title": "Steep Dingin 14 Jam (Set Alarm OS) & Decanting",
+        "durationSeconds": 50305,
         "waterAddedGrams": 0,
-        "instruction": "Diamkan 14 jam. Saring ampas dengan kain belacu halus untuk mendapatkan sirup kental harum legendaris."
+        "instruction": "Diamkan 14 jam dengan Alarm Cold Brew. Saring ampas dengan kain belacu halus setelah alarm selesai."
       },
       {
         "stepOrder": 4,
@@ -68,8 +68,8 @@ List<Map<String, dynamic>> getSeedsPart33(String now) => [
     "grindSize": "Medium-Fine",
     "coffeeWeightGrams": 55,
     "totalWaterWeightGrams": 650,
-    "totalTimeSeconds": 130,
-    "description": "Menyeduh dengan teko jaring halus Hario Mizudashi. Menggunakan kopi fermentasi anaerobik yang menghasilkan aroma anggur merah (winey), rasa manis plum matang, dan sensasi sparkling dingin menyegarkan.",
+    "totalTimeSeconds": 43200,
+    "description": "Menyeduh dengan teko jaring halus Hario Mizudashi selama 12 jam di kulkas menghasilkan aroma anggur merah (winey) dan manis plum matang.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
@@ -96,10 +96,10 @@ List<Map<String, dynamic>> getSeedsPart33(String now) => [
       },
       {
         "stepOrder": 4,
-        "title": "Simpan Kulkas 12 Jam & Cabut Saringan",
-        "durationSeconds": 30,
+        "title": "Simpan Kulkas 12 Jam (Set Alarm OS) & Cabut Saringan",
+        "durationSeconds": 43100,
         "waterAddedGrams": 0,
-        "instruction": "Simpan di rak kulkas 12 jam. Angkat tabung saringan ampas dan nikmati dingin langsung dari teko."
+        "instruction": "Simpan di rak kulkas 12 jam dan setel Alarm Cold Brew. Angkat tabung saringan setelah alarm berbunyi."
       }
     ]
   },
@@ -119,6 +119,7 @@ List<Map<String, dynamic>> getSeedsPart33(String now) => [
     "grindSize": "Medium",
     "coffeeWeightGrams": 22,
     "totalWaterWeightGrams": 180,
+    "iceWeightGrams": 100,
     "totalTimeSeconds": 130,
     "description": "Perpaduan panasnya tarikan vakum syphon dengan kejutan pendinginan es batu di bejana server. Menghasilkan aroma floral kismis dan rasa asam jeruk merah (blood orange) yang terkunci seketika tanpa teroksidasi.",
     "isCustom": false,
@@ -170,17 +171,17 @@ List<Map<String, dynamic>> getSeedsPart33(String now) => [
     "grindSize": "Medium-Coarse",
     "coffeeWeightGrams": 50,
     "totalWaterWeightGrams": 400,
-    "totalTimeSeconds": 120,
-    "description": "Mocktail kopi segar juara musim panas Australia. Menggabungkan konsentrat cold brew fruity dengan air tonik berkarbonasi dingin, sirup jeruk yuzu, dan irisan kulit jeruk sunkist.",
+    "totalTimeSeconds": 57600,
+    "description": "Mocktail kopi segar juara musim panas Australia. Konsentrat cold brew 16 jam dipadukan dengan air tonik berkarbonasi dingin, jeruk yuzu, dan kulit jeruk sunkist.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
       {
         "stepOrder": 1,
-        "title": "Ekstraksi Konsentrat Cold Brew Rasio 1:8",
-        "durationSeconds": 35,
+        "title": "Ekstraksi Konsentrat Cold Brew 16 Jam (Set Alarm OS)",
+        "durationSeconds": 57515,
         "waterAddedGrams": 400,
-        "instruction": "Seduh 50g bubuk Ethiopia dengan 400g air es dingin selama 16 jam, saring hingga bebas ampas."
+        "instruction": "Seduh 50g bubuk Ethiopia dengan 400g air es dingin selama 16 jam di kulkas, saring hingga bebas ampas."
       },
       {
         "stepOrder": 2,
@@ -272,8 +273,8 @@ List<Map<String, dynamic>> getSeedsPart33(String now) => [
     "grindSize": "Coarse Dried Husk",
     "coffeeWeightGrams": 30,
     "totalWaterWeightGrams": 450,
-    "totalTimeSeconds": 120,
-    "description": "Racikan teh ceri kopi kering (Cascara) karya pelopor kopi Aida Batlle. Ekstraksi dingin 20 jam menghasilkan minuman kaya antioksidan polifenol dengan rasa buah rosehip, kismis merah, dan madu liar yang manis alami.",
+    "totalTimeSeconds": 72000,
+    "description": "Racikan teh ceri kopi kering (Cascara) karya pelopor kopi Aida Batlle dengan ekstraksi dingin 20 jam kaya antioksidan.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
@@ -293,10 +294,10 @@ List<Map<String, dynamic>> getSeedsPart33(String now) => [
       },
       {
         "stepOrder": 3,
-        "title": "Kocok Botol Kaca & Simpan Kulkas 20 Jam",
-        "durationSeconds": 35,
+        "title": "Simpan Kulkas 20 Jam (Set Alarm OS)",
+        "durationSeconds": 71915,
         "waterAddedGrams": 0,
-        "instruction": "Tutup rapat dan kocok perlahan. Simpan di kulkas selama 20 jam untuk ekstraksi gula buah alami."
+        "instruction": "Tutup rapat, kocok perlahan, lalu simpan di kulkas selama 20 jam dengan Alarm Cold Brew."
       },
       {
         "stepOrder": 4,

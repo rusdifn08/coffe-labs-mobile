@@ -92,15 +92,15 @@ List<Map<String, dynamic>> getSeedsPart17(String now) => [
     "grindSize": "Medium-Coarse",
     "coffeeWeightGrams": 30,
     "totalWaterWeightGrams": 500,
-    "totalTimeSeconds": 480,
-    "description": "Teknik legendaris tanpa menekan plunger hingga dasar; setelah 4 menit kerak diaduk dan dibersihkan lalu didiamkan 5 menit agar fines mengendap.",
+    "totalTimeSeconds": 540,
+    "description": "Teknik legendaris James Hoffmann (9 menit) tanpa menekan plunger hingga dasar; setelah 4 menit kerak diaduk dan dibersihkan lalu didiamkan 5 menit agar fines mengendap.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
           {"stepOrder": 1, "title": "Tuang Air Penuh 500g", "durationSeconds": 30, "waterAddedGrams": 500},
-          {"stepOrder": 2, "title": "Infusi Diam Tanpa Sentuh", "durationSeconds": 210, "waterAddedGrams": 0},
-          {"stepOrder": 3, "title": "Aduk Kerak & Buang Busa (Skim)", "durationSeconds": 60, "waterAddedGrams": 0},
-          {"stepOrder": 4, "title": "Sedimentasi 5 Menit (No Plunge)", "durationSeconds": 180, "waterAddedGrams": 0}
+          {"stepOrder": 2, "title": "Infusi Diam hingga Menit 4:00", "durationSeconds": 210, "waterAddedGrams": 0},
+          {"stepOrder": 3, "title": "Aduk Kerak & Buang Busa (Skim)", "durationSeconds": 30, "waterAddedGrams": 0},
+          {"stepOrder": 4, "title": "Sedimentasi 5 Menit (No Plunge)", "durationSeconds": 270, "waterAddedGrams": 0}
     ]
   },
   {

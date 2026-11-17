@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../services/language_service.dart';
 import '../../../../widgets/thermal_receipt_sheet.dart';
+import '../../multi_method_brewing/domain/brew_archetype.dart';
 
 class RecipeDetailBottomBar extends StatelessWidget {
   final Map<String, dynamic> scaledRecipe;
@@ -27,6 +28,8 @@ class RecipeDetailBottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEn = LanguageService.isEnglish;
+    final classification = MethodArchetypeMapper.classify(scaledRecipe);
+    final isColdBrew = classification.isColdBrewAlarmOnly;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
@@ -90,22 +93,34 @@ class RecipeDetailBottomBar extends StatelessWidget {
             ),
           ),
 
-          // Start Guided Brewing Button
+          // Start Guided Brewing Button (atau Jadwalkan Alarm OS khusus Cold Brew)
           Expanded(
             child: SizedBox(
               height: 52,
               child: ElevatedButton.icon(
                 onPressed: onStartBrew,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryBrown,
+                  backgroundColor: isColdBrew
+                      ? const Color(0xFF0E7490)
+                      : AppTheme.primaryBrown,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
-                icon: const Icon(CupertinoIcons.play_fill, color: Colors.white, size: 20),
+                icon: Icon(
+                  isColdBrew ? Icons.alarm_add_rounded : CupertinoIcons.play_fill,
+                  color: Colors.white,
+                  size: 20,
+                ),
                 label: Text(
-                  scaledCoffeeGrams != baseCoffeeGrams
-                      ? 'Start Brew (${coffeeWeight}g → ${totalWater}g)'
-                      : 'Start Brew',
-                  style: const TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.bold),
+                  isColdBrew
+                      ? (scaledCoffeeGrams != baseCoffeeGrams
+                          ? 'Pasang Alarm (${coffeeWeight}g → ${totalWater}g)'
+                          : 'Pasang Alarm Cold Brew')
+                      : (scaledCoffeeGrams != baseCoffeeGrams
+                          ? 'Start Brew (${coffeeWeight}g → ${totalWater}g)'
+                          : 'Start Brew'),
+                  style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.bold),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),

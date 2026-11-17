@@ -36,7 +36,7 @@ final class AuthControllerProvider
   AuthController create() => AuthController();
 }
 
-String _$authControllerHash() => r'3b31835a78c5ec291405d7ff2f70ecceb3737d6c';
+String _$authControllerHash() => r'523537c7c1e3bf9a1a59f9f20895991924aaa8aa';
 
 /// AsyncNotifier untuk otentikasi pengguna, peran, status persetujuan, dan tier langganan.
 

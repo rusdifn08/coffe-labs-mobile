@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../features/recipes/controllers/recipe_list_controller.dart';
+import '../repositories/recipe_repository.dart';
 import '../features/recipe_detail/widgets/recipe_detail_app_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flag/flag.dart';
 import '../services/api_service.dart';
 import '../services/language_service.dart';
 import '../services/coffee_translator.dart';
@@ -12,7 +12,13 @@ import '../utils/barista_utils.dart';
 import '../services/trial_service.dart';
 import 'barista_profile_screen.dart';
 import 'brew_timer_screen.dart';
-import 'onboarding_screen.dart';
+import '../features/auth/utils/auth_navigation_helper.dart';
+import '../features/multi_method_brewing/domain/brew_archetype.dart';
+import '../features/multi_method_brewing/presentation/screens/cold_brew_and_drip_studio_screen.dart';
+import '../features/multi_method_brewing/presentation/screens/flash_chill_iced_brew_screen.dart';
+import '../features/multi_method_brewing/presentation/screens/sca_cupping_multi_bowl_screen.dart';
+import '../features/multi_method_brewing/presentation/screens/steep_and_release_immersion_screen.dart';
+import '../features/multi_method_brewing/presentation/screens/thermal_cue_brewer_screen.dart';
 import '../features/recipe_detail/utils/recipe_attribute_deducer.dart';
 import '../features/recipe_detail/widgets/grinder_converter_sheet.dart';
 import '../features/recipe_detail/widgets/recipe_params_summary.dart';
@@ -37,6 +43,7 @@ class RecipeDetailScreen extends ConsumerStatefulWidget {
 class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
   late Map<String, dynamic> _recipe;
   bool _isFavorite = false;
+  bool? _favoriteOverride;
   late int _baseCoffeeGrams;
   late int _scaledCoffeeGrams;
   final Set<int> _checkedPrep = {};
@@ -65,9 +72,9 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
     if (scanned == null) return recipe;
 
     final copy = Map<String, dynamic>.from(recipe);
-    final cleanBeanName = scanned.beanName.trim();
-    if (cleanBeanName.isNotEmpty && cleanBeanName != 'Specialty Coffee') {
-      copy['beanName'] = cleanBeanName;
+    final displayBeanName = scanned.fullDisplayName.trim();
+    if (displayBeanName.isNotEmpty && displayBeanName != 'Specialty Coffee') {
+      copy['beanName'] = displayBeanName;
       // Simpan juga untuk pencarian judul/atribusi pada deducer
       copy['origin'] = scanned.origin;
     }
@@ -80,7 +87,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
     if (scanned.roasteryName.trim().isNotEmpty && scanned.roasteryName != 'Specialty Roastery') {
       copy['scannedRoastery'] = scanned.roasteryName;
     }
-    copy['scannedBeanName'] = cleanBeanName;
+    copy['scannedBeanName'] = displayBeanName;
     copy['scannedProcess'] = scanned.process;
     copy['scannedVariety'] = scanned.variety;
     return copy;
@@ -132,17 +139,44 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
         context: context,
         title: 'Batas Seduh Trial Tercapai',
         message: 'Anda telah mencapai batas 10 kali seduh pada mode trial. Fitur seduh terkunci selama 1 minggu ($days hari tersisa).\n\nSilakan login atau daftar akun resmi yang disetujui Admin untuk seduh tanpa batas!',
-        onLoginTap: () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingScreen()));
-        },
+        onLoginTap: () => AuthNavigationHelper.openLoginScreen(context),
       );
       return;
     }
     final scaled = _buildScaledRecipe();
     if (!mounted) return;
+    final classification = MethodArchetypeMapper.classify(scaled);
+
+    final Widget targetScreen;
+    switch (classification.archetype) {
+      case BrewExecutionArchetype.longHorizonPersistentAlarm:
+        targetScreen = ColdBrewAndDripStudioScreen(recipe: scaled);
+      case BrewExecutionArchetype.flashChillIcedFilter:
+        targetScreen = FlashChillIcedBrewScreen(recipe: scaled);
+      case BrewExecutionArchetype.thermalCuePhaseBrewer:
+        targetScreen = ThermalCueBrewerScreen(
+          recipe: scaled,
+          subMethod:
+              classification.thermalSubMethod ?? ThermalCueSubMethod.mokaPot,
+        );
+      case BrewExecutionArchetype.steepAndReleaseImmersion:
+        final sub = classification.immersionSubMethod;
+        if (sub == ImmersionSubMethod.cuppingBowl) {
+          targetScreen = ScaCuppingMultiBowlScreen(recipe: scaled);
+        } else {
+          targetScreen = SteepAndReleaseImmersionScreen(
+            recipe: scaled,
+            subMethod: sub ?? ImmersionSubMethod.aeropress,
+          );
+        }
+      case BrewExecutionArchetype.percolationPourOver:
+      case BrewExecutionArchetype.subSecondPressureEspresso:
+        targetScreen = BrewTimerScreen(recipeData: scaled);
+    }
+
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => BrewTimerScreen(recipeData: scaled)),
+      MaterialPageRoute(builder: (_) => targetScreen),
     );
   }
 
@@ -156,12 +190,29 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
   Future<void> _toggleFavorite() async {
     final id = _recipe['id'] as int?;
     if (id == null) return;
-    await ApiService.toggleFavorite(id);
-    setState(() => _isFavorite = !_isFavorite);
+    final currentIds = ref.read(favoriteIdsProvider).value;
+    final currentFav =
+        _favoriteOverride ?? (currentIds?.contains(id) ?? _isFavorite);
+    final nextFav = !currentFav;
+    setState(() {
+      _isFavorite = nextFav;
+      _favoriteOverride = nextFav;
+    });
+    final repo = ref.read(recipeRepositoryProvider);
+    final persisted = await repo.toggleFavorite(id);
+    ApiService.clearFavoritesCache();
     if (!mounted) return;
+    ref.invalidate(favoriteIdsProvider);
+    setState(() {
+      _isFavorite = persisted;
+      _favoriteOverride = persisted;
+    });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(_isFavorite ? 'Ditambahkan ke favorit' : 'Dihapus dari favorit'),
+        content: Text(
+          persisted ? 'Ditambahkan ke favorit ❤️' : 'Dihapus dari favorit',
+        ),
+        backgroundColor: persisted ? const Color(0xFFFF1E56) : null,
         duration: const Duration(seconds: 1),
       ),
     );
@@ -175,8 +226,11 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final favIds = ref.watch(favoriteIdsProvider).value ?? <int>{};
-    final bool isFav = favIds.contains(_recipe['id'] as int? ?? -1);
+    final favAsync = ref.watch(favoriteIdsProvider);
+    final favIds = favAsync.value ?? <int>{};
+    final int recipeId = _recipe['id'] as int? ?? -1;
+    final bool isFav = _favoriteOverride ??
+        (favAsync.hasValue ? favIds.contains(recipeId) : _isFavorite);
     final scaledRecipe = _buildScaledRecipe();
     final String rawTitle = scaledRecipe['title'] as String;
     final String rawAuthor = scaledRecipe['author'] as String;
@@ -374,7 +428,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                                     ),
                                     if (countryCode.isNotEmpty) ...[
                                       const SizedBox(width: 8),
-                                      Flag.fromString(countryCode, height: 13, width: 18),
+                                      BaristaFlagBadge(countryCode: countryCode, height: 13, width: 18),
                                     ],
                                   ],
                                 ),

@@ -12,8 +12,20 @@ part 'auth_controller.g.dart';
 /// AsyncNotifier untuk otentikasi pengguna, peran, status persetujuan, dan tier langganan.
 @riverpod
 class AuthController extends _$AuthController {
+  bool _suppressNotifier = false;
+
   @override
   Future<AuthUser?> build() async {
+    void onAuthChanged() {
+      if (_suppressNotifier) return;
+      ref.invalidateSelf();
+    }
+
+    AuthService.changeNotifier.addListener(onAuthChanged);
+    ref.onDispose(() {
+      AuthService.changeNotifier.removeListener(onAuthChanged);
+    });
+
     final repo = ref.watch(authRepositoryProvider);
     return repo.getCurrentUser();
   }
@@ -21,7 +33,13 @@ class AuthController extends _$AuthController {
   /// Eksekusi proses login akun barista.
   Future<AuthResult> login({required String username, required String password}) async {
     final repo = ref.read(authRepositoryProvider);
-    final result = await repo.login(username: username, password: password);
+    _suppressNotifier = true;
+    late final AuthResult result;
+    try {
+      result = await repo.login(username: username, password: password);
+    } finally {
+      _suppressNotifier = false;
+    }
     if (result.success && result.user != null) {
       state = AsyncValue.data(result.user);
       unawaited(
@@ -45,12 +63,18 @@ class AuthController extends _$AuthController {
     required String avatarUrl,
   }) async {
     final repo = ref.read(authRepositoryProvider);
-    final result = await repo.register(
-      username: username,
-      password: password,
-      fullName: fullName,
-      avatarUrl: avatarUrl,
-    );
+    _suppressNotifier = true;
+    late final AuthResult result;
+    try {
+      result = await repo.register(
+        username: username,
+        password: password,
+        fullName: fullName,
+        avatarUrl: avatarUrl,
+      );
+    } finally {
+      _suppressNotifier = false;
+    }
     if (result.success && result.user != null) {
       state = AsyncValue.data(result.user);
       unawaited(
@@ -78,7 +102,12 @@ class AuthController extends _$AuthController {
     } catch (_) {}
 
     final repo = ref.read(authRepositoryProvider);
-    await repo.logout();
+    _suppressNotifier = true;
+    try {
+      await repo.logout();
+    } finally {
+      _suppressNotifier = false;
+    }
     ref.read(unreadNotificationsCountProvider.notifier).setCount(0);
     state = const AsyncValue.data(null);
   }

@@ -44,6 +44,8 @@ class CommunitiesApiService {
     required String description,
     required String privacyLevel,
     List<String> focusTags = const [],
+    List<String> invitedUserIds = const [],
+    String? inviteMessage,
   }) async {
     try {
       final res = await _dio.post<dynamic>(
@@ -55,6 +57,9 @@ class CommunitiesApiService {
           'description': description.trim(),
           'privacy_level': privacyLevel,
           'focus_tags': focusTags,
+          if (invitedUserIds.isNotEmpty) 'invited_user_ids': invitedUserIds,
+          if (inviteMessage != null && inviteMessage.trim().isNotEmpty)
+            'invite_message': inviteMessage.trim(),
         },
       );
       final data = Map<String, dynamic>.from(_unwrapData(res) as Map);
@@ -226,6 +231,92 @@ class CommunitiesApiService {
           .map((e) => CommunityLeaderboardEntry.fromJson(
               Map<String, dynamic>.from(e as Map)))
           .toList();
+    } on DioException catch (e) {
+      throw GlobalErrorAndLoggingInterceptor.mapDioException(e);
+    }
+  }
+
+  Future<List<ClubMemberInvitation>> getPendingInvitations() async {
+    try {
+      final res =
+          await _dio.get<dynamic>('/api/v1/communities/invitations/pending');
+      final items = _unwrapData(res) as List<dynamic>? ?? const [];
+      return items
+          .map((e) => ClubMemberInvitation.fromJson(
+              Map<String, dynamic>.from(e as Map)))
+          .toList();
+    } on DioException catch (e) {
+      throw GlobalErrorAndLoggingInterceptor.mapDioException(e);
+    }
+  }
+
+  Future<RespondInvitationResponse> acceptInvitation(String inviteId) async {
+    try {
+      final res = await _dio
+          .post<dynamic>('/api/v1/communities/invitations/$inviteId/accept');
+      final data = Map<String, dynamic>.from(_unwrapData(res) as Map);
+      return RespondInvitationResponse.fromJson(data);
+    } on DioException catch (e) {
+      throw GlobalErrorAndLoggingInterceptor.mapDioException(e);
+    }
+  }
+
+  Future<RespondInvitationResponse> declineInvitation(String inviteId) async {
+    try {
+      final res = await _dio
+          .post<dynamic>('/api/v1/communities/invitations/$inviteId/decline');
+      final data = Map<String, dynamic>.from(_unwrapData(res) as Map);
+      return RespondInvitationResponse.fromJson(data);
+    } on DioException catch (e) {
+      throw GlobalErrorAndLoggingInterceptor.mapDioException(e);
+    }
+  }
+
+  Future<SendClubInvitesResponse> inviteUsersToClub({
+    required String communityId,
+    required List<String> userIds,
+    String roleGranted = 'BARISTA_MEMBER',
+    String? message,
+  }) async {
+    try {
+      final res = await _dio.post<dynamic>(
+        '/api/v1/communities/$communityId/member-invites',
+        data: {
+          'user_ids': userIds,
+          'role_granted': roleGranted,
+          if (message != null && message.trim().isNotEmpty)
+            'message': message.trim(),
+        },
+      );
+      final data = Map<String, dynamic>.from(_unwrapData(res) as Map);
+      return SendClubInvitesResponse.fromJson(data);
+    } on DioException catch (e) {
+      throw GlobalErrorAndLoggingInterceptor.mapDioException(e);
+    }
+  }
+
+  Future<List<ClubSentInvitation>> getClubSentInvitations(
+    String communityId,
+  ) async {
+    try {
+      final res = await _dio.get<dynamic>(
+        '/api/v1/communities/$communityId/member-invites',
+      );
+      final items = _unwrapData(res) as List<dynamic>? ?? const [];
+      return items
+          .map((e) => ClubSentInvitation.fromJson(
+              Map<String, dynamic>.from(e as Map)))
+          .toList();
+    } on DioException catch (e) {
+      throw GlobalErrorAndLoggingInterceptor.mapDioException(e);
+    }
+  }
+
+  Future<void> cancelClubInvitation(String communityId, String inviteId) async {
+    try {
+      await _dio.delete<dynamic>(
+        '/api/v1/communities/$communityId/member-invites/$inviteId',
+      );
     } on DioException catch (e) {
       throw GlobalErrorAndLoggingInterceptor.mapDioException(e);
     }

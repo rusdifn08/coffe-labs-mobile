@@ -22,6 +22,8 @@ class AuthUser {
   final String? subscriptionPlanId;
   final String avatarUrl;
   final String? createdAt;
+  final DateTime? trialFullUntil;
+  final String? trialPolicyOverride;
 
   const AuthUser({
     required this.id,
@@ -33,6 +35,8 @@ class AuthUser {
     this.subscriptionPlanId,
     required this.avatarUrl,
     this.createdAt,
+    this.trialFullUntil,
+    this.trialPolicyOverride,
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
@@ -48,6 +52,14 @@ class AuthUser {
         : (inferredTier == 'business'
             ? 'plan_business'
             : (inferredTier == 'pro' ? 'plan_pro' : 'plan_trial'));
+    final rawTrialUntil =
+        (json['trial_full_until'] ?? json['trialFullUntil'])?.toString();
+    final parsedTrialUntil = (rawTrialUntil != null && rawTrialUntil.isNotEmpty)
+        ? DateTime.tryParse(rawTrialUntil)
+        : null;
+    final trialOverride =
+        (json['trial_policy_override'] ?? json['trialPolicyOverride'])
+            ?.toString();
 
     return AuthUser(
       id: json['id']?.toString() ?? '',
@@ -59,6 +71,8 @@ class AuthUser {
       subscriptionPlanId: inferredPlanId,
       avatarUrl: json['avatar_url']?.toString() ?? json['avatarUrl']?.toString() ?? 'assets/images/characters/avatar_1.png',
       createdAt: json['created_at']?.toString(),
+      trialFullUntil: parsedTrialUntil,
+      trialPolicyOverride: trialOverride,
     );
   }
 
@@ -72,7 +86,17 @@ class AuthUser {
     'subscription_plan_id': subscriptionPlanId,
     'avatar_url': avatarUrl,
     'created_at': createdAt,
+    'trial_full_until': trialFullUntil?.toIso8601String(),
+    'trial_policy_override': trialPolicyOverride,
   };
+
+  bool get hasActiveFullTrialOverride =>
+      !isBusiness &&
+      !isPro &&
+      !isAdmin &&
+      trialPolicyOverride == 'full_trial_7d_non_business' &&
+      trialFullUntil != null &&
+      DateTime.now().isBefore(trialFullUntil!);
 
   bool get isAdmin => role == 'admin';
   bool get isApproved => status == 'approved';
@@ -132,7 +156,9 @@ class AuthResult {
 
 class AuthService {
   static const String _tokenKey = 'coffeehub_auth_jwt_token';
+  static const String _v1TokenKey = 'coffeehub_auth_token_v1';
   static const String _userKey = 'coffeehub_auth_user_json';
+  static const String _sessionUserKey = 'coffeehub_auth_session_user';
   static const String _serverUrlKey = 'coffeehub_backend_server_url';
   static const String defaultProductionUrl = 'https://coffe-labs-backend.onrender.com';
 
@@ -194,16 +220,21 @@ class AuthService {
     changeNotifier.value++;
   }
 
-  /// Cek apakah pengguna saat ini sudah login secara resmi dan approved
+  /// Cek apakah pengguna saat ini sudah login dengan akun resmi & approved
+  /// (berlaku untuk semua tier akun termasuk Trial terdaftar, Pro, Business, & Admin).
   static Future<bool> isLoggedIn() async {
-    final inTrial = await TrialService.isTrialMode();
-    if (inTrial) return false;
-
     final token = await getToken();
     if (token == null || token.isEmpty) return false;
 
     final user = await getCurrentUser();
     return user != null && (user.isApproved || user.isAdmin);
+  }
+
+  /// Cek apakah pengguna berada di Mode Pengunjung anonim (tanpa akun login).
+  static Future<bool> isAnonymousVisitor() async {
+    final loggedIn = await isLoggedIn();
+    if (loggedIn) return false;
+    return TrialService.isTrialMode();
   }
 
   /// Cek apakah pengguna yang sedang login memiliki hak akses ADMIN
@@ -212,23 +243,95 @@ class AuthService {
     return user != null && user.isAdmin;
   }
 
-  /// Mengambil JWT token yang tersimpan di memori perangkat
-  static Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_tokenKey);
-  }
-
-  /// Mengambil profil pengguna yang sedang login
-  static Future<AuthUser?> getCurrentUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    final rawJson = prefs.getString(_userKey);
-    if (rawJson == null || rawJson.isEmpty) return null;
+  /// Mendekode payload JSON dari JWT (Base64Url) untuk fallback ekstraksi klaim `sub`.
+  static Map<String, dynamic>? decodeJwtPayload(String? token) {
+    if (token == null || token.trim().isEmpty) return null;
     try {
-      final decoded = json.decode(rawJson) as Map<String, dynamic>;
-      return AuthUser.fromJson(decoded);
+      final parts = token.trim().split('.');
+      if (parts.length < 2) return null;
+      final normalized = base64Url.normalize(parts[1]);
+      final raw = utf8.decode(base64Url.decode(normalized));
+      final decoded = json.decode(raw);
+      return decoded is Map<String, dynamic> ? decoded : null;
     } catch (_) {
       return null;
     }
+  }
+
+  /// Sinkronisasi kedua skema key sesi (`AuthService` & `AuthRepositoryImpl`) agar state Riverpod selalu konsisten.
+  static Future<void> persistSessionMirrors(
+    SharedPreferences prefs, {
+    required AuthUser user,
+    String? token,
+  }) async {
+    final userJson = json.encode(user.toJson());
+    await Future.wait([
+      prefs.setString(_userKey, userJson),
+      prefs.setString(_sessionUserKey, userJson),
+      if (token != null && token.trim().isNotEmpty) ...[
+        prefs.setString(_tokenKey, token.trim()),
+        prefs.setString(_v1TokenKey, token.trim()),
+      ],
+    ]);
+  }
+
+  /// Mengambil JWT token yang tersimpan di memori perangkat
+  static Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final primary = prefs.getString(_tokenKey)?.trim();
+    if (primary != null && primary.isNotEmpty) return primary;
+    final secondary = prefs.getString(_v1TokenKey)?.trim();
+    return (secondary != null && secondary.isNotEmpty) ? secondary : null;
+  }
+
+  /// Mengambil profil pengguna yang sedang login (dengan sinkronisasi multi-key & fallback JWT `sub`)
+  static Future<AuthUser?> getCurrentUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rawJson = prefs.getString(_userKey) ?? prefs.getString(_sessionUserKey);
+    final token = await getToken();
+    final claims = decodeJwtPayload(token);
+    final jwtSub = (claims?['sub'] ?? claims?['user_id'])?.toString().trim() ?? '';
+
+    AuthUser? parsed;
+    if (rawJson != null && rawJson.isNotEmpty) {
+      try {
+        final decoded = json.decode(rawJson) as Map<String, dynamic>;
+        parsed = AuthUser.fromJson(decoded);
+      } catch (_) {}
+    }
+
+    if (parsed != null) {
+      if (parsed.id.trim().isEmpty && jwtSub.isNotEmpty) {
+        return AuthUser(
+          id: jwtSub,
+          username: parsed.username,
+          fullName: parsed.fullName,
+          role: parsed.role,
+          status: parsed.status,
+          tier: parsed.tier,
+          subscriptionPlanId: parsed.subscriptionPlanId,
+          avatarUrl: parsed.avatarUrl,
+          createdAt: parsed.createdAt,
+        );
+      }
+      return parsed;
+    }
+
+    if (jwtSub.isNotEmpty && claims != null) {
+      return AuthUser(
+        id: jwtSub,
+        username: claims['username']?.toString() ?? 'barista',
+        fullName: claims['full_name']?.toString() ??
+            claims['username']?.toString() ??
+            'Barista Coffee Labs',
+        role: claims['role']?.toString() ?? 'user',
+        status: claims['status']?.toString() ?? 'approved',
+        tier: claims['tier']?.toString() ?? 'trial',
+        avatarUrl: 'assets/images/characters/avatar_1.png',
+      );
+    }
+
+    return null;
   }
 
   static Map<String, dynamic> _safeDecodeJson(String rawBody, int statusCode) {
@@ -350,8 +453,7 @@ class AuthService {
         }
 
         await Future.wait([
-          prefs.setString(_tokenKey, token),
-          prefs.setString(_userKey, json.encode(user.toJson())),
+          persistSessionMirrors(prefs, user: user, token: token),
           ProfileService.setUserName(user.fullName),
           if (user.avatarUrl.isNotEmpty) ProfileService.setUserImagePath(user.avatarUrl),
         ]);
@@ -514,8 +616,12 @@ class AuthService {
   /// Logout pengguna dan bersihkan sesi secara tuntas tanpa residu lisensi
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
-    await prefs.remove(_userKey);
+    await Future.wait([
+      prefs.remove(_tokenKey),
+      prefs.remove(_v1TokenKey),
+      prefs.remove(_userKey),
+      prefs.remove(_sessionUserKey),
+    ]);
     // Hapus total lisensi lokal agar pengguna berikutnya tidak tertular Business / Pro
     await SubscriptionService.resetToTrial();
     await TrialService.setTrialMode(false);
@@ -559,7 +665,7 @@ class AuthService {
           final newUserJson = json.encode(user.toJson());
           final hasChanged = oldUserJson != newUserJson;
 
-          await prefs.setString(_userKey, newUserJson);
+          await persistSessionMirrors(prefs, user: user, token: token);
 
           if (user.isBusiness || user.isAdmin) {
             await SubscriptionService.activatePlan(
@@ -605,4 +711,12 @@ class AuthService {
 
   /// Hapus user dari database (Khusus Admin)
   static Future<bool> deleteUser(String userId) => AdminUserService.deleteUser(userId);
+
+  /// Ubah tier/kebijakan akses akun user oleh Admin ('trial' | 'trial_7d' | 'pro' | 'business')
+  static Future<bool> updateUserTier(
+    String userId,
+    String tier, {
+    int? trialDays,
+  }) =>
+      AdminUserService.updateUserTier(userId, tier, trialDays: trialDays);
 }

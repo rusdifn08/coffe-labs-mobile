@@ -108,11 +108,42 @@ class ChatApiService {
         if (query != null && query.trim().isNotEmpty) 'q': query.trim(),
         'limit': limit,
       },
+      options: Options(
+        receiveTimeout: const Duration(seconds: 6),
+        sendTimeout: const Duration(seconds: 6),
+      ),
     );
     final rawList = res.data?['data'] as List<dynamic>? ?? const [];
     return rawList
         .whereType<Map<String, dynamic>>()
         .map(ChatPeerDto.fromJson)
         .toList();
+  }
+
+  /// Jalur cadangan HTTP REST idempoten saat WebSocket sedang menghubungkan ulang / terblokir proxy.
+  Future<ChatMessageDto> sendMessageHttp({
+    required String conversationId,
+    required String clientMsgId,
+    required ChatMessageType messageType,
+    String? replyToMsgId,
+    String? bodyText,
+    InteractiveAttachment? attachment,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/chat/conversations/$conversationId/messages',
+      data: {
+        'client_msg_id': clientMsgId,
+        'message_type': messageType.wireValue,
+        if (replyToMsgId != null && replyToMsgId.isNotEmpty)
+          'reply_to_msg_id': replyToMsgId,
+        if (bodyText != null && bodyText.isNotEmpty) 'body_text': bodyText,
+        if (attachment != null) 'attachment': attachment.toJson(),
+      },
+    );
+    final rawMsg = res.data?['data'];
+    if (rawMsg is Map<String, dynamic>) {
+      return ChatMessageDto.fromJson(rawMsg);
+    }
+    throw Exception('Respon server pengiriman pesan tidak valid.');
   }
 }

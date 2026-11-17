@@ -41,28 +41,35 @@ class RecipeChecklistCard extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      const Icon(CupertinoIcons.checkmark_seal_fill, size: 16, color: AppTheme.primaryBrown),
-                      const SizedBox(width: 8),
-                      Text(
-                        isEn ? 'Pre-Brew Preparation Checklist' : 'Checklist Persiapan Sebelum Brew',
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textDark),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryBrown.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(8),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        const Icon(CupertinoIcons.checkmark_seal_fill, size: 16, color: AppTheme.primaryBrown),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            isEn ? 'Pre-Brew Preparation Checklist' : 'Checklist Persiapan Sebelum Brew',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                          ),
                         ),
-                        child: Text(
-                          '${checkedPrep.length}/${prepChecklist.length}',
-                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryBrown),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryBrown.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '${checkedPrep.length}/${prepChecklist.length}',
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryBrown),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   IconButton(
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),

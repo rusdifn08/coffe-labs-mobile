@@ -95,9 +95,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
   }
 
   Future<void> _goNext() async {
-    // Warm up backend secara senyap di background sambil mengecek sesi
+    // Warm up backend & sinkronkan Trial Policy secara senyap tanpa menunda UI
     AuthService.warmUpBackend();
-    final authUser = await ref.read(authControllerProvider.future);
+    TrialService.getPolicy(refreshFromBackend: true).catchError(
+      (_) => TrialService.currentPolicySync,
+    );
+    AuthUser? authUser;
+    try {
+      authUser = await ref
+          .read(authControllerProvider.future)
+          .timeout(const Duration(seconds: 3));
+    } catch (_) {}
     final isAuthed = authUser != null || await AuthService.isLoggedIn();
     final isTrial = await TrialService.isTrialMode();
     await Future.delayed(const Duration(milliseconds: 1450));

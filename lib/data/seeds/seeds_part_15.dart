@@ -17,15 +17,16 @@ List<Map<String, dynamic>> getSeedsPart15(String now) => [
     "grindSize": "Coarse",
     "coffeeWeightGrams": 12,
     "totalWaterWeightGrams": 200,
-    "totalTimeSeconds": 240,
-    "description": "Cara paling murni mencicipi karakter asli biji kopi di rumah tanpa pengaruh teknik tuangan dripper.",
+    "totalTimeSeconds": 900,
+    "description": "Protokol cupping 15 menit standar untuk mencicipi karakter asli biji kopi di rumah dari suhu panas ke dingin.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
-          {"stepOrder": 1, "title": "Aroma Bubuk Kering", "durationSeconds": 25, "waterAddedGrams": 0},
-          {"stepOrder": 2, "title": "Tuang Air Mendidih Terkontrol", "durationSeconds": 20, "waterAddedGrams": 200},
-          {"stepOrder": 3, "title": "Diamkan 4 Menit", "durationSeconds": 225, "waterAddedGrams": 0},
-          {"stepOrder": 4, "title": "Pecahkan Kerak & Hirup Slurp", "durationSeconds": 60, "waterAddedGrams": 0}
+          {"stepOrder": 1, "title": "Cek Aroma Kering & Tuang 200g (00:00–00:30)", "durationSeconds": 30, "waterAddedGrams": 200},
+          {"stepOrder": 2, "title": "Diamkan Steep 4 Menit (00:30–04:00)", "durationSeconds": 210, "waterAddedGrams": 0},
+          {"stepOrder": 3, "title": "Pecahkan Kerak & Skim Busa (04:00–08:00)", "durationSeconds": 240, "waterAddedGrams": 0},
+          {"stepOrder": 4, "title": "Turunkan Suhu ke 70°C (08:00–10:00)", "durationSeconds": 120, "waterAddedGrams": 0},
+          {"stepOrder": 5, "title": "Hirup Slurp Evaluasi Lengkap (10:00–15:00)", "durationSeconds": 300, "waterAddedGrams": 0}
     ]
   },
   {
@@ -44,15 +45,16 @@ List<Map<String, dynamic>> getSeedsPart15(String now) => [
     "grindSize": "Medium-Coarse",
     "coffeeWeightGrams": 13,
     "totalWaterWeightGrams": 215,
-    "totalTimeSeconds": 240,
-    "description": "Uji kontrol kualitas harian roastery setelah resting 24 jam untuk memastikan profil sangrai tepat sasaran.",
+    "totalTimeSeconds": 900,
+    "description": "Uji kontrol kualitas harian roastery 15 menit setelah resting 24 jam untuk memastikan profil sangrai tepat sasaran.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
-          {"stepOrder": 1, "title": "Cek Fragrance", "durationSeconds": 25, "waterAddedGrams": 0},
-          {"stepOrder": 2, "title": "Tuang Cepat Merata", "durationSeconds": 20, "waterAddedGrams": 215},
-          {"stepOrder": 3, "title": "Steep Ekstraksi 4 Menit", "durationSeconds": 225, "waterAddedGrams": 0},
-          {"stepOrder": 4, "title": "Skim Busa & Cicip Suhu Turun", "durationSeconds": 60, "waterAddedGrams": 0}
+          {"stepOrder": 1, "title": "Cek Fragrance & Tuang 215g (00:00–00:30)", "durationSeconds": 30, "waterAddedGrams": 215},
+          {"stepOrder": 2, "title": "Steep Ekstraksi 4 Menit (00:30–04:00)", "durationSeconds": 210, "waterAddedGrams": 0},
+          {"stepOrder": 3, "title": "Break Crust & Skim Busa (04:00–08:00)", "durationSeconds": 240, "waterAddedGrams": 0},
+          {"stepOrder": 4, "title": "Stabilisasi Suhu 70°C (08:00–10:00)", "durationSeconds": 120, "waterAddedGrams": 0},
+          {"stepOrder": 5, "title": "Cicip Multi-Suhu QC Batch (10:00–15:00)", "durationSeconds": 300, "waterAddedGrams": 0}
     ]
   },
   {
@@ -71,15 +73,16 @@ List<Map<String, dynamic>> getSeedsPart15(String now) => [
     "grindSize": "Coarse",
     "coffeeWeightGrams": 12,
     "totalWaterWeightGrams": 200,
-    "totalTimeSeconds": 240,
-    "description": "Menilai kebersihan cup (clean cup) dan mendeteksi potensi cacat fermentasi atau mold pada green bean.",
+    "totalTimeSeconds": 900,
+    "description": "Menilai kebersihan cup (clean cup) dan mendeteksi potensi cacat fermentasi hingga suhu dingin pada menit ke-15.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
-          {"stepOrder": 1, "title": "Dry Assessment", "durationSeconds": 30, "waterAddedGrams": 0},
-          {"stepOrder": 2, "title": "Water Infusion 200g", "durationSeconds": 20, "waterAddedGrams": 200},
-          {"stepOrder": 3, "title": "Wet Aroma Analysis", "durationSeconds": 220, "waterAddedGrams": 0},
-          {"stepOrder": 4, "title": "Break & Clean Skim", "durationSeconds": 60, "waterAddedGrams": 0}
+          {"stepOrder": 1, "title": "Dry Check & Infusi 200g (00:00–00:30)", "durationSeconds": 30, "waterAddedGrams": 200},
+          {"stepOrder": 2, "title": "Wet Aroma Analysis (00:30–04:00)", "durationSeconds": 210, "waterAddedGrams": 0},
+          {"stepOrder": 3, "title": "Break & Clean Skim (04:00–08:00)", "durationSeconds": 240, "waterAddedGrams": 0},
+          {"stepOrder": 4, "title": "Cooling 70°C Deteksi Defect (08:00–10:00)", "durationSeconds": 120, "waterAddedGrams": 0},
+          {"stepOrder": 5, "title": "Clean Cup Validation 3x Suhu (10:00–15:00)", "durationSeconds": 300, "waterAddedGrams": 0}
     ]
   },
   {
@@ -98,15 +101,16 @@ List<Map<String, dynamic>> getSeedsPart15(String now) => [
     "grindSize": "Coarse",
     "coffeeWeightGrams": 12,
     "totalWaterWeightGrams": 200,
-    "totalTimeSeconds": 240,
-    "description": "Uji segitiga (triangulasi) 3 mangkuk untuk melatih kepekaan lidah menemukan 1 mangkuk yang berbeda.",
+    "totalTimeSeconds": 900,
+    "description": "Uji segitiga (triangulasi) 3 mangkuk selama 15 menit penuh untuk melatih kepekaan lidah menemukan 1 mangkuk berbeda.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
-          {"stepOrder": 1, "title": "Dry Triangle Check", "durationSeconds": 30, "waterAddedGrams": 0},
-          {"stepOrder": 2, "title": "Tuang 3 Mangkuk Simultan", "durationSeconds": 25, "waterAddedGrams": 200},
-          {"stepOrder": 3, "title": "Steep 4 Menit", "durationSeconds": 215, "waterAddedGrams": 0},
-          {"stepOrder": 4, "title": "Blind Tasting & Selection", "durationSeconds": 60, "waterAddedGrams": 0}
+          {"stepOrder": 1, "title": "Dry Check & Tuang 3 Mangkuk 200g (00:00–00:30)", "durationSeconds": 30, "waterAddedGrams": 200},
+          {"stepOrder": 2, "title": "Steep 4 Menit (00:30–04:00)", "durationSeconds": 210, "waterAddedGrams": 0},
+          {"stepOrder": 3, "title": "Break & Skim Seragam (04:00–08:00)", "durationSeconds": 240, "waterAddedGrams": 0},
+          {"stepOrder": 4, "title": "Cool-Down 70°C (08:00–10:00)", "durationSeconds": 120, "waterAddedGrams": 0},
+          {"stepOrder": 5, "title": "Blind Tasting & Triangle Selection (10:00–15:00)", "durationSeconds": 300, "waterAddedGrams": 0}
     ]
   },
   {
@@ -125,15 +129,16 @@ List<Map<String, dynamic>> getSeedsPart15(String now) => [
     "grindSize": "Coarse",
     "coffeeWeightGrams": 11,
     "totalWaterWeightGrams": 185,
-    "totalTimeSeconds": 240,
-    "description": "Penilaian rinci intensitas keasaman malat sitrat dan kelembutan rasa manis buah persik madu.",
+    "totalTimeSeconds": 900,
+    "description": "Penilaian rinci 15 menit intensitas keasaman malat sitrat dan kelembutan rasa manis buah persik madu.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
-          {"stepOrder": 1, "title": "Aroma Bunga Kering", "durationSeconds": 30, "waterAddedGrams": 0},
-          {"stepOrder": 2, "title": "Tuang Air Suhu Tinggi 185g", "durationSeconds": 15, "waterAddedGrams": 185},
-          {"stepOrder": 3, "title": "Steep Diam 4 Menit", "durationSeconds": 225, "waterAddedGrams": 0},
-          {"stepOrder": 4, "title": "Break & Evaluasi Suhu 70°-50°C", "durationSeconds": 60, "waterAddedGrams": 0}
+          {"stepOrder": 1, "title": "Aroma Kering & Tuang 185g (00:00–00:30)", "durationSeconds": 30, "waterAddedGrams": 185},
+          {"stepOrder": 2, "title": "Steep Diam 4 Menit (00:30–04:00)", "durationSeconds": 210, "waterAddedGrams": 0},
+          {"stepOrder": 3, "title": "Break Crust & Skim (04:00–08:00)", "durationSeconds": 240, "waterAddedGrams": 0},
+          {"stepOrder": 4, "title": "Pendinginan Suhu 70°C (08:00–10:00)", "durationSeconds": 120, "waterAddedGrams": 0},
+          {"stepOrder": 5, "title": "Evaluasi Skor Acidity/Sweetness (10:00–15:00)", "durationSeconds": 300, "waterAddedGrams": 0}
     ]
   },
   {
@@ -152,15 +157,16 @@ List<Map<String, dynamic>> getSeedsPart15(String now) => [
     "grindSize": "Coarse",
     "coffeeWeightGrams": 12,
     "totalWaterWeightGrams": 200,
-    "totalTimeSeconds": 240,
-    "description": "Membandingkan langsung pengaruh proses pascapanen pada varietas dan kebun yang sama.",
+    "totalTimeSeconds": 900,
+    "description": "Membandingkan langsung pengaruh proses pascapanen pada varietas dan kebun yang sama dari suhu panas hingga dingin.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
-          {"stepOrder": 1, "title": "Fragrance Comparison", "durationSeconds": 30, "waterAddedGrams": 0},
-          {"stepOrder": 2, "title": "Tuang Kedua Mangkuk", "durationSeconds": 20, "waterAddedGrams": 200},
-          {"stepOrder": 3, "title": "Steeping 4 Menit", "durationSeconds": 220, "waterAddedGrams": 0},
-          {"stepOrder": 4, "title": "Dual Slurp Tasting", "durationSeconds": 60, "waterAddedGrams": 0}
+          {"stepOrder": 1, "title": "Fragrance & Tuang Kedua Mangkuk (00:00–00:30)", "durationSeconds": 30, "waterAddedGrams": 200},
+          {"stepOrder": 2, "title": "Steeping 4 Menit (00:30–04:00)", "durationSeconds": 210, "waterAddedGrams": 0},
+          {"stepOrder": 3, "title": "Break Crust & Skim (04:00–08:00)", "durationSeconds": 240, "waterAddedGrams": 0},
+          {"stepOrder": 4, "title": "Cooling 70°C (08:00–10:00)", "durationSeconds": 120, "waterAddedGrams": 0},
+          {"stepOrder": 5, "title": "Dual Slurp Side-by-Side (10:00–15:00)", "durationSeconds": 300, "waterAddedGrams": 0}
     ]
   },
   {
@@ -179,15 +185,16 @@ List<Map<String, dynamic>> getSeedsPart15(String now) => [
     "grindSize": "Coarse",
     "coffeeWeightGrams": 12,
     "totalWaterWeightGrams": 200,
-    "totalTimeSeconds": 270,
-    "description": "Mencicipi kopi pada suhu hangat (60°C), suam (45°C), dan dingin (35°C) untuk melihat evolusi rasa sebenarnya.",
+    "totalTimeSeconds": 900,
+    "description": "Mencicipi kopi pada suhu panas (70°C), hangat (55°C), dan dingin (38°C) selama 15 menit untuk melihat evolusi rasa sebenarnya.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
-          {"stepOrder": 1, "title": "Tuang Air 200g", "durationSeconds": 20, "waterAddedGrams": 200},
-          {"stepOrder": 2, "title": "Steep & Break 4 Menit", "durationSeconds": 220, "waterAddedGrams": 0},
-          {"stepOrder": 3, "title": "Cicip Fase Hangat 60°C", "durationSeconds": 40, "waterAddedGrams": 0},
-          {"stepOrder": 4, "title": "Cicip Fase Dingin 38°C", "durationSeconds": 40, "waterAddedGrams": 0}
+          {"stepOrder": 1, "title": "Tuang Air 200g (00:00–00:30)", "durationSeconds": 30, "waterAddedGrams": 200},
+          {"stepOrder": 2, "title": "Steep 4 Menit (00:30–04:00)", "durationSeconds": 210, "waterAddedGrams": 0},
+          {"stepOrder": 3, "title": "Break Crust & Skim (04:00–08:00)", "durationSeconds": 240, "waterAddedGrams": 0},
+          {"stepOrder": 4, "title": "Cooling Fase Awal 70°C (08:00–10:00)", "durationSeconds": 120, "waterAddedGrams": 0},
+          {"stepOrder": 5, "title": "Cicip 70°C→55°C→38°C (10:00–15:00)", "durationSeconds": 300, "waterAddedGrams": 0}
     ]
   },
   {

@@ -65,6 +65,7 @@ class RecipeListController extends _$RecipeListController {
   Future<void> saveRecipe(Map<String, dynamic> recipe) async {
     final repo = ref.read(recipeRepositoryProvider);
     await repo.saveCustomRecipe(recipe);
+    if (!ref.mounted) return;
     ref.invalidateSelf();
   }
 
@@ -72,6 +73,7 @@ class RecipeListController extends _$RecipeListController {
   Future<void> deleteRecipe(int id) async {
     final repo = ref.read(recipeRepositoryProvider);
     await repo.deleteRecipe(id);
+    if (!ref.mounted) return;
     ref.invalidateSelf();
   }
 
@@ -79,6 +81,7 @@ class RecipeListController extends _$RecipeListController {
   Future<bool> toggleFavorite(int id) async {
     final repo = ref.read(recipeRepositoryProvider);
     final isFav = await repo.toggleFavorite(id);
+    if (!ref.mounted) return isFav;
     ref.invalidate(favoriteIdsProvider);
     return isFav;
   }

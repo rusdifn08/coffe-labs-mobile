@@ -2,9 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import '../core/router/app_router.dart';
 import '../features/auth/controllers/auth_controller.dart';
+import '../features/auth/utils/auth_navigation_helper.dart';
 import '../features/auth/widgets/auth_error_banner.dart';
 import '../features/auth/widgets/auth_header.dart';
 import '../features/auth/widgets/auth_login_form.dart';
@@ -107,12 +106,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       });
       HapticFeedback.heavyImpact();
 
-      // Berikan durasi untuk animasi selebrasi yang memukau
-      await Future.delayed(const Duration(milliseconds: 950));
+      // Sinkronkan policy terbaru secara senyap sambil menunggu animasi selebrasi
+      await Future.wait([
+        TrialService.getPolicy(refreshFromBackend: true),
+        Future.delayed(const Duration(milliseconds: 650)),
+      ]);
       if (!mounted) return;
 
       ref.invalidate(authControllerProvider);
-      context.go(AppRoutes.home);
+      AuthNavigationHelper.returnHomeAfterAuth(context);
     } else {
       setState(() {
         _isLoading = false;
@@ -196,14 +198,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   void _enterTrialMode() async {
     await TrialService.setTrialMode(true);
+    await TrialService.getPolicy(refreshFromBackend: true);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Memulai Mode Trial (10 Resep & 10x Seduh)'),
+      SnackBar(
+        content: Text(
+          TrialService.isFullNonBusinessTrialActiveSync()
+              ? 'Memulai Trial Full Access Non-Bisnis!'
+              : 'Memulai Mode Trial (10 Resep Pilihan)',
+        ),
         backgroundColor: Colors.orange,
       ),
     );
-    context.go(AppRoutes.home);
+    AuthNavigationHelper.returnHomeAfterAuth(context);
   }
 
   @override

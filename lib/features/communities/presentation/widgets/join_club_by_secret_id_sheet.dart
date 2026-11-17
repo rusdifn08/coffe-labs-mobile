@@ -115,7 +115,7 @@ class _JoinClubBySecretIdSheetState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Gabung Club Rahasia',
+                          'Join Club',
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w700,
@@ -215,7 +215,7 @@ class _JoinClubBySecretIdSheetState
                         ),
                       )
                     : const Icon(CupertinoIcons.checkmark_seal_fill, size: 18),
-                label: Text(_submitting ? 'Memverifikasi...' : 'Gabung Club Sekarang'),
+                label: Text(_submitting ? 'Memverifikasi...' : 'Join Club'),
               ),
             ],
           ),

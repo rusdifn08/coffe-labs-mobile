@@ -1,11 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../features/auth/utils/auth_navigation_helper.dart';
 import '../features/settings/widgets/change_password_dialog.dart';
 import '../features/settings/widgets/language_selector_dialog.dart';
 import '../services/app_update_service.dart';
 import '../services/auth_service.dart';
 import '../services/language_service.dart';
 import '../services/profile_service.dart';
+import '../services/trial_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/receipt_customization_sheet.dart';
 import 'feedback_screen.dart';
@@ -28,12 +30,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     _loadProfile();
     ProfileService.changeNotifier.addListener(_loadProfile);
+    AuthService.changeNotifier.addListener(_loadProfile);
+    TrialService.changeNotifier.addListener(_loadProfile);
     LanguageService.changeNotifier.addListener(_loadLanguage);
   }
 
   @override
   void dispose() {
     ProfileService.changeNotifier.removeListener(_loadProfile);
+    AuthService.changeNotifier.removeListener(_loadProfile);
+    TrialService.changeNotifier.removeListener(_loadProfile);
     LanguageService.changeNotifier.removeListener(_loadLanguage);
     _nameController.dispose();
     super.dispose();
@@ -45,14 +51,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _loadProfile() async {
+    await TrialService.getPolicy();
     final name = await ProfileService.getUserName();
     final img = await ProfileService.getUserImagePath();
     final lang = await LanguageService.getLanguage();
     final user = await AuthService.getCurrentUser();
     if (!mounted) return;
     setState(() {
-      _nameController.text = name;
-      _imagePath = img;
+      _nameController.text = user?.fullName ?? name;
+      _imagePath = (user?.avatarUrl.isNotEmpty == true) ? user!.avatarUrl : img;
       _selectedLanguage = lang;
       _currentUser = user;
     });
@@ -161,7 +168,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 18),
+            _buildAccountSessionCard(isEn),
+            const SizedBox(height: 16),
 
             // NAMA PROFILE SECTION
             Container(
@@ -223,38 +232,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
                 ],
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isEn ? 'Security & Password' : 'Keamanan & Kata Sandi',
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
-                  ),
-                  const SizedBox(height: 10),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.shade100,
-                        borderRadius: BorderRadius.circular(12),
+              child: Material(
+                color: Colors.transparent,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isEn ? 'Security & Password' : 'Keamanan & Kata Sandi',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
+                    ),
+                    const SizedBox(height: 10),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(CupertinoIcons.lock_shield_fill, color: Colors.brown, size: 22),
                       ),
-                      child: const Icon(CupertinoIcons.lock_shield_fill, color: Colors.brown, size: 22),
+                      title: Text(
+                        isEn ? 'Change Account Password' : 'Ubah Password Akun',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      subtitle: Text(
+                        _currentUser != null
+                            ? (isEn ? 'Update password for @${_currentUser!.username}' : 'Perbarui kata sandi akun @${_currentUser!.username}')
+                            : (isEn ? 'Please log in to your account first' : 'Login akun terlebih dahulu'),
+                        style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted),
+                      ),
+                      trailing: const Icon(CupertinoIcons.chevron_forward, size: 18, color: AppTheme.textMuted),
+                      onTap: () => ChangePasswordDialog.show(context, _currentUser),
                     ),
-                    title: Text(
-                      isEn ? 'Change Account Password' : 'Ubah Password Akun',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                    subtitle: Text(
-                      _currentUser != null
-                          ? (isEn ? 'Update password for @${_currentUser!.username}' : 'Perbarui kata sandi akun @${_currentUser!.username}')
-                          : (isEn ? 'Please log in to your account first' : 'Login akun terlebih dahulu'),
-                      style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted),
-                    ),
-                    trailing: const Icon(CupertinoIcons.chevron_forward, size: 18, color: AppTheme.textMuted),
-                    onTap: () => ChangePasswordDialog.show(context, _currentUser),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -269,37 +281,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
                 ],
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isEn ? 'Language & Region' : 'Bahasa & Wilayah',
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
-                  ),
-                  const SizedBox(height: 10),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade100,
-                        borderRadius: BorderRadius.circular(12),
+              child: Material(
+                color: Colors.transparent,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isEn ? 'Language & Region' : 'Bahasa & Wilayah',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
+                    ),
+                    const SizedBox(height: 10),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(CupertinoIcons.globe, color: Colors.blueAccent, size: 22),
                       ),
-                      child: const Icon(CupertinoIcons.globe, color: Colors.blueAccent, size: 22),
+                      title: Text(isEn ? 'Language' : 'Bahasa / Language', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      subtitle: Text(
+                        LanguageService.getLanguageLabel(_selectedLanguage),
+                        style: const TextStyle(fontSize: 11.5, color: AppTheme.primaryBrown, fontWeight: FontWeight.bold),
+                      ),
+                      trailing: const Icon(CupertinoIcons.chevron_forward, size: 18, color: AppTheme.textMuted),
+                      onTap: () => LanguageSelectorDialog.show(
+                        context,
+                        selectedLanguage: _selectedLanguage,
+                        onLanguageSelected: (lang) => setState(() => _selectedLanguage = lang),
+                      ),
                     ),
-                    title: Text(isEn ? 'Language' : 'Bahasa / Language', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    subtitle: Text(
-                      LanguageService.getLanguageLabel(_selectedLanguage),
-                      style: const TextStyle(fontSize: 11.5, color: AppTheme.primaryBrown, fontWeight: FontWeight.bold),
-                    ),
-                    trailing: const Icon(CupertinoIcons.chevron_forward, size: 18, color: AppTheme.textMuted),
-                    onTap: () => LanguageSelectorDialog.show(
-                      context,
-                      selectedLanguage: _selectedLanguage,
-                      onLanguageSelected: (lang) => setState(() => _selectedLanguage = lang),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -314,38 +329,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
                 ],
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isEn ? 'Receipt & Store Branding' : 'Kustomisasi Struk Kasir & Toko',
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
-                  ),
-                  const SizedBox(height: 10),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.shade100,
-                        borderRadius: BorderRadius.circular(12),
+              child: Material(
+                color: Colors.transparent,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isEn ? 'Receipt & Store Branding' : 'Kustomisasi Struk Kasir & Toko',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
+                    ),
+                    const SizedBox(height: 10),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(CupertinoIcons.printer_fill, color: Colors.deepOrange, size: 22),
                       ),
-                      child: const Icon(CupertinoIcons.printer_fill, color: Colors.deepOrange, size: 22),
+                      title: Text(
+                        isEn ? 'Customize Receipt Header' : 'Header Struk Kasir',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      subtitle: Text(
+                        isEn
+                            ? 'Set store name, slogan, icon, barista & social handle'
+                            : 'Ubah nama kedai, slogan, ikon, barista & catatan kaki',
+                        style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted),
+                      ),
+                      trailing: const Icon(CupertinoIcons.chevron_forward, size: 18, color: AppTheme.textMuted),
+                      onTap: () => ReceiptCustomizationSheet.show(context),
                     ),
-                    title: Text(
-                      isEn ? 'Customize Receipt Header' : 'Header Struk Kasir',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                    subtitle: Text(
-                      isEn
-                          ? 'Set store name, slogan, icon, barista & social handle'
-                          : 'Ubah nama kedai, slogan, ikon, barista & catatan kaki',
-                      style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted),
-                    ),
-                    trailing: const Icon(CupertinoIcons.chevron_forward, size: 18, color: AppTheme.textMuted),
-                    onTap: () => ReceiptCustomizationSheet.show(context),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -360,65 +378,68 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
                 ],
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isEn ? 'Support & System' : 'Dukungan & Sistem',
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
-                  ),
-                  const SizedBox(height: 10),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.teal.shade100,
-                        borderRadius: BorderRadius.circular(12),
+              child: Material(
+                color: Colors.transparent,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isEn ? 'Support & System' : 'Dukungan & Sistem',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
+                    ),
+                    const SizedBox(height: 10),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.teal.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(CupertinoIcons.chat_bubble_2_fill, color: Colors.teal, size: 22),
                       ),
-                      child: const Icon(CupertinoIcons.chat_bubble_2_fill, color: Colors.teal, size: 22),
-                    ),
-                    title: Text(
-                      isEn ? 'Feedback / Report Bug' : 'Beri Masukan / Laporkan Bug',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                    subtitle: Text(
-                      isEn ? 'Send feedback directly to development team' : 'Kirim masukan langsung ke tim pengembang',
-                      style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted),
-                    ),
-                    trailing: const Icon(CupertinoIcons.chevron_forward, size: 18, color: AppTheme.textMuted),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const FeedbackScreen()),
-                      );
-                    },
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.purple.shade100,
-                        borderRadius: BorderRadius.circular(12),
+                      title: Text(
+                        isEn ? 'Feedback / Report Bug' : 'Beri Masukan / Laporkan Bug',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                       ),
-                      child: const Icon(CupertinoIcons.arrow_clockwise_circle_fill, color: Colors.purple, size: 22),
+                      subtitle: Text(
+                        isEn ? 'Send feedback directly to development team' : 'Kirim masukan langsung ke tim pengembang',
+                        style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted),
+                      ),
+                      trailing: const Icon(CupertinoIcons.chevron_forward, size: 18, color: AppTheme.textMuted),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const FeedbackScreen()),
+                        );
+                      },
                     ),
-                    title: Text(
-                      isEn ? 'Check System Updates' : 'Periksa Pembaruan Sistem',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    const Divider(height: 1),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.purple.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(CupertinoIcons.arrow_clockwise_circle_fill, color: Colors.purple, size: 22),
+                      ),
+                      title: Text(
+                        isEn ? 'Check System Updates' : 'Periksa Pembaruan Sistem',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      subtitle: Text(
+                        isEn ? 'OTA Shorebird Patch & Native Version' : 'OTA Shorebird Patch & Versi Native',
+                        style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted),
+                      ),
+                      trailing: const Icon(CupertinoIcons.chevron_forward, size: 18, color: AppTheme.textMuted),
+                      onTap: () {
+                        AppUpdateService.checkForUpdate(context: context, isManual: true);
+                      },
                     ),
-                    subtitle: Text(
-                      isEn ? 'OTA Shorebird Patch & Native Version' : 'OTA Shorebird Patch & Versi Native',
-                      style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted),
-                    ),
-                    trailing: const Icon(CupertinoIcons.chevron_forward, size: 18, color: AppTheme.textMuted),
-                    onTap: () {
-                      AppUpdateService.checkForUpdate(context: context, isManual: true);
-                    },
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -433,12 +454,177 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'v2.3.0 • Powered by Rust Axum & Shorebird Engine',
+              'v2.4.0 • Powered by Rust Axum & Shorebird Engine',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 11, color: AppTheme.textMuted, height: 1.4),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildAccountSessionCard(bool isEn) {
+    final user = _currentUser;
+    final isFullTrial =
+        TrialService.isFullNonBusinessTrialActiveSync(user: user);
+
+    if (user != null) {
+      final tierLabel = user.isAdmin
+          ? 'SUPERADMIN'
+          : (user.isBusiness
+              ? 'BUSINESS CAFE'
+              : (user.isPro
+                  ? 'COFFEE LABS PRO'
+                  : (isFullTrial
+                      ? 'TRIAL 7H FULL (NON-BISNIS)'
+                      : 'AKUN TERDAFTAR (TRIAL)')));
+
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0FDF4),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFBBF7D0)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(9),
+              decoration: BoxDecoration(
+                color: const Color(0xFF15803D).withValues(alpha: 0.14),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                CupertinoIcons.checkmark_seal_fill,
+                color: Color(0xFF15803D),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          '${user.fullName} (@${user.username})',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.textDark,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    isEn ? 'Active Status: $tierLabel' : 'Status Sesi: $tierLabel',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF166534),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF15803D),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                isEn ? 'LOGGED IN' : 'AKTIF',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceWhite,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.borderWarm),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(9),
+            decoration: BoxDecoration(
+              color: AppTheme.accentGold.withValues(alpha: 0.16),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              CupertinoIcons.person_crop_circle,
+              color: AppTheme.primaryBrown,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isEn ? 'Visitor Mode (Not Logged In)' : 'Mode Pengunjung (Belum Login)',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.textDark,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  isEn
+                      ? 'Log in to sync your barista profile & unlock features'
+                      : 'Masuk akun resmi untuk sinkronisasi profil & fitur barista',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppTheme.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: () => AuthNavigationHelper.openLoginScreen(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryBrown,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: Text(
+              isEn ? 'Log In' : 'Masuk',
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
       ),
     );
   }

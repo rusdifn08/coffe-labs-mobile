@@ -31,6 +31,7 @@ class AppTheme {
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: bgCream,
+        centerTitle: true,
         elevation: 0,
         iconTheme: const IconThemeData(color: textDark),
         titleTextStyle: GoogleFonts.poppins(

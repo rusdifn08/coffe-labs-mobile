@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:coffee_hub_mobile/features/home/widgets/home_frequent_recipe_card.dart';
+import 'package:coffee_hub_mobile/features/home/widgets/home_recent_brew_tile.dart';
 import 'package:coffee_hub_mobile/services/recipe_sanitizer.dart';
 import 'package:coffee_hub_mobile/utils/barista_utils.dart';
 import 'package:coffee_hub_mobile/features/recipe_feed/widgets/recipe_feed_grid_card.dart';
@@ -133,6 +135,48 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.text('12.5g'), findsOneWidget);
+    });
+
+    testWidgets('BaristaFlagBadge & BaristaUtils.buildOfflineImage handle fi/tw flags and invalid assets without throwing',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                const BaristaFlagBadge(countryCode: 'fi'),
+                const BaristaFlagBadge(countryCode: 'tw'),
+                const BaristaFlagBadge(countryCode: 'zz'),
+                BaristaUtils.buildOfflineImage('assets/does_not_exist.jpg', width: 48, height: 48),
+                SizedBox(
+                  height: 220,
+                  child: HomeFrequentRecipeCard(
+                    recipe: const {
+                      'title': 'Metode Multi-Pour Neo Brew (2026)',
+                      'author': 'Tetsu Kasuya',
+                      'category': 'V60',
+                    },
+                    onTap: () {},
+                  ),
+                ),
+                HomeRecentBrewTile(
+                  recipe: const {
+                    'title': 'Bhinneka Tunggal Ika (2024 Juara)',
+                    'author': 'Ryan Wibawa',
+                  },
+                  onTap: () {},
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('ZZ'), findsOneWidget);
+      expect(find.textContaining('Neo Brew'), findsOneWidget);
+      expect(find.textContaining('Ryan Wibawa'), findsOneWidget);
     });
   });
 }

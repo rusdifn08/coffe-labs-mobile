@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/network/rust_api_client.dart';
@@ -24,25 +23,36 @@ abstract class AuthRepository {
 class AuthRepositoryImpl implements AuthRepository {
   static const String _userSessionKey = 'coffeehub_auth_session_user';
   static const String _authTokenKey = 'coffeehub_auth_token_v1';
+  static const String _legacyUserKey = 'coffeehub_auth_user_json';
+  static const String _legacyTokenKey = 'coffeehub_auth_jwt_token';
 
   final RustApiClient _apiClient;
   AuthUser? _cachedUser;
+  int _lastAuthChangeVersion = -1;
 
   AuthRepositoryImpl({required RustApiClient apiClient}) : _apiClient = apiClient;
 
   @override
   Future<AuthUser?> getCurrentUser() async {
-    if (_cachedUser != null) return _cachedUser;
-    final prefs = await SharedPreferences.getInstance();
-    final rawJson = prefs.getString(_userSessionKey);
-    if (rawJson != null) {
-      try {
-        final decoded = json.decode(rawJson) as Map<String, dynamic>;
-        _cachedUser = AuthUser.fromJson(decoded);
-        return _cachedUser;
-      } catch (_) {}
+    final version = AuthService.changeNotifier.value;
+    if (_cachedUser != null &&
+        _cachedUser!.id.trim().isNotEmpty &&
+        _lastAuthChangeVersion == version) {
+      return _cachedUser;
     }
-    return null;
+
+    final resolved = await AuthService.getCurrentUser();
+    _lastAuthChangeVersion = AuthService.changeNotifier.value;
+    _cachedUser = resolved;
+    return resolved;
+  }
+
+  Future<void> _persistUnifiedSession(AuthUser user, String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await AuthService.persistSessionMirrors(prefs, user: user, token: token);
+    _cachedUser = user;
+    AuthService.changeNotifier.value++;
+    _lastAuthChangeVersion = AuthService.changeNotifier.value;
   }
 
   @override
@@ -57,11 +67,7 @@ class AuthRepositoryImpl implements AuthRepository {
         final userMap = response['user'] as Map<String, dynamic>? ?? response as Map<String, dynamic>;
         final user = AuthUser.fromJson(userMap);
         final token = response['token']?.toString() ?? 'session_token_${user.id}';
-
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_userSessionKey, json.encode(user.toJson()));
-        await prefs.setString(_authTokenKey, token);
-        _cachedUser = user;
+        await _persistUnifiedSession(user, token);
 
         return AuthResult(success: true, message: 'Login berhasil', user: user, token: token);
       }
@@ -91,11 +97,7 @@ class AuthRepositoryImpl implements AuthRepository {
         final userMap = response['user'] as Map<String, dynamic>? ?? response as Map<String, dynamic>;
         final user = AuthUser.fromJson(userMap);
         final token = response['token']?.toString() ?? 'session_token_${user.id}';
-
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_userSessionKey, json.encode(user.toJson()));
-        await prefs.setString(_authTokenKey, token);
-        _cachedUser = user;
+        await _persistUnifiedSession(user, token);
 
         return AuthResult(success: true, message: 'Registrasi berhasil', user: user, token: token);
       }
@@ -108,9 +110,15 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_userSessionKey);
-    await prefs.remove(_authTokenKey);
+    await Future.wait([
+      prefs.remove(_userSessionKey),
+      prefs.remove(_authTokenKey),
+      prefs.remove(_legacyUserKey),
+      prefs.remove(_legacyTokenKey),
+    ]);
     _cachedUser = null;
+    AuthService.changeNotifier.value++;
+    _lastAuthChangeVersion = AuthService.changeNotifier.value;
   }
 
   @override

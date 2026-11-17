@@ -10,6 +10,7 @@ import '../features/bean_scanner/controllers/selected_brew_bean_controller.dart'
 import '../features/bean_scanner/models/resolved_coffee_bean.dart';
 import '../features/recipes/controllers/recipe_list_controller.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../services/trial_service.dart';
 import '../services/language_service.dart';
 import '../services/coffee_translator.dart';
@@ -41,6 +42,7 @@ class RecipeFeedScreen extends ConsumerStatefulWidget {
 class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
   List<Map<String, dynamic>> _uniqueBaristas = [];
   bool _isTrial = false;
+  AuthUser? _currentUser;
 
   // Filter States
   String _searchQuery = '';
@@ -80,8 +82,15 @@ class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
   }
 
   void _checkTrial() async {
+    await TrialService.getPolicy();
     final t = await TrialService.isTrialMode();
-    if (mounted) setState(() => _isTrial = t);
+    final user = await AuthService.getCurrentUser();
+    if (mounted) {
+      setState(() {
+        _currentUser = user;
+        _isTrial = t && (user == null || (!user.isPro && !user.isBusiness && !user.isAdmin));
+      });
+    }
   }
 
   void _onTrialChanged() {
@@ -221,8 +230,18 @@ class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
     RecipeTrialLockDialog.show(context);
   }
 
-  void _openDetail(dynamic recipe, {int? index}) {
-    if (_isTrial && index != null && index >= 10) {
+  void _openDetail(
+    dynamic recipe, {
+    int? index,
+    Set<int>? canonicalFreeIds,
+  }) {
+    final locked = TrialService.isRecipeLockedSync(
+      recipe,
+      isTrial: _isTrial,
+      canonicalFreeIds: canonicalFreeIds,
+      user: _currentUser,
+    );
+    if (locked) {
       _showTrialLockDialog();
       return;
     }
@@ -240,14 +259,27 @@ class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
     );
   }
 
-  void _surpriseMe(List<dynamic> pool) {
+  void _surpriseMe(
+    List<dynamic> pool, {
+    Set<int>? canonicalFreeIds,
+  }) {
     if (pool.isEmpty) return;
-    var source = pool;
-    if (_isTrial && source.length > 10) {
-      source = source.take(10).toList();
+    final accessible = pool
+        .where(
+          (r) => !TrialService.isRecipeLockedSync(
+            r,
+            isTrial: _isTrial,
+            canonicalFreeIds: canonicalFreeIds,
+            user: _currentUser,
+          ),
+        )
+        .toList();
+    if (accessible.isEmpty) {
+      _showTrialLockDialog();
+      return;
     }
-    final picked = (List<dynamic>.from(source)..shuffle()).first;
-    _openDetail(picked, index: 0);
+    final picked = (List<dynamic>.from(accessible)..shuffle()).first;
+    _openDetail(picked, canonicalFreeIds: canonicalFreeIds);
   }
 
   @override
@@ -265,6 +297,9 @@ class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
         body: Center(child: Text('Gagal memuat resep: $err')),
       ),
       data: (allRecipes) {
+        // KUNCI KEAMANAN: Hitung daftar ID resep bebas dari katalog PENUH (sebelum search/filter/sort).
+        final Set<int> canonicalFreeIds =
+            TrialService.computeCanonicalFreeIds(allRecipes);
         final List<dynamic> filteredRecipes = allRecipes.where((raw) {
           final r = ApiService.sanitizeRecipe(raw);
           final catLower = _selectedCategory.toLowerCase();
@@ -460,7 +495,10 @@ class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
                 IconButton(
                   tooltip: isEn ? 'Surprise Me (Random Recipe)' : 'Pilihkan Resep Acak',
                   icon: const Icon(CupertinoIcons.sparkles),
-                  onPressed: () => _surpriseMe(filteredRecipes),
+                  onPressed: () => _surpriseMe(
+                    filteredRecipes,
+                    canonicalFreeIds: canonicalFreeIds,
+                  ),
                 ),
                 IconButton(
                   tooltip: isEn ? 'Add Custom Recipe' : 'Tambah Resep Sendiri',
@@ -519,6 +557,7 @@ class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
                               child: _buildRecipeGrid(
                                 context,
                                 filteredRecipes,
+                                canonicalFreeIds: canonicalFreeIds,
                                 isSplitMode: true,
                               ),
                             ),
@@ -534,10 +573,19 @@ class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
                           child: LandscapeRecipeInspector(
                             rawRecipe: _selectedInspectionRecipe ?? (filteredRecipes.isNotEmpty ? filteredRecipes.first : null),
                             isTrial: _isTrial,
+                            isRecipeLockedOverride: TrialService.isRecipeLockedSync(
+                              _selectedInspectionRecipe ?? (filteredRecipes.isNotEmpty ? filteredRecipes.first : null),
+                              isTrial: _isTrial,
+                              canonicalFreeIds: canonicalFreeIds,
+                              user: _currentUser,
+                            ),
                             onTrialLocked: _showTrialLockDialog,
                             onOpenFullDetail: () {
                               if (_selectedInspectionRecipe != null) {
-                                _openDetail(_selectedInspectionRecipe);
+                                _openDetail(
+                                  _selectedInspectionRecipe,
+                                  canonicalFreeIds: canonicalFreeIds,
+                                );
                               }
                             },
                             onClose: () => setState(() => _isSplitMode = false),
@@ -581,6 +629,7 @@ class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
                       child: _buildRecipeGrid(
                         context,
                         filteredRecipes,
+                        canonicalFreeIds: canonicalFreeIds,
                         isSplitMode: false,
                       ),
                     ),
@@ -677,7 +726,7 @@ class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
                     ),
                     Expanded(
                       child: Text(
-                        '${bean.roasteryName} - ${bean.beanName}',
+                        bean.fullDisplayName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
@@ -711,6 +760,7 @@ class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
   Widget _buildRecipeGrid(
     BuildContext context,
     List<dynamic> recipes, {
+    required Set<int> canonicalFreeIds,
     required bool isSplitMode,
   }) {
     if (recipes.isEmpty) {
@@ -745,14 +795,32 @@ class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
         ),
         itemCount: recipes.length,
         itemBuilder: (context, index) {
-          return _buildGridCard(context, recipes[index], index, isSplitMode: isSplitMode);
+          return _buildGridCard(
+            context,
+            recipes[index],
+            index,
+            canonicalFreeIds: canonicalFreeIds,
+            isSplitMode: isSplitMode,
+          );
         },
       ),
     );
   }
 
-  Widget _buildGridCard(BuildContext context, dynamic rawRecipe, int index, {bool isSplitMode = false}) {
+  Widget _buildGridCard(
+    BuildContext context,
+    dynamic rawRecipe,
+    int index, {
+    required Set<int> canonicalFreeIds,
+    bool isSplitMode = false,
+  }) {
     final recipe = ApiService.sanitizeRecipe(rawRecipe);
+    final isLocked = TrialService.isRecipeLockedSync(
+      recipe,
+      isTrial: _isTrial,
+      canonicalFreeIds: canonicalFreeIds,
+      user: _currentUser,
+    );
     final isSelected = isSplitMode &&
         _selectedInspectionRecipe != null &&
         _selectedInspectionRecipe['id'] == recipe['id'];
@@ -761,12 +829,21 @@ class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
       rawRecipe: rawRecipe,
       index: index,
       isTrial: _isTrial,
+      isLockedOverride: isLocked,
       isSelected: isSelected,
       onTap: () {
+        if (isLocked) {
+          _showTrialLockDialog();
+          return;
+        }
         if (isSplitMode) {
           setState(() => _selectedInspectionRecipe = rawRecipe);
         } else {
-          _openDetail(recipe, index: index);
+          _openDetail(
+            recipe,
+            index: index,
+            canonicalFreeIds: canonicalFreeIds,
+          );
         }
       },
       onLongPress: recipe['isCustom'] == true

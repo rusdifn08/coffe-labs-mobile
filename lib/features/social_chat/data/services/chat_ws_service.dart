@@ -73,7 +73,10 @@ class ChatWsService {
   Future<String> _resolveUserId() async {
     final user = await AuthService.getCurrentUser();
     if (user != null && user.id.isNotEmpty) {
-      _currentUserId = user.id;
+      if (_currentUserId != user.id) {
+        _currentUserId = user.id;
+        unawaited(_db.reconcileLocalSenderId(user.id));
+      }
       return user.id;
     }
     return _currentUserId ?? '';
@@ -175,7 +178,15 @@ class ChatWsService {
     }
 
     if (_activeRoomId != null) {
-      await sendFrame(ClientFrame.setActiveRoom(conversationId: _activeRoomId));
+      final activeId = _activeRoomId!;
+      await sendFrame(ClientFrame.setActiveRoom(conversationId: activeId));
+      final latestSeq = await _db.getLatestSeqForConversation(activeId);
+      if (latestSeq > 0) {
+        await _db.markLocalRoomReadUpTo(activeId, latestSeq);
+        await sendFrame(
+          ClientFrame.ackRead(conversationId: activeId, upToSeqId: latestSeq),
+        );
+      }
     }
 
     await flushOutboxQueue();
@@ -249,13 +260,24 @@ class ChatWsService {
           peerDeliveredWatermarks: const {},
           peerReadWatermarks: const {},
         );
-        if (dto.senderId != uid && uid.isNotEmpty) {
+        final fromOther = !ChatDriftDatabase.isSameSender(dto.senderId, uid) &&
+            uid.isNotEmpty;
+        if (fromOther) {
           await sendFrame(
             ClientFrame.ackDelivered(
               conversationId: dto.conversationId,
               upToSeqId: dto.seqId,
             ),
           );
+          if (_activeRoomId == dto.conversationId) {
+            await _db.markLocalRoomReadUpTo(dto.conversationId, dto.seqId);
+            await sendFrame(
+              ClientFrame.ackRead(
+                conversationId: dto.conversationId,
+                upToSeqId: dto.seqId,
+              ),
+            );
+          }
         }
       case ServerReceiptWatermarkUpdateFrame wm:
         await _db.applyReceiptWatermark(
@@ -275,7 +297,7 @@ class ChatWsService {
         final deliveredMap = <String, int>{};
         final readMap = <String, int>{};
         for (final wm in batch.watermarks) {
-          if (wm.userId != uid) {
+          if (!ChatDriftDatabase.isSameSender(wm.userId, uid)) {
             final prevDel = deliveredMap[wm.conversationId] ?? 0;
             final prevRead = readMap[wm.conversationId] ?? 0;
             if (wm.lastDeliveredSeqId > prevDel) {

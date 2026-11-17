@@ -1,3 +1,4 @@
+import 'package:coffee_hub_mobile/screens/toolkit_screen.dart';
 import 'package:coffee_hub_mobile/widgets/toolkit_card.dart';
 import 'package:coffee_hub_mobile/widgets/toolkit_section_svg_icons.dart';
 import 'package:flutter/material.dart';
@@ -107,7 +108,24 @@ void main() {
       );
 
       expect(find.text('Marketplace Kopi'), findsOneWidget);
+      expect(find.text('Katalog biji kopi'), findsOneWidget);
       expect(find.text('PRO'), findsNothing);
+    });
+
+    testWidgets('ToolkitScreen removes description from top hero banner and keeps compact grid cards', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(home: ToolkitScreen()),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Peralatan Presisi Barista'), findsOneWidget);
+      expect(
+        find.text('Asisten dial-in, matriks klik grinder, kalkulator 4:6, kimia air, dan kurva degassing.'),
+        findsNothing,
+      );
+      expect(find.text('Marketplace Kopi'), findsOneWidget);
+      expect(find.text('Katalog 50+ roastery & checkout'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 }

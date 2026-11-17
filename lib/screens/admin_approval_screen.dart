@@ -2,9 +2,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../features/admin/widgets/admin_user_card.dart';
 import '../features/admin/widgets/admin_user_stats_card.dart';
+import '../features/monitoring/presentation/screens/platform_monitoring_dashboard_screen.dart';
 import '../models/admin_user_stats.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
+import 'admin_trial_control_screen.dart';
 
 class AdminApprovalScreen extends StatefulWidget {
   const AdminApprovalScreen({super.key});
@@ -132,6 +134,83 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen> with SingleTi
     }
   }
 
+  Future<void> _handleChangeTier(AuthUser user) async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: AppTheme.surfaceWhite,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Atur Akses & Tier @${user.username}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.textDark,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Pilih skema akses atau aktifkan Trial 7 Hari Full Non-Bisnis khusus akun ini.',
+                style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                leading: const Icon(CupertinoIcons.sparkles, color: Color(0xFF15803D)),
+                title: const Text('Trial 7 Hari Full Access (Non-Bisnis)', style: TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: const Text('Buka semua resep, Dial-In, Scanner & Toolkit selama 7 hari; Bisnis POS tetap terkunci'),
+                onTap: () => Navigator.pop(ctx, 'trial_7d'),
+              ),
+              ListTile(
+                leading: const Icon(CupertinoIcons.lock_shield, color: AppTheme.primaryBrown),
+                title: const Text('Trial Terbatas (Strict Default)', style: TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: const Text('Ikuti kebijakan trial terbatas standar (10 resep kanonik)'),
+                onTap: () => Navigator.pop(ctx, 'trial'),
+              ),
+              ListTile(
+                leading: const Icon(CupertinoIcons.star_circle_fill, color: Colors.amber),
+                title: const Text('Coffee Labs Pro', style: TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: const Text('Akses Brewer Penuh Permanen (Non-Bisnis)'),
+                onTap: () => Navigator.pop(ctx, 'pro'),
+              ),
+              ListTile(
+                leading: const Icon(CupertinoIcons.briefcase_fill, color: Colors.deepOrange),
+                title: const Text('Coffee Labs Business', style: TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: const Text('Buka semua fitur termasuk Kasir POS & OLED Kiosk'),
+                onTap: () => Navigator.pop(ctx, 'business'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (choice == null || !mounted) return;
+    final ok = await AuthService.updateUserTier(
+      user.id,
+      choice,
+      trialDays: choice == 'trial_7d' ? 7 : null,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? "Akses '@${user.username}' diperbarui menjadi $choice"
+              : "Gagal mengubah tier '@${user.username}'.",
+        ),
+        backgroundColor: ok ? const Color(0xFF2E7D32) : Colors.redAccent,
+      ),
+    );
+    if (ok) _loadData();
+  }
+
   @override
   Widget build(BuildContext context) {
     final newRegistrations = _users.where(_isNewRegistration).toList();
@@ -146,9 +225,33 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen> with SingleTi
     return Scaffold(
       backgroundColor: AppTheme.bgCream,
       appBar: AppBar(
-        title: const Text('Manajemen Pengguna & Pendaftaran'),
+        title: const Text(
+          'Manajemen Pengguna',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: const Icon(CupertinoIcons.slider_horizontal_3, color: AppTheme.primaryBrown),
+            tooltip: 'Kontrol Trial 7 Hari Non-Bisnis',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AdminTrialControlScreen()),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(CupertinoIcons.chart_bar_alt_fill, color: AppTheme.primaryBrown),
+            tooltip: 'Monitoring User Online',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PlatformMonitoringDashboardScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(CupertinoIcons.arrow_clockwise),
             tooltip: 'Segarkan Data',
@@ -161,23 +264,35 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen> with SingleTi
           unselectedLabelColor: AppTheme.textMuted,
           indicatorColor: AppTheme.primaryBrown,
           indicatorWeight: 3,
+          labelPadding: const EdgeInsets.symmetric(horizontal: 6),
           tabs: [
             Tab(
               child: Row(
+                mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('Notifikasi Baru'),
+                  const Flexible(
+                    child: Text(
+                      'Baru',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                   if (newRegistrations.isNotEmpty) ...[
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 5),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                       decoration: BoxDecoration(
                         color: Colors.orange,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         '${newRegistrations.length}',
-                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
@@ -185,23 +300,17 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen> with SingleTi
               ),
             ),
             Tab(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('Semua'),
-                  const SizedBox(width: 6),
-                  Text('(${allUsers.length})', style: const TextStyle(fontSize: 12)),
-                ],
+              child: Text(
+                'Semua (${allUsers.length})',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             Tab(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('Nonaktif'),
-                  const SizedBox(width: 6),
-                  Text('(${declinedUsers.length})', style: const TextStyle(fontSize: 12)),
-                ],
+              child: Text(
+                'Nonaktif (${declinedUsers.length})',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -288,6 +397,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen> with SingleTi
           onAccept: _handleAccept,
           onDecline: _handleDecline,
           onDelete: _handleDelete,
+          onChangeTier: _handleChangeTier,
         );
       },
     );

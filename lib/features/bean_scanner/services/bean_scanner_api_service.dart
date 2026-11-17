@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../../services/auth_service.dart';
 import '../models/resolved_coffee_bean.dart';
+import 'coffee_knowledge_graph_service.dart';
 import 'cognitive_bean_analyzer.dart';
 
 class BeanScannerApiService {
@@ -11,12 +12,20 @@ class BeanScannerApiService {
     required List<Map<String, dynamic>> blocks,
     required String croppedImagePath,
   }) async {
-    // 1. First run instant on-device Cognitive AI Analysis
+    await CoffeeKnowledgeGraphService.instance.initialize();
+
+    // 1. First run instant on-device Cognitive AI + Full Knowledge Graph Analysis
     final localCognitiveBean = CognitiveBeanAnalyzer.analyze(
       rawFullText: rawFullText,
       blocksDto: blocks,
       localImagePath: croppedImagePath,
     );
+
+    // Apabila sudah terverifikasi akurat oleh Knowledge Graph & Katalog Lokal,
+    // langsung kembalikan hasil presisi tanpa menunggu latensi jaringan tambahan.
+    if (localCognitiveBean.isCatalogVerified && localCognitiveBean.confidenceScore >= 88.0) {
+      return localCognitiveBean;
+    }
 
     try {
       final baseUrl = await AuthService.getBaseUrl();
@@ -37,7 +46,7 @@ class BeanScannerApiService {
         uri,
         headers: headers,
         body: json.encode(payload),
-      ).timeout(const Duration(seconds: 8));
+      ).timeout(const Duration(seconds: 2));
 
       if (res.statusCode == 200 || res.statusCode == 201) {
         final body = json.decode(res.body);
@@ -98,6 +107,14 @@ class BeanScannerApiService {
           serverResolved = serverResolved.copyWith(
             altitudeMasl: localCognitiveBean.altitudeMasl,
             isAiInferredAltitude: false,
+          );
+        }
+
+        // Pertahankan langkah-langkah resep lengkap dari on-device planner bila backend hanya mengirim stub
+        if (serverResolved.recommendedRecipes.isEmpty ||
+            serverResolved.recommendedRecipes.every((r) => r.steps.isEmpty)) {
+          serverResolved = serverResolved.copyWith(
+            recommendedRecipes: localCognitiveBean.recommendedRecipes,
           );
         }
 

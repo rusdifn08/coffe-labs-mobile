@@ -153,13 +153,14 @@ List<Map<String, dynamic>> getSeedsPart1(String now) => [
         "grindSize": "Medium Fine",
         "coffeeWeightGrams": 15,
         "totalWaterWeightGrams": 250,
-        "totalTimeSeconds": 105,
-        "description": "Mikaela membawa semangat realisme kedai kopi ke panggung dunia. Menggunakan Kalita Wave 155 berbahan logam, dasar Kalita yang datar memberikan ekstraksi yang lebih merata tanpa harus memanipulasi air terlalu banyak. Setelah memisahkan fines (debu kopi) dengan saringan, Mikaela melakukan tuangan spiral secara perlahan dan terus-menerus hingga mencapai target 250 gram air pada menit 1:45. Air yang digunakan adalah hasil manipulasi Reverse Osmosis yang mengoptimalkan daya tarik senyawa rasa manis.",
+        "totalTimeSeconds": 155,
+        "description": "Mikaela membawa semangat realisme kedai kopi ke panggung dunia. Menggunakan Kalita Wave 155 berbahan logam, dasar Kalita yang datar memberikan ekstraksi yang lebih merata tanpa harus memanipulasi air terlalu banyak. Setelah memisahkan fines dengan saringan, Mikaela melakukan blooming 30g selama 30 detik lalu tuangan spiral perlahan hingga 250g pada menit 1:45 dan selesai tiris pada 2:35 (155 detik).",
         "isCustom": false,
         "createdAt": now,
         "steps": [
-          {"stepOrder": 1, "title": "Blooming", "durationSeconds": 30, "waterAddedGrams": 50},
-          {"stepOrder": 2, "title": "Continuous Spiral Pour", "durationSeconds": 75, "waterAddedGrams": 200}
+          {"stepOrder": 1, "title": "Blooming Spiral Cepat 30g", "durationSeconds": 30, "waterAddedGrams": 30, "instruction": "Basahi 15g bubuk kopi dengan 30g air 96°C secara cepat selama 30 detik (0:00–0:30)."},
+          {"stepOrder": 2, "title": "Continuous Spiral Pour s/d 250g", "durationSeconds": 75, "waterAddedGrams": 220, "instruction": "Tuang terus-menerus perlahan dengan pola spiral merata (+220g) hingga total 250g tercapai di menit 1:45."},
+          {"stepOrder": 3, "title": "Drawdown Lengkap & Angkat Dripper", "durationSeconds": 50, "waterAddedGrams": 0, "instruction": "Biarkan air surut sempurna dari dasar Kalita hingga selesai tepat di menit 2:35 (155 detik)."}
         ]
       },
   {
@@ -384,13 +385,13 @@ List<Map<String, dynamic>> getSeedsPart1(String now) => [
         "grindSize": "Medium",
         "coffeeWeightGrams": 12,
         "totalWaterWeightGrams": 200,
-        "totalTimeSeconds": 130,
-        "description": "Patrik Rolf merancang perangkat seduhnya sendiri, April Pour-Over, berdasar datar. Uniknya, Rolf menggiling kopinya satu jam penuh sebelum kompetisi untuk memungkinkan pelepasan karbon dioksida seketika (rapid degassing). Ia kemudian membagi 200ml air seduhnya hanya dalam dua tahap penuangan agresif yang melarutkan kemanisan karamel secara maksimal.",
+        "totalTimeSeconds": 150,
+        "description": "Patrik Rolf merancang April Brewer berdasar datar dengan metode ikonik dua tahap tuangan presisi (masing-masing 50g memutar + 50g tepat di tengah) menggunakan 12g kopi dan 200g air bersuhu 93°C selama total 2 menit 30 detik (150 detik).",
         "isCustom": false,
         "createdAt": now,
         "steps": [
-          {"stepOrder": 1, "title": "Aggressive Pour 1", "durationSeconds": 60, "waterAddedGrams": 100},
-          {"stepOrder": 2, "title": "Aggressive Pour 2", "durationSeconds": 70, "waterAddedGrams": 100}
+          {"stepOrder": 1, "title": "Pour 1 (0:00): 50g Circular + 50g Center", "durationSeconds": 60, "waterAddedGrams": 100, "instruction": "0:00 Tuang 50g memutar untuk meratakan bed, lanjutkan 50g aliran vertikal tepat di tengah (total 100g). Tunggu surut hingga 1:00."},
+          {"stepOrder": 2, "title": "Pour 2 (1:00): 50g Circular + 50g Center & Tiris", "durationSeconds": 90, "waterAddedGrams": 100, "instruction": "1:00 Ulangi 50g memutar + 50g tepat di tengah hingga total 200g, lalu biarkan menetes tuntas hingga menit 2:30 (150 detik)."}
         ]
       },
 ];

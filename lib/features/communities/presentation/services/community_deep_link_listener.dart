@@ -42,6 +42,14 @@ class _CommunityDeepLinkListenerState
   Future<void> _handleIncomingUri(Uri uri) async {
     final full = uri.toString();
     if (_lastHandledUri == full) return;
+
+    final liveCode = _extractLiveBrewCode(uri);
+    if (liveCode != null && liveCode.isNotEmpty) {
+      _lastHandledUri = full;
+      ref.read(appRouterProvider).go('/livebrew/$liveCode');
+      return;
+    }
+
     final token = _extractClubInviteToken(uri);
     if (token == null || token.isEmpty) return;
 
@@ -56,6 +64,20 @@ class _CommunityDeepLinkListenerState
       // Fallback: open interactive link resolver screen if user isn't logged in yet
       ref.read(appRouterProvider).go('/c/$token');
     }
+  }
+
+  static String? _extractLiveBrewCode(Uri uri) {
+    final segs = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+    if (uri.scheme == 'coffeelabs' && uri.host == 'livebrew' && segs.isNotEmpty) {
+      return segs.first;
+    }
+    if (uri.scheme.startsWith('http') &&
+        uri.host.contains('coffeelabs.') &&
+        segs.length >= 2 &&
+        segs.first == 'livebrew') {
+      return segs[1];
+    }
+    return null;
   }
 
   static String? _extractClubInviteToken(Uri uri) {

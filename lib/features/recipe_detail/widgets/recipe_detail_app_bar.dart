@@ -1,10 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flag/flag.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../utils/barista_utils.dart';
-import '../../../../widgets/thermal_receipt_sheet.dart';
 import '../../../../screens/add_recipe_screen.dart';
+import 'animated_favorite_heart_button.dart';
+import 'recipe_cover_background.dart';
+import 'recipe_share_sheet.dart';
 
 class RecipeDetailAppBar extends StatelessWidget {
   final String coverImageUrl;
@@ -36,9 +37,12 @@ class RecipeDetailAppBar extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (countryCode.isNotEmpty) ...[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(3),
-              child: Flag.fromString(countryCode, height: 12, width: 17, fit: BoxFit.cover),
+            BaristaFlagBadge(
+              countryCode: countryCode,
+              height: 12,
+              width: 17,
+              fit: BoxFit.cover,
+              borderRadius: 3,
             ),
             const SizedBox(width: 8),
           ],
@@ -61,20 +65,22 @@ class RecipeDetailAppBar extends StatelessWidget {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            BaristaUtils.buildOfflineImage(
-              coverImageUrl,
-              fit: BoxFit.cover,
-              cacheWidth: 800,
+            RecipeCoverBackground(
+              coverImageUrl: coverImageUrl,
+              portraitUrl: BaristaUtils.imageUrlFromRecipe(scaledRecipe),
+              methodName: scaledRecipe['method']?.toString(),
+              categoryName: scaledRecipe['category']?.toString(),
             ),
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
+                  stops: const [0.0, 0.45, 1.0],
                   colors: [
-                    Colors.black.withValues(alpha: 0.65),
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.45),
+                    Colors.black.withValues(alpha: 0.48),
+                    Colors.black.withValues(alpha: 0.14),
+                    Colors.black.withValues(alpha: 0.36),
                   ],
                 ),
               ),
@@ -118,9 +124,9 @@ class RecipeDetailAppBar extends StatelessWidget {
             ),
             child: IconButton(
               padding: EdgeInsets.zero,
-              tooltip: 'Print Struk Resep Bluetooth Kasir',
-              icon: const Icon(CupertinoIcons.printer_fill, color: Colors.white, size: 18),
-              onPressed: () => ThermalReceiptSheet.show(context, scaledRecipe),
+              tooltip: 'Bagikan Resep ke Sosmed & Coffee Labs Web',
+              icon: const Icon(CupertinoIcons.share, color: Colors.white, size: 18),
+              onPressed: () => RecipeShareSheet.show(context, scaledRecipe),
             ),
           ),
         ),
@@ -153,21 +159,9 @@ class RecipeDetailAppBar extends StatelessWidget {
         ),
         Padding(
           padding: const EdgeInsets.only(top: 7.0, bottom: 7.0, right: 12.0, left: 3.0),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.35),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              padding: EdgeInsets.zero,
-              tooltip: isFavorite ? 'Hapus dari Favorit' : 'Simpan ke Favorit',
-              icon: Icon(
-                isFavorite ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
-                color: isFavorite ? Colors.redAccent : Colors.white,
-                size: 20,
-              ),
-              onPressed: onToggleFavorite,
-            ),
+          child: AnimatedFavoriteHeartButton(
+            isFavorite: isFavorite,
+            onToggle: onToggleFavorite,
           ),
         ),
       ],

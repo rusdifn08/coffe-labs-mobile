@@ -152,7 +152,7 @@ final class ExploreCommunitiesControllerProvider
 }
 
 String _$exploreCommunitiesControllerHash() =>
-    r'1603f6e877b284bfa5e08b892ad13405fb0e6f8e';
+    r'a1b055b075534e28175c91400ae8184b90c3f843';
 
 final class ExploreCommunitiesControllerFamily extends $Family
     with
@@ -650,7 +650,7 @@ final class SecretIdJoinControllerProvider
 }
 
 String _$secretIdJoinControllerHash() =>
-    r'c29831fe6fbb99e57b5d4e30b33e80c10c9545e0';
+    r'2b2f60367def3da6ee0fb6356f7f0e982a35065e';
 
 abstract class _$SecretIdJoinController
     extends $AsyncNotifier<JoinClubResponse?> {

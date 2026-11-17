@@ -9,6 +9,13 @@ set(BINARY_NAME "coffee_hub_mobile")
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
 cmake_policy(VERSION 3.14...3.25)
+set(CMAKE_POLICY_DEFAULT_CMP0175 OLD)
+if(NOT DEFINED FLUTTER_TARGET_PLATFORM)
+  set(FLUTTER_TARGET_PLATFORM "windows-x64")
+endif()
+if(NOT PDFIUM_ARCH)
+  set(PDFIUM_ARCH "x64" CACHE STRING "Architecture of pdfium used" FORCE)
+endif()
 
 # Define build configuration option.
 get_property(IS_MULTICONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
@@ -57,7 +64,24 @@ add_subdirectory("runner")
 
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
-include(flutter/generated_plugins.cmake)
+# Bypass heavy 6.5GB Firebase C++ Desktop SDK extraction on Windows (FCM is mobile-only).
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/flutter/ephemeral/.plugin_symlinks/firebase_core/windows/include")
+  add_library(firebase_core_plugin STATIC
+    "runner/firebase_core_stub.cpp"
+  )
+  apply_standard_settings(firebase_core_plugin)
+  target_compile_definitions(firebase_core_plugin PUBLIC FLUTTER_PLUGIN_IMPL)
+  target_include_directories(firebase_core_plugin PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/flutter/ephemeral/.plugin_symlinks/firebase_core/windows/include"
+  )
+  target_link_libraries(firebase_core_plugin PUBLIC flutter flutter_wrapper_plugin)
+  target_link_libraries(${BINARY_NAME} PRIVATE firebase_core_plugin)
+endif()
+
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/flutter/generated_plugins.cmake" _GEN_PLUGINS_CONTENT)
+string(REGEX REPLACE "[ \t]*firebase_core\r?\n" "" _GEN_PLUGINS_CONTENT "${_GEN_PLUGINS_CONTENT}")
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/generated_plugins_filtered.cmake" "${_GEN_PLUGINS_CONTENT}")
+include("${CMAKE_CURRENT_BINARY_DIR}/generated_plugins_filtered.cmake")
 
 
 # === Installation ===

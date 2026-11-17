@@ -34,6 +34,11 @@ import '../../features/social_profile_feed/presentation/screens/barista_director
 import '../../features/social_profile_feed/presentation/screens/social_user_profile_screen.dart';
 import '../../features/social_profile_feed/presentation/screens/thread_detail_screen.dart';
 import '../../features/social_graph/presentation/screens/social_connections_tab_screen.dart';
+import '../../features/monitoring/data/telemetry_batch_outbox_service.dart';
+import '../../features/monitoring/presentation/route_lifecycle_observer.dart';
+import '../../features/monitoring/presentation/screens/platform_monitoring_dashboard_screen.dart';
+import '../../features/live_brew/presentation/screens/customer_live_brew_tracker_screen.dart';
+import '../../features/multi_method_brewing/presentation/screens/cold_brew_and_drip_studio_screen.dart';
 import '../../models/business_pos_models.dart';
 import '../services/kiosk_engine_service.dart';
 
@@ -48,6 +53,7 @@ class AppRoutes {
   static const String recipeDetail = '/recipe-detail';
   static const String addRecipe = '/add-recipe';
   static const String brewTimer = '/brew-timer';
+  static const String coldBrewAlarm = '/brew/cold-brew-alarm/:alarmId';
   static const String baristaProfile = '/barista';
   static const String favorites = '/favorites';
   static const String settings = '/settings';
@@ -71,8 +77,11 @@ class AppRoutes {
   static const String adminApproval = '/admin/approval';
   static const String adminFeedback = '/admin/feedback';
   static const String adminVersion = '/admin/version';
+  static const String adminMonitoring = '/admin/monitoring';
   static const String aodShowcase = '/business/aod-showcase';
   static const String inAppTrainer = '/in-app-trainer';
+  static const String liveBrew = '/livebrew';
+  static const String liveBrewTracker = '/livebrew/:addressCode';
 }
 
 /// Listenable bridge yang memicu evaluasi ulang Route Guard pada GoRouter
@@ -105,9 +114,18 @@ GoRouter appRouter(Ref ref) {
 
   ref.onDispose(refreshNotifier.dispose);
 
+  final lifecycleObserver = CoffeeLabsRouteAndLifecycleObserver(
+    TelemetryBatchOutboxService.instance,
+  );
+  ref.onDispose(() {
+    lifecycleObserver.detachLifecycle();
+    TelemetryBatchOutboxService.instance.dispose();
+  });
+
   return GoRouter(
     initialLocation: AppRoutes.splash,
     refreshListenable: refreshNotifier,
+    observers: [lifecycleObserver],
     redirect: (BuildContext context, GoRouterState state) async {
       final path = state.matchedLocation;
 
@@ -122,8 +140,8 @@ GoRouter appRouter(Ref ref) {
         return AppRoutes.aodShowcase;
       }
 
-      // Biarkan halaman Splash menjalankan animasi pembuka & pengecekan sesi awal
-      if (path == AppRoutes.splash) {
+      // Biarkan halaman Splash & Live Brew QR publik terbuka tanpa blokir login
+      if (path == AppRoutes.splash || path.startsWith('/livebrew')) {
         return null;
       }
 
@@ -228,6 +246,23 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state) => BrewTimerScreen(recipeData: state.extra),
       ),
       GoRoute(
+        path: AppRoutes.coldBrewAlarm,
+        builder: (context, state) => ColdBrewAndDripStudioScreen(
+          recipe: state.extra is Map<String, dynamic>
+              ? state.extra as Map<String, dynamic>
+              : const {
+                  'title': 'Cold Brew Concentrate',
+                  'method': 'Cold Brew',
+                  'category': 'Cold Brew',
+                  'coffeeWeightGrams': 50,
+                  'totalWaterWeightGrams': 500,
+                  'waterTempCelsius': 4,
+                  'totalTimeSeconds': 57600,
+                  'steps': [],
+                },
+        ),
+      ),
+      GoRoute(
         path: AppRoutes.baristaProfile,
         builder: (context, state) {
           final args = state.extra as Map<String, dynamic>? ?? const {};
@@ -316,11 +351,11 @@ GoRouter appRouter(Ref ref) {
       ),
       GoRoute(
         path: AppRoutes.socialExplore,
-        builder: (context, state) => const SocialExploreAndFeedScreen(initialTabIndex: 0),
+        builder: (context, state) => const SocialExploreAndFeedScreen(initialTabIndex: 2),
       ),
       GoRoute(
         path: AppRoutes.socialClubs,
-        builder: (context, state) => const SocialExploreAndFeedScreen(initialTabIndex: 2),
+        builder: (context, state) => const SocialExploreAndFeedScreen(initialTabIndex: 0),
       ),
       GoRoute(
         path: AppRoutes.socialClubWorkspace,
@@ -377,8 +412,23 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state) => const AdminVersionScreen(),
       ),
       GoRoute(
+        path: AppRoutes.adminMonitoring,
+        builder: (context, state) => const PlatformMonitoringDashboardScreen(),
+      ),
+      GoRoute(
         path: AppRoutes.inAppTrainer,
         builder: (context, state) => const StudioAiHubScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.liveBrew,
+        builder: (context, state) => const CustomerLiveBrewTrackerScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.liveBrewTracker,
+        builder: (context, state) {
+          final code = state.pathParameters['addressCode'] ?? '';
+          return CustomerLiveBrewTrackerScreen(addressCode: code);
+        },
       ),
       GoRoute(
         path: AppRoutes.aodShowcase,

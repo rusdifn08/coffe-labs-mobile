@@ -16,7 +16,10 @@ SocialProfileApiService socialProfileApiService(Ref ref) {
   return SocialProfileApiService(ref.watch(dioClientProvider));
 }
 
-@riverpod
+/// Hentikan exponential retry Riverpod 3 (yang bisa menahan loading >20s saat 404/500).
+Duration? fastProfileHttpRetry(int retryCount, Object error) => null;
+
+@Riverpod(retry: fastProfileHttpRetry)
 class PublicProfileController extends _$PublicProfileController {
   @override
   Future<MaterializedProfileView> build(String targetUserOrUsername) {
@@ -29,7 +32,7 @@ class PublicProfileController extends _$PublicProfileController {
     state = await AsyncValue.guard(
       () => ref
           .read(socialProfileApiServiceProvider)
-          .getProfile(targetUserOrUsername),
+          .getProfile(targetUserOrUsername, forceRefresh: true),
     );
   }
 
@@ -89,7 +92,7 @@ class PublicProfileController extends _$PublicProfileController {
   }
 }
 
-@riverpod
+@Riverpod(retry: fastProfileHttpRetry)
 class ProfileTabFeedController extends _$ProfileTabFeedController {
   bool _isFetchingNext = false;
 

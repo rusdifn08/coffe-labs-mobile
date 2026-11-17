@@ -1,11 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flag/flag.dart';
 import '../../../../data/brew_visual_catalog.dart';
+import '../../../../models/trial_access_policy.dart';
 import '../../../../screens/brew_timer_screen.dart';
 import '../../../../services/api_service.dart';
 import '../../../../services/coffee_translator.dart';
 import '../../../../services/language_service.dart';
+import '../../../../services/trial_service.dart';
 import '../../../../shared/design_system/atoms/coffee_bean_icon.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../utils/barista_utils.dart';
@@ -15,6 +16,7 @@ import '../../../../utils/barista_utils.dart';
 class LandscapeRecipeInspector extends StatefulWidget {
   final dynamic rawRecipe;
   final bool isTrial;
+  final bool? isRecipeLockedOverride;
   final VoidCallback onTrialLocked;
   final VoidCallback onOpenFullDetail;
   final VoidCallback? onClose;
@@ -23,6 +25,7 @@ class LandscapeRecipeInspector extends StatefulWidget {
     super.key,
     required this.rawRecipe,
     required this.isTrial,
+    this.isRecipeLockedOverride,
     required this.onTrialLocked,
     required this.onOpenFullDetail,
     this.onClose,
@@ -168,7 +171,7 @@ class _LandscapeRecipeInspectorState extends State<LandscapeRecipeInspector> {
                           ),
                           if (countryCode.isNotEmpty) ...[
                             const SizedBox(width: 5),
-                            Flag.fromString(countryCode, height: 10, width: 14),
+                            BaristaFlagBadge(countryCode: countryCode, height: 10, width: 14),
                           ],
                         ],
                       ),
@@ -436,7 +439,15 @@ class _LandscapeRecipeInspectorState extends State<LandscapeRecipeInspector> {
                   flex: 6,
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      if (widget.isTrial) {
+                      final locked = widget.isRecipeLockedOverride ??
+                          (!TrialService.isFeatureUnlockedSync(
+                                TrialFeature.allRecipes,
+                              ) &&
+                              TrialService.isRecipeLockedSync(
+                                recipe,
+                                isTrial: widget.isTrial,
+                              ));
+                      if (locked) {
                         widget.onTrialLocked();
                         return;
                       }

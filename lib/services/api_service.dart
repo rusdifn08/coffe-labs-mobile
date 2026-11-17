@@ -26,6 +26,10 @@ class ApiService {
     _favoritesCache = null;
   }
 
+  static void clearFavoritesCache() {
+    _favoritesCache = null;
+  }
+
   static void _notifyChanged() {
     changeNotifier.value++;
   }

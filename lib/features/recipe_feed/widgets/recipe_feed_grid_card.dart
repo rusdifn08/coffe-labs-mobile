@@ -1,10 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flag/flag.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../models/trial_access_policy.dart';
 import '../../../../services/api_service.dart';
 import '../../../../services/language_service.dart';
 import '../../../../services/coffee_translator.dart';
+import '../../../../services/trial_service.dart';
 import '../../../../utils/barista_utils.dart';
 import '../../../../data/brew_visual_catalog.dart';
 import '../../../../shared/design_system/atoms/coffee_bean_icon.dart';
@@ -14,6 +15,7 @@ class RecipeFeedGridCard extends StatelessWidget {
   final dynamic rawRecipe;
   final int index;
   final bool isTrial;
+  final bool? isLockedOverride;
   final bool isSelected;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
@@ -25,6 +27,7 @@ class RecipeFeedGridCard extends StatelessWidget {
     required this.rawRecipe,
     required this.index,
     required this.isTrial,
+    this.isLockedOverride,
     this.isSelected = false,
     required this.onTap,
     this.onLongPress,
@@ -36,7 +39,10 @@ class RecipeFeedGridCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isEn = LanguageService.isEnglish;
     final recipe = rawRecipe is Map ? ApiService.sanitizeRecipe(rawRecipe) : <String, dynamic>{};
-    final bool isLocked = isTrial && index >= 10;
+    final bool isLocked = isLockedOverride ??
+        (!TrialService.isFeatureUnlockedSync(TrialFeature.allRecipes) &&
+            isTrial &&
+            index >= 10);
     String rawTitle = recipe['title'] as String;
     String title = isEn ? CoffeeTranslator.translateTitle(rawTitle) : rawTitle;
     String rawAuthor = recipe['author'] as String;
@@ -229,7 +235,7 @@ class RecipeFeedGridCard extends StatelessWidget {
                       ),
                       if (countryCode.isNotEmpty) ...[
                         const SizedBox(width: 4),
-                        Flag.fromString(countryCode, height: 10, width: 14),
+                        BaristaFlagBadge(countryCode: countryCode, height: 10, width: 14),
                       ],
                     ],
                   ),

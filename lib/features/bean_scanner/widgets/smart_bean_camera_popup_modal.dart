@@ -8,6 +8,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/router/app_router.dart';
+import '../../../screens/brew_timer_screen.dart';
+import '../../auth/utils/auth_navigation_helper.dart';
+import '../../../services/trial_service.dart';
 import '../../in_app_trainer/presentation/in_app_bean_trainer_screen.dart';
 import '../controllers/bean_scanner_controller.dart';
 import '../controllers/selected_brew_bean_controller.dart';
@@ -516,7 +519,7 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
                                 ? bean.notesSource
                                 : (bean.notesSource == 'ON_DEVICE_AI_FEW_SHOT_MODEL'
                                     ? '🎯 Trained AI Model Match (${bean.confidenceScore.toStringAsFixed(0)}%)'
-                                    : (bean.isCatalogVerified
+                                    : (bean.isCatalogVerified || bean.notesSource == 'CATALOG_VERIFIED'
                                         ? '✓ Katalog Terverifikasi'
                                         : (bean.notesSource == 'AI_SOMMELIER_INFERRED'
                                             ? '✨ Cognitive AI Sommelier'
@@ -524,7 +527,9 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
                             style: TextStyle(
                               color: (bean.notesSource.startsWith('🎯') || bean.notesSource == 'ON_DEVICE_AI_FEW_SHOT_MODEL')
                                   ? const Color(0xFF00E5FF)
-                                  : (bean.isCatalogVerified ? Colors.greenAccent : const Color(0xFFD4AF37)),
+                                  : ((bean.isCatalogVerified || bean.notesSource == 'CATALOG_VERIFIED')
+                                      ? Colors.greenAccent
+                                      : const Color(0xFFD4AF37)),
                               fontSize: 9.5,
                               fontWeight: FontWeight.bold,
                             ),
@@ -549,7 +554,7 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
                             ? 'MobileNetV4 NCM'
                             : (bean.notesSource == 'ON_DEVICE_AI_FEW_SHOT_MODEL'
                                 ? 'On-Device AI'
-                                : (bean.isCatalogVerified ? 'Database' : 'Smart AI Inference')),
+                                : (bean.isCatalogVerified ? 'Knowledge Graph' : 'Smart AI Inference')),
                         style: const TextStyle(color: Colors.white60, fontSize: 8.5),
                       ),
                     ),
@@ -557,10 +562,10 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  bean.beanName,
+                  bean.fullDisplayName,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(color: Colors.white, fontSize: 16.5, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 2),
                 Row(
@@ -694,52 +699,139 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
           ),
           const SizedBox(height: 16),
 
-          // Recommended Recipe Highlight Card
+          // Recommended Recipe Cards (Tap langsung masuk ke BrewTimerScreen!)
           if (bean.recommendedRecipes.isNotEmpty) ...[
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF241D17),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.35)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(CupertinoIcons.star_fill, color: Color(0xFFD4AF37), size: 18),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Rekomendasi Resep Presisi (Tap untuk Seduh):',
+                    style: TextStyle(color: Color(0xFFD4AF37), fontSize: 11, fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Rekomendasi Resep V60 Terbaik:',
-                          style: TextStyle(color: Color(0xFFD4AF37), fontSize: 10.5, fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          bean.recommendedRecipes.first.name,
-                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          '${bean.recommendedRecipes.first.targetNotes} (Suhu: ${bean.recommendedWaterTempC}°C)',
-                          style: const TextStyle(color: Colors.white54, fontSize: 11),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                ),
+                Text(
+                  '${bean.recommendedRecipes.length} opsi',
+                  style: const TextStyle(color: Colors.white38, fontSize: 10),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 8),
+            ...bean.recommendedRecipes.asMap().entries.map((entry) {
+              final idx = entry.key;
+              final rec = entry.value;
+              final isPrimary = idx == 0;
+              final mins = (rec.totalTimeSeconds ~/ 60).toString();
+              final secs = (rec.totalTimeSeconds % 60).toString().padLeft(2, '0');
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Material(
+                  color: isPrimary ? const Color(0xFF282018) : const Color(0xFF1E1A17),
+                  borderRadius: BorderRadius.circular(14),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: () => _launchBrewTimerWithRecipe(bean, rec),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isPrimary
+                              ? const Color(0xFFD4AF37).withValues(alpha: 0.65)
+                              : Colors.white12,
+                          width: isPrimary ? 1.3 : 1.0,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFD4AF37).withValues(alpha: isPrimary ? 0.22 : 0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  isPrimary ? '★ Utama' : 'Alternatif',
+                                  style: const TextStyle(
+                                    color: Color(0xFFD4AF37),
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  rec.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFD4AF37),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(CupertinoIcons.play_fill, color: Colors.black, size: 10),
+                                    SizedBox(width: 3),
+                                    Text(
+                                      'Seduh',
+                                      style: TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: [
+                              _buildRecipeMiniChip(rec.method),
+                              _buildRecipeMiniChip('${rec.coffeeGrams}g : ${rec.totalWaterGrams}ml'),
+                              _buildRecipeMiniChip('${rec.suggestedTempC}°C'),
+                              _buildRecipeMiniChip('$mins:$secs'),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            rec.targetNotes,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white60, fontSize: 11),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+            const SizedBox(height: 8),
           ],
 
-          // Action Buttons: Foto Ulang, Next, & Tombol Latih AI untuk Kemasan Baru
+          // Action Buttons: Foto Ulang, Mulai Seduh, & Tombol Latih AI untuk Kemasan Baru
           if (!bean.notesSource.startsWith('🎯') && bean.notesSource != 'ON_DEVICE_AI_FEW_SHOT_MODEL') ...[
             SizedBox(
               width: double.infinity,
@@ -792,11 +884,13 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    // Simpan ke state global untuk seduh presisi
-                    ref.read(selectedBrewBeanProvider.notifier).setBean(bean);
-                    Navigator.pop(context);
-                    // Arahkan langsung ke halaman pemilihan resep
-                    context.push('${AppRoutes.recipes}?autoRecommend=true');
+                    if (bean.recommendedRecipes.isNotEmpty) {
+                      _launchBrewTimerWithRecipe(bean, bean.recommendedRecipes.first);
+                    } else {
+                      ref.read(selectedBrewBeanProvider.notifier).setBean(bean);
+                      Navigator.pop(context);
+                      context.push('${AppRoutes.recipes}?autoRecommend=true');
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFD4AF37),
@@ -804,16 +898,78 @@ class _SmartBeanCameraPopupModalState extends ConsumerState<SmartBeanCameraPopup
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  icon: const Icon(Icons.coffee, size: 18),
-                  label: const Text(
-                    'Next →',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  icon: const Icon(CupertinoIcons.play_fill, size: 16),
+                  label: Text(
+                    bean.recommendedRecipes.isNotEmpty ? 'Mulai Seduh' : 'Next →',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                 ),
               ),
             ],
           ),
+          Center(
+            child: TextButton.icon(
+              onPressed: () {
+                ref.read(selectedBrewBeanProvider.notifier).setBean(bean);
+                Navigator.pop(context);
+                context.push('${AppRoutes.recipes}?autoRecommend=true');
+              },
+              icon: const Icon(Icons.menu_book_rounded, size: 14, color: Colors.white54),
+              label: const Text(
+                'Atau jelajahi semua resep di World Recipes',
+                style: TextStyle(color: Colors.white54, fontSize: 11.5),
+              ),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildRecipeMiniChip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.black38,
+        borderRadius: BorderRadius.circular(5),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+
+  Future<void> _launchBrewTimerWithRecipe(
+    ResolvedCoffeeBean bean,
+    RecommendedRecipeSummary recipe,
+  ) async {
+    final canBrew = await TrialService.canBrew();
+    if (!mounted) return;
+    if (!canBrew) {
+      final remaining = await TrialService.getRemainingLockDuration();
+      if (!mounted) return;
+      final days = remaining != null ? (remaining.inDays + 1) : 7;
+      TrialService.showLockedDialog(
+        context: context,
+        title: 'Batas Seduh Trial Tercapai',
+        message:
+            'Anda telah mencapai batas 10 kali seduh pada mode trial. Fitur seduh terkunci selama 1 minggu ($days hari tersisa).\n\nSilakan login atau daftar akun resmi yang disetujui Admin untuk seduh tanpa batas!',
+        onLoginTap: () => AuthNavigationHelper.openLoginScreen(context),
+      );
+      return;
+    }
+
+    // Simpan ke state global & suntikkan Roastery + Nama Kopi ke BrewTimerScreen
+    ref.read(selectedBrewBeanProvider.notifier).setBean(bean);
+    final recipeMap = recipe.toBrewTimerRecipeMap(bean);
+
+    final nav = Navigator.of(context, rootNavigator: true);
+    Navigator.of(context).pop();
+    nav.push(
+      MaterialPageRoute(
+        builder: (_) => BrewTimerScreen(recipeData: recipeMap),
       ),
     );
   }

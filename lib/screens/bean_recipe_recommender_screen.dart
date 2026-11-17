@@ -1,17 +1,9 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../features/beans/controllers/bean_inventory_controller.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../features/bean_dial_in/widgets/bean_ai_customizer_card.dart';
-import '../features/bean_dial_in/widgets/bean_ai_extraction_metrics_card.dart';
-import '../features/bean_dial_in/widgets/bean_barista_opinion_card.dart';
-import '../features/bean_dial_in/widgets/bean_custom_goal_card.dart';
-import '../features/bean_dial_in/widgets/bean_dose_slider_card.dart';
-import '../features/bean_dial_in/widgets/bean_input_selector_card.dart';
-import '../features/bean_dial_in/widgets/bean_pour_schedule_card.dart';
-import '../features/bean_dial_in/widgets/bean_recipe_parameter_card.dart';
-import '../features/bean_dial_in/widgets/bean_sensory_radar_card.dart';
-import '../features/bean_dial_in/widgets/roastery_bean_selector_card.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../features/bean_dial_in/widgets/compact_dial_in_sections.dart';
+import '../features/beans/controllers/bean_inventory_controller.dart';
 import '../models/bean_ai_customization_models.dart';
 import '../models/bean_recommendation_models.dart';
 import '../models/curated_roastery_bean.dart';
@@ -24,27 +16,26 @@ class BeanRecipeRecommenderScreen extends ConsumerStatefulWidget {
   const BeanRecipeRecommenderScreen({super.key});
 
   @override
-  ConsumerState<BeanRecipeRecommenderScreen> createState() => _BeanRecipeRecommenderScreenState();
+  ConsumerState<BeanRecipeRecommenderScreen> createState() =>
+      _BeanRecipeRecommenderScreenState();
 }
 
-class _BeanRecipeRecommenderScreenState extends ConsumerState<BeanRecipeRecommenderScreen> {
-  // Mode: Catalog Roastery vs Custom Bean
+class _BeanRecipeRecommenderScreenState
+    extends ConsumerState<BeanRecipeRecommenderScreen> {
   bool _isCatalogMode = true;
 
   late List<CuratedRoasteryBean> _catalogBeans;
   late CuratedRoasteryBean _selectedCatalogBean;
 
-  // Custom Bean controllers (if user wants custom entry)
-  final TextEditingController _customBeanCtrl = TextEditingController(text: 'Aceh Gayo Pantan Musara');
+  final TextEditingController _customBeanCtrl =
+      TextEditingController(text: 'Aceh Gayo Pantan Musara');
   BeanRoastLevel _customRoast = BeanRoastLevel.light;
   BeanProcess _customProcess = BeanProcess.washed;
 
-  // Common parameters
   FlavorGoal _flavorGoal = FlavorGoal.sweetBalanced;
   BeanDripper _dripper = BeanDripper.v60;
   double _coffeeDose = 15.0;
 
-  // AI Customization parameters
   BeanRoastAge _roastAge = BeanRoastAge.peak;
   WaterProfile _waterProfile = WaterProfile.scaStandard;
   PouringParadigm _pouringParadigm = PouringParadigm.specialtyStandard;
@@ -52,15 +43,13 @@ class _BeanRecipeRecommenderScreenState extends ConsumerState<BeanRecipeRecommen
   int _customMicronAdjust = 0;
   double _customRatioAdjust = 0.0;
 
-  final List<String> _popularOrigins = [
+  final List<String> _popularOrigins = const [
     'Aceh Gayo Pantan Musara',
     'Gunung Halu West Java',
     'Bali Kintamani Ulian',
     'Toraja Sapan',
     'Flores Bajawa',
-    'Java Ijen Raung',
     'Ethiopia Yirgacheffe',
-    'Colombia Geisha',
   ];
 
   late RecommendedBrewRecipe _recipe;
@@ -98,11 +87,11 @@ class _BeanRecipeRecommenderScreenState extends ConsumerState<BeanRecipeRecommen
     final String beanTitle = _isCatalogMode
         ? '${_selectedCatalogBean.roasteryName} • ${_selectedCatalogBean.name}'
         : _customBeanCtrl.text;
-    final BeanRoastLevel roast = _isCatalogMode ? _selectedCatalogBean.roastLevel : _customRoast;
-    final BeanProcess process = _isCatalogMode ? _selectedCatalogBean.process : _customProcess;
-    final String origin = _isCatalogMode ? _selectedCatalogBean.origin : '';
-    final String variety = _isCatalogMode ? _selectedCatalogBean.variety : '';
-    final List<String> notes = _isCatalogMode ? _selectedCatalogBean.tastingNotesList : const [];
+    final roast = _isCatalogMode ? _selectedCatalogBean.roastLevel : _customRoast;
+    final process = _isCatalogMode ? _selectedCatalogBean.process : _customProcess;
+    final origin = _isCatalogMode ? _selectedCatalogBean.origin : '';
+    final variety = _isCatalogMode ? _selectedCatalogBean.variety : '';
+    final notes = _isCatalogMode ? _selectedCatalogBean.tastingNotesList : const <String>[];
 
     setState(() {
       _recipe = BeanRecommenderEngine.calculate(
@@ -138,22 +127,10 @@ class _BeanRecipeRecommenderScreenState extends ConsumerState<BeanRecipeRecommen
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(
-          children: [
-            const Icon(CupertinoIcons.sparkles, color: Colors.amber, size: 18),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'AI Dial-In: ${tweak.suggestion}',
-                style: const TextStyle(fontSize: 12),
-              ),
-            ),
-          ],
-        ),
+        content: Text('AI Dial-In: ${tweak.suggestion}', style: const TextStyle(fontSize: 12)),
         backgroundColor: const Color(0xFF1E293B),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(seconds: 4),
+        duration: const Duration(seconds: 3),
       ),
     );
   }
@@ -175,6 +152,33 @@ class _BeanRecipeRecommenderScreenState extends ConsumerState<BeanRecipeRecommen
     );
   }
 
+  void _openQuickGuideSheet(BuildContext context) {
+    showDialInInfoSheet(
+      context: context,
+      title: 'Cara Pakai Smart Brew Dial-In',
+      items: const [
+        (
+          icon: CupertinoIcons.checkmark_seal_fill,
+          color: AppTheme.primaryBrown,
+          heading: '1. Pilih Kopi',
+          body: 'Pilih biji dari Katalog Roastery resmi atau masukkan karakter biji kustom Anda.',
+        ),
+        (
+          icon: Icons.tune_rounded,
+          color: Color(0xFF007A87),
+          heading: '2. Atur Target & Dosis',
+          body: 'Tentukan karakter rasa, alat dripper, serta dosis kopi. Tekan Koreksi jika cangkir terlalu asam/pahit.',
+        ),
+        (
+          icon: CupertinoIcons.play_circle_fill,
+          color: Color(0xFFD97706),
+          heading: '3. Mulai Seduh Presisi',
+          body: 'Tinjau resep & jadwal tuangan, lalu tekan tombol Mulai Seduh di bagian bawah.',
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final beansAsync = ref.watch(beanInventoryControllerProvider);
@@ -184,272 +188,227 @@ class _BeanRecipeRecommenderScreenState extends ConsumerState<BeanRecipeRecommen
     return Scaffold(
       backgroundColor: AppTheme.bgCream,
       appBar: AppBar(
-        title: Text(isEn ? 'Smart Brew AI Dial-In' : 'Smart Brew AI Dial-In ☕'),
+        title: Text(
+          isEn ? 'Smart Brew Dial-In' : 'Smart Brew Dial-In',
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+        ),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(CupertinoIcons.circle_grid_hex_fill),
+            icon: const Icon(Icons.info_outline_rounded, size: 21),
+            tooltip: 'Panduan Singkat',
+            onPressed: () => _openQuickGuideSheet(context),
+          ),
+          IconButton(
+            icon: const Icon(CupertinoIcons.circle_grid_hex_fill, size: 20),
             tooltip: 'Matriks Grinder',
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const GrinderConverterScreen()));
-            },
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const GrinderConverterScreen()),
+            ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildModeSwitcher(),
-            const SizedBox(height: 12),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(14, 6, 14, 24),
+        children: [
+          _buildModeSwitcher(catalogBeans.length),
+          const SizedBox(height: 10),
 
-            // Bean Selector (Catalog vs Custom)
-            if (_isCatalogMode)
-              RoasteryBeanSelectorCard(
-                allBeans: catalogBeans,
-                selectedBean: _selectedCatalogBean,
-                onBeanSelected: _onCatalogBeanSelected,
-                onSwitchToCustom: () {
-                  setState(() => _isCatalogMode = false);
-                  _recalculate();
-                },
-              )
-            else ...[
-              BeanInputSelectorCard(
-                beanNameCtrl: _customBeanCtrl,
-                selectedRoast: _customRoast,
-                selectedProcess: _customProcess,
-                popularOrigins: _popularOrigins,
-                onRoastChanged: (r) {
-                  setState(() => _customRoast = r);
-                  _recalculate();
-                },
-                onProcessChanged: (p) {
-                  setState(() => _customProcess = p);
-                  _recalculate();
-                },
-                onRecalculate: _recalculate,
+          CompactBeanSelectorSection(
+            isCatalogMode: _isCatalogMode,
+            allBeans: catalogBeans,
+            selectedBean: _selectedCatalogBean,
+            onBeanSelected: _onCatalogBeanSelected,
+            customBeanCtrl: _customBeanCtrl,
+            customRoast: _customRoast,
+            customProcess: _customProcess,
+            popularOrigins: _popularOrigins,
+            onCustomRoastChanged: (r) {
+              setState(() => _customRoast = r);
+              _recalculate();
+            },
+            onCustomProcessChanged: (p) {
+              setState(() => _customProcess = p);
+              _recalculate();
+            },
+            onRecalculate: _recalculate,
+          ),
+          const SizedBox(height: 10),
+
+          CompactBrewConfigSection(
+            selectedGoal: _flavorGoal,
+            selectedDripper: _dripper,
+            dose: _coffeeDose,
+            totalWater: _recipe.totalWater,
+            brewRatio: _recipe.brewRatio,
+            roastAge: _roastAge,
+            waterProfile: _waterProfile,
+            pouringParadigm: _pouringParadigm,
+            onGoalChanged: (goal) {
+              setState(() => _flavorGoal = goal);
+              _recalculate();
+            },
+            onDripperChanged: (dripper) {
+              setState(() => _dripper = dripper);
+              _recalculate();
+            },
+            onDoseChanged: (v) {
+              setState(() => _coffeeDose = v);
+              _recalculate();
+            },
+            onRoastAgeChanged: (age) {
+              setState(() => _roastAge = age);
+              _recalculate();
+            },
+            onWaterProfileChanged: (w) {
+              setState(() => _waterProfile = w);
+              _recalculate();
+            },
+            onParadigmChanged: (p) {
+              setState(() => _pouringParadigm = p);
+              _recalculate();
+            },
+            onApplyTweak: _onApplyAiTweak,
+          ),
+          const SizedBox(height: 10),
+
+          CompactDialInResultSection(
+            recipe: _recipe,
+            roastAge: _roastAge,
+            waterProfile: _waterProfile,
+          ),
+        ],
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border(top: BorderSide(color: AppTheme.borderWarm)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _dripper.label.split('(').first.trim(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.textDark,
+                      ),
+                    ),
+                    Text(
+                      '${_coffeeDose.round()}g → ${_recipe.totalWater.round()}ml • ${_recipe.waterTemp}°C',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.primaryBrown,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  icon: const Icon(CupertinoIcons.arrow_2_squarepath, size: 14),
-                  label: const Text('Kembali ke Katalog Roastery Resmi', style: TextStyle(fontSize: 11.5)),
-                  onPressed: () {
-                    setState(() => _isCatalogMode = true);
-                    _recalculate();
-                  },
+              const SizedBox(width: 12),
+              ElevatedButton.icon(
+                onPressed: _startTimer,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryBrown,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: const Icon(CupertinoIcons.play_fill, size: 16),
+                label: Text(
+                  isEn ? 'Start Brew' : 'Mulai Seduh',
+                  style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800),
                 ),
               ),
             ],
-            const SizedBox(height: 14),
-
-            // Barista Opinion & Brew Style Tuning
-            if (_isCatalogMode)
-              BeanBaristaOpinionCard(
-                selectedBean: _selectedCatalogBean,
-                selectedGoal: _flavorGoal,
-                selectedDripper: _dripper,
-                onGoalChanged: (goal) {
-                  setState(() => _flavorGoal = goal);
-                  _recalculate();
-                },
-                onDripperChanged: (dripper) {
-                  setState(() => _dripper = dripper);
-                  _recalculate();
-                },
-              )
-            else
-              BeanCustomGoalCard(
-                selectedGoal: _flavorGoal,
-                selectedDripper: _dripper,
-                onGoalChanged: (goal) {
-                  setState(() => _flavorGoal = goal);
-                  _recalculate();
-                },
-                onDripperChanged: (dripper) {
-                  setState(() => _dripper = dripper);
-                  _recalculate();
-                },
-              ),
-
-            const SizedBox(height: 14),
-
-            // AI Roasting Age, Water PPM, & Pouring Paradigm Customizer
-            BeanAiCustomizerCard(
-              selectedRoastAge: _roastAge,
-              selectedWaterProfile: _waterProfile,
-              selectedParadigm: _pouringParadigm,
-              onRoastAgeChanged: (age) {
-                setState(() => _roastAge = age);
-                _recalculate();
-              },
-              onWaterProfileChanged: (water) {
-                setState(() => _waterProfile = water);
-                _recalculate();
-              },
-              onParadigmChanged: (paradigm) {
-                setState(() => _pouringParadigm = paradigm);
-                _recalculate();
-              },
-              onApplyTweak: _onApplyAiTweak,
-            ),
-
-            const SizedBox(height: 14),
-
-            // Dose Slider
-            BeanDoseSliderCard(
-              dose: _coffeeDose,
-              totalWater: _recipe.totalWater,
-              brewRatio: _recipe.brewRatio,
-              onDoseChanged: (v) {
-                setState(() => _coffeeDose = v);
-                _recalculate();
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // Recipe Parameters (Grind, Microns, Clicks, Temperature)
-            BeanRecipeParameterCard(recipe: _recipe),
-
-            const SizedBox(height: 14),
-
-            // AI Extraction Science Metrics (TDS, EY, Flow rate)
-            BeanAiExtractionMetricsCard(
-              recipe: _recipe,
-              roastAge: _roastAge,
-              waterProfile: _waterProfile,
-            ),
-
-            const SizedBox(height: 14),
-
-            // Predicted Sensory Radar (5-Axis)
-            BeanSensoryRadarCard(recipe: _recipe),
-
-            const SizedBox(height: 14),
-
-            // Pour Schedule & Flow Curve
-            BeanPourScheduleCard(recipe: _recipe),
-
-            const SizedBox(height: 24),
-
-            // Action Button: Start Brewing
-            ElevatedButton.icon(
-              onPressed: _startTimer,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryBrown,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                elevation: 3,
-              ),
-              icon: const Icon(CupertinoIcons.play_circle_fill, size: 22),
-              label: Text(
-                isEn ? 'Start Brew with Live Timer ⏱️' : 'Mulai Seduh Resep Ini Sekarang ⏱️',
-                style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(height: 30),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildModeSwitcher() {
+  Widget _buildModeSwitcher(int beanCount) {
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.borderWarm),
       ),
       child: Row(
         children: [
-          Expanded(
-            child: InkWell(
-              borderRadius: BorderRadius.circular(10),
-              onTap: () {
-                if (!_isCatalogMode) {
-                  setState(() => _isCatalogMode = true);
-                  _recalculate();
-                }
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                decoration: BoxDecoration(
-                  color: _isCatalogMode ? AppTheme.primaryBrown : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                alignment: Alignment.center,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(CupertinoIcons.checkmark_seal_fill, size: 14, color: _isCatalogMode ? AppTheme.accentGold : Colors.grey),
-                    const SizedBox(width: 5),
-                    Flexible(
-                      child: Text(
-                        'Katalog (${_catalogBeans.length}+)',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.bold,
-                          color: _isCatalogMode ? Colors.white : AppTheme.textDark,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          _modeTab(
+            active: _isCatalogMode,
+            icon: CupertinoIcons.checkmark_seal_fill,
+            label: 'Katalog ($beanCount+)',
+            onTap: () {
+              if (!_isCatalogMode) {
+                setState(() => _isCatalogMode = true);
+                _recalculate();
+              }
+            },
           ),
           const SizedBox(width: 4),
-          Expanded(
-            child: InkWell(
-              borderRadius: BorderRadius.circular(10),
-              onTap: () {
-                if (_isCatalogMode) {
-                  setState(() => _isCatalogMode = false);
-                  _recalculate();
-                }
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                decoration: BoxDecoration(
-                  color: !_isCatalogMode ? AppTheme.primaryBrown : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                alignment: Alignment.center,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(CupertinoIcons.pencil, size: 14, color: !_isCatalogMode ? AppTheme.accentGold : Colors.grey),
-                    const SizedBox(width: 5),
-                    Flexible(
-                      child: Text(
-                        'Biji Kustom',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.bold,
-                          color: !_isCatalogMode ? Colors.white : AppTheme.textDark,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          _modeTab(
+            active: !_isCatalogMode,
+            icon: CupertinoIcons.pencil,
+            label: 'Biji Kustom',
+            onTap: () {
+              if (_isCatalogMode) {
+                setState(() => _isCatalogMode = false);
+                _recalculate();
+              }
+            },
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _modeTab({
+    required bool active,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(9),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.symmetric(vertical: 7),
+          decoration: BoxDecoration(
+            color: active ? AppTheme.primaryBrown : Colors.transparent,
+            borderRadius: BorderRadius.circular(9),
+          ),
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 13, color: active ? AppTheme.accentGold : AppTheme.textMuted),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  color: active ? Colors.white : AppTheme.textDark,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

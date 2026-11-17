@@ -8,12 +8,15 @@ import '../features/gamification/models/coffee_level.dart';
 import '../features/gamification/services/gamification_service.dart';
 import '../features/gamification/widgets/level_roadmap_modal.dart';
 import '../features/recipes/controllers/recipe_list_controller.dart';
+import '../features/home/widgets/home_admin_quick_bar.dart';
 import '../features/home/widgets/home_quick_access_section.dart';
 import '../features/home/widgets/home_brew_methods_section.dart';
 import '../features/home/widgets/home_bean_recommender_banner.dart';
+import '../features/multi_method_brewing/presentation/widgets/active_cold_brew_floating_banner.dart';
 import '../features/home/widgets/home_frequent_recipe_card.dart';
 import '../features/home/widgets/home_recent_brew_tile.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../services/profile_service.dart';
 import '../services/language_service.dart';
 import '../services/trial_service.dart';
@@ -34,6 +37,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProviderStateMixin {
   bool _showBrewMethods = false;
+  bool _isAdmin = false;
   String _userName = 'Barista';
   String? _userImagePath;
   List<Map<String, dynamic>> _baristas = [];
@@ -69,12 +73,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
     final img = await ProfileService.getUserImagePath();
     final baristas = await ApiService.getUniqueBaristas();
     final stats = await GamificationService.instance.getStats();
+    final isAdmin = await AuthService.isAdmin();
     if (!mounted) return;
     setState(() {
       _userName = name;
       _userImagePath = img;
       _baristas = baristas;
       _gamificationStats = stats;
+      _isAdmin = isAdmin;
     });
   }
 
@@ -192,6 +198,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
 
                   // Quick Access Section (Social, Marketplace, Beans Radar)
                   HomeQuickAccessSection(isEn: isEn),
+                  if (_isAdmin) ...[
+                    const SizedBox(height: 14),
+                    HomeAdminQuickBar(isEn: isEn),
+                  ],
                   const SizedBox(height: 20),
 
                   // Brew Methods Section (Disusun berdasarkan frekuensi seduh user)
@@ -201,6 +211,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
                     methods: sortedMethods,
                   ),
                   const SizedBox(height: 20),
+
+                  // Active Cold Brew Background Alarms Banner
+                  const ActiveColdBrewFloatingBanner(),
 
                   // Smart Brew Dial-In Banner
                   HomeBeanRecommenderBanner(isEn: isEn),

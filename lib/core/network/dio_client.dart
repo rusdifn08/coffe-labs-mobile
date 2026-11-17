@@ -156,7 +156,7 @@ class GlobalErrorAndLoggingInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    if (kDebugMode) {
+    if (kDebugMode && err.requestOptions.extra['silentTelemetry'] != true) {
       debugPrint('❌ [DIO ERR] ${err.response?.statusCode ?? err.type} ${err.requestOptions.uri}: ${err.message}');
     }
     handler.next(err);
@@ -205,6 +205,12 @@ class GlobalErrorAndLoggingInterceptor extends Interceptor {
       return ApiException(
         message: serverMessage ?? 'Akses ditolak oleh kebijakan keamanan server (403).',
         statusCode: 403,
+        endpoint: endpoint,
+      );
+    } else if (statusCode == 404) {
+      return ApiException(
+        message: serverMessage ?? 'Layanan endpoint belum aktif pada server backend (404).',
+        statusCode: 404,
         endpoint: endpoint,
       );
     } else if (statusCode != null && statusCode >= 500) {

@@ -1,12 +1,27 @@
+import 'package:coffee_hub_mobile/core/network/dio_client.dart';
+import 'package:coffee_hub_mobile/features/social_chat/data/local/chat_drift_database.dart';
+import 'package:coffee_hub_mobile/features/social_chat/data/services/chat_api_service.dart';
+import 'package:coffee_hub_mobile/features/social_chat/data/services/chat_ws_service.dart';
+import 'package:coffee_hub_mobile/features/social_chat/domain/chat_protocol.dart';
+import 'package:coffee_hub_mobile/features/social_chat/presentation/controllers/chat_controllers.dart';
+import 'package:coffee_hub_mobile/features/social_graph/data/services/social_graph_api_service.dart';
+import 'package:coffee_hub_mobile/features/social_graph/domain/models/social_graph_models.dart';
+import 'package:coffee_hub_mobile/features/social_graph/presentation/controllers/relationship_controller.dart';
+import 'package:coffee_hub_mobile/features/social_profile_feed/data/services/social_profile_api_service.dart';
 import 'package:coffee_hub_mobile/features/social_profile_feed/domain/models/social_profile_models.dart';
 import 'package:coffee_hub_mobile/features/social_profile_feed/domain/models/social_thread_models.dart';
+import 'package:coffee_hub_mobile/features/social_profile_feed/presentation/controllers/social_profile_controllers.dart';
+import 'package:coffee_hub_mobile/features/social_profile_feed/presentation/screens/social_user_profile_screen.dart';
 import 'package:coffee_hub_mobile/features/social_profile_feed/presentation/widgets/barista_rank_showcase_header.dart';
 import 'package:coffee_hub_mobile/features/social_profile_feed/presentation/widgets/live_or_recent_brew_spotlight_card.dart';
 import 'package:coffee_hub_mobile/features/social_profile_feed/presentation/widgets/thread_pouring_curve_card.dart';
 import 'package:coffee_hub_mobile/features/social_profile_feed/presentation/widgets/thread_post_card.dart';
 import 'package:coffee_hub_mobile/features/social_profile_feed/presentation/widgets/thread_recipe_attachment_card.dart';
 import 'package:coffee_hub_mobile/features/social_profile_feed/presentation/widgets/thread_scanned_bean_badge.dart';
+import 'package:dio/dio.dart';
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -383,5 +398,194 @@ void main() {
       expect(find.text('Tetsu • Kalita • Rasio 1:16.0'), findsOneWidget);
       expect(find.text('2:45'), findsOneWidget);
     });
+
+    test('SocialProfileApiService caches profile and maps HTTP 500 to friendly ApiException',
+        () async {
+      final dio = Dio();
+      var serverHits = 0;
+      var return500 = false;
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            serverHits++;
+            if (return500) {
+              return handler.reject(
+                DioException(
+                  requestOptions: options,
+                  response: Response(
+                    requestOptions: options,
+                    statusCode: 500,
+                    data: {'message': 'Server gangguan sementara.'},
+                  ),
+                  type: DioExceptionType.badResponse,
+                ),
+              );
+            }
+            return handler.resolve(
+              Response(
+                requestOptions: options,
+                statusCode: 200,
+                data: {
+                  'success': true,
+                  'data': {
+                    'user_id': 'u-risaha15',
+                    'username': 'risaha15',
+                    'display_name': 'Risa Hanipah',
+                    'bio': 'V60 Enthusiast',
+                    'barista_level': 8,
+                    'followers_count': 12,
+                  },
+                },
+              ),
+            );
+          },
+        ),
+      );
+
+      final api = SocialProfileApiService(dio);
+      final p1 = await api.getProfile('risaha15');
+      expect(p1.username, 'risaha15');
+      expect(serverHits, 1);
+
+      // L1 cache hit avoids redundant HTTP call
+      final p2 = await api.getProfile('@risaha15');
+      expect(p2.displayName, 'Risa Hanipah');
+      expect(serverHits, 1);
+
+      // Force refresh returning 500 while cached -> stale fallback survives cleanly!
+      return500 = true;
+      final stale = await api.getProfile('risaha15', forceRefresh: true);
+      expect(stale.username, 'risaha15');
+
+      // Unknown uncached target with 500 -> clean ApiException without developer.mozilla URL
+      await expectLater(
+        () => api.getProfile('other_user'),
+        throwsA(
+          isA<ApiException>().having(
+            (e) => e.message,
+            'message',
+            'Server gangguan sementara.',
+          ),
+        ),
+      );
+    });
+
+    testWidgets(
+      'SocialUserProfileScreen recovers cleanly from transient error and displays @risaha15 profile & mutual status',
+      (tester) async {
+        final fakeProfileApi = _FakeRisahaProfileApi()..failOnce = true;
+        final fakeGraphApi = _FakeRisahaGraphApi();
+        final fakeWs = _FakeProfileWsStub();
+        addTearDown(fakeWs.dispose);
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              socialProfileApiServiceProvider.overrideWithValue(fakeProfileApi),
+              socialGraphApiServiceProvider.overrideWithValue(fakeGraphApi),
+              chatWsServiceProvider.overrideWithValue(fakeWs),
+            ],
+            child: const MaterialApp(
+              home: SocialUserProfileScreen(targetUserOrUsername: 'risaha15'),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.textContaining('Terjadi gangguan internal'), findsOneWidget);
+        expect(find.textContaining('developer.mozilla.org'), findsNothing);
+
+        await tester.tap(find.text('Coba Lagi'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('@risaha15'), findsAtLeastNWidgets(1));
+        expect(find.text('Risa Hanipah'), findsOneWidget);
+        expect(find.text('Teman Mutual'), findsOneWidget);
+      },
+    );
   });
+}
+
+class _FakeRisahaProfileApi extends SocialProfileApiService {
+  _FakeRisahaProfileApi() : super(Dio());
+  bool failOnce = false;
+
+  @override
+  Future<MaterializedProfileView> getProfile(
+    String targetUserOrUsername, {
+    bool forceRefresh = false,
+  }) async {
+    if (failOnce) {
+      failOnce = false;
+      throw const ApiException(
+        message: 'Terjadi gangguan internal pada server Rust (500).',
+        statusCode: 500,
+      );
+    }
+    return const MaterializedProfileView(
+      userId: 'u-risaha15',
+      username: 'risaha15',
+      displayName: 'Risa Hanipah',
+      bio: 'V60 & Japanese Iced Coffee',
+      accountTier: 'Pro',
+      baristaLevel: 8,
+      baristaRankTitle: 'Home Brewer',
+      followersCount: 15,
+      followingCount: 10,
+      isFollowedByViewer: true,
+      isFollowingViewer: true,
+    );
+  }
+
+  @override
+  Future<CursorPaginatedResult<SocialThreadItem>> getProfileTabThreads({
+    required String targetUserOrUsername,
+    required ProfileFeedTab tab,
+    String? cursor,
+    int limit = 20,
+  }) async {
+    return const CursorPaginatedResult(
+      items: [],
+      nextCursor: null,
+      hasMore: false,
+    );
+  }
+}
+
+class _FakeRisahaGraphApi extends SocialGraphApiService {
+  _FakeRisahaGraphApi() : super(Dio());
+
+  @override
+  Future<RelationshipSnapshot> getRelationshipSnapshot(
+    String targetUserOrUsername,
+  ) async {
+    return const RelationshipSnapshot(
+      targetUserId: 'u-risaha15',
+      state: RelationshipState.mutual,
+      isMutual: true,
+      isFollowedByTarget: true,
+      followersCount: 15,
+      followingCount: 10,
+    );
+  }
+}
+
+class _FakeProfileWsStub extends ChatWsService {
+  final ChatDriftDatabase _db;
+  _FakeProfileWsStub._(this._db) : super(_db, ChatApiService(Dio()));
+  factory _FakeProfileWsStub() =>
+      _FakeProfileWsStub._(ChatDriftDatabase(NativeDatabase.memory()));
+
+  @override
+  Future<void> connectIfAuthenticated() async {}
+
+  @override
+  Stream<ServerSocialGraphEventFrame> get socialGraphEvents =>
+      const Stream<ServerSocialGraphEventFrame>.empty();
+
+  @override
+  Future<void> dispose() async {
+    await super.dispose();
+    await _db.close();
+  }
 }

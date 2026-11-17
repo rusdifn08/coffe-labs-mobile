@@ -9,6 +9,8 @@ import '../models/bean_scan_state.dart';
 import '../models/resolved_coffee_bean.dart';
 import '../services/bean_scanner_api_service.dart';
 import '../services/bean_vision_scanner_service.dart';
+import '../services/coffee_knowledge_graph_service.dart';
+import '../services/scanned_bean_recipe_planner.dart';
 
 class BeanScannerController extends Notifier<BeanScanState> {
   @override
@@ -28,6 +30,7 @@ class BeanScannerController extends Notifier<BeanScanState> {
   Future<void> processImage(File imageFile) async {
     state = BeanScanStateAnalyzing(imageFile);
     try {
+      await CoffeeKnowledgeGraphService.instance.initialize();
       final visionResult = await BeanVisionScannerService.processPhoto(imageFile);
 
       // STAGE 0 (PRIORITY #1): Class-Incremental Continual Learning (MobileNetV4 1280-D NCM Vision Engine)
@@ -40,8 +43,7 @@ class BeanScannerController extends Notifier<BeanScanState> {
           if (match.isRecognized && match.matchedRecord != null) {
             final rec = match.matchedRecord!;
             final confPercent = (match.confidence * 100).toStringAsFixed(0);
-
-            final ncmResolved = ResolvedCoffeeBean(
+            final seedBean = ResolvedCoffeeBean(
               beanId: 'ncm_${rec.classSlug}',
               isCatalogVerified: true,
               confidenceScore: (match.confidence * 100).clamp(65.0, 99.5),
@@ -54,18 +56,21 @@ class BeanScannerController extends Notifier<BeanScanState> {
               altitudeMasl: rec.altitude,
               tastingNotes: rec.tastingNotes,
               recommendedWaterTempC: rec.recommendedTemp,
-              recommendedRecipes: [
-                RecommendedRecipeSummary(
-                  slug: 'v60-ncm-learned',
-                  name: 'V60 Pour Over (${rec.roastery})',
-                  targetNotes: rec.tastingNotes.take(3).join(', '),
-                  suggestedTempC: rec.recommendedTemp,
-                  ratio: '1:15',
-                ),
-              ],
+              recommendedRecipes: const [],
               localCroppedImagePath: visionResult.croppedImageFile.path,
               notesSource: '🎯 MobileNetV4 NCM Match ($confPercent%)',
             );
+            final tailored = ScannedBeanRecipePlanner.buildRecommendations(
+              displayBeanName: seedBean.fullDisplayName,
+              origin: rec.origin,
+              variety: rec.variety,
+              processRaw: rec.process,
+              roastRaw: seedBean.roastLevel,
+              altitudeMasl: rec.altitude,
+              tastingNotes: rec.tastingNotes,
+              targetTempOverride: rec.recommendedTemp,
+            );
+            final ncmResolved = seedBean.copyWith(recommendedRecipes: tailored);
 
             state = BeanScanStateResolved(
               bean: ncmResolved,
@@ -100,7 +105,7 @@ class BeanScannerController extends Notifier<BeanScanState> {
                     .toList() ??
                 ['Blueberry', 'Milk Chocolate'];
 
-            final customResolved = ResolvedCoffeeBean(
+            final seedCustom = ResolvedCoffeeBean(
               beanId: 'trained_${match.model.classSlug}',
               isCatalogVerified: true,
               confidenceScore: 99.0,
@@ -113,17 +118,22 @@ class BeanScannerController extends Notifier<BeanScanState> {
               altitudeMasl: altitude,
               tastingNotes: notesList,
               recommendedWaterTempC: 92,
-              recommendedRecipes: [
-                RecommendedRecipeSummary(
-                  slug: 'v60-transfer-learning',
-                  name: 'V60 Precision Pourover (Custom Trained)',
-                  targetNotes: notesList.take(3).join(', '),
-                  suggestedTempC: 92,
-                  ratio: '1:15',
-                ),
-              ],
+              recommendedRecipes: const [],
               localCroppedImagePath: visionResult.croppedImageFile.path,
               notesSource: '🎯 Trained AI Model Match (99%)',
+            );
+            final customRecipes = ScannedBeanRecipePlanner.buildRecommendations(
+              displayBeanName: seedCustom.fullDisplayName,
+              origin: seedCustom.origin,
+              variety: varietal,
+              processRaw: process,
+              roastRaw: seedCustom.roastLevel,
+              altitudeMasl: altitude,
+              tastingNotes: notesList,
+            );
+            final customResolved = seedCustom.copyWith(
+              recommendedWaterTempC: customRecipes.first.suggestedTempC,
+              recommendedRecipes: customRecipes,
             );
 
             state = BeanScanStateResolved(

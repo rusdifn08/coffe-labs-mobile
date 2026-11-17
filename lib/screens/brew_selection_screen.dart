@@ -8,7 +8,7 @@ import '../utils/barista_utils.dart';
 import 'brew_timer_screen.dart';
 import 'recipe_detail_screen.dart';
 import 'add_recipe_screen.dart';
-import 'onboarding_screen.dart';
+import '../features/auth/utils/auth_navigation_helper.dart';
 import 'four_six_calculator_screen.dart';
 import 'dial_in_assistant_screen.dart';
 import '../services/trial_service.dart';
@@ -206,9 +206,10 @@ class BrewSelectionScreen extends ConsumerWidget {
                                 message: isEn
                                     ? 'You have reached the 10-brew limit on trial mode. Brewing is locked for 1 week ($days days remaining).\n\nPlease log in or sign up with an Admin-approved account to brew without limits!'
                                     : 'Anda telah mencapai batas 10 kali seduh pada mode trial. Fitur seduh terkunci selama 1 minggu ($days hari tersisa).\n\nSilakan login atau daftar akun resmi yang disetujui Admin untuk seduh tanpa batas!',
-                                onLoginTap: () {
-                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const OnboardingScreen()));
-                                },
+                                onLoginTap: () =>
+                                    AuthNavigationHelper.openLoginScreen(
+                                  context,
+                                ),
                               );
                               return;
                             }

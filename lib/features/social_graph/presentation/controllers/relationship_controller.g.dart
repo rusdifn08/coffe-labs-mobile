@@ -124,7 +124,7 @@ final class UserRelationshipControllerProvider
     required UserRelationshipControllerFamily super.from,
     required String super.argument,
   }) : super(
-         retry: null,
+         retry: fastGraphHttpRetry,
          name: r'userRelationshipControllerProvider',
          isAutoDispose: true,
          dependencies: null,
@@ -158,7 +158,7 @@ final class UserRelationshipControllerProvider
 }
 
 String _$userRelationshipControllerHash() =>
-    r'8717fbb25773e1eec08bc658709bda4cd0b7ac3f';
+    r'4142599652d6b566ae6de18076efe4d2a47e438d';
 
 final class UserRelationshipControllerFamily extends $Family
     with
@@ -171,7 +171,7 @@ final class UserRelationshipControllerFamily extends $Family
         > {
   UserRelationshipControllerFamily._()
     : super(
-        retry: null,
+        retry: fastGraphHttpRetry,
         name: r'userRelationshipControllerProvider',
         dependencies: null,
         $allTransitiveDependencies: null,

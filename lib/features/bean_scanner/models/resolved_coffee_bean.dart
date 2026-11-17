@@ -106,6 +106,13 @@ class RecommendedRecipeSummary {
   final String targetNotes;
   final int suggestedTempC;
   final String ratio;
+  final String method;
+  final String grindSize;
+  final int coffeeGrams;
+  final int totalWaterGrams;
+  final int totalTimeSeconds;
+  final String description;
+  final List<Map<String, dynamic>> steps;
 
   const RecommendedRecipeSummary({
     required this.slug,
@@ -113,15 +120,35 @@ class RecommendedRecipeSummary {
     required this.targetNotes,
     required this.suggestedTempC,
     required this.ratio,
+    this.method = 'Hario V60',
+    this.grindSize = '645 µm (Medium • 22 Klik)',
+    this.coffeeGrams = 15,
+    this.totalWaterGrams = 225,
+    this.totalTimeSeconds = 150,
+    this.description = '',
+    this.steps = const [],
   });
 
   factory RecommendedRecipeSummary.fromJson(Map<String, dynamic> json) {
+    final rawSteps = json['steps'] as List? ?? [];
+    final parsedSteps = rawSteps
+        .whereType<Map>()
+        .map((m) => Map<String, dynamic>.from(m))
+        .toList();
+
     return RecommendedRecipeSummary(
       slug: json['slug']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
       targetNotes: json['target_notes']?.toString() ?? '',
       suggestedTempC: (json['suggested_temp_c'] as num?)?.toInt() ?? 92,
       ratio: json['ratio']?.toString() ?? '1:15',
+      method: json['method']?.toString() ?? 'Hario V60',
+      grindSize: json['grind_size']?.toString() ?? '645 µm (Medium • 22 Klik)',
+      coffeeGrams: (json['coffee_grams'] as num?)?.toInt() ?? 15,
+      totalWaterGrams: (json['total_water_grams'] as num?)?.toInt() ?? 225,
+      totalTimeSeconds: (json['total_time_seconds'] as num?)?.toInt() ?? 150,
+      description: json['description']?.toString() ?? '',
+      steps: parsedSteps,
     );
   }
 
@@ -132,7 +159,119 @@ class RecommendedRecipeSummary {
       'target_notes': targetNotes,
       'suggested_temp_c': suggestedTempC,
       'ratio': ratio,
+      'method': method,
+      'grind_size': grindSize,
+      'coffee_grams': coffeeGrams,
+      'total_water_grams': totalWaterGrams,
+      'total_time_seconds': totalTimeSeconds,
+      if (description.isNotEmpty) 'description': description,
+      if (steps.isNotEmpty) 'steps': steps,
     };
+  }
+
+  /// Konversi ringkasan resep hasil deteksi Smart OCR menjadi payload lengkap
+  /// untuk `BrewTimerScreen` dengan identitas `Roastery + Nama Kopi`.
+  Map<String, dynamic> toBrewTimerRecipeMap(ResolvedCoffeeBean bean) {
+    final displayBean = bean.fullDisplayName;
+    final lowerMethod = method.toLowerCase();
+    String category = 'V60';
+    if (lowerMethod.contains('origami')) {
+      category = 'Origami';
+    } else if (lowerMethod.contains('kalita')) {
+      category = 'Kalita';
+    } else if (lowerMethod.contains('aeropress')) {
+      category = 'AeroPress';
+    } else if (lowerMethod.contains('chemex')) {
+      category = 'Chemex';
+    }
+
+    final List<Map<String, dynamic>> resolvedSteps = steps.isNotEmpty
+        ? steps.map((s) => Map<String, dynamic>.from(s)).toList()
+        : _buildDefaultSteps(
+            coffeeGrams: coffeeGrams,
+            totalWaterGrams: totalWaterGrams,
+            totalTimeSeconds: totalTimeSeconds,
+            suggestedTempC: suggestedTempC,
+            leadNote: bean.tastingNotes.isNotEmpty ? bean.tastingNotes.first : 'manis alami',
+          );
+
+    return {
+      'id': 98000 + (slug.hashCode.abs() % 900),
+      'title': name,
+      'author': bean.roasteryName != 'Specialty Roastery'
+          ? '${bean.roasteryName} • Smart AI'
+          : 'Coffee Labs Smart AI',
+      'category': category,
+      'method': method,
+      'beanName': displayBean,
+      'scannedBeanName': displayBean,
+      'scannedRoastery': bean.roasteryName,
+      'roastery': bean.roasteryName,
+      'origin': bean.origin,
+      'variety': bean.variety,
+      'process': bean.process,
+      'roastLevel': bean.roastLevel,
+      'waterTempCelsius': suggestedTempC,
+      'grindSize': grindSize,
+      'coffeeWeightGrams': coffeeGrams,
+      'totalWaterWeightGrams': totalWaterGrams,
+      'iceWeightGrams': 0,
+      'totalTimeSeconds': totalTimeSeconds,
+      'tastingNotes': bean.tastingNotes.join(', '),
+      'description': description.isNotEmpty ? description : targetNotes,
+      'steps': resolvedSteps,
+    };
+  }
+
+  static List<Map<String, dynamic>> _buildDefaultSteps({
+    required int coffeeGrams,
+    required int totalWaterGrams,
+    required int totalTimeSeconds,
+    required int suggestedTempC,
+    required String leadNote,
+  }) {
+    final bloom = (coffeeGrams * 3).clamp(30, 75);
+    final rem = (totalWaterGrams - bloom).clamp(60, 450);
+    final p2 = (rem * 0.45).round();
+    final p3 = rem - p2;
+    final bloomSec = 40;
+    final dur2 = ((totalTimeSeconds - bloomSec) * 0.45).round().clamp(25, 90);
+    final dur3 = (totalTimeSeconds - bloomSec - dur2).clamp(30, 120);
+    return [
+      {
+        'stepOrder': 1,
+        'title': '1. Blooming & Degassing',
+        'waterAddedGrams': bloom,
+        'waterGrams': bloom,
+        'cumulativeWaterGrams': bloom,
+        'durationSeconds': bloomSec,
+        'timeSeconds': bloomSec,
+        'instruction':
+            'Tuang ${bloom}g air ($suggestedTempC°C) merata membasahi seluruh bubuk kopi, goyangkan dripper lembut untuk degassing.',
+      },
+      {
+        'stepOrder': 2,
+        'title': '2. Sweet Flavor Pour',
+        'waterAddedGrams': p2,
+        'waterGrams': p2,
+        'cumulativeWaterGrams': bloom + p2,
+        'durationSeconds': dur2,
+        'timeSeconds': dur2,
+        'instruction':
+            'Tuang spiral stabil hingga ${bloom + p2}g untuk mengekstrak karakter $leadNote.',
+      },
+      {
+        'stepOrder': 3,
+        'title': '3. Clean Clarity Finish',
+        'waterAddedGrams': p3,
+        'waterGrams': p3,
+        'cumulativeWaterGrams': totalWaterGrams,
+        'durationSeconds': dur3,
+        'timeSeconds': dur3,
+        'instruction':
+            'Tuang lembut di titik tengah hingga ${totalWaterGrams}g dan biarkan tuntas mengalir bersih.',
+      },
+    ];
   }
 }
 
@@ -176,6 +315,60 @@ class ResolvedCoffeeBean {
     this.isAiInferredVariety = false,
     this.classifiedBlocks = const [],
   });
+
+  /// Nama pendek roastery (mis. "Fugol Coffee Roasters" -> "Fugol").
+  String get shortRoasteryLabel {
+    final raw = roasteryName.trim();
+    if (raw.isEmpty) return '';
+    final lower = raw.toLowerCase();
+    if (lower == 'specialty roastery' || lower == 'roastery' || lower == 'coffee roastery') {
+      return '';
+    }
+    var short = raw;
+    for (final suffix in const [
+      'official store',
+      'coffee roasters',
+      'coffee roastery',
+      'coffee supply',
+      'coffee house',
+      'coffee beans',
+      'coffee bean',
+      'coffee lab',
+      'roasters',
+      'roastery',
+      'roaster',
+      'roast',
+      'supply',
+      'coffee',
+      'beans',
+      'bean',
+    ]) {
+      final candidate = short
+          .replaceAll(RegExp('\\s+${RegExp.escape(suffix)}\$', caseSensitive: false), '')
+          .trim();
+      if (candidate.length >= 3) {
+        short = candidate;
+      }
+    }
+    return short;
+  }
+
+  /// Format resmi tampilan kopi terdeteksi: `Roastery + Nama Kopi`
+  /// (mis. "Fugol Watermelon Smash").
+  String get fullDisplayName {
+    final cleanBean = beanName.trim();
+    final shortBrand = shortRoasteryLabel;
+    if (shortBrand.isEmpty) return cleanBean;
+    if (cleanBean.isEmpty || cleanBean.toLowerCase() == 'specialty coffee') {
+      return shortBrand;
+    }
+    final beanLow = cleanBean.toLowerCase();
+    final brandLow = shortBrand.toLowerCase();
+    if (beanLow.startsWith(brandLow) || beanLow.contains('$brandLow ')) {
+      return cleanBean;
+    }
+    return '$shortBrand $cleanBean';
+  }
 
   ResolvedCoffeeBean copyWith({
     String? beanId,

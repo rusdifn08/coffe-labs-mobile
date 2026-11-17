@@ -70,6 +70,10 @@ class SocialGraphApiService {
         if (cursor != null && cursor.isNotEmpty) 'cursor': cursor,
         'limit': limit,
       },
+      options: Options(
+        receiveTimeout: const Duration(seconds: 6),
+        sendTimeout: const Duration(seconds: 6),
+      ),
     );
     final data = _unwrapMap(res.data);
     final items = (data['items'] as List<dynamic>? ?? const [])

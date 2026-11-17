@@ -17,8 +17,8 @@ List<Map<String, dynamic>> getSeedsPart39(String now) => [
     "grindSize": "Medium (Bukan Kasar!)",
     "coffeeWeightGrams": 30,
     "totalWaterWeightGrams": 500,
-    "totalTimeSeconds": 300,
-    "description": "Metode revolusioner James Hoffmann yang paling banyak ditonton di YouTube dunia. Menggunakan gilingan medium, mendiamkan seduhan 4 menit tanpa ditekan, memecahkan kerak dan membuang busa ampas mengapung dengan dua sendok, lalu membiarkan partikel halus mengendap sendiri selama 5 menit tanpa menekan plunger ke dasar.",
+    "totalTimeSeconds": 540,
+    "description": "Metode revolusioner James Hoffmann 9 menit penuh (540s): diamkan seduhan 4 menit, pecahkan kerak dan skim busa 30 detik, lalu biarkan fines mengendap 5 menit sebelum dituang tanpa menekan plunger.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
@@ -31,24 +31,24 @@ List<Map<String, dynamic>> getSeedsPart39(String now) => [
       },
       {
         "stepOrder": 2,
-        "title": "Steep Tenang 4 Menit (Biarkan Kerak Mengapung)",
-        "durationSeconds": 120,
+        "title": "Steep Tenang s/d Menit 4:00 (Biarkan Kerak Mengapung)",
+        "durationSeconds": 210,
         "waterAddedGrams": 0,
-        "instruction": "Jangan pasang plunger dan jangan diaduk. Biarkan lapisan kerak kopi mengapung di permukaan membentuk insulasi alami."
+        "instruction": "Jangan pasang plunger dan jangan diaduk. Biarkan lapisan kerak kopi mengapung di permukaan membentuk insulasi alami hingga menit 4:00."
       },
       {
         "stepOrder": 3,
         "title": "Pecahkan Kerak Sendok & Skim Busa Mengapung",
-        "durationSeconds": 60,
+        "durationSeconds": 30,
         "waterAddedGrams": 0,
-        "instruction": "Aduk permukaan kerak 3 kali perlahan dengan sendok hingga ampas tenggelam. Gunakan 2 sendok untuk membuang sisa busa putih dan minyak pahit."
+        "instruction": "Aduk permukaan kerak perlahan hingga ampas tenggelam, lalu gunakan 2 sendok untuk membuang sisa busa putih."
       },
       {
         "stepOrder": 4,
-        "title": "Pasang Plunger di Permukaan (JANGAN DITEKAN!)",
-        "durationSeconds": 90,
+        "title": "Sedimentasi 5 Menit & Tuang Tanpa Plunge",
+        "durationSeconds": 270,
         "waterAddedGrams": 0,
-        "instruction": "Pasang tutup plunger hanya sebagai saringan di atas cairan tanpa ditekan ke bawah. Tuang perlahan ke cangkir, tinggalkan tetes terakhir yang keruh."
+        "instruction": "Diamkan ±5 menit hingga ampas turun ke dasar, pasang plunger di permukaan atas saja tanpa menekan, lalu tuang perlahan."
       }
     ]
   },
@@ -165,13 +165,13 @@ List<Map<String, dynamic>> getSeedsPart39(String now) => [
     "variety": "Bourbon",
     "process": "Washed",
     "method": "French Press",
-    "category": "French Press / Cupping",
+    "category": "French Press / Cold Brew",
     "waterTempCelsius": 4,
     "grindSize": "Coarse",
     "coffeeWeightGrams": 50,
     "totalWaterWeightGrams": 400,
-    "totalTimeSeconds": 150,
-    "description": "Cara termudah dan terpintar membuat cold brew di rumah menggunakan teko French Press. Cukup masukkan air dingin, aduk rata, simpan di kulkas semalaman, lalu tekan plunger di pagi hari untuk konsentrat dingin manis.",
+    "totalTimeSeconds": 28800,
+    "description": "Cara termudah membuat cold brew di rumah menggunakan teko French Press semalaman (8–12 jam). Cukup aduk air dingin dan pasang Alarm Cold Brew semalaman, lalu tekan plunger di pagi hari.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
@@ -191,17 +191,17 @@ List<Map<String, dynamic>> getSeedsPart39(String now) => [
       },
       {
         "stepOrder": 3,
-        "title": "Simpan di Kulkas 8–12 Jam",
-        "durationSeconds": 50,
+        "title": "Simpan di Kulkas 8 Jam (Set Alarm Cold Brew OS)",
+        "durationSeconds": 28700,
         "waterAddedGrams": 0,
-        "instruction": "Pasang tutup plunger di posisi atas tanpa ditekan. Masukkan ke dalam kulkas selama 8 hingga 12 jam."
+        "instruction": "Pasang tutup plunger di posisi atas tanpa ditekan. Simpan di kulkas 8–12 jam menggunakan Alarm Cold Brew."
       },
       {
         "stepOrder": 4,
         "title": "Tekan Plunger di Pagi Hari & Nikmati",
         "durationSeconds": 40,
         "waterAddedGrams": 0,
-        "instruction": "Keluarkan dari kulkas, tekan plunger perlahan ke bawah, tuangkan cold brew segar ke atas es batu."
+        "instruction": "Setelah alarm berbunyi, keluarkan dari kulkas, tekan plunger perlahan ke bawah, tuangkan cold brew segar ke atas es batu."
       }
     ]
   },

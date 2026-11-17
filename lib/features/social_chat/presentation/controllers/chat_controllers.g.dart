@@ -209,7 +209,7 @@ final class ChatRoomListControllerProvider
 }
 
 String _$chatRoomListControllerHash() =>
-    r'39469abd655c8d075fdf1538894cefa5202189b5';
+    r'4affa3e8533d894656413d4f8ef43a8e2e4f6b64';
 
 abstract class _$ChatRoomListController
     extends $StreamNotifier<List<ChatRoomListItemView>> {
@@ -285,7 +285,7 @@ final class ActiveChatRoomControllerProvider
 }
 
 String _$activeChatRoomControllerHash() =>
-    r'e62fdbc6782a857e03c8cd185e535e4c166ae6ea';
+    r'5e30079e4978454f1fd3cfadce0114b8132142bc';
 
 final class ActiveChatRoomControllerFamily extends $Family
     with

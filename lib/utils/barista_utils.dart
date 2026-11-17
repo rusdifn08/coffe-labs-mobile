@@ -1,5 +1,8 @@
 import 'dart:io';
+import 'package:flag/flag.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../data/barista_catalog.dart';
 import '../theme/app_theme.dart';
 
@@ -284,7 +287,7 @@ class BaristaUtils {
     };
   }
 
-  /// Render gambar 100% offline (mendukung assets/ dan file lokal perangkat).
+  /// Render gambar 100% offline (mendukung assets/, file lokal perangkat, & fallback aman tanpa red-X).
   static Widget buildOfflineImage(
     String? path, {
     double? width,
@@ -292,9 +295,8 @@ class BaristaUtils {
     BoxFit fit = BoxFit.cover,
     int? cacheWidth,
   }) {
-    const fallback = 'assets/images/avatars/generic_fallback.jpg';
     if (path == null || path.isEmpty) {
-      return Image.asset(fallback, width: width, height: height, fit: fit);
+      return _buildSafeFallbackWidget(width: width, height: height, fit: fit);
     }
     if (path.startsWith('assets/') || path.startsWith('lib/')) {
       return Image.asset(
@@ -303,15 +305,11 @@ class BaristaUtils {
         height: height,
         fit: fit,
         cacheWidth: cacheWidth,
-        errorBuilder: (_, _, _) => Image.asset(
-          fallback,
-          width: width,
-          height: height,
-          fit: fit,
-        ),
+        errorBuilder: (_, _, _) =>
+            _buildSafeFallbackWidget(width: width, height: height, fit: fit),
       );
     }
-    if (!path.startsWith('http')) {
+    if (!kIsWeb && !path.startsWith('http')) {
       final file = File(path);
       if (file.existsSync()) {
         return Image.file(
@@ -319,16 +317,105 @@ class BaristaUtils {
           width: width,
           height: height,
           fit: fit,
-          errorBuilder: (_, _, _) => Image.asset(
-            fallback,
-            width: width,
-            height: height,
-            fit: fit,
-          ),
+          errorBuilder: (_, _, _) =>
+              _buildSafeFallbackWidget(width: width, height: height, fit: fit),
         );
       }
     }
-    return Image.asset(fallback, width: width, height: height, fit: fit);
+    return _buildSafeFallbackWidget(width: width, height: height, fit: fit);
+  }
+
+  static Widget _buildSafeFallbackWidget({
+    double? width,
+    double? height,
+    BoxFit fit = BoxFit.cover,
+  }) {
+    const fallback = 'assets/images/avatars/generic_fallback.jpg';
+    return Image.asset(
+      fallback,
+      width: width,
+      height: height,
+      fit: fit,
+      errorBuilder: (_, _, _) => Container(
+        width: width,
+        height: height,
+        color: AppTheme.bgCream,
+        alignment: Alignment.center,
+        child: Icon(
+          Icons.local_cafe_rounded,
+          color: AppTheme.primaryBrown.withValues(alpha: 0.72),
+          size: ((width ?? height ?? 44) * 0.48).clamp(16.0, 34.0),
+        ),
+      ),
+    );
+  }
+}
+
+/// Widget bendera negara aman yang melindungi dari exception jika SVG asset tidak ditemukan.
+class BaristaFlagBadge extends StatelessWidget {
+  final String countryCode;
+  final double width;
+  final double height;
+  final BoxFit fit;
+  final double borderRadius;
+
+  const BaristaFlagBadge({
+    super.key,
+    required this.countryCode,
+    this.width = 18,
+    this.height = 13,
+    this.fit = BoxFit.contain,
+    this.borderRadius = 2,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final normalized = countryCode.trim().toLowerCase();
+    if (normalized.isEmpty) return const SizedBox.shrink();
+
+    Widget badge;
+    if (Flag.flagsCode.contains(normalized)) {
+      badge = SvgPicture.asset(
+        'packages/flag/res/4x3/$normalized.svg',
+        width: width,
+        height: height,
+        fit: fit,
+        semanticsLabel: normalized.toUpperCase(),
+        placeholderBuilder: (_) => _buildCodeFallback(normalized),
+        errorBuilder: (_, _, _) => _buildCodeFallback(normalized),
+      );
+    } else {
+      badge = _buildCodeFallback(normalized);
+    }
+
+    if (borderRadius > 0) {
+      badge = ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: badge,
+      );
+    }
+    return SizedBox(width: width, height: height, child: badge);
+  }
+
+  Widget _buildCodeFallback(String normalized) {
+    return Container(
+      width: width,
+      height: height,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppTheme.primaryBrown.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(borderRadius),
+      ),
+      child: Text(
+        normalized.toUpperCase(),
+        style: TextStyle(
+          fontSize: (height * 0.58).clamp(6.5, 9.5),
+          fontWeight: FontWeight.w800,
+          color: AppTheme.primaryBrown,
+          height: 1.0,
+        ),
+      ),
+    );
   }
 }
 

@@ -102,7 +102,38 @@ class RecipeFilterMatcher {
   static bool matchesMethod(Map<String, dynamic> r, String selectedMethod) {
     if (selectedMethod == 'All') return true;
     final lower = selectedMethod.toLowerCase();
-    return (r['method'] ?? '').toString().toLowerCase().contains(lower) ||
-        (r['category'] ?? '').toString().toLowerCase().contains(lower);
+    final method = (r['method'] ?? '').toString().toLowerCase();
+    final category = (r['category'] ?? '').toString().toLowerCase();
+    final title = (r['title'] ?? '').toString().toLowerCase();
+    final ice = (r['iceWeightGrams'] as num?)?.toDouble() ?? 0;
+
+    if (lower == 'japanese drip') {
+      return method.contains('japanese') ||
+          category.contains('japanese') ||
+          category.contains('es di server') ||
+          title.contains('japanese') ||
+          (ice > 0 && !method.contains('cold brew') && !method.contains('espresso'));
+    }
+    if (lower == 'vietnam drip') {
+      return method.contains('vietnam') ||
+          method.contains('phin') ||
+          category.contains('vietnam') ||
+          category.contains('phin');
+    }
+    if (lower == 'cold brew') {
+      return method.contains('cold brew') ||
+          method.contains('cold drip') ||
+          method.contains('kyoto') ||
+          category.contains('cold brew') ||
+          title.contains('cold brew');
+    }
+    if (lower == 'turkish coffee') {
+      return method.contains('turkish') ||
+          method.contains('cezve') ||
+          method.contains('ibrik') ||
+          category.contains('turkish');
+    }
+
+    return method.contains(lower) || category.contains(lower);
   }
 }

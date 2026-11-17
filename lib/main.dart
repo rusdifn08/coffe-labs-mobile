@@ -4,9 +4,13 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart' show PlatformDispatcher, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:media_kit/media_kit.dart';
+import 'core/network/dio_client.dart';
 import 'core/router/app_router.dart';
 import 'features/auth/controllers/auth_controller.dart';
+import 'features/bean_scanner/services/coffee_knowledge_graph_service.dart';
 import 'features/communities/presentation/services/community_deep_link_listener.dart';
+import 'features/monitoring/data/telemetry_batch_outbox_service.dart';
 import 'features/notifications/data/services/device_token_lifecycle_service.dart';
 import 'features/notifications/data/services/local_push_orchestrator.dart';
 import 'features/notifications/presentation/controllers/notification_center_controller.dart';
@@ -20,6 +24,16 @@ void main() {
 
   // Inisialisasi sqflite FFI untuk platform desktop (Windows / Linux / macOS)
   PrototypeDatabase.ensureFfiInitialized();
+
+  // Pra-muat Knowledge Graph Kopi (coffee.json, knowledge graph, catalog) di background
+  unawaited(CoffeeKnowledgeGraphService.instance.initialize());
+
+  // Inisialisasi native libmpv media_kit secara aman di luar Flutter VM test
+  if (!kIsWeb && !Platform.environment.containsKey('FLUTTER_TEST')) {
+    try {
+      MediaKit.ensureInitialized();
+    } catch (_) {}
+  }
 
   // Daftarkan background FCM handler secara aman pada platform mobile tanpa crash bila config Firebase belum ada.
   if (!kIsWeb && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS)) {
@@ -72,6 +86,7 @@ class CoffeeHubApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
+    TelemetryBatchOutboxService.instance.attachDio(ref.watch(dioClientProvider));
 
     ref.listen(authControllerProvider, (prev, next) {
       final wasAuthed = prev?.value != null;

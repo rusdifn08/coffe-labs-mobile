@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flag/flag.dart';
 import '../data/barista_catalog.dart';
+import '../features/recipe_detail/widgets/recipe_cover_background.dart';
 import '../services/api_service.dart';
 import '../services/language_service.dart';
 import '../services/coffee_translator.dart';
@@ -67,9 +67,10 @@ class _BaristaProfileScreenState extends State<BaristaProfileScreen> {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  BaristaUtils.buildOfflineImage(
-                    coverImageUrl,
-                    fit: BoxFit.cover,
+                  RecipeCoverBackground(
+                    coverImageUrl: coverImageUrl,
+                    portraitUrl: imageUrl,
+                    methodName: 'Hario V60',
                   ),
                   Container(
                     decoration: BoxDecoration(
@@ -108,7 +109,7 @@ class _BaristaProfileScreenState extends State<BaristaProfileScreen> {
                         Row(
                           children: [
                             if (_profile.countryCode.isNotEmpty) ...[
-                              Flag.fromString(_profile.countryCode, height: 14, width: 20),
+                              BaristaFlagBadge(countryCode: _profile.countryCode, height: 14, width: 20),
                               const SizedBox(width: 8),
                             ],
                             Text(

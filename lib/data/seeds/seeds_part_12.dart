@@ -205,6 +205,7 @@ List<Map<String, dynamic>> getSeedsPart12(String now) => [
     "grindSize": "Medium-Fine",
     "coffeeWeightGrams": 18,
     "totalWaterWeightGrams": 200,
+    "iceWeightGrams": 100,
     "totalTimeSeconds": 160,
     "description": "Ekstraksi pekat konsentrat di atas 100g es batu dalam server untuk Japanese iced segar nan renyah.",
     "isCustom": false,

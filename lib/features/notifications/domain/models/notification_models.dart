@@ -95,7 +95,13 @@ abstract class NotificationInboxItem with _$NotificationInboxItem {
   factory NotificationInboxItem.fromJson(Map<String, dynamic> json) =>
       _$NotificationInboxItemFromJson(json);
 
+  String? get entityId => actionPayload['entity_id']?.toString();
   String? get actorId => actionPayload['actor_id']?.toString();
+  String? get clubCommunityId => actionPayload['conversation_id']?.toString();
+  bool get isClubInvitation => eventType == 'CLUB_MEMBER_INVITED';
+  String? get clubInvitationId => entityId;
+  bool get hasClubInviteActions =>
+      isClubInvitation && (clubInvitationId?.trim().isNotEmpty ?? false);
   bool get hasQuickFollbackAction =>
       eventType == 'SOCIAL_NEW_FOLLOWER' &&
       (actionPayload['is_follback_opportunity'] == true ||

@@ -273,6 +273,8 @@ class _NotificationCenterScreenState
         final inFlight = state.follbackInFlightIds.contains(item.id);
         final followedBack =
             actorId.isNotEmpty && state.followedBackActorIds.contains(actorId);
+        final clubInviteInFlight = state.clubInviteInFlightIds.contains(item.id);
+        final clubInviteStatus = state.respondedClubInviteStatus[item.id];
 
         return _NotificationCard(
           item: item,
@@ -280,8 +282,19 @@ class _NotificationCenterScreenState
           relativeTime: _formatRelativeTime(item.createdAt),
           follbackInFlight: inFlight,
           followedBack: followedBack,
+          clubInviteInFlight: clubInviteInFlight,
+          clubInviteStatus: clubInviteStatus,
           onTap: () => _openItem(item),
           onFollback: () => ctrl.quickFollback(item),
+          onRespondClubInvite: (accept) async {
+            final res = await ctrl.respondToClubInvite(item, accept: accept);
+            if (res != null &&
+                accept &&
+                context.mounted &&
+                GoRouter.maybeOf(context) != null) {
+              context.push('/social/clubs/${res.communityId}');
+            }
+          },
         );
       },
     );
@@ -294,8 +307,11 @@ class _NotificationCard extends StatelessWidget {
   final String relativeTime;
   final bool follbackInFlight;
   final bool followedBack;
+  final bool clubInviteInFlight;
+  final String? clubInviteStatus;
   final VoidCallback onTap;
   final VoidCallback onFollback;
+  final ValueChanged<bool>? onRespondClubInvite;
 
   const _NotificationCard({
     required this.item,
@@ -303,8 +319,11 @@ class _NotificationCard extends StatelessWidget {
     required this.relativeTime,
     required this.follbackInFlight,
     required this.followedBack,
+    this.clubInviteInFlight = false,
+    this.clubInviteStatus,
     required this.onTap,
     required this.onFollback,
+    this.onRespondClubInvite,
   });
 
   @override
@@ -454,6 +473,104 @@ class _NotificationCard extends StatelessWidget {
                             ),
                         ],
                       ),
+                    ],
+                    if (item.hasClubInviteActions) ...[
+                      const SizedBox(height: 10),
+                      if (clubInviteStatus == 'ACCEPTED')
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8F5E9),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Text(
+                            'Bergabung ke Coffee Club ✓',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF2E7D32),
+                            ),
+                          ),
+                        )
+                      else if (clubInviteStatus == 'DECLINED')
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.bgCream,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppTheme.borderWarm),
+                          ),
+                          child: const Text(
+                            'Undangan ditolak',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textMuted,
+                            ),
+                          ),
+                        )
+                      else
+                        Row(
+                          children: [
+                            OutlinedButton(
+                              onPressed: clubInviteInFlight
+                                  ? null
+                                  : () => onRespondClubInvite?.call(false),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppTheme.textDark,
+                                side: const BorderSide(color: AppTheme.borderWarm),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 7,
+                                ),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: const Text(
+                                'Tolak',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton.icon(
+                              onPressed: clubInviteInFlight
+                                  ? null
+                                  : () => onRespondClubInvite?.call(true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryBrown,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 7,
+                                ),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              icon: Icon(
+                                clubInviteInFlight
+                                    ? CupertinoIcons.hourglass
+                                    : CupertinoIcons.checkmark_alt,
+                                size: 15,
+                              ),
+                              label: Text(
+                                clubInviteInFlight ? 'Memproses...' : 'Terima & Gabung',
+                                style: const TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                     ],
                   ],
                 ),

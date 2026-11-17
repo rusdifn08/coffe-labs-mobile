@@ -4,7 +4,7 @@ List<Map<String, dynamic>> getSeedsPart37(String now) => [
   {
     "id": 636,
     "title": "World AeroPress Champion 2018 Gold",
-    "author": "Carolina Ibarra Garzon 🇺🇸",
+    "author": "Carolina Ibarra Garay 🇺🇸",
     "coverImageUrl": "assets/images/avatars/generic_fallback.jpg",
     "authorAvatarUrl": "assets/images/avatars/generic_fallback.jpg",
     "authorImageUrl": "assets/images/avatars/generic_fallback.jpg",
@@ -14,41 +14,41 @@ List<Map<String, dynamic>> getSeedsPart37(String now) => [
     "method": "AeroPress",
     "category": "AeroPress",
     "waterTempCelsius": 85,
-    "grindSize": "Coarse (Comandante 30 Klik)",
-    "coffeeWeightGrams": 35,
-    "totalWaterWeightGrams": 260,
-    "totalTimeSeconds": 105,
-    "description": "Resep juara dunia AeroPress 2018 di Boston oleh Carolina Ibarra Garzon. Menggunakan dosis besar 34.9g dengan gilingan sangat kasar dan suhu air rendah 85°C, lalu diencerkan (bypass) dengan 160g air hangat di akhir untuk rasa manis buah persik dan kejernihan yang tak tertandingi.",
+    "grindSize": "Fine to Medium-Fine (EK43S 8/10)",
+    "coffeeWeightGrams": 34.9,
+    "totalWaterWeightGrams": 200,
+    "totalTimeSeconds": 120,
+    "description": "Resep juara dunia AeroPress 2018 di Sydney, Australia oleh Carolina Ibarra Garay. Menggunakan dosis 34.9g dengan 100g air seduh bersuhu 85°C (aduk 30s, balik di 1:00, press 30s), lalu ditambah 100g bypass air hingga total 200g.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
       {
         "stepOrder": 1,
-        "title": "Posisi Inverted & Dosing 35g Biji Kasar",
+        "title": "Posisi Inverted & Dosing 34.9g",
         "durationSeconds": 20,
         "waterAddedGrams": 0,
-        "instruction": "Pasang AeroPress posisi terbalik (inverted). Masukkan 35g bubuk kopi gilingan sangat kasar."
+        "instruction": "Pasang AeroPress posisi terbalik (inverted), bilas filter kertas di cap, dan masukkan 34.9g bubuk kopi."
       },
       {
         "stepOrder": 2,
-        "title": "Tuang 100g Air Bersuhu 85°C & Aduk Keras",
-        "durationSeconds": 30,
+        "title": "Tuang 100g Air 85°C & Aduk Sumpit Kayu",
+        "durationSeconds": 40,
         "waterAddedGrams": 100,
-        "instruction": "Tuangkan 100g air bersuhu 85°C, aduk kencang 20 kali menggunakan paddle selama 30 detik untuk ekstraksi instan."
+        "instruction": "Tuangkan 100g air bersuhu 85°C (0:00–0:30), lalu aduk kuat namun hati-hati hingga menit 1:00."
       },
       {
         "stepOrder": 3,
-        "title": "Pasang Cap Filter Kertas & Balik ke Server",
-        "durationSeconds": 25,
+        "title": "Pasang Cap & Flip ke Server",
+        "durationSeconds": 30,
         "waterAddedGrams": 0,
-        "instruction": "Pasang filter cap dengan kertas saring basah. Balikkan AeroPress ke atas server pada detik ke-70."
+        "instruction": "Kunci filter cap dan balikkan AeroPress ke atas server pada menit 1:00–1:30."
       },
       {
         "stepOrder": 4,
-        "title": "Plunge Halus 30s & Bypass Air 160g",
+        "title": "Plunge Halus 30s & Bypass 100g",
         "durationSeconds": 30,
-        "waterAddedGrams": 160,
-        "instruction": "Tekan plunger lembut selama 30 detik (berhenti sebelum suara desis). Tambahkan 160g air hangat ke hasil seduhan."
+        "waterAddedGrams": 100,
+        "instruction": "Tekan plunger lembut 30 detik (berhenti sebelum bunyi desis). Tambahkan 100g air bypass hingga total 200g."
       }
     ]
   },
@@ -65,11 +65,11 @@ List<Map<String, dynamic>> getSeedsPart37(String now) => [
     "method": "AeroPress",
     "category": "AeroPress",
     "waterTempCelsius": 78,
-    "grindSize": "Medium-Coarse",
-    "coffeeWeightGrams": 16,
+    "grindSize": "Extra Coarse",
+    "coffeeWeightGrams": 16.5,
     "totalWaterWeightGrams": 250,
-    "totalTimeSeconds": 105,
-    "description": "Shuichi Sasaki dari Jepang memenangkan kejuaraan dunia dengan teknik suhu sangat rendah 78°C. Menggunakan 3 kali adukan tenang dan waktu seduh total kurang dari 2 menit untuk menangkap keasaman buah lemon manis tanpa sedikitpun rasa pahit.",
+    "totalTimeSeconds": 100,
+    "description": "Shuichi Sasaki dari Jepang memenangkan kejuaraan dunia 2014 dengan dosis 16.5g, 250g air bersuhu sangat rendah 78°C, dan total waktu 100 detik untuk keasaman lemon manis bebas pahit.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
@@ -78,19 +78,19 @@ List<Map<String, dynamic>> getSeedsPart37(String now) => [
         "title": "Posisi Standar & Dosing 16.5g",
         "durationSeconds": 15,
         "waterAddedGrams": 0,
-        "instruction": "Bilas filter kertas di cap, pasang AeroPress posisi standar di atas server kaca."
+        "instruction": "Bilas filter kertas di cap, pasang AeroPress posisi standar di atas server kaca, isi 16.5g kopi."
       },
       {
         "stepOrder": 2,
         "title": "Tuang 40g Air 78°C & Pre-infusi 25s",
         "durationSeconds": 25,
         "waterAddedGrams": 40,
-        "instruction": "Tuang 40g air bersuhu 78°C untuk melepaskan aroma bunga melati secara sangat lembut."
+        "instruction": "Tuang 40g air bersuhu 78°C secara lembut untuk blooming 25 detik."
       },
       {
         "stepOrder": 3,
         "title": "Tuang Sisa 210g Air & Aduk 3 Putaran",
-        "durationSeconds": 35,
+        "durationSeconds": 30,
         "waterAddedGrams": 210,
         "instruction": "Tuang 210g air berikutnya hingga total 250g, lakukan 3 kali adukan memutar perlahan."
       },
@@ -99,7 +99,7 @@ List<Map<String, dynamic>> getSeedsPart37(String now) => [
         "title": "Plunge Lembut 30 Detik Tuntas",
         "durationSeconds": 30,
         "waterAddedGrams": 0,
-        "instruction": "Pasang plunger dan tekan perlahan dengan berat telapak tangan selama 30 detik tuntas."
+        "instruction": "Pasang plunger dan tekan perlahan hingga selesai tepat di detik ke-100."
       }
     ]
   },
@@ -207,7 +207,7 @@ List<Map<String, dynamic>> getSeedsPart37(String now) => [
   },
   {
     "id": 640,
-    "title": "World AeroPress Champion 2020 Gold",
+    "title": "Tuomas Merikanto Bypass Reserve (WAC 2021 Champion)",
     "author": "Tuomas Merikanto 🇫🇮",
     "coverImageUrl": "assets/images/avatars/generic_fallback.jpg",
     "authorAvatarUrl": "assets/images/avatars/generic_fallback.jpg",

@@ -105,20 +105,27 @@ class RecipeIngredientsCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(
-                    isEspresso ? CupertinoIcons.square_list_fill : Icons.restaurant_menu_rounded,
-                    size: 20,
-                    color: isEspresso ? Colors.amber[800] : AppTheme.primaryBrown,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    isEn ? 'Ingredients & Formula' : 'Komposisi & Bahan',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 16),
-                  ),
-                ],
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(
+                      isEspresso ? CupertinoIcons.square_list_fill : Icons.restaurant_menu_rounded,
+                      size: 20,
+                      color: isEspresso ? Colors.amber[800] : AppTheme.primaryBrown,
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        isEn ? 'Ingredients & Formula' : 'Komposisi & Bahan',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 16),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(

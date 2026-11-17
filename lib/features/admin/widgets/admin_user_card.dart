@@ -10,6 +10,7 @@ class AdminUserCard extends StatelessWidget {
   final Function(AuthUser) onAccept;
   final Function(AuthUser) onDecline;
   final Function(AuthUser) onDelete;
+  final Function(AuthUser)? onChangeTier;
 
   const AdminUserCard({
     super.key,
@@ -18,6 +19,7 @@ class AdminUserCard extends StatelessWidget {
     required this.onAccept,
     required this.onDecline,
     required this.onDelete,
+    this.onChangeTier,
   });
 
   @override
@@ -155,6 +157,25 @@ class AdminUserCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
+                  ],
+                  if (onChangeTier != null) ...[
+                    OutlinedButton.icon(
+                      onPressed: () => onChangeTier!(user),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.primaryBrown,
+                        side: BorderSide(color: AppTheme.primaryBrown.withValues(alpha: 0.35)),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      icon: const Icon(CupertinoIcons.slider_horizontal_3, size: 13),
+                      label: Text(
+                        user.hasActiveFullTrialOverride
+                            ? 'Trial 7H'
+                            : user.tier.toUpperCase(),
+                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
                   ],
                   IconButton(
                     icon: const Icon(CupertinoIcons.trash, color: Colors.redAccent, size: 18),

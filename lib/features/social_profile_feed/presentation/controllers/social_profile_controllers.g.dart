@@ -70,7 +70,7 @@ final class PublicProfileControllerProvider
     required PublicProfileControllerFamily super.from,
     required String super.argument,
   }) : super(
-         retry: null,
+         retry: fastProfileHttpRetry,
          name: r'publicProfileControllerProvider',
          isAutoDispose: true,
          dependencies: null,
@@ -104,7 +104,7 @@ final class PublicProfileControllerProvider
 }
 
 String _$publicProfileControllerHash() =>
-    r'dc3bde5accf89e406b119875dd4c323c2be9f28c';
+    r'd5f02983a31a2c2decb96e5922a8dd8ec6b02aa0';
 
 final class PublicProfileControllerFamily extends $Family
     with
@@ -117,7 +117,7 @@ final class PublicProfileControllerFamily extends $Family
         > {
   PublicProfileControllerFamily._()
     : super(
-        retry: null,
+        retry: fastProfileHttpRetry,
         name: r'publicProfileControllerProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
@@ -177,7 +177,7 @@ final class ProfileTabFeedControllerProvider
     required ProfileTabFeedControllerFamily super.from,
     required (String, ProfileFeedTab) super.argument,
   }) : super(
-         retry: null,
+         retry: fastProfileHttpRetry,
          name: r'profileTabFeedControllerProvider',
          isAutoDispose: true,
          dependencies: null,
@@ -211,7 +211,7 @@ final class ProfileTabFeedControllerProvider
 }
 
 String _$profileTabFeedControllerHash() =>
-    r'5549ea07e7e0783d586e42be1dd29dbdf72ef066';
+    r'e36594dedfd2a2f3a01353b04fe930cbe0b6ab76';
 
 final class ProfileTabFeedControllerFamily extends $Family
     with
@@ -224,7 +224,7 @@ final class ProfileTabFeedControllerFamily extends $Family
         > {
   ProfileTabFeedControllerFamily._()
     : super(
-        retry: null,
+        retry: fastProfileHttpRetry,
         name: r'profileTabFeedControllerProvider',
         dependencies: null,
         $allTransitiveDependencies: null,

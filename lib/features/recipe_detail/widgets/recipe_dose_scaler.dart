@@ -36,17 +36,24 @@ class RecipeDoseScaler extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  const Icon(CupertinoIcons.slider_horizontal_3, size: 16, color: AppTheme.primaryBrown),
-                  const SizedBox(width: 6),
-                  Text(
-                    isEn ? 'Adjust Coffee Dose (Auto-Scale)' : 'Sesuaikan Dosis Kopi (Auto-Scale)',
-                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppTheme.textDark),
-                  ),
-                ],
+              Expanded(
+                child: Row(
+                  children: [
+                    const Icon(CupertinoIcons.slider_horizontal_3, size: 16, color: AppTheme.primaryBrown),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        isEn ? 'Adjust Coffee Dose (Auto-Scale)' : 'Sesuaikan Dosis Kopi (Auto-Scale)',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              if (scaledCoffeeGrams != baseCoffeeGrams)
+              if (scaledCoffeeGrams != baseCoffeeGrams) ...[
+                const SizedBox(width: 8),
                 GestureDetector(
                   onTap: onReset,
                   child: Text(
@@ -54,6 +61,7 @@ class RecipeDoseScaler extends StatelessWidget {
                     style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryBrown),
                   ),
                 ),
+              ],
             ],
           ),
           const SizedBox(height: 10),

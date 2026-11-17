@@ -179,6 +179,7 @@ List<Map<String, dynamic>> getSeedsPart14(String now) => [
     "grindSize": "Medium-Fine",
     "coffeeWeightGrams": 18,
     "totalWaterWeightGrams": 180,
+    "iceWeightGrams": 120,
     "totalTimeSeconds": 160,
     "description": "Imersi pekat 2 menit lalu langsung dirilis ke dalam server berisi 120g es batu murni.",
     "isCustom": false,
@@ -341,15 +342,16 @@ List<Map<String, dynamic>> getSeedsPart14(String now) => [
     "grindSize": "Coarse (70% lolos 20-mesh)",
     "coffeeWeightGrams": 12,
     "totalWaterWeightGrams": 200,
-    "totalTimeSeconds": 240,
-    "description": "Protokol resmi SCA evaluasi mutu sensorik biji kopi dengan rasio 5.5% (12g kopi : 200ml air).",
+    "totalTimeSeconds": 900,
+    "description": "Protokol resmi SCA 15 menit evaluasi mutu sensorik biji kopi dengan rasio 5.5% (12g kopi : 200ml air): tuang 00:00, break crust 04:00, evaluasi 70°C di 10:00 hingga suhu ruang 15:00.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
-          {"stepOrder": 1, "title": "Dry Fragrance Evaluation", "durationSeconds": 30, "waterAddedGrams": 0},
-          {"stepOrder": 2, "title": "Pouring Water Direct to Crust", "durationSeconds": 20, "waterAddedGrams": 200},
-          {"stepOrder": 3, "title": "Wet Aroma Steep 4 Min", "durationSeconds": 220, "waterAddedGrams": 0},
-          {"stepOrder": 4, "title": "Break Crust 3x & Skim Fines", "durationSeconds": 60, "waterAddedGrams": 0}
+          {"stepOrder": 1, "title": "Dry Fragrance & Pour Water Direct 200g (00:00–00:30)", "durationSeconds": 30, "waterAddedGrams": 200},
+          {"stepOrder": 2, "title": "Wet Aroma Crust Steep (00:30–04:00)", "durationSeconds": 210, "waterAddedGrams": 0},
+          {"stepOrder": 3, "title": "Break Crust 3x & Skim Busa (04:00–08:00)", "durationSeconds": 240, "waterAddedGrams": 0},
+          {"stepOrder": 4, "title": "Cool-Down Stabil menuju 70°C (08:00–10:00)", "durationSeconds": 120, "waterAddedGrams": 0},
+          {"stepOrder": 5, "title": "Slurp & Skor Sensorik 70°C→40°C (10:00–15:00)", "durationSeconds": 300, "waterAddedGrams": 0}
     ]
   },
   {
@@ -368,15 +370,16 @@ List<Map<String, dynamic>> getSeedsPart14(String now) => [
     "grindSize": "Coarse",
     "coffeeWeightGrams": 13,
     "totalWaterWeightGrams": 220,
-    "totalTimeSeconds": 240,
-    "description": "Metode cupping buta petani kopi Brasil untuk menilai sweetness, body, dan konsistensi cup-to-cup.",
+    "totalTimeSeconds": 900,
+    "description": "Metode cupping buta petani kopi Brasil standar 15 menit untuk menilai sweetness, body, dan konsistensi cup-to-cup hingga suhu mendingin.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
-          {"stepOrder": 1, "title": "Evaluasi Kering", "durationSeconds": 30, "waterAddedGrams": 0},
-          {"stepOrder": 2, "title": "Tuang Air Cepat 220g", "durationSeconds": 20, "waterAddedGrams": 220},
-          {"stepOrder": 3, "title": "Steep Diam 4 Menit", "durationSeconds": 220, "waterAddedGrams": 0},
-          {"stepOrder": 4, "title": "Break & Slurp Sensorik", "durationSeconds": 60, "waterAddedGrams": 0}
+          {"stepOrder": 1, "title": "Evaluasi Kering & Tuang Cepat 220g (00:00–00:30)", "durationSeconds": 30, "waterAddedGrams": 220},
+          {"stepOrder": 2, "title": "Steep Diam 4 Menit (00:30–04:00)", "durationSeconds": 210, "waterAddedGrams": 0},
+          {"stepOrder": 3, "title": "Break Crust & Skim Clean (04:00–08:00)", "durationSeconds": 240, "waterAddedGrams": 0},
+          {"stepOrder": 4, "title": "Pendinginan Sensorik 70°C (08:00–10:00)", "durationSeconds": 120, "waterAddedGrams": 0},
+          {"stepOrder": 5, "title": "Slurp Blind Sweetness & Body (10:00–15:00)", "durationSeconds": 300, "waterAddedGrams": 0}
     ]
   },
   {
@@ -395,15 +398,16 @@ List<Map<String, dynamic>> getSeedsPart14(String now) => [
     "grindSize": "Medium-Coarse",
     "coffeeWeightGrams": 11,
     "totalWaterWeightGrams": 190,
-    "totalTimeSeconds": 240,
-    "description": "Kalibrasi sensori juri dan barista kompetisi WBC untuk mencatat spektrum aroma, rasa, dan aftertaste.",
+    "totalTimeSeconds": 900,
+    "description": "Kalibrasi sensori juri dan barista kompetisi WBC 15 menit untuk mencatat evolusi spektrum aroma, rasa, dan aftertaste.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
-          {"stepOrder": 1, "title": "Sniff Aroma Kering", "durationSeconds": 30, "waterAddedGrams": 0},
-          {"stepOrder": 2, "title": "Tuang Menyeluruh 190g", "durationSeconds": 15, "waterAddedGrams": 190},
-          {"stepOrder": 3, "title": "Infusi Stabil 4 Menit", "durationSeconds": 225, "waterAddedGrams": 0},
-          {"stepOrder": 4, "title": "Break & Cupping Slurp", "durationSeconds": 60, "waterAddedGrams": 0}
+          {"stepOrder": 1, "title": "Sniff Kering & Tuang 190g (00:00–00:30)", "durationSeconds": 30, "waterAddedGrams": 190},
+          {"stepOrder": 2, "title": "Infusi Stabil hingga 04:00", "durationSeconds": 210, "waterAddedGrams": 0},
+          {"stepOrder": 3, "title": "Break Crust & Skim Busa (04:00–08:00)", "durationSeconds": 240, "waterAddedGrams": 0},
+          {"stepOrder": 4, "title": "Fase Turun Suhu 70°C (08:00–10:00)", "durationSeconds": 120, "waterAddedGrams": 0},
+          {"stepOrder": 5, "title": "Kalibrasi Slurp 3 Suhu (10:00–15:00)", "durationSeconds": 300, "waterAddedGrams": 0}
     ]
   }
 ];

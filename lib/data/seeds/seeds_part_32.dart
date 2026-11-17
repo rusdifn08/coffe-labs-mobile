@@ -228,8 +228,8 @@ List<Map<String, dynamic>> getSeedsPart32(String now) => [
     "grindSize": "Medium (Sea Salt)",
     "coffeeWeightGrams": 50,
     "totalWaterWeightGrams": 500,
-    "totalTimeSeconds": 180,
-    "description": "Metode menara tetes es legendaris dari Kyoto, Jepang. Meneteskan air es dingin dengan kecepatan presisi 40–45 tetes per menit selama 6–8 jam. Timer ini memandu tahap inisiasi krusial hidrasi bed kopi dan kalibrasi katup tetesan.",
+    "totalTimeSeconds": 25200,
+    "description": "Metode menara tetes es legendaris dari Kyoto, Jepang. Meneteskan air es dingin dengan kecepatan presisi 40–45 tetes per menit selama 6–8 jam (rata-rata 7 jam / 25200s). Mode Cold Drip memandu persiapan bed kopi lalu memasang Alarm Latar Belakang.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
@@ -249,17 +249,17 @@ List<Map<String, dynamic>> getSeedsPart32(String now) => [
       },
       {
         "stepOrder": 3,
-        "title": "Kalibrasi Katup 1 Tetes Tiap 1.5 Detik",
+        "title": "Kalibrasi Katup 1 Tetes Tiap 1.5 Detik (40 BPM)",
         "durationSeconds": 50,
         "waterAddedGrams": 450,
-        "instruction": "Putar kran jarum kaca hingga aliran menetes stabil 40-45 tetes/menit dari bejana es batu di atas."
+        "instruction": "Putar kran jarum kaca hingga aliran menetes stabil 40-45 tetes/menit menggunakan Metronom Katup di Studio Cold Brew."
       },
       {
         "stepOrder": 4,
-        "title": "Inisiasi Ekstraksi Dingin (6-8 Jam)",
-        "durationSeconds": 60,
+        "title": "Ekstraksi Dingin Kyoto Drip 7 Jam (Set Alarm OS)",
+        "durationSeconds": 25080,
         "waterAddedGrams": 0,
-        "instruction": "Biarkan menara menetes di suhu ruang sejuk. Ekstraksi menghasilkan konsentrat seperti minuman wiski malt manis tanpa keasaman pahit."
+        "instruction": "Biarkan menara menetes 7 jam dan aktifkan Alarm Latar Belakang hingga selesai menjadi konsentrat manis bebas keasaman pahit."
       }
     ]
   },
@@ -279,8 +279,8 @@ List<Map<String, dynamic>> getSeedsPart32(String now) => [
     "grindSize": "Coarse (Kasar Seperti Garam Kasar)",
     "coffeeWeightGrams": 70,
     "totalWaterWeightGrams": 560,
-    "totalTimeSeconds": 150,
-    "description": "Sistem seduh rendam dingin 1:8 rasio Toddy yang memotong hingga 67% kadar asam lambung kopi. Menghasilkan sirup konsentrat cokelat pekat bebas asam lambung yang tahan disimpan hingga 2 minggu di kulkas.",
+    "totalTimeSeconds": 86400,
+    "description": "Sistem seduh rendam dingin 1:8 rasio Toddy yang memotong hingga 67% kadar asam lambung kopi. Menggunakan Alarm Latar Belakang 24 jam penuh untuk sirup konsentrat cokelat pekat.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
@@ -307,10 +307,10 @@ List<Map<String, dynamic>> getSeedsPart32(String now) => [
       },
       {
         "stepOrder": 4,
-        "title": "Tutup Rapat & Resting 18-24 Jam",
-        "durationSeconds": 40,
+        "title": "Tutup Rapat & Resting 24 Jam (Set Alarm OS)",
+        "durationSeconds": 86290,
         "waterAddedGrams": 0,
-        "instruction": "Simpan wadah tertutup di suhu ruang sejuk selama 24 jam. Cabut sumbat untuk mengalirkan sirup konsentrat hitam pekat."
+        "instruction": "Simpan wadah tertutup di suhu ruang sejuk selama 24 jam (gunakan Alarm OS). Cabut sumbat setelah alarm berbunyi."
       }
     ]
   },
@@ -330,8 +330,8 @@ List<Map<String, dynamic>> getSeedsPart32(String now) => [
     "grindSize": "Medium-Coarse",
     "coffeeWeightGrams": 60,
     "totalWaterWeightGrams": 600,
-    "totalTimeSeconds": 140,
-    "description": "Basis racikan cold brew yang diformulasikan khusus untuk infusi gas Nitrogen (Nitro Tap / Whipped Dispenser). Menggunakan biji proses natural buah persik matang dengan filtrasi ultra-halus untuk busa mikro sehalus bir Guinness.",
+    "totalTimeSeconds": 57600,
+    "description": "Basis racikan cold brew 16 jam kulkas (4°C) yang diformulasikan khusus untuk infusi gas Nitrogen (Nitro Tap / Whipped Dispenser).",
     "isCustom": false,
     "createdAt": now,
     "steps": [
@@ -351,10 +351,10 @@ List<Map<String, dynamic>> getSeedsPart32(String now) => [
       },
       {
         "stepOrder": 3,
-        "title": "Maserasi Kulkas 16 Jam",
-        "durationSeconds": 35,
+        "title": "Maserasi Kulkas 4°C selama 16 Jam (Set Alarm OS)",
+        "durationSeconds": 57495,
         "waterAddedGrams": 0,
-        "instruction": "Simpan wadah tertutup di lemari pendingin (chiller). Ekstraksi dingin mengunci sukrosa buah persik dan stroberi."
+        "instruction": "Simpan wadah tertutup di lemari pendingin (chiller) 16 jam. Ekstraksi dingin mengunci sukrosa buah persik dan stroberi."
       },
       {
         "stepOrder": 4,

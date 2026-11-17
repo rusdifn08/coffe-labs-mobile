@@ -32,6 +32,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.44.4'
           channel: 'stable'
           cache: true
 
@@ -83,6 +84,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.44.4'
           channel: 'stable'
           cache: true
 
@@ -142,7 +144,7 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             TAG="${GITHUB_REF#refs/tags/}"
           else
-            TAG="v2.3.0-$(date +'%Y%m%d-%H%M')"
+            TAG="v2.4.0"
           fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "title=Coffee Labs App Release $TAG" >> $GITHUB_OUTPUT
@@ -155,7 +157,7 @@ jobs:
           draft: false
           prerelease: false
           body: |
-            ## ☕ Coffee Labs Mobile Release v2.3.0
+            ## ☕ Coffee Labs Mobile Release v2.4.0
             
             Unduh file aplikasi secara langsung tanpa kompresi `.zip`:
             
@@ -168,10 +170,11 @@ jobs:
             ### 🍏 iOS (.ipa):
             - **`CoffeeLabs-iOS-Release.ipa`** *(Format `.ipa` terkompresi untuk sideloading via AltStore, Sideloadly, TrollStore, atau Scarlet)*
 
-            ### ✨ Apa yang Baru di v2.3.0:
-            - 🎨 **Identitas Brand & Animasi Splash Screen Profesional**: Pembaruan penuh ikon peluncur lintas platform (Android Adaptive, iOS, macOS, Windows, Web), logo transparan bebas latar putih di seluruh aplikasi, dan animasi splash screen telemetri orbital & Chemex berkonsep Warm Cream Coffee Labs.
-            - 💬 **Social Coffee Ecosystem 3.1–3.5**: Real-Time Direct Chat (WebSocket + Drift SQLite offline cache), Profil Publik & Activity Thread Feed, Asymmetric Follow/Follback/Mutual Social Graph, Push Notification Engine (FCM + In-App Deep Link), serta Komunitas Coffee Club & Feed For You / Trending.
-            - ☕ **100+ Indonesian Roastery & WBrC 2025 Precision**: Katalog 100 roastery Nusantara, pembaruan kelas deteksi AI, dan penyempurnaan resep WBrC 2025.
+            ### ✨ Apa yang Baru di v2.4.0:
+            - 🎮 **3D Interactive V60 Brew Studio & Gyroscope Physics**: Simulasi penyeduhan V60 3D interaktif dengan sensor gyroscope, bilas kertas filter, teko leher angsa presisi, dan telemetri aliran air.
+            - 📚 **LMS Manual Brew Academy & DRM Offline E-Book**: Kurikulum lengkap Manual Brew dengan unduhan E-Book on-demand (hemat ukuran APK, dapat dibaca 100% offline).
+            - 🛡️ **Admin Trial 7-Day Full Access (Non-Business) & Recipe Lock Security**: Panel kontrol Admin untuk kebijakan Trial 7 Hari Full Access, perbaikan keamanan lock resep saat filter/search, dan sistem share kartu resep lintas sosial media.
+            - ❄️ **18 Brew Methods Audit & Background Cold Brew Alarm**: Audit kurasi 18 metode seduh dan sistem pengingat latar belakang untuk ekstraksi Cold Brew.
           files: release-files/*.*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -432,8 +432,8 @@ List<Map<String, dynamic>> getSeedsPart4(String now) => [
         "iceWeightGrams": 0,
         "waterPpm": "70 ppm",
         "tastingNotes": "Crisp Fruit, High Sweetness, Silky Clean Cup",
-        "totalTimeSeconds": 150,
-        "description": "Resep AeroPress harian paling praktis tanpa perlu dibalik (non-inverted) dan tanpa perlu mengaduk dengan sendok. Cukup pasang plunger untuk menciptakan vakum, goyangkan lembut di menit ke-2, lalu tekan perlahan.",
+        "totalTimeSeconds": 180,
+        "description": "Resep AeroPress harian paling praktis tanpa perlu dibalik (non-inverted) dan tanpa perlu mengaduk dengan sendok. Cukup pasang plunger untuk menciptakan vakum selama 2 menit, swirl di 02:00, tunggu 30 detik, lalu tekan perlahan selama 30 detik (total 03:00 / 180s).",
         "isCustom": false,
         "createdAt": now,
         "steps": [

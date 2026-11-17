@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../core/network/dio_client.dart';
+import '../../../../services/auth_service.dart';
 import '../../../auth/controllers/auth_controller.dart';
 import '../../data/local/chat_drift_database.dart';
 import '../../data/services/chat_api_service.dart';
@@ -131,6 +133,11 @@ class ChatRoomListController extends _$ChatRoomListController {
     try {
       final api = ref.read(chatApiServiceProvider);
       final db = ref.read(chatDriftDatabaseProvider);
+      final user = await AuthService.getCurrentUser();
+      final uid = user?.id.trim() ?? '';
+      if (uid.isNotEmpty) {
+        await db.reconcileLocalSenderId(uid);
+      }
       final rooms = await api.fetchConversations();
       if (rooms.isNotEmpty) {
         await db.upsertConversationsFromServer(rooms);
@@ -175,20 +182,41 @@ class ActiveChatRoomController extends _$ActiveChatRoomController {
     return db.watchMessageViews(conversationId);
   }
 
+  Future<String> _resolveCurrentUserId() async {
+    final providerUser = await ref.read(authControllerProvider.future);
+    final rawId = providerUser?.id.trim() ?? '';
+    if (rawId.isNotEmpty) {
+      await ref.read(chatDriftDatabaseProvider).reconcileLocalSenderId(rawId);
+      return rawId;
+    }
+    final serviceUser = await AuthService.getCurrentUser();
+    final fallbackId = serviceUser?.id.trim() ?? '';
+    if (fallbackId.isNotEmpty) {
+      await ref.read(chatDriftDatabaseProvider).reconcileLocalSenderId(fallbackId);
+      return fallbackId;
+    }
+    return '';
+  }
+
   Future<void> _syncRoomHistory(String conversationId) async {
     try {
       final api = ref.read(chatApiServiceProvider);
       final db = ref.read(chatDriftDatabaseProvider);
-      final user = await ref.read(authControllerProvider.future);
-      final uid = user?.id ?? '';
+      final uid = await _resolveCurrentUserId();
 
       final history = await api.fetchHistory(conversationId, limit: 60);
       final deliveredMap = <String, int>{};
       final readMap = <String, int>{};
       for (final wm in history.watermarks) {
-        if (wm.userId != uid) {
-          deliveredMap[wm.conversationId] = wm.lastDeliveredSeqId;
-          readMap[wm.conversationId] = wm.lastReadSeqId;
+        if (!ChatDriftDatabase.isSameSender(wm.userId, uid)) {
+          deliveredMap[wm.conversationId] = math.max(
+            deliveredMap[wm.conversationId] ?? 0,
+            wm.lastDeliveredSeqId,
+          );
+          readMap[wm.conversationId] = math.max(
+            readMap[wm.conversationId] ?? 0,
+            wm.lastReadSeqId,
+          );
         }
       }
       await db.upsertIncomingMessages(
@@ -197,6 +225,17 @@ class ActiveChatRoomController extends _$ActiveChatRoomController {
         peerDeliveredWatermarks: deliveredMap,
         peerReadWatermarks: readMap,
       );
+
+      var maxPeerSeq = 0;
+      for (final m in history.messages) {
+        if (!ChatDriftDatabase.isSameSender(m.senderId, uid) &&
+            m.seqId > maxPeerSeq) {
+          maxPeerSeq = m.seqId;
+        }
+      }
+      if (maxPeerSeq > 0) {
+        await markViewportSeqAsRead(maxPeerSeq);
+      }
     } catch (_) {}
   }
 
@@ -252,8 +291,8 @@ class ActiveChatRoomController extends _$ActiveChatRoomController {
   }) async {
     final db = ref.read(chatDriftDatabaseProvider);
     final ws = ref.read(chatWsServiceProvider);
-    final authUser = await ref.read(authControllerProvider.future);
-    final senderId = authUser?.id ?? 'local_barista';
+    final uid = await _resolveCurrentUserId();
+    final senderId = uid.isNotEmpty ? uid : 'local_barista';
 
     final clientMsgId = _uuid.v4();
     final frame = ClientFrame.sendMessage(
@@ -277,7 +316,20 @@ class ActiveChatRoomController extends _$ActiveChatRoomController {
       wireFrameJson: frame.toWireJson(),
     );
 
-    await ws.sendFrame(frame);
+    final sentViaWs = await ws.sendFrame(frame);
+    unawaited(
+      _deliverViaHttpIfStillPending(
+        clientMsgId: clientMsgId,
+        targetConversationId: conversationId,
+        messageType: messageType,
+        replyToMsgId: replyToMsgId,
+        bodyText: bodyText,
+        attachment: attachment,
+        delayBeforeFallback: sentViaWs
+            ? const Duration(milliseconds: 2200)
+            : Duration.zero,
+      ),
+    );
   }
 
   Future<void> retryFailedMessage(LocalChatMessageView failedMsg) async {
@@ -295,15 +347,73 @@ class ActiveChatRoomController extends _$ActiveChatRoomController {
       } catch (_) {}
     }
 
+    final msgType = ChatMessageType.fromWire(failedMsg.messageType);
     final frame = ClientFrame.sendMessage(
       clientMsgId: failedMsg.clientMsgId,
       conversationId: failedMsg.conversationId,
       replyToMsgId: failedMsg.replyToMsgId,
-      messageType: ChatMessageType.fromWire(failedMsg.messageType),
+      messageType: msgType,
       bodyText: failedMsg.bodyText,
       attachment: parsedAttachment,
     );
-    await ws.sendFrame(frame);
+    final sentViaWs = await ws.sendFrame(frame);
+    unawaited(
+      _deliverViaHttpIfStillPending(
+        clientMsgId: failedMsg.clientMsgId,
+        targetConversationId: failedMsg.conversationId,
+        messageType: msgType,
+        replyToMsgId: failedMsg.replyToMsgId,
+        bodyText: failedMsg.bodyText,
+        attachment: parsedAttachment,
+        delayBeforeFallback: sentViaWs
+            ? const Duration(milliseconds: 2200)
+            : Duration.zero,
+      ),
+    );
+  }
+
+  Future<void> _deliverViaHttpIfStillPending({
+    required String clientMsgId,
+    required String targetConversationId,
+    required ChatMessageType messageType,
+    String? replyToMsgId,
+    String? bodyText,
+    InteractiveAttachment? attachment,
+    required Duration delayBeforeFallback,
+  }) async {
+    if (delayBeforeFallback > Duration.zero) {
+      await Future<void>.delayed(delayBeforeFallback);
+    }
+
+    final db = ref.read(chatDriftDatabaseProvider);
+    final currentStatus = await db.getMessageDeliveryStatus(clientMsgId);
+    if (currentStatus != 'sending') return;
+
+    try {
+      final api = ref.read(chatApiServiceProvider);
+      final saved = await api.sendMessageHttp(
+        conversationId: targetConversationId,
+        clientMsgId: clientMsgId,
+        messageType: messageType,
+        replyToMsgId: replyToMsgId,
+        bodyText: bodyText,
+        attachment: attachment,
+      );
+      await db.applySentAck(
+        clientMsgId: saved.clientMsgId,
+        serverMsgId: saved.id,
+        conversationId: saved.conversationId,
+        seqId: saved.seqId,
+        createdAt: saved.createdAt,
+      );
+    } on ApiException catch (e) {
+      final code = e.statusCode ?? 0;
+      if (code >= 400 && code < 500 && code != 408 && code != 429) {
+        await db.markOutboxFailed(clientMsgId);
+      }
+    } catch (_) {
+      // Tetap berstatus `sending` (Pending) di Outbox offline agar dikirim otomatis saat tersambung kembali.
+    }
   }
 
   void notifyTyping() {
@@ -323,13 +433,15 @@ class ActiveChatRoomController extends _$ActiveChatRoomController {
 
   Future<void> markViewportSeqAsRead(int seqId) async {
     if (seqId <= _lastSentReadSeq) return;
-    _lastSentReadSeq = seqId;
 
     final db = ref.read(chatDriftDatabaseProvider);
     final ws = ref.read(chatWsServiceProvider);
     await db.markLocalRoomReadUpTo(conversationId, seqId);
-    await ws.sendFrame(
+    final sentViaWs = await ws.sendFrame(
       ClientFrame.ackRead(conversationId: conversationId, upToSeqId: seqId),
     );
+    if (sentViaWs) {
+      _lastSentReadSeq = seqId;
+    }
   }
 }

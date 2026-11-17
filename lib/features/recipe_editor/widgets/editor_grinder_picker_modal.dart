@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../../data/brew_visual_catalog.dart';
 import '../../../../theme/app_theme.dart';
+import 'grinder_thumbnail_image.dart';
 
 class EditorGrinderPickerModal {
   static void show({
@@ -57,23 +58,27 @@ class EditorGrinderPickerModal {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Pilih Grinder Kopi',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '18 Grinder populer dunia & favorit barista Indonesia',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.grey.shade600,
-                                  ),
-                            ),
-                          ],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Pilih Grinder Kopi',
+                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${BrewVisualCatalog.grinderModels.length} Grinder populer dunia & favorit barista Indonesia',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Colors.grey.shade600,
+                                    ),
+                              ),
+                            ],
+                          ),
                         ),
                         IconButton(
                           icon: const Icon(Icons.close),
@@ -179,12 +184,13 @@ class EditorGrinderPickerModal {
                                   child: Stack(
                                     children: [
                                       Center(
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(12),
-                                          child: Image.asset(
-                                            g.imagePath,
-                                            fit: BoxFit.contain,
-                                            width: double.infinity,
+                                        child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: GrinderThumbnailImage(
+                                            imagePath: g.imagePath,
+                                            isElectric: g.isElectric,
+                                            size: 92,
+                                            borderRadius: 12,
                                           ),
                                         ),
                                       ),

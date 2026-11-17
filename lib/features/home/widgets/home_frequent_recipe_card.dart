@@ -32,8 +32,8 @@ class HomeFrequentRecipeCard extends StatelessWidget {
       catColor = Colors.green;
     }
 
-    final coverImageUrl = (recipe['coverImageUrl'] ?? recipe['authorImageUrl'])?.toString();
-    final authorAvatarUrl = (recipe['authorAvatarUrl'] ?? recipe['authorImageUrl'])?.toString();
+    final coverImageUrl = BaristaUtils.coverUrlFromRecipe(recipe);
+    final authorAvatarUrl = BaristaUtils.imageUrlFromRecipe(recipe);
 
     return GestureDetector(
       onTap: onTap,

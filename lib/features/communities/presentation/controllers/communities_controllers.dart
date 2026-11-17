@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../core/network/dio_client.dart';
@@ -29,18 +30,22 @@ class ExploreCommunitiesController extends _$ExploreCommunitiesController {
     try {
       final res = await api.discoverCommunities(query: query);
       if (query == null || query.trim().isEmpty) {
-        await localDb.cacheMyClubs(res.myClubs);
+        try {
+          await localDb.cacheMyClubs(res.myClubs);
+        } catch (_) {}
       }
       return res;
     } catch (_) {
-      final cached = await localDb.loadCachedMyClubs();
-      if (cached.isNotEmpty) {
-        return DiscoverCommunitiesResponse(
-          myClubs: cached,
-          discoverClubs: const [],
-          hasMore: false,
-        );
-      }
+      try {
+        final cached = await localDb.loadCachedMyClubs();
+        if (cached.isNotEmpty) {
+          return DiscoverCommunitiesResponse(
+            myClubs: cached,
+            discoverClubs: const [],
+            hasMore: false,
+          );
+        }
+      } catch (_) {}
       rethrow;
     }
   }
@@ -153,5 +158,66 @@ class SecretIdJoinController extends _$SecretIdJoinController {
     }
     ref.invalidate(exploreCommunitiesControllerProvider);
     return res.requireValue;
+  }
+}
+
+/// Daftar undangan langsung Coffee Club berstatus `PENDING` milik user aktif.
+final pendingClubInvitationsProvider =
+    FutureProvider.autoDispose<List<ClubMemberInvitation>>((ref) async {
+  return ref.watch(communitiesApiProvider).getPendingInvitations();
+});
+
+/// Daftar undangan anggota berstatus `PENDING` yang dikirim oleh suatu Coffee Club.
+final clubSentInvitationsProvider = FutureProvider.autoDispose
+    .family<List<ClubSentInvitation>, String>((ref, communityId) async {
+  return ref.watch(communitiesApiProvider).getClubSentInvitations(communityId);
+});
+
+/// Controller aksi Accept / Decline / Kirim Undangan Coffee Club.
+final clubInvitationActionsProvider =
+    Provider<ClubInvitationActions>((ref) => ClubInvitationActions(ref));
+
+class ClubInvitationActions {
+  final Ref _ref;
+
+  ClubInvitationActions(this._ref);
+
+  Future<RespondInvitationResponse> acceptInvitation(String inviteId) async {
+    final res =
+        await _ref.read(communitiesApiProvider).acceptInvitation(inviteId);
+    _ref.invalidate(pendingClubInvitationsProvider);
+    _ref.invalidate(exploreCommunitiesControllerProvider);
+    _ref.invalidate(communityWorkspaceControllerProvider(res.communityId));
+    return res;
+  }
+
+  Future<RespondInvitationResponse> declineInvitation(String inviteId) async {
+    final res =
+        await _ref.read(communitiesApiProvider).declineInvitation(inviteId);
+    _ref.invalidate(pendingClubInvitationsProvider);
+    return res;
+  }
+
+  Future<SendClubInvitesResponse> inviteUsers({
+    required String communityId,
+    required List<String> userIds,
+    String roleGranted = 'BARISTA_MEMBER',
+    String? message,
+  }) async {
+    final res = await _ref.read(communitiesApiProvider).inviteUsersToClub(
+          communityId: communityId,
+          userIds: userIds,
+          roleGranted: roleGranted,
+          message: message,
+        );
+    _ref.invalidate(clubSentInvitationsProvider(communityId));
+    return res;
+  }
+
+  Future<void> cancelInvitation(String communityId, String inviteId) async {
+    await _ref
+        .read(communitiesApiProvider)
+        .cancelClubInvitation(communityId, inviteId);
+    _ref.invalidate(clubSentInvitationsProvider(communityId));
   }
 }

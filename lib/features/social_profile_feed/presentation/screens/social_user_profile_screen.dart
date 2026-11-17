@@ -288,7 +288,7 @@ class _SocialUserProfileScreenState
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Profil tidak ditemukan atau gagal dimuat.\n$err',
+                    'Profil tidak ditemukan atau gagal dimuat.\n${err.toString().replaceFirst('Exception: ', '')}',
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: AppTheme.textMuted),
                   ),

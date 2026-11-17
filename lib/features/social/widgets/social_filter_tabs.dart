@@ -1,7 +1,8 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
 import '../../../../theme/app_theme.dart';
 
+/// Tab filter feed minimalis bergaya garis bawah ala Threads (tanpa card pill).
 class SocialFilterTabs extends StatelessWidget {
   final String activeTab;
   final ValueChanged<String> onTabChanged;
@@ -14,46 +15,62 @@ class SocialFilterTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tabs = [
-      {'id': 'all', 'label': 'Semua Feed', 'icon': CupertinoIcons.layers_fill},
-      {'id': 'popular', 'label': '🔥 Terpopuler', 'icon': CupertinoIcons.flame_fill},
-      {'id': 'recipes', 'label': '📖 Resep Kopi', 'icon': CupertinoIcons.book_fill},
+    const tabs = [
+      (id: 'all', label: 'Semua'),
+      (id: 'popular', label: 'Terpopuler'),
+      (id: 'recipes', label: 'Resep Kopi'),
     ];
 
-    return Row(
-      children: tabs.map((t) {
-        final active = activeTab == t['id'];
-        return Expanded(
-          child: GestureDetector(
-            onTap: () {
-              if (activeTab != t['id']) {
-                onTabChanged(t['id'] as String);
-              }
-            },
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                color: active ? AppTheme.primaryBrown : AppTheme.surfaceWhite,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: active ? AppTheme.primaryBrown : AppTheme.primaryBrown.withValues(alpha: 0.15),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: tabs.map((t) {
+            final active = activeTab == t.id;
+            return Expanded(
+              child: InkWell(
+                onTap: () {
+                  if (activeTab != t.id) {
+                    onTabChanged(t.id);
+                  }
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Text(
+                        t.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                          color: active
+                              ? AppTheme.primaryBrown
+                              : AppTheme.textMuted,
+                        ),
+                      ),
+                    ),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      height: 2.2,
+                      margin: const EdgeInsets.symmetric(horizontal: 20),
+                      decoration: BoxDecoration(
+                        color: active
+                            ? AppTheme.primaryBrown
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              child: Center(
-                child: Text(
-                  t['label'] as String,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: active ? FontWeight.bold : FontWeight.w600,
-                    color: active ? Colors.white : AppTheme.textDark,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
+            );
+          }).toList(),
+        ),
+        const Divider(height: 1, thickness: 1, color: AppTheme.dividerColor),
+      ],
     );
   }
 }

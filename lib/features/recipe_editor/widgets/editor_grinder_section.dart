@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../../data/brew_visual_catalog.dart';
 import '../../../../theme/app_theme.dart';
+import 'grinder_thumbnail_image.dart';
 
 class EditorGrinderSection extends StatelessWidget {
   final GrinderModel selectedGrinder;
@@ -64,14 +65,11 @@ class EditorGrinderSection extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.asset(
-                          selectedGrinder.imagePath,
-                          width: 58,
-                          height: 58,
-                          fit: BoxFit.contain,
-                        ),
+                      GrinderThumbnailImage(
+                        imagePath: selectedGrinder.imagePath,
+                        isElectric: selectedGrinder.isElectric,
+                        size: 58,
+                        borderRadius: 12,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -92,15 +90,21 @@ class EditorGrinderSection extends StatelessWidget {
                                   ),
                                 ),
                                 const SizedBox(width: 6),
-                                Text(
-                                  '${selectedGrinder.minClicks} - ${selectedGrinder.maxClicks} Klik',
-                                  style: const TextStyle(fontSize: 10.5, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                                Flexible(
+                                  child: Text(
+                                    '${selectedGrinder.minClicks} - ${selectedGrinder.maxClicks} Klik',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 10.5, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                                  ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 2),
                             Text(
                               selectedGrinder.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: AppTheme.textDark),
                             ),
                             Text(
@@ -188,25 +192,38 @@ class EditorGrinderSection extends StatelessWidget {
                         ),
 
                         // Center Info
-                        Column(
-                          children: [
-                            Text(
-                              '$currentClicks Klik',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.primaryBrown,
-                              ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: Column(
+                              children: [
+                                Text(
+                                  '$currentClicks Klik',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.primaryBrown,
+                                  ),
+                                ),
+                                Text(
+                                  '${selectedGrinder.estimateMicrons(currentClicks)} • $selectedGrindPreset',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.textDark),
+                                ),
+                                Text(
+                                  selectedGrinder.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                                ),
+                              ],
                             ),
-                            Text(
-                              '${selectedGrinder.estimateMicrons(currentClicks)} • $selectedGrindPreset',
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.textDark),
-                            ),
-                            Text(
-                              selectedGrinder.name,
-                              style: const TextStyle(fontSize: 10, color: AppTheme.textMuted),
-                            ),
-                          ],
+                          ),
                         ),
 
                         // Plus Button

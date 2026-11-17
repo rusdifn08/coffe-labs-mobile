@@ -229,12 +229,16 @@ class RecipeSpecsCard extends StatelessWidget {
                 children: [
                   const Icon(CupertinoIcons.sparkles, size: 14, color: AppTheme.accentAmber),
                   const SizedBox(width: 6),
-                  Text(
-                    isEn ? 'Tasting Notes & Flavor Profile' : 'Profil Rasa (Tasting Notes)',
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textMuted,
+                  Flexible(
+                    child: Text(
+                      isEn ? 'Tasting Notes & Flavor Profile' : 'Profil Rasa (Tasting Notes)',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textMuted,
+                      ),
                     ),
                   ),
                 ],

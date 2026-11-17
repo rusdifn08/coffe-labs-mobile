@@ -6,7 +6,10 @@ list(APPEND FLUTTER_PLUGIN_LIST
   app_links_linux
   audioplayers_linux
   file_selector_linux
+  flutter_angle
   flutter_secure_storage_linux
+  media_kit_libs_linux
+  media_kit_video
   printing
   rive_native
   url_launcher_linux

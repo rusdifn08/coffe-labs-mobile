@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
 import '../services/audio_service.dart';
 import '../services/api_service.dart';
@@ -21,18 +22,22 @@ import '../features/brew/timer/widgets/brew_iced_banner.dart';
 import '../features/brew/timer/widgets/brew_scale_live_badge.dart';
 import '../features/brew/tts/brewing_tts_service.dart';
 import '../features/gamification/services/gamification_service.dart';
+import '../features/monitoring/data/telemetry_batch_outbox_service.dart';
 import '../features/brew/timer/widgets/barista_espresso_cockpit.dart';
+import '../features/live_brew/domain/live_brew_models.dart';
+import '../features/live_brew/presentation/controllers/barista_live_transmitter_controller.dart';
+import '../features/live_brew/presentation/widgets/table_qr_manager_modal.dart';
 
-class BrewTimerScreen extends StatefulWidget {
+class BrewTimerScreen extends ConsumerStatefulWidget {
   final dynamic recipeData;
 
   const BrewTimerScreen({super.key, required this.recipeData});
 
   @override
-  State<BrewTimerScreen> createState() => _BrewTimerScreenState();
+  ConsumerState<BrewTimerScreen> createState() => _BrewTimerScreenState();
 }
 
-class _BrewTimerScreenState extends State<BrewTimerScreen> {
+class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
   Timer? _timer;
   Timer? _prepTimer;
   int _elapsedSeconds = 0;
@@ -134,6 +139,7 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
     _prepTimer?.cancel();
     AudioService.stopBgm();
     BrewingTTSService.instance.stop();
+    TelemetryBatchOutboxService.instance.setBrewingActive(false);
     _stepScrollController.dispose();
     super.dispose();
   }
@@ -144,6 +150,14 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
     if (activeIndex != _lastScrolledStepIndex) {
       _lastScrolledStepIndex = activeIndex;
       _scrollToStep(activeIndex);
+      final stage = activeIndex == 0
+          ? LiveBrewStage.bloomingDegassing
+          : (activeIndex >= steps.length - 1
+              ? LiveBrewStage.drawdownSwirl
+              : LiveBrewStage.activePouring);
+      ref
+          .read(baristaLiveTransmitterProvider.notifier)
+          .pushStageTransition(stage, activeIndex, waterTempCelsius.toDouble());
     }
   }
 
@@ -159,6 +173,7 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
 
   void _startMainTimer() {
     _prepTimer?.cancel();
+    TelemetryBatchOutboxService.instance.setBrewingActive(true);
     setState(() {
       _isPreparing = false;
       _isRunning = true;
@@ -238,6 +253,7 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
       _prepTimer?.cancel();
       AudioService.stopBgm();
       BrewingTTSService.instance.stop();
+      TelemetryBatchOutboxService.instance.setBrewingActive(false);
       setState(() {
         _isRunning = false;
         _isPreparing = false;
@@ -336,6 +352,19 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
   void _showDialInDoctorSheet() => BrewDoctorSheet.show(context);
 
   void _promptJournal() {
+    ref.read(baristaLiveTransmitterProvider.notifier).finishAndServe(
+          finalWeightG: totalWaterGrams.toDouble(),
+          totalDurationSec: _elapsedSeconds > 0 ? _elapsedSeconds : totalSeconds,
+        );
+    TelemetryBatchOutboxService.instance.setBrewingActive(false);
+    TelemetryBatchOutboxService.instance.recordBrewExperiment(
+      recipeId: _recipe['id']?.toString(),
+      recipeTitle: title,
+      brewMethod: _recipe['method']?.toString() ?? 'V60',
+      durationSec: _elapsedSeconds > 0 ? _elapsedSeconds : totalSeconds,
+      completed: true,
+      stepsCompleted: steps.length,
+    );
     GamificationService.instance.recordBrewCompleted();
     if (mounted) BrewSensoryEvaluationSheet.show(context, _recipe);
   }
@@ -395,6 +424,29 @@ class _BrewTimerScreenState extends State<BrewTimerScreen> {
               icon: Icon(_useBaristaCockpit ? CupertinoIcons.stopwatch : CupertinoIcons.square_list),
               onPressed: () => setState(() => _useBaristaCockpit = !_useBaristaCockpit),
             ),
+          IconButton(
+            tooltip: isEn ? 'Live Brew QR Stream' : 'Siarkan Live Brew QR',
+            icon: Icon(
+              Icons.qr_code_2_rounded,
+              size: 21,
+              color: ref.watch(baristaLiveTransmitterProvider).isBroadcasting
+                  ? const Color(0xFFDC2626)
+                  : null,
+            ),
+            onPressed: () => TableQrManagerModal.show(
+              context,
+              activeRecipe: _recipe,
+              weightSampler: () {
+                if (SmartScaleService.instance.isConnected) {
+                  return SmartScaleService.instance.currentWeight;
+                }
+                final frac = totalSeconds > 0
+                    ? (_elapsedSeconds / totalSeconds).clamp(0.0, 1.0)
+                    : 0.0;
+                return totalWaterGrams * frac;
+              },
+            ),
+          ),
           IconButton(
             tooltip: isEn ? 'Print Bluetooth Receipt' : 'Print Struk Resep Bluetooth',
             icon: const Icon(CupertinoIcons.printer_fill, size: 20),

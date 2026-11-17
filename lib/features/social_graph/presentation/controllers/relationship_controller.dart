@@ -28,7 +28,10 @@ class RelationshipFeedbackBanner extends _$RelationshipFeedbackBanner {
   void clear() => state = null;
 }
 
-@riverpod
+/// Hentikan exponential retry Riverpod 3 pada endpoint relasi agar profil langsung responsif.
+Duration? fastGraphHttpRetry(int retryCount, Object error) => null;
+
+@Riverpod(retry: fastGraphHttpRetry)
 class UserRelationshipController extends _$UserRelationshipController {
   Timer? _coalesceTimer;
   RelationshipSnapshot? _confirmedSnapshot;

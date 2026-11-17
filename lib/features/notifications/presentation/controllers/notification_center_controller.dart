@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../services/auth_service.dart';
+import '../../../communities/domain/community_models.dart';
+import '../../../communities/presentation/controllers/communities_controllers.dart';
 import '../../../social_chat/domain/chat_protocol.dart';
 import '../../../social_chat/presentation/controllers/chat_controllers.dart';
 import '../../data/services/device_token_lifecycle_service.dart';
@@ -72,6 +74,8 @@ class NotificationCenterState {
   final int unreadCount;
   final Set<String> follbackInFlightIds;
   final Set<String> followedBackActorIds;
+  final Set<String> clubInviteInFlightIds;
+  final Map<String, String> respondedClubInviteStatus;
   final String? errorMessage;
 
   const NotificationCenterState({
@@ -84,6 +88,8 @@ class NotificationCenterState {
     this.unreadCount = 0,
     this.follbackInFlightIds = const <String>{},
     this.followedBackActorIds = const <String>{},
+    this.clubInviteInFlightIds = const <String>{},
+    this.respondedClubInviteStatus = const <String, String>{},
     this.errorMessage,
   });
 
@@ -98,6 +104,8 @@ class NotificationCenterState {
     int? unreadCount,
     Set<String>? follbackInFlightIds,
     Set<String>? followedBackActorIds,
+    Set<String>? clubInviteInFlightIds,
+    Map<String, String>? respondedClubInviteStatus,
     String? errorMessage,
     bool clearError = false,
   }) {
@@ -111,6 +119,10 @@ class NotificationCenterState {
       unreadCount: unreadCount ?? this.unreadCount,
       follbackInFlightIds: follbackInFlightIds ?? this.follbackInFlightIds,
       followedBackActorIds: followedBackActorIds ?? this.followedBackActorIds,
+      clubInviteInFlightIds:
+          clubInviteInFlightIds ?? this.clubInviteInFlightIds,
+      respondedClubInviteStatus:
+          respondedClubInviteStatus ?? this.respondedClubInviteStatus,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
@@ -320,6 +332,46 @@ class NotificationCenterController extends Notifier<NotificationCenterState> {
         follbackInFlightIds: doneInFlight,
         errorMessage: 'Follback gagal diproses: $e',
       );
+    }
+  }
+
+  Future<RespondInvitationResponse?> respondToClubInvite(
+    NotificationInboxItem item, {
+    required bool accept,
+  }) async {
+    final inviteId = item.clubInvitationId?.trim() ?? '';
+    if (inviteId.isEmpty) return null;
+
+    final nextInFlight = Set<String>.from(state.clubInviteInFlightIds)
+      ..add(item.id);
+    state = state.copyWith(clubInviteInFlightIds: nextInFlight, clearError: true);
+
+    try {
+      final actions = ref.read(clubInvitationActionsProvider);
+      final res = accept
+          ? await actions.acceptInvitation(inviteId)
+          : await actions.declineInvitation(inviteId);
+      if (!ref.mounted) return res;
+
+      final doneInFlight = Set<String>.from(state.clubInviteInFlightIds)
+        ..remove(item.id);
+      final nextStatuses = Map<String, String>.from(state.respondedClubInviteStatus)
+        ..[item.id] = res.status;
+      state = state.copyWith(
+        clubInviteInFlightIds: doneInFlight,
+        respondedClubInviteStatus: nextStatuses,
+      );
+      await markAsRead(item.id);
+      return res;
+    } catch (e) {
+      if (!ref.mounted) return null;
+      final doneInFlight = Set<String>.from(state.clubInviteInFlightIds)
+        ..remove(item.id);
+      state = state.copyWith(
+        clubInviteInFlightIds: doneInFlight,
+        errorMessage: 'Gagal memproses undangan Coffee Club: $e',
+      );
+      return null;
     }
   }
 }

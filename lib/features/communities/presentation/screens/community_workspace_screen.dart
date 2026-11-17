@@ -187,8 +187,8 @@ class _CommunityWorkspaceScreenState
             actions: [
               if (ws.canManageInvites)
                 IconButton(
-                  tooltip: 'Undang via Secret ID / QR',
-                  icon: const Icon(CupertinoIcons.qrcode_viewfinder,
+                  tooltip: 'Undang Barista / Secret ID',
+                  icon: const Icon(CupertinoIcons.person_badge_plus_fill,
                       color: AppTheme.primaryBrown),
                   onPressed: () => ShareClubInviteModal.show(
                     context,

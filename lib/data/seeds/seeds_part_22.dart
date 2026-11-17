@@ -292,7 +292,7 @@ List<Map<String, dynamic>> getSeedsPart22(String now) => [
     "grindSize": "Fine",
     "coffeeWeightGrams": 19,
     "totalWaterWeightGrams": 145,
-    "totalTimeSeconds": 35,
+    "totalTimeSeconds": 30,
     "description": "Ikon kopi Antipodean. 110 ml air panas dituangkan lebih dahulu, lalu double ristretto diekstraksi langsung di atasnya sehingga lapisan crema emas tetap utuh mengapung.",
     "isCustom": false,
     "createdAt": now,

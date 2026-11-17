@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -66,15 +67,28 @@ class SmartScaleService extends ChangeNotifier {
   }
 
   void _initBluetooth() {
+    if (kIsWeb ||
+        (!Platform.isAndroid && !Platform.isIOS && !Platform.isMacOS) ||
+        Platform.environment.containsKey('FLUTTER_TEST')) {
+      _isBluetoothSupported = false;
+      return;
+    }
+
     try {
-      FlutterBluePlus.adapterState.listen((state) {
-        if (state != BluetoothAdapterState.on) {
-          if (_connectedDevice != null && !_isSimulationMode) {
-            disconnect();
+      FlutterBluePlus.adapterState.listen(
+        (state) {
+          if (state != BluetoothAdapterState.on) {
+            if (_connectedDevice != null && !_isSimulationMode) {
+              disconnect();
+            }
           }
-        }
-        notifyListeners();
-      });
+          notifyListeners();
+        },
+        onError: (Object e) {
+          debugPrint('Bluetooth stream notice: $e');
+          _isBluetoothSupported = false;
+        },
+      );
     } catch (e) {
       debugPrint('Bluetooth initialization notice: $e');
       _isBluetoothSupported = false;

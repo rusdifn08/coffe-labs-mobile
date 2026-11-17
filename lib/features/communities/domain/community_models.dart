@@ -293,3 +293,157 @@ class DiscoverCommunitiesResponse {
     );
   }
 }
+
+class ClubMemberInvitation {
+  final String id;
+  final String communityId;
+  final String communityName;
+  final String communitySlug;
+  final String communityDescription;
+  final String privacyLevel;
+  final int membersCount;
+  final List<String> focusTags;
+  final String inviterId;
+  final String inviterUsername;
+  final String inviterDisplayName;
+  final String? inviterAvatarUrl;
+  final String roleGranted;
+  final String message;
+  final String status;
+  final DateTime createdAt;
+
+  const ClubMemberInvitation({
+    required this.id,
+    required this.communityId,
+    required this.communityName,
+    required this.communitySlug,
+    required this.communityDescription,
+    required this.privacyLevel,
+    required this.membersCount,
+    required this.focusTags,
+    required this.inviterId,
+    required this.inviterUsername,
+    required this.inviterDisplayName,
+    this.inviterAvatarUrl,
+    required this.roleGranted,
+    required this.message,
+    required this.status,
+    required this.createdAt,
+  });
+
+  factory ClubMemberInvitation.fromJson(Map<String, dynamic> json) {
+    return ClubMemberInvitation(
+      id: (json['id'] ?? '').toString(),
+      communityId: (json['community_id'] ?? '').toString(),
+      communityName: (json['community_name'] ?? '').toString(),
+      communitySlug: (json['community_slug'] ?? '').toString(),
+      communityDescription: (json['community_description'] ?? '').toString(),
+      privacyLevel: (json['privacy_level'] ?? 'PUBLIC').toString(),
+      membersCount: (json['members_count'] as num?)?.toInt() ?? 1,
+      focusTags: (json['focus_tags'] as List<dynamic>? ?? const [])
+          .map((e) => e.toString())
+          .toList(),
+      inviterId: (json['inviter_id'] ?? '').toString(),
+      inviterUsername: (json['inviter_username'] ?? '').toString(),
+      inviterDisplayName: (json['inviter_display_name'] ?? '').toString(),
+      inviterAvatarUrl: json['inviter_avatar_url']?.toString(),
+      roleGranted: (json['role_granted'] ?? 'BARISTA_MEMBER').toString(),
+      message: (json['message'] ?? '').toString(),
+      status: (json['status'] ?? 'PENDING').toString(),
+      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ??
+          DateTime.now(),
+    );
+  }
+}
+
+class ClubSentInvitation {
+  final String id;
+  final String communityId;
+  final String inviteeId;
+  final String inviteeUsername;
+  final String inviteeDisplayName;
+  final String? inviteeAvatarUrl;
+  final String roleGranted;
+  final String status;
+  final String message;
+  final DateTime createdAt;
+
+  const ClubSentInvitation({
+    required this.id,
+    required this.communityId,
+    required this.inviteeId,
+    required this.inviteeUsername,
+    required this.inviteeDisplayName,
+    this.inviteeAvatarUrl,
+    required this.roleGranted,
+    required this.status,
+    required this.message,
+    required this.createdAt,
+  });
+
+  factory ClubSentInvitation.fromJson(Map<String, dynamic> json) {
+    return ClubSentInvitation(
+      id: (json['id'] ?? '').toString(),
+      communityId: (json['community_id'] ?? '').toString(),
+      inviteeId: (json['invitee_id'] ?? '').toString(),
+      inviteeUsername: (json['invitee_username'] ?? '').toString(),
+      inviteeDisplayName: (json['invitee_display_name'] ?? '').toString(),
+      inviteeAvatarUrl: json['invitee_avatar_url']?.toString(),
+      roleGranted: (json['role_granted'] ?? 'BARISTA_MEMBER').toString(),
+      status: (json['status'] ?? 'PENDING').toString(),
+      message: (json['message'] ?? '').toString(),
+      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ??
+          DateTime.now(),
+    );
+  }
+}
+
+class SendClubInvitesResponse {
+  final int invitedCount;
+  final int skippedAlreadyMember;
+  final List<ClubSentInvitation> invitations;
+
+  const SendClubInvitesResponse({
+    required this.invitedCount,
+    required this.skippedAlreadyMember,
+    required this.invitations,
+  });
+
+  factory SendClubInvitesResponse.fromJson(Map<String, dynamic> json) {
+    return SendClubInvitesResponse(
+      invitedCount: (json['invited_count'] as num?)?.toInt() ?? 0,
+      skippedAlreadyMember:
+          (json['skipped_already_member'] as num?)?.toInt() ?? 0,
+      invitations: (json['invitations'] as List<dynamic>? ?? const [])
+          .map((e) => ClubSentInvitation.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
+    );
+  }
+}
+
+class RespondInvitationResponse {
+  final String invitationId;
+  final String communityId;
+  final String status;
+  final JoinClubResponse? joinedClub;
+
+  const RespondInvitationResponse({
+    required this.invitationId,
+    required this.communityId,
+    required this.status,
+    this.joinedClub,
+  });
+
+  factory RespondInvitationResponse.fromJson(Map<String, dynamic> json) {
+    return RespondInvitationResponse(
+      invitationId: (json['invitation_id'] ?? '').toString(),
+      communityId: (json['community_id'] ?? '').toString(),
+      status: (json['status'] ?? '').toString(),
+      joinedClub: json['joined_club'] is Map
+          ? JoinClubResponse.fromJson(
+              Map<String, dynamic>.from(json['joined_club'] as Map),
+            )
+          : null,
+    );
+  }
+}

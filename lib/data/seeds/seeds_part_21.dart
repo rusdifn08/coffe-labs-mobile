@@ -260,14 +260,14 @@ List<Map<String, dynamic>> getSeedsPart21(String now) => [
     "grindSize": "Medium-Coarse",
     "coffeeWeightGrams": 40,
     "totalWaterWeightGrams": 450,
-    "totalTimeSeconds": 480,
-    "description": "Satu tetes setiap 1.5 detik melalui menara kaca Kyoto Drip selama 6 jam menghasilkan konsentrat seperti minuman anggur anggun.",
+    "totalTimeSeconds": 21600,
+    "description": "Satu tetes setiap 1.5 detik melalui menara kaca Kyoto Drip selama 6 jam menghasilkan konsentrat seperti minuman anggur anggun (gunakan Alarm Latar Belakang).",
     "isCustom": false,
     "createdAt": now,
     "steps": [
           {"stepOrder": 1, "title": "Basahi Bubuk di Kolom Drip", "durationSeconds": 30, "waterAddedGrams": 50},
           {"stepOrder": 2, "title": "Pasang Kertas Saring Atas", "durationSeconds": 15, "waterAddedGrams": 0},
-          {"stepOrder": 3, "title": "Atur Katup Tetes 1 Tetes/Detik", "durationSeconds": 375, "waterAddedGrams": 400},
+          {"stepOrder": 3, "title": "Tetes Lambat 40 TPM selama 6 Jam (Set Alarm)", "durationSeconds": 21495, "waterAddedGrams": 400},
           {"stepOrder": 4, "title": "Penyelesaian Labu Spiral", "durationSeconds": 60, "waterAddedGrams": 0}
     ]
   },
@@ -287,15 +287,15 @@ List<Map<String, dynamic>> getSeedsPart21(String now) => [
     "grindSize": "Coarse",
     "coffeeWeightGrams": 100,
     "totalWaterWeightGrams": 700,
-    "totalTimeSeconds": 600,
-    "description": "Ekstraksi dingin imersi 16 jam tanpa keasaman pahit, sangat manis legit untuk disajikan dengan susu oat atau air soda.",
+    "totalTimeSeconds": 57600,
+    "description": "Ekstraksi dingin imersi 16 jam tanpa keasaman pahit, sangat manis legit untuk disajikan dengan susu oat atau air soda (setel Alarm Cold Brew 16 jam).",
     "isCustom": false,
     "createdAt": now,
     "steps": [
           {"stepOrder": 1, "title": "Masukkan Kopi ke Wadah Saring", "durationSeconds": 30, "waterAddedGrams": 0},
           {"stepOrder": 2, "title": "Tuang Air Dingin Tersaring 700g", "durationSeconds": 30, "waterAddedGrams": 700},
-          {"stepOrder": 3, "title": "Imersi Suhu Ruang 16 Jam", "durationSeconds": 480, "waterAddedGrams": 0},
-          {"stepOrder": 4, "title": "Buka Stopper & Teteskan", "durationSeconds": 60, "waterAddedGrams": 0}
+          {"stepOrder": 3, "title": "Imersi Suhu Ruang 16 Jam (Set Alarm)", "durationSeconds": 57480, "waterAddedGrams": 0},
+          {"stepOrder": 4, "title": "Buka Stopper & Teteskan Konsentrat", "durationSeconds": 60, "waterAddedGrams": 0}
     ]
   },
   {
@@ -314,13 +314,13 @@ List<Map<String, dynamic>> getSeedsPart21(String now) => [
     "grindSize": "Coarse",
     "coffeeWeightGrams": 80,
     "totalWaterWeightGrams": 600,
-    "totalTimeSeconds": 540,
-    "description": "Cold brew pekat yang diinjeksi gas nitrogen bertekanan tinggi menghasilkan efek cascade ombak dan tekstur krim Guinness.",
+    "totalTimeSeconds": 50400,
+    "description": "Cold brew pekat 14 jam kulkas yang diinjeksi gas nitrogen bertekanan tinggi menghasilkan efek cascade ombak dan tekstur krim Guinness.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
-          {"stepOrder": 1, "title": "Steeping Air Es 14 Jam", "durationSeconds": 420, "waterAddedGrams": 600},
-          {"stepOrder": 2, "title": "Double Filtration", "durationSeconds": 60, "waterAddedGrams": 0},
+          {"stepOrder": 1, "title": "Steeping Air Es 4°C selama 14 Jam (Set Alarm)", "durationSeconds": 50280, "waterAddedGrams": 600},
+          {"stepOrder": 2, "title": "Double Filtration Bebas Partikel", "durationSeconds": 60, "waterAddedGrams": 0},
           {"stepOrder": 3, "title": "Injeksi Nitrogen Dispenser", "durationSeconds": 60, "waterAddedGrams": 0}
     ]
   },
@@ -340,14 +340,14 @@ List<Map<String, dynamic>> getSeedsPart21(String now) => [
     "grindSize": "Coarse",
     "coffeeWeightGrams": 50,
     "totalWaterWeightGrams": 400,
-    "totalTimeSeconds": 480,
-    "description": "Ditambahkan sedikit kulit jeruk segar pada saat imersi dingin untuk mengangkat karakter sitrus alami kopi Kintamani.",
+    "totalTimeSeconds": 43200,
+    "description": "Ditambahkan sedikit kulit jeruk segar pada saat imersi dingin 12 jam untuk mengangkat karakter sitrus alami kopi Kintamani.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
           {"stepOrder": 1, "title": "Campur Bubuk Kopi & Kulit Jeruk", "durationSeconds": 20, "waterAddedGrams": 0},
           {"stepOrder": 2, "title": "Tuang Air Dingin 400g", "durationSeconds": 25, "waterAddedGrams": 400},
-          {"stepOrder": 3, "title": "Imersi Dingin 12 Jam", "durationSeconds": 375, "waterAddedGrams": 0},
+          {"stepOrder": 3, "title": "Imersi Dingin 12 Jam (Set Alarm)", "durationSeconds": 43095, "waterAddedGrams": 0},
           {"stepOrder": 4, "title": "Saring Kertas Halus", "durationSeconds": 60, "waterAddedGrams": 0}
     ]
   },
@@ -367,14 +367,14 @@ List<Map<String, dynamic>> getSeedsPart21(String now) => [
     "grindSize": "Medium-Coarse",
     "coffeeWeightGrams": 45,
     "totalWaterWeightGrams": 450,
-    "totalTimeSeconds": 480,
-    "description": "Tetesan lambat air es memunculkan rasa cokelat pahit manis, kismis hitam, dan rempah kayu manis tanpa keasaman lambung.",
+    "totalTimeSeconds": 21600,
+    "description": "Tetesan lambat air es selama 6 jam memunculkan rasa cokelat pahit manis, kismis hitam, dan rempah kayu manis tanpa keasaman lambung.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
           {"stepOrder": 1, "title": "Basahi Kolom Ekstraksi", "durationSeconds": 25, "waterAddedGrams": 50},
           {"stepOrder": 2, "title": "Pasang Kertas Saring", "durationSeconds": 15, "waterAddedGrams": 0},
-          {"stepOrder": 3, "title": "Tetesan Air Es Bertahap", "durationSeconds": 380, "waterAddedGrams": 400},
+          {"stepOrder": 3, "title": "Tetesan Air Es 6 Jam (Set Alarm)", "durationSeconds": 21500, "waterAddedGrams": 400},
           {"stepOrder": 4, "title": "Selesai di Botol Kaca", "durationSeconds": 60, "waterAddedGrams": 0}
     ]
   },
@@ -394,14 +394,14 @@ List<Map<String, dynamic>> getSeedsPart21(String now) => [
     "grindSize": "Coarse",
     "coffeeWeightGrams": 40,
     "totalWaterWeightGrams": 350,
-    "totalTimeSeconds": 480,
+    "totalTimeSeconds": 36000,
     "description": "Mengganti air biasa dengan air kelapa muda segar untuk imersi dingin 10 jam di kulkas, super segar dan manis alami.",
     "isCustom": false,
     "createdAt": now,
     "steps": [
           {"stepOrder": 1, "title": "Bubuk Kopi di Wadah Kaca", "durationSeconds": 20, "waterAddedGrams": 0},
           {"stepOrder": 2, "title": "Tuang Air Kelapa Murni 350g", "durationSeconds": 25, "waterAddedGrams": 350},
-          {"stepOrder": 3, "title": "Imersi Kulkas 10 Jam", "durationSeconds": 375, "waterAddedGrams": 0},
+          {"stepOrder": 3, "title": "Imersi Kulkas 10 Jam (Set Alarm)", "durationSeconds": 35895, "waterAddedGrams": 0},
           {"stepOrder": 4, "title": "Saring & Tuang ke Es Batu", "durationSeconds": 60, "waterAddedGrams": 0}
     ]
   }

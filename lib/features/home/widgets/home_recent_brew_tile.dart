@@ -18,7 +18,7 @@ class HomeRecentBrewTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final title = CoffeeTranslator.translateTitle(recipe['title']?.toString() ?? 'Unknown Recipe');
     final author = recipe['author'] ?? 'Anonymous';
-    final authorImageUrl = (recipe['authorAvatarUrl'] ?? recipe['authorImageUrl'])?.toString();
+    final authorImageUrl = BaristaUtils.imageUrlFromRecipe(recipe);
 
     return GestureDetector(
       onTap: onTap,

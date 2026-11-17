@@ -144,8 +144,13 @@ class AdminUserService {
     }
   }
 
-  /// Ubah tier langganan user secara langsung (Khusus Admin: trial / pro / business)
-  static Future<bool> updateUserTier(String userId, String tier) async {
+  /// Ubah tier/kebijakan akses user secara langsung oleh Admin
+  /// Mendukung: `'trial'`, `'trial_7d'` (Trial 7 Hari Full Non-Bisnis), `'pro'`, `'business'`.
+  static Future<bool> updateUserTier(
+    String userId,
+    String tier, {
+    int? trialDays,
+  }) async {
     try {
       final token = await AuthService.getToken();
       if (token == null) return false;
@@ -159,7 +164,10 @@ class AdminUserService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-        body: json.encode({'tier': tier.trim().toLowerCase()}),
+        body: json.encode({
+          'tier': tier.trim().toLowerCase(),
+          'trial_days': ?trialDays,
+        }),
       ).timeout(const Duration(seconds: 30));
 
       return response.statusCode == 200;

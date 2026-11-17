@@ -15,6 +15,7 @@ class ThermalReceiptData {
   final int grandTotal;
   final String paymentMethod;
   final String? footerNote;
+  final String? liveBrewUrl;
 
   const ThermalReceiptData({
     required this.storeName,
@@ -30,6 +31,7 @@ class ThermalReceiptData {
     required this.grandTotal,
     required this.paymentMethod,
     this.footerNote,
+    this.liveBrewUrl,
   });
 }
 
@@ -98,6 +100,11 @@ class ThermalReceiptService {
     buffer.writeln();
     buffer.writeln(_centerText(data.footerNote ?? 'Terima Kasih Atas Kunjungan Anda', 32));
     buffer.writeln(_centerText('Diseduh dengan Rasio Presisi & Cinta', 32));
+    if (data.liveBrewUrl != null && data.liveBrewUrl!.isNotEmpty) {
+      buffer.writeln(_divider('-', 32));
+      buffer.writeln(_centerText('LACAK SEDUH LIVE:', 32));
+      buffer.writeln(data.liveBrewUrl);
+    }
     buffer.writeln(_centerText('Powered by Coffee Labs POS', 32));
     buffer.writeln();
     buffer.writeln();

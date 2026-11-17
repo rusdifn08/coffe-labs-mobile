@@ -73,9 +73,7 @@ class BeanVisionScannerService {
           final ocrInput = InputImage.fromFilePath(finalCroppedFile.path);
           final recognizedText = await textRecognizer.processImage(ocrInput);
 
-          fullText = recognizedText.text;
-
-          // Ambil estimasi dimensi gambar dari bounding box terluar
+          // Kumpulkan koordinat terluar untuk normalisasi [0..1]
           double maxBottom = 1.0;
           double maxRight = 1.0;
           for (final block in recognizedText.blocks) {
@@ -87,22 +85,45 @@ class BeanVisionScannerService {
             }
           }
 
+          // Granularitas per-TextLine agar brand/roastery, nama kopi, dan subjudul
+          // tidak tergabung menjadi 1 blok paragraf raksasa.
           for (final block in recognizedText.blocks) {
-            final box = block.boundingBox;
-            final normHeight = (box.height / maxBottom).clamp(0.01, 1.0);
-            final normTop = (box.top / maxBottom).clamp(0.0, 1.0);
-            final normWidth = (box.width / maxRight).clamp(0.01, 1.0);
-            final normLeft = (box.left / maxRight).clamp(0.0, 1.0);
-
-            blocksDto.add({
-              'text': block.text,
-              'normalized_height': normHeight,
-              'top_y': normTop,
-              'left_x': normLeft,
-              'normalized_width': normWidth,
-              'confidence': 0.95,
-            });
+            if (block.lines.isNotEmpty) {
+              for (final line in block.lines) {
+                final lineText = line.text.trim();
+                if (lineText.isEmpty) continue;
+                final box = line.boundingBox;
+                blocksDto.add({
+                  'text': lineText,
+                  'normalized_height': (box.height / maxBottom).clamp(0.01, 1.0),
+                  'top_y': (box.top / maxBottom).clamp(0.0, 1.0),
+                  'left_x': (box.left / maxRight).clamp(0.0, 1.0),
+                  'normalized_width': (box.width / maxRight).clamp(0.01, 1.0),
+                  'confidence': 0.95,
+                });
+              }
+            } else if (block.text.trim().isNotEmpty) {
+              final box = block.boundingBox;
+              blocksDto.add({
+                'text': block.text.trim(),
+                'normalized_height': (box.height / maxBottom).clamp(0.01, 1.0),
+                'top_y': (box.top / maxBottom).clamp(0.0, 1.0),
+                'left_x': (box.left / maxRight).clamp(0.0, 1.0),
+                'normalized_width': (box.width / maxRight).clamp(0.01, 1.0),
+                'confidence': 0.95,
+              });
+            }
           }
+
+          blocksDto.sort((a, b) {
+            final dy = ((a['top_y'] as num) - (b['top_y'] as num)).toDouble();
+            if (dy.abs() > 0.015) return dy.compareTo(0.0);
+            return ((a['left_x'] as num) - (b['left_x'] as num)).toDouble().compareTo(0.0);
+          });
+
+          fullText = blocksDto.isNotEmpty
+              ? blocksDto.map((b) => b['text']?.toString() ?? '').where((s) => s.isNotEmpty).join('\n')
+              : recognizedText.text;
         } catch (e) {
           debugPrint('On-device OCR platform fallback: $e');
         }
@@ -117,7 +138,15 @@ class BeanVisionScannerService {
               blocksDto.add(Map<String, dynamic>.from(b));
             }
           }
-          if (!rawFull.contains('\n') && blocksDto.isNotEmpty) {
+          blocksDto.sort((a, b) {
+            final dy = ((a['top_y'] as num?)?.toDouble() ?? 0.0) -
+                ((b['top_y'] as num?)?.toDouble() ?? 0.0);
+            if (dy.abs() > 0.015) return dy.compareTo(0.0);
+            return (((a['left_x'] as num?)?.toDouble() ?? 0.0) -
+                    ((b['left_x'] as num?)?.toDouble() ?? 0.0))
+                .compareTo(0.0);
+          });
+          if (blocksDto.isNotEmpty) {
             fullText = blocksDto.map((b) => b['text']?.toString() ?? '').where((s) => s.isNotEmpty).join('\n');
           } else {
             fullText = rawFull;
@@ -127,19 +156,23 @@ class BeanVisionScannerService {
 
       // Fallback Cerdas untuk Desktop / Ketika OCR lokal tidak menghasilkan teks:
       if (fullText.trim().isEmpty) {
+        CoffeeKnowledgeGraphService.instance.ensureSyncInitialized();
         final fileName = photoFile.uri.pathSegments.isNotEmpty ? photoFile.uri.pathSegments.last : '';
         final cleanFileName = fileName
             .replaceAll(RegExp(r'[\-_.]'), ' ')
             .replaceAll(RegExp(r'\b(jpg|jpeg|png|webp|heic)\b', caseSensitive: false), '')
             .trim();
 
+        final lowerFile = cleanFileName.toLowerCase();
         if (cleanFileName.length >= 3 &&
             (CoffeeKnowledgeGraphService.instance.findOrigin(cleanFileName) != null ||
-                cleanFileName.toLowerCase().contains('kopi') ||
-                cleanFileName.toLowerCase().contains('coffee') ||
-                cleanFileName.toLowerCase().contains('bean') ||
-                cleanFileName.toLowerCase().contains('malabar') ||
-                cleanFileName.toLowerCase().contains('halu'))) {
+                CoffeeKnowledgeGraphService.instance.matchKnownRoastery(cleanFileName) != null ||
+                lowerFile.contains('kopi') ||
+                lowerFile.contains('coffee') ||
+                lowerFile.contains('bean') ||
+                lowerFile.contains('watermelon') ||
+                lowerFile.contains('malabar') ||
+                lowerFile.contains('halu'))) {
           fullText = cleanFileName;
           blocksDto.add({
             'text': cleanFileName,

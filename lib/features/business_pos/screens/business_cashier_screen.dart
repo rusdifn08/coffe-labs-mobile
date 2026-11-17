@@ -17,6 +17,8 @@ import '../widgets/receipt_preview_modal.dart';
 import '../widgets/business_menu_asset_image.dart';
 import '../widgets/business_svg_icons.dart';
 import '../../../theme/business_theme.dart';
+import '../../live_brew/presentation/controllers/barista_live_transmitter_controller.dart';
+import '../../live_brew/presentation/widgets/table_qr_manager_modal.dart';
 import 'oled_diagnostic_screen.dart';
 import 'shift_summary_screen.dart';
 
@@ -170,6 +172,28 @@ class _BusinessCashierScreenState extends ConsumerState<BusinessCashierScreen> {
           }
         });
 
+        // Buat sesi Live Brew dinamis agar QR struk langsung terhubung ke Landing Pages
+        String? liveBrewUrl;
+        try {
+          final firstItemName = cart.items.isNotEmpty
+              ? cart.items.first.menuItem.name
+              : 'Handcrafted Coffee';
+          final snap = await ref
+              .read(baristaLiveTransmitterProvider.notifier)
+              .startLiveSession(
+                recipe: {
+                  'title': firstItemName,
+                  'method': 'V60',
+                  'coffeeWeightGrams': 15,
+                  'totalWaterWeightGrams': 225,
+                  'waterTempCelsius': 92,
+                },
+                weightSampler: () => 0.0,
+                customerName: cart.customerName ?? 'Pelanggan Meja Bar',
+              );
+          liveBrewUrl = snap?.livebrewUrl;
+        } catch (_) {}
+
         // Susun data struk termal
         final receiptData = ThermalReceiptData(
           storeName: _config.storeName,
@@ -185,6 +209,7 @@ class _BusinessCashierScreenState extends ConsumerState<BusinessCashierScreen> {
           grandTotal: finalTotal,
           paymentMethod: cart.paymentMethod,
           footerNote: _discountReason.isNotEmpty ? 'Promo: $_discountReason' : null,
+          liveBrewUrl: liveBrewUrl,
         );
 
         // Reset keranjang belanja & diskon
@@ -195,6 +220,7 @@ class _BusinessCashierScreenState extends ConsumerState<BusinessCashierScreen> {
         });
 
         // Munculkan preview struk termal autentik
+        if (!mounted) return;
         ReceiptPreviewModal.show(
           context,
           data: receiptData,
@@ -263,6 +289,11 @@ class _BusinessCashierScreenState extends ConsumerState<BusinessCashierScreen> {
             icon: const Icon(CupertinoIcons.square_grid_2x2_fill, color: Colors.white70),
             tooltip: 'Kelola & Urutkan Menu',
             onPressed: _openManageMenuModal,
+          ),
+          IconButton(
+            icon: const Icon(Icons.qr_code_2_rounded, color: Color(0xFFD4AF37)),
+            tooltip: 'Kelola Meja QR & Live Brew',
+            onPressed: () => TableQrManagerModal.show(context),
           ),
           IconButton(
             icon: const Icon(CupertinoIcons.chart_bar_square_fill, color: Color(0xFFD4AF37)),

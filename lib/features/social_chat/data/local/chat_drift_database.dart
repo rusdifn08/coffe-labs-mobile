@@ -345,6 +345,51 @@ class ChatDriftDatabase extends _$ChatDriftDatabase {
     });
   }
 
+  static bool isSameSender(String a, String b) {
+    final left = a.trim().toLowerCase();
+    final right = b.trim().toLowerCase();
+    return left.isNotEmpty && left == right;
+  }
+
+  static int _statusRank(String status) {
+    return switch (status) {
+      'sending' => 0,
+      'failed' => 0,
+      'sent' => 1,
+      'delivered' => 2,
+      'read' => 3,
+      _ => 1,
+    };
+  }
+
+  static String _pickMonotonicStatus(String? existingStatus, String candidate) {
+    if (existingStatus == null || existingStatus.isEmpty) return candidate;
+    return _statusRank(existingStatus) >= _statusRank(candidate)
+        ? existingStatus
+        : candidate;
+  }
+
+  /// Memperbaiki `sender_id = 'local_barista'` historis ke UUID pengguna resmi agar bubble kanan/kiri akurat.
+  Future<void> reconcileLocalSenderId(String realUserId) async {
+    final clean = realUserId.trim();
+    if (clean.isEmpty || clean == 'local_barista') return;
+    await customStatement(
+      '''
+      UPDATE local_messages
+      SET sender_id = ?
+      WHERE sender_id = 'local_barista'
+      ''',
+      [clean],
+    );
+  }
+
+  Future<String?> getMessageDeliveryStatus(String clientMsgId) async {
+    final row = await (select(localMessages)
+          ..where((m) => m.clientMsgId.equals(clientMsgId)))
+        .getSingleOrNull();
+    return row?.deliveryStatus;
+  }
+
   Future<void> applySentAck({
     required String clientMsgId,
     required String serverMsgId,
@@ -357,13 +402,18 @@ class ChatDriftDatabase extends _$ChatDriftDatabase {
             ..where((q) => q.clientMsgId.equals(clientMsgId)))
           .go();
 
+      final existing = await (select(localMessages)
+            ..where((m) => m.clientMsgId.equals(clientMsgId)))
+          .getSingleOrNull();
+      final nextStatus = _pickMonotonicStatus(existing?.deliveryStatus, 'sent');
+
       await (update(localMessages)
             ..where((m) => m.clientMsgId.equals(clientMsgId)))
           .write(
         LocalMessagesCompanion(
           serverMsgId: Value(serverMsgId),
           seqId: Value(seqId),
-          deliveryStatus: const Value('sent'),
+          deliveryStatus: Value(nextStatus),
           createdAt: Value(createdAt),
         ),
       );
@@ -410,27 +460,75 @@ class ChatDriftDatabase extends _$ChatDriftDatabase {
     required Map<String, int> peerDeliveredWatermarks,
     required Map<String, int> peerReadWatermarks,
   }) async {
-    if (messages.isEmpty) return;
+    if (messages.isEmpty &&
+        peerDeliveredWatermarks.isEmpty &&
+        peerReadWatermarks.isEmpty) {
+      return;
+    }
 
     await transaction(() async {
+      final convIdsToUpdate = <String>{
+        ...peerDeliveredWatermarks.keys,
+        ...peerReadWatermarks.keys,
+      };
+      for (final convId in convIdsToUpdate) {
+        final delSeq = peerDeliveredWatermarks[convId] ?? 0;
+        final readSeq = peerReadWatermarks[convId] ?? 0;
+        await customStatement(
+          '''
+          UPDATE local_conversations
+          SET peer_delivered_seq_id = MAX(peer_delivered_seq_id, ?),
+              peer_read_seq_id = MAX(peer_read_seq_id, ?)
+          WHERE id = ?
+          ''',
+          [delSeq > readSeq ? delSeq : readSeq, readSeq, convId],
+        );
+      }
+
+      if (messages.isEmpty) return;
+
+      final clientIds = messages.map((m) => m.clientMsgId).toList();
+      final existingRows = await (select(localMessages)
+            ..where((m) => m.clientMsgId.isIn(clientIds)))
+          .get();
+      final existingByClientId = {
+        for (final row in existingRows) row.clientMsgId: row,
+      };
+
+      final convWatermarksRows = await (select(localConversations)
+            ..where((c) => c.id.isIn(messages.map((m) => m.conversationId).toSet())))
+          .get();
+      final convById = {for (final c in convWatermarksRows) c.id: c};
+
       for (final msg in messages) {
         await (delete(pendingOutboxQueue)
               ..where((q) => q.clientMsgId.equals(msg.clientMsgId)))
             .go();
 
-        final peerRead = peerReadWatermarks[msg.conversationId] ?? 0;
-        final peerDelivered = peerDeliveredWatermarks[msg.conversationId] ?? 0;
+        final convRow = convById[msg.conversationId];
+        final incomingRead = peerReadWatermarks[msg.conversationId] ?? 0;
+        final incomingDel = peerDeliveredWatermarks[msg.conversationId] ?? 0;
+        final peerRead = incomingRead > (convRow?.peerReadSeqId ?? 0)
+            ? incomingRead
+            : (convRow?.peerReadSeqId ?? 0);
+        final peerDelivered = incomingDel > (convRow?.peerDeliveredSeqId ?? 0)
+            ? incomingDel
+            : (convRow?.peerDeliveredSeqId ?? 0);
 
-        String statusStr = 'sent';
-        if (msg.senderId == currentUserId) {
-          if (msg.seqId <= peerRead) {
-            statusStr = 'read';
-          } else if (msg.seqId <= peerDelivered) {
-            statusStr = 'delivered';
+        String candidateStatus = 'sent';
+        if (isSameSender(msg.senderId, currentUserId)) {
+          if (msg.seqId <= peerRead && peerRead > 0) {
+            candidateStatus = 'read';
+          } else if (msg.seqId <= peerDelivered && peerDelivered > 0) {
+            candidateStatus = 'delivered';
           }
         } else {
-          statusStr = 'delivered';
+          candidateStatus = 'delivered';
         }
+
+        final existing = existingByClientId[msg.clientMsgId];
+        final statusStr =
+            _pickMonotonicStatus(existing?.deliveryStatus, candidateStatus);
 
         final attachStr = msg.attachment != null
             ? json.encode(msg.attachment!.toJson())
@@ -459,7 +557,7 @@ class ChatDriftDatabase extends _$ChatDriftDatabase {
           SET last_seq_id = MAX(last_seq_id, ?),
               local_synced_seq_id = MAX(local_synced_seq_id, ?),
               unread_count = CASE
-                WHEN ? <> ? AND ? > my_read_seq_id THEN MAX(0, MAX(last_seq_id, ?) - my_read_seq_id)
+                WHEN LOWER(?) <> LOWER(?) AND ? > my_read_seq_id THEN MAX(0, MAX(last_seq_id, ?) - my_read_seq_id)
                 ELSE unread_count
               END
           WHERE id = ?
@@ -484,6 +582,36 @@ class ChatDriftDatabase extends _$ChatDriftDatabase {
           ),
         );
       }
+
+      if (currentUserId.isNotEmpty) {
+        for (final convId in convIdsToUpdate) {
+          final readSeq = peerReadWatermarks[convId] ?? 0;
+          final delSeq = peerDeliveredWatermarks[convId] ?? 0;
+          if (readSeq > 0) {
+            await customStatement(
+              '''
+              UPDATE local_messages
+              SET delivery_status = 'read'
+              WHERE conversation_id = ? AND LOWER(sender_id) = LOWER(?)
+                AND seq_id IS NOT NULL AND seq_id <= ?
+              ''',
+              [convId, currentUserId, readSeq],
+            );
+          }
+          if (delSeq > 0) {
+            await customStatement(
+              '''
+              UPDATE local_messages
+              SET delivery_status = 'delivered'
+              WHERE conversation_id = ? AND LOWER(sender_id) = LOWER(?)
+                AND seq_id IS NOT NULL AND seq_id <= ?
+                AND delivery_status IN ('sending', 'failed', 'sent')
+              ''',
+              [convId, currentUserId, delSeq],
+            );
+          }
+        }
+      }
     });
   }
 
@@ -494,7 +622,7 @@ class ChatDriftDatabase extends _$ChatDriftDatabase {
     required ReceiptStatus status,
     required int upToSeqId,
   }) async {
-    if (actorUserId == currentUserId) {
+    if (isSameSender(actorUserId, currentUserId)) {
       if (status == ReceiptStatus.read) {
         await customStatement(
           '''
@@ -524,7 +652,7 @@ class ChatDriftDatabase extends _$ChatDriftDatabase {
           '''
           UPDATE local_messages
           SET delivery_status = 'read'
-          WHERE conversation_id = ? AND sender_id = ? AND seq_id IS NOT NULL AND seq_id <= ?
+          WHERE conversation_id = ? AND LOWER(sender_id) = LOWER(?) AND seq_id IS NOT NULL AND seq_id <= ?
           ''',
           [conversationId, currentUserId, upToSeqId],
         );
@@ -541,14 +669,21 @@ class ChatDriftDatabase extends _$ChatDriftDatabase {
           '''
           UPDATE local_messages
           SET delivery_status = 'delivered'
-          WHERE conversation_id = ? AND sender_id = ?
+          WHERE conversation_id = ? AND LOWER(sender_id) = LOWER(?)
             AND seq_id IS NOT NULL AND seq_id <= ?
-            AND delivery_status IN ('sending', 'sent')
+            AND delivery_status IN ('sending', 'failed', 'sent')
           ''',
           [conversationId, currentUserId, upToSeqId],
         );
       }
     });
+  }
+
+  Future<int> getLatestSeqForConversation(String conversationId) async {
+    final row = await (select(localConversations)
+          ..where((c) => c.id.equals(conversationId)))
+        .getSingleOrNull();
+    return row?.lastSeqId ?? 0;
   }
 
   Future<void> markLocalRoomReadUpTo(String conversationId, int seqId) async {

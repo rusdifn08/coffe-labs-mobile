@@ -12,6 +12,7 @@ import '../features/profile/widgets/profile_trial_card.dart';
 import '../features/profile/widgets/user_profile_header_card.dart';
 import '../features/business_pos/widgets/business_suite_launcher_card.dart';
 import '../models/subscription_plan.dart';
+import '../models/trial_access_policy.dart';
 import '../services/auth_service.dart';
 import '../services/feedback_service.dart';
 import '../services/profile_service.dart';
@@ -81,6 +82,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         }).catchError((_) {});
       }
 
+      await TrialService.getPolicy();
+      TrialService.syncPolicyFromBackend().catchError(
+        (_) => TrialService.currentPolicySync,
+      );
       final plan = await SubscriptionService.getCurrentPlan();
       final isTrial = await TrialService.isTrialMode();
       final name = await ProfileService.getUserName();
@@ -289,7 +294,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   const SizedBox(height: 12),
                                 ],
                                 if (_isTrial && _currentPlan.tier == SubscriptionTier.trial) ...[
-                                  const ProfileTrialCard(),
+                                  ProfileTrialCard(
+                                    currentUser: _currentUser,
+                                    isFullTrialActive:
+                                        TrialService.isFullNonBusinessTrialActiveSync(
+                                      user: _currentUser,
+                                    ),
+                                    remainingPolicyDuration:
+                                        TrialService.remainingTrialPolicyDurationSync(
+                                      user: _currentUser,
+                                    ),
+                                  ),
                                   const SizedBox(height: 12),
                                 ],
                               ],
@@ -313,7 +328,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 ],
                                 BusinessSuiteLauncherCard(
                                   isBusiness: isAdmin ||
-                                      _currentPlan.tier == SubscriptionTier.business,
+                                      _currentPlan.tier == SubscriptionTier.business ||
+                                      TrialService.isFeatureUnlockedSync(
+                                        TrialFeature.businessSuite,
+                                        user: _currentUser,
+                                      ),
                                 ),
                                 const SizedBox(height: 12),
                                 ProfileMenuSection(
@@ -331,7 +350,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   ),
                                   icon: const Icon(CupertinoIcons.square_arrow_left, size: 18),
                                   label: Text(
-                                    _isTrial ? 'Keluar dari Mode Trial' : 'Logout / Keluar Akun',
+                                    _currentUser == null
+                                        ? 'Keluar dari Mode Pengunjung'
+                                        : 'Logout / Keluar Akun',
                                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                                   ),
                                 ),
@@ -388,16 +409,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           const SizedBox(height: 12),
                         ],
 
-                        // Status Card Mode Pengunjung (Akses Ekosistem Terbuka)
+                        // Status Card Mode Pengunjung / Akun Terdaftar
                         if (_isTrial && _currentPlan.tier == SubscriptionTier.trial) ...[
-                          const ProfileTrialCard(),
+                          ProfileTrialCard(
+                            currentUser: _currentUser,
+                            isFullTrialActive:
+                                TrialService.isFullNonBusinessTrialActiveSync(
+                              user: _currentUser,
+                            ),
+                            remainingPolicyDuration:
+                                TrialService.remainingTrialPolicyDurationSync(
+                              user: _currentUser,
+                            ),
+                          ),
                           const SizedBox(height: 12),
                         ],
 
                         // Mode Business (Eksklusif Business)
                         BusinessSuiteLauncherCard(
                           isBusiness: isAdmin ||
-                              _currentPlan.tier == SubscriptionTier.business,
+                              _currentPlan.tier == SubscriptionTier.business ||
+                              TrialService.isFeatureUnlockedSync(
+                                TrialFeature.businessSuite,
+                                user: _currentUser,
+                              ),
                         ),
                         const SizedBox(height: 12),
 
@@ -420,7 +455,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ),
                           icon: const Icon(CupertinoIcons.square_arrow_left, size: 18),
                           label: Text(
-                            _isTrial ? 'Keluar dari Mode Trial' : 'Logout / Keluar Akun',
+                            _currentUser == null
+                                ? 'Keluar dari Mode Pengunjung'
+                                : 'Logout / Keluar Akun',
                             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                           ),
                         ),

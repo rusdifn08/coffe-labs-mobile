@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../services/thermal_receipt_service.dart';
 
 class ReceiptPreviewModal extends StatelessWidget {
@@ -105,6 +106,25 @@ class ReceiptPreviewModal extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
+                      if (data.liveBrewUrl != null && data.liveBrewUrl!.isNotEmpty) ...[
+                        const SizedBox(height: 14),
+                        const Divider(color: Colors.black26),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'SCAN QR UNTUK LIVE BREW',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF4A3426),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        QrImageView(
+                          data: data.liveBrewUrl!,
+                          size: 118,
+                          backgroundColor: Colors.white,
+                        ),
+                      ],
                     ],
                   ),
                 ),

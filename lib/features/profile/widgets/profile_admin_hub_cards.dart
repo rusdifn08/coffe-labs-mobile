@@ -2,7 +2,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../screens/admin_approval_screen.dart';
 import '../../../screens/admin_feedback_screen.dart';
+import '../../../screens/admin_trial_control_screen.dart';
 import '../../../screens/admin_version_screen.dart';
+import '../../../services/trial_service.dart';
+import '../../monitoring/presentation/screens/platform_monitoring_dashboard_screen.dart';
 import '../../../theme/app_theme.dart';
 
 class ProfileAdminHubCards extends StatelessWidget {
@@ -60,13 +63,206 @@ class ProfileAdminHubCards extends StatelessWidget {
           ),
         ),
 
-        // 3 Kartu Aksi Kompak & Profesional
+        // Kartu Aksi Kompak & Profesional
+        _buildAdminMonitoringHubCard(context),
+        const SizedBox(height: 8),
+        _buildAdminTrialControlCard(context),
+        const SizedBox(height: 8),
         _buildAdminApprovalCard(context),
         const SizedBox(height: 8),
         _buildAdminFeedbackHubCard(context),
         const SizedBox(height: 8),
         _buildAdminVersionHubCard(context),
       ],
+    );
+  }
+
+  Widget _buildAdminTrialControlCard(BuildContext context) {
+    final policy = TrialService.currentPolicySync;
+    final isFull7d = policy.isFull7DayNonBusiness;
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isFull7d
+              ? const [Color(0xFF14532D), Color(0xFF166534)]
+              : const [Color(0xFF1E3A8A), Color(0xFF1E40AF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFECA400).withValues(alpha: 0.4),
+          width: 1.1,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AdminTrialControlScreen()),
+            ).then((_) => onRefresh());
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    isFull7d
+                        ? CupertinoIcons.sparkles
+                        : CupertinoIcons.slider_horizontal_3,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Kontrol Trial & 7 Hari Full Non-Bisnis',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        isFull7d
+                            ? 'Aktif: Trial 7 Hari Full (Non-Bisnis)'
+                            : 'Switch akun non-pembeli & atur izin fitur',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.white.withValues(alpha: 0.84),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                  decoration: BoxDecoration(
+                    color: isFull7d
+                        ? const Color(0xFFDCFCE7)
+                        : Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: Text(
+                    isFull7d ? '7H FULL' : 'ATUR',
+                    style: TextStyle(
+                      color: isFull7d ? const Color(0xFF14532D) : Colors.white,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdminMonitoringHubCard(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF4E2F16), Color(0xFF6B4423)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFECA400).withValues(alpha: 0.45), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryBrown.withValues(alpha: 0.18),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PlatformMonitoringDashboardScreen()),
+            ).then((_) => onRefresh());
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(CupertinoIcons.chart_bar_alt_fill, color: Colors.white, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Live Monitoring & User Online',
+                        style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Colors.white),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Pantau user online, screen time & resep V60',
+                        style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.82)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F5E9),
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: const Text(
+                    '● LIVE',
+                    style: TextStyle(color: Color(0xFF2E7D32), fontSize: 10, fontWeight: FontWeight.w800),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Icon(CupertinoIcons.chevron_forward, color: Colors.white.withValues(alpha: 0.7), size: 16),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
