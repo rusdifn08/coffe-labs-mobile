@@ -72,6 +72,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/flutter/ephemeral/.plugin_symlinks/fireba
   apply_standard_settings(firebase_core_plugin)
   target_compile_definitions(firebase_core_plugin PUBLIC FLUTTER_PLUGIN_IMPL)
   target_include_directories(firebase_core_plugin PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/runner/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/flutter/ephemeral/.plugin_symlinks/firebase_core/windows/include"
   )
   target_link_libraries(firebase_core_plugin PUBLIC flutter flutter_wrapper_plugin)
