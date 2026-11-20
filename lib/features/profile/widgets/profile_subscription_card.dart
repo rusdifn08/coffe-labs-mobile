@@ -113,7 +113,8 @@ class ProfileSubscriptionCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _buildCompactTierPill(
-                      title: 'Coffee Labs Pro',
+                      title: 'Pro',
+                      originalPrice: 'Rp 490K',
                       price: 'Rp 99K',
                       sub: 'Sekali Bayar',
                       isPopular: true,
@@ -124,6 +125,7 @@ class ProfileSubscriptionCard extends StatelessWidget {
                   Expanded(
                     child: _buildCompactTierPill(
                       title: 'Business',
+                      originalPrice: 'Rp 1.490K',
                       price: 'Rp 249K',
                       sub: 'Sekali Bayar',
                       isPopular: false,
@@ -162,6 +164,7 @@ class ProfileSubscriptionCard extends StatelessWidget {
 
   Widget _buildCompactTierPill({
     required String title,
+    required String originalPrice,
     required String price,
     required String sub,
     required bool isPopular,
@@ -186,57 +189,85 @@ class ProfileSubscriptionCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: isPopular ? const Color(0xFFE5A65D) : Colors.white,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    if (isPopular) ...[
-                      const SizedBox(width: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE5A65D),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'BEST',
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 7.5,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF2C1810),
+                            color: isPopular ? const Color(0xFFE5A65D) : Colors.white,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ),
+                      if (isPopular) ...[
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE5A65D),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            'BEST',
+                            style: TextStyle(
+                              fontSize: 7.5,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF2C1810),
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    sub,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.65),
+                      fontSize: 8.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 6),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  originalPrice,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.48),
+                    fontSize: 9.2,
+                    fontWeight: FontWeight.w600,
+                    decoration: TextDecoration.lineThrough,
+                    decorationColor: Colors.white.withValues(alpha: 0.58),
+                    height: 1.05,
+                  ),
                 ),
                 Text(
-                  sub,
+                  price,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.65),
-                    fontSize: 8.5,
+                    color: isPopular ? const Color(0xFFE5A65D) : Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    height: 1.15,
                   ),
                 ),
               ],
-            ),
-            const Spacer(),
-            Text(
-              price,
-              style: TextStyle(
-                color: isPopular ? const Color(0xFFE5A65D) : Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w900,
-              ),
             ),
           ],
         ),
