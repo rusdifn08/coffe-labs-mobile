@@ -465,6 +465,27 @@ void main() {
         await tester.tap(find.text('Buka LMS Bab 1.1'));
         await tester.pumpAndSettle();
         expect(find.text('Lab Simulasi Interaktif'), findsOneWidget);
+        expect(find.byKey(const Key('lms_in_video_timeline_slider')), findsOneWidget);
+        expect(find.byKey(const Key('lms_speed_selector_btn')), findsOneWidget);
+        expect(find.byKey(const Key('lms_fullscreen_toggle_btn')), findsOneWidget);
+
+        // Buka menu kecepatan YouTube (0.75x, 1.0x, 1.1x, 1.25x, 1.5x, 1.75x, 2.0x) lalu pilih 1.1x
+        await tester.tap(find.byKey(const Key('lms_speed_selector_btn')));
+        await tester.pumpAndSettle();
+        expect(find.text('1.1x'), findsOneWidget);
+        expect(find.text('1.25x'), findsOneWidget);
+        expect(find.text('1.5x'), findsOneWidget);
+        await tester.tap(find.text('1.1x'));
+        await tester.pumpAndSettle();
+        expect(find.text('1.1x'), findsOneWidget);
+
+        // Toggle Fullscreen masuk lalu keluar
+        await tester.tap(find.byKey(const Key('lms_fullscreen_toggle_btn')));
+        await tester.pumpAndSettle();
+        expect(find.text('Tutup'), findsOneWidget);
+        await tester.tap(find.byKey(const Key('lms_fullscreen_toggle_btn')));
+        await tester.pumpAndSettle();
+        expect(find.text('Lab Simulasi Interaktif'), findsOneWidget);
 
         // Tap Back button -> should pop immediately without crash/exception
         await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));

@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -59,28 +60,44 @@ class LmsCoursePlayerScreen extends ConsumerStatefulWidget {
 
 class _LmsCoursePlayerScreenState
     extends ConsumerState<LmsCoursePlayerScreen> {
+  static const List<double> supportedPlaybackSpeeds = [
+    0.75,
+    1.0,
+    1.1,
+    1.25,
+    1.5,
+    1.75,
+    2.0,
+  ];
+
   final Lms100BitTracker _tracker = Lms100BitTracker();
   final Map<int, int> _selectedAnswers = {};
   final List<StreamSubscription<dynamic>> _playerSubs = [];
+  final GlobalKey _videoSurfaceKey = GlobalKey();
 
-  // ValueNotifier terisolasi agar update posisi/play/buffer/100-bit TIDAK pernah
+  // ValueNotifier terisolasi agar update posisi/play/buffer/100-bit/overlay TIDAK pernah
   // memicu full-screen setState (mencegah lag saat video berjalan 30–60fps).
   late final ValueNotifier<double> _positionSecNotifier;
   late final ValueNotifier<int> _durationSecNotifier;
   late final ValueNotifier<bool> _isPlayingNotifier;
   late final ValueNotifier<bool> _isBufferingNotifier;
   late final ValueNotifier<int> _completionPctNotifier;
+  late final ValueNotifier<bool> _controlsVisibleNotifier;
 
   late final Widget? _cachedMarkdownSection;
 
   Player? _player;
   VideoController? _videoController;
   Timer? _fallbackPlaybackTimer;
+  Timer? _controlsAutoHideTimer;
   int _sessionToken = 0;
   bool _isDisposed = false;
   int _lastTickedSecond = -1;
 
   bool _usingNativeVideo = false;
+  bool _isInitializingPlayer = false;
+  bool _pendingPlayOnReady = false;
+  bool _isFullscreen = false;
   bool _showInteractiveLab = false;
   double _playbackSpeed = 1.0;
   String? _streamStatusText;
@@ -99,6 +116,86 @@ class _LmsCoursePlayerScreenState
     return '${m.toString().padLeft(2, '0')}:${rem.toString().padLeft(2, '0')}';
   }
 
+  String _formatSpeedLabel(double speed) {
+    if (speed == speed.roundToDouble()) {
+      return '${speed.toStringAsFixed(1)}x';
+    }
+    final s = speed.toStringAsFixed(2);
+    return '${s.endsWith('0') ? s.substring(0, s.length - 1) : s}x';
+  }
+
+  void _scheduleControlsAutoHide() {
+    _controlsAutoHideTimer?.cancel();
+    if (!_isPlayingNotifier.value) return;
+    _controlsAutoHideTimer = Timer(const Duration(milliseconds: 3200), () {
+      if (_isDisposed || !mounted) return;
+      if (_isPlayingNotifier.value) {
+        _controlsVisibleNotifier.value = false;
+      }
+    });
+  }
+
+  void _onVideoSurfaceTap() {
+    final nextVisible = !_controlsVisibleNotifier.value;
+    _controlsVisibleNotifier.value = nextVisible;
+    if (nextVisible && _isPlayingNotifier.value) {
+      _scheduleControlsAutoHide();
+    } else {
+      _controlsAutoHideTimer?.cancel();
+    }
+  }
+
+  void _setFullscreen(bool fullscreen) {
+    if (_isFullscreen == fullscreen) return;
+    setState(() => _isFullscreen = fullscreen);
+    _controlsVisibleNotifier.value = true;
+    if (_isPlayingNotifier.value) {
+      _scheduleControlsAutoHide();
+    }
+    if (!_isHeadlessTest && !kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      if (fullscreen) {
+        unawaited(
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky),
+        );
+        unawaited(
+          SystemChrome.setPreferredOrientations(const [
+            DeviceOrientation.landscapeLeft,
+            DeviceOrientation.landscapeRight,
+          ]),
+        );
+      } else {
+        unawaited(
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),
+        );
+        unawaited(
+          SystemChrome.setPreferredOrientations(const [
+            DeviceOrientation.portraitUp,
+            DeviceOrientation.portraitDown,
+          ]),
+        );
+      }
+    }
+  }
+
+  void _toggleFullscreen() => _setFullscreen(!_isFullscreen);
+
+  void _setPlaybackSpeed(double speed) {
+    setState(() => _playbackSpeed = speed);
+    if (_player != null) {
+      unawaited(_player!.setRate(speed).catchError((_) {}));
+    }
+    _controlsVisibleNotifier.value = true;
+    _scheduleControlsAutoHide();
+  }
+
+  void _skipRelativeSeconds(int deltaSec) {
+    final target = (_positionSecNotifier.value + deltaSec)
+        .clamp(0.0, _durationSec.toDouble());
+    _attemptSeek(target);
+    _controlsVisibleNotifier.value = true;
+    _scheduleControlsAutoHide();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -109,6 +206,7 @@ class _LmsCoursePlayerScreenState
     _isPlayingNotifier = ValueNotifier<bool>(false);
     _isBufferingNotifier = ValueNotifier<bool>(false);
     _completionPctNotifier = ValueNotifier<int>(widget.lesson.completionPct.clamp(0, 100));
+    _controlsVisibleNotifier = ValueNotifier<bool>(true);
 
     _cachedMarkdownSection = widget.lesson.keyTakeawaysMarkdown.isNotEmpty
         ? RepaintBoundary(
@@ -260,21 +358,41 @@ class _LmsCoursePlayerScreenState
   Future<void> _initStreamPlayer() async {
     final token = _sessionToken;
     final api = ref.read(baristaToolkitApiProvider);
-    String? rawUrl;
-    try {
-      final info = await api.fetchLessonStream(widget.lesson.id);
-      if (_isDisposed || !mounted) return;
-      rawUrl = info['signed_hls_url']?.toString();
-      final serverDur = (info['duration_sec'] as num?)?.toInt() ?? 0;
-      if (serverDur > 0) {
-        _durationSecNotifier.value = serverDur;
-      }
-    } catch (_) {}
-
-    if (_isDisposed || !mounted) return;
+    _isInitializingPlayer = !_isHeadlessTest;
 
     if (!_isHeadlessTest) {
-      final resolved = await _resolveBestPlayableSource(api: api, serverUrl: rawUrl);
+      // Jalur cepat (< 5ms): pada desktop dev, langsung cek berkas MP4 Object Storage lokal
+      // TANPA menunggu request HTTP ke Render agar saat user klik Play suara langsung keluar instan.
+      final isDesktop =
+          !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+      final bab1Stem = _bab1ObjectKeys[widget.lesson.subchapterCode];
+      (String source, String badge)? resolved;
+
+      if (isDesktop && bab1Stem != null) {
+        final localFile = _findLocalWorkspaceObjectFile(bab1Stem);
+        if (localFile != null) {
+          resolved = (
+            localFile.resolveSymbolicLinksSync(),
+            'HD Object Storage',
+          );
+        }
+      }
+
+      if (resolved == null) {
+        String? rawUrl;
+        try {
+          final info = await api.fetchLessonStream(widget.lesson.id);
+          if (_isDisposed || !mounted) return;
+          rawUrl = info['signed_hls_url']?.toString();
+          final serverDur = (info['duration_sec'] as num?)?.toInt() ?? 0;
+          if (serverDur > 0) {
+            _durationSecNotifier.value = serverDur;
+          }
+        } catch (_) {}
+        if (_isDisposed || !mounted) return;
+        resolved = await _resolveBestPlayableSource(api: api, serverUrl: rawUrl);
+      }
+
       if (_isDisposed || !mounted) return;
       if (resolved != null) {
         final (playableSource, badge) = resolved;
@@ -285,6 +403,7 @@ class _LmsCoursePlayerScreenState
         if (_isDisposed || !mounted || session == null) return;
 
         final (player, vc) = session;
+        _fallbackPlaybackTimer?.cancel();
         _cancelPlayerSubscriptions();
         _playerSubs.addAll([
           player.stream.duration.listen((dur) {
@@ -306,6 +425,12 @@ class _LmsCoursePlayerScreenState
             if (_isPlayingNotifier.value != playing) {
               _isPlayingNotifier.value = playing;
             }
+            if (playing) {
+              _scheduleControlsAutoHide();
+            } else {
+              _controlsAutoHideTimer?.cancel();
+              _controlsVisibleNotifier.value = true;
+            }
           }),
           player.stream.buffering.listen((buf) {
             if (_isDisposed) return;
@@ -315,6 +440,14 @@ class _LmsCoursePlayerScreenState
           }),
         ]);
 
+        if (_playbackSpeed != 1.0) {
+          unawaited(player.setRate(_playbackSpeed).catchError((_) {}));
+        }
+
+        final shouldAutoPlayNow = _pendingPlayOnReady;
+        _pendingPlayOnReady = false;
+        _isInitializingPlayer = false;
+
         setState(() {
           _player = player;
           _videoController = vc;
@@ -322,11 +455,26 @@ class _LmsCoursePlayerScreenState
           _streamSourceBadge = badge;
           _streamStatusText = 'Video Animasi HD Siap Diputar ($badge)';
         });
+
+        if (shouldAutoPlayNow) {
+          _isBufferingNotifier.value = false;
+          unawaited(player.play().catchError((_) {}));
+        }
         return;
       }
+    } else {
+      try {
+        final info = await api.fetchLessonStream(widget.lesson.id);
+        if (_isDisposed || !mounted) return;
+        final serverDur = (info['duration_sec'] as num?)?.toInt() ?? 0;
+        if (serverDur > 0) {
+          _durationSecNotifier.value = serverDur;
+        }
+      } catch (_) {}
     }
 
     if (_isDisposed || !mounted) return;
+    _isInitializingPlayer = false;
     setState(() {
       _usingNativeVideo = false;
       _streamSourceBadge = null;
@@ -337,14 +485,24 @@ class _LmsCoursePlayerScreenState
   }
 
   void _togglePlayPause() {
+    _controlsVisibleNotifier.value = true;
     if (_usingNativeVideo && _player != null) {
       unawaited(_player!.playOrPause().catchError((_) {}));
+      _scheduleControlsAutoHide();
+      return;
+    }
+    // Bila player native masih dalam proses openMedia (< 100ms), antrekan play asli
+    // agar TIDAK menjalankan timer bisu tanpa suara.
+    if (_isInitializingPlayer && !_isHeadlessTest) {
+      _pendingPlayOnReady = !_pendingPlayOnReady;
+      _isBufferingNotifier.value = _pendingPlayOnReady;
       return;
     }
     final nextPlaying = !_isPlayingNotifier.value;
     _isPlayingNotifier.value = nextPlaying;
     _fallbackPlaybackTimer?.cancel();
     if (nextPlaying) {
+      _scheduleControlsAutoHide();
       _fallbackPlaybackTimer = Timer.periodic(
         const Duration(milliseconds: 500),
         (_) {
@@ -354,10 +512,13 @@ class _LmsCoursePlayerScreenState
           _onPlaybackTick(next);
           if (next >= _durationSec) {
             _isPlayingNotifier.value = false;
+            _controlsVisibleNotifier.value = true;
             _fallbackPlaybackTimer?.cancel();
           }
         },
       );
+    } else {
+      _controlsAutoHideTimer?.cancel();
     }
   }
 
@@ -489,7 +650,22 @@ class _LmsCoursePlayerScreenState
   void dispose() {
     _isDisposed = true;
     _fallbackPlaybackTimer?.cancel();
+    _controlsAutoHideTimer?.cancel();
     _cancelPlayerSubscriptions();
+    if (_isFullscreen &&
+        !_isHeadlessTest &&
+        !kIsWeb &&
+        (Platform.isAndroid || Platform.isIOS)) {
+      unawaited(
+        SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),
+      );
+      unawaited(
+        SystemChrome.setPreferredOrientations(const [
+          DeviceOrientation.portraitUp,
+          DeviceOrientation.portraitDown,
+        ]),
+      );
+    }
     // Lepas sesi secara non-blocking (pause + stop) tanpa dispose VideoOutput sinkron
     // agar bebas crash ANGLE Surface.cpp:528 & bebas freeze UI thread saat Back.
     LmsVideoSessionManager.instance.releaseSession(_sessionToken);
@@ -498,6 +674,7 @@ class _LmsCoursePlayerScreenState
     _isPlayingNotifier.dispose();
     _isBufferingNotifier.dispose();
     _completionPctNotifier.dispose();
+    _controlsVisibleNotifier.dispose();
     super.dispose();
   }
 
@@ -511,6 +688,25 @@ class _LmsCoursePlayerScreenState
         currentIdx >= 0 && currentIdx < lessonsInCourse.length - 1
             ? lessonsInCourse[currentIdx + 1]
             : null;
+
+    if (_isFullscreen) {
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) {
+            _setFullscreen(false);
+          }
+        },
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          body: SafeArea(
+            child: Center(
+              child: _buildVideoStage(lesson, isFullscreen: true),
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppTheme.bgCream,
@@ -928,269 +1124,609 @@ class _LmsCoursePlayerScreenState
     );
   }
 
-  Widget _buildVideoStage(LmsLessonModel lesson) {
+  Widget _buildVideoStage(
+    LmsLessonModel lesson, {
+    bool isFullscreen = false,
+  }) {
     final isWindowsDesktop = !kIsWeb && Platform.isWindows;
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: isFullscreen ? EdgeInsets.zero : const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1C130E),
-        borderRadius: BorderRadius.circular(18),
+        color: const Color(0xFF140E0A),
+        borderRadius: BorderRadius.circular(isFullscreen ? 0 : 18),
+        boxShadow: isFullscreen
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.14),
+                  blurRadius: 14,
+                  offset: const Offset(0, 5),
+                ),
+              ],
       ),
       clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          AspectRatio(
-            aspectRatio: 16 / 9,
-            child: _usingNativeVideo && _videoController != null
-                ? Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      RepaintBoundary(
-                        child: Video(
-                          controller: _videoController!,
-                          controls: NoVideoControls,
-                          wakelock: !isWindowsDesktop,
-                          pauseUponEnteringBackgroundMode: true,
-                        ),
-                      ),
-                      Positioned.fill(
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.translucent,
-                          onTap: _togglePlayPause,
-                          child: ValueListenableBuilder<bool>(
-                            valueListenable: _isPlayingNotifier,
-                            builder: (_, isPlaying, _) {
-                              return ValueListenableBuilder<bool>(
-                                valueListenable: _isBufferingNotifier,
-                                builder: (_, isBuffering, _) {
-                                  return AnimatedOpacity(
-                                    duration: const Duration(milliseconds: 200),
-                                    opacity: (!isPlaying || isBuffering) ? 1.0 : 0.0,
-                                    child: Center(
-                                      child: isBuffering
-                                          ? const CircularProgressIndicator(
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // 1. Video Surface (atau Fallback Poster Stage)
+            if (_usingNativeVideo && _videoController != null)
+              RepaintBoundary(
+                key: _videoSurfaceKey,
+                child: Video(
+                  controller: _videoController!,
+                  controls: NoVideoControls,
+                  // Matikan subtitle eksternal (.vtt) bawaan libmpv agar tidak menumpuk
+                  // di atas kartu Karaoke subtitle bawaan video.
+                  subtitleViewConfiguration: const SubtitleViewConfiguration(
+                    visible: false,
+                  ),
+                  wakelock: !isWindowsDesktop,
+                  pauseUponEnteringBackgroundMode: true,
+                ),
+              )
+            else
+              Container(
+                color: const Color(0xFF1C130E),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  _streamStatusText ?? 'Coffee Labs Cinema Player Ready',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white60,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+
+            // 2. Area Ketuk / Klik Video untuk Menampilkan atau Menyembunyikan Timeline & Kontrol
+            Positioned.fill(
+              child: GestureDetector(
+                key: const Key('lms_video_tap_surface'),
+                behavior: HitTestBehavior.translucent,
+                onTap: _onVideoSurfaceTap,
+                onDoubleTap: _toggleFullscreen,
+                child: const SizedBox.expand(),
+              ),
+            ),
+
+            // 3. Garis Progres Tipis di Tepi Bawah saat Kontrol Tersembunyi (Gaya YouTube)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: ValueListenableBuilder<bool>(
+                valueListenable: _controlsVisibleNotifier,
+                builder: (_, controlsVisible, _) {
+                  if (controlsVisible) return const SizedBox.shrink();
+                  return ValueListenableBuilder<int>(
+                    valueListenable: _durationSecNotifier,
+                    builder: (_, durSec, _) {
+                      final safeDur = durSec > 0 ? durSec.toDouble() : 1.0;
+                      return ValueListenableBuilder<double>(
+                        valueListenable: _positionSecNotifier,
+                        builder: (_, posSec, _) {
+                          final ratio = (posSec / safeDur).clamp(0.0, 1.0);
+                          return LinearProgressIndicator(
+                            value: ratio,
+                            minHeight: 2.5,
+                            backgroundColor: Colors.white12,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              AppTheme.accentGold,
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+
+            // 4. Overlay Kontrol & Timeline di Dalam Video (Muncul saat Video Diketuk / Dijeda)
+            Positioned.fill(
+              child: ValueListenableBuilder<bool>(
+                valueListenable: _controlsVisibleNotifier,
+                builder: (_, controlsVisible, _) {
+                  return IgnorePointer(
+                    ignoring: !controlsVisible,
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 220),
+                      opacity: controlsVisible ? 1.0 : 0.0,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: _onVideoSurfaceTap,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.black.withValues(alpha: 0.62),
+                                Colors.black.withValues(alpha: 0.18),
+                                Colors.black.withValues(alpha: 0.22),
+                                Colors.black.withValues(alpha: 0.78),
+                              ],
+                              stops: const [0.0, 0.28, 0.62, 1.0],
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // BARIS ATAS DALAM VIDEO: Status 100-Bit + Chapter Chips
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 3.5,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withValues(alpha: 0.58),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: AppTheme.accentGold.withValues(alpha: 0.45),
+                                        ),
+                                      ),
+                                      child: ValueListenableBuilder<int>(
+                                        valueListenable: _completionPctNotifier,
+                                        builder: (_, pct, _) {
+                                          return Text(
+                                            '100-Bit: $pct%',
+                                            style: const TextStyle(
                                               color: AppTheme.accentGold,
-                                            )
-                                          : Container(
-                                              width: 58,
-                                              height: 58,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    if (lesson.chapterMarkers.isNotEmpty) ...[
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: SizedBox(
+                                          height: 24,
+                                          child: ListView.separated(
+                                            scrollDirection: Axis.horizontal,
+                                            itemCount: lesson.chapterMarkers.length,
+                                            separatorBuilder: (_, _) =>
+                                                const SizedBox(width: 5),
+                                            itemBuilder: (context, idx) {
+                                              final mk = lesson.chapterMarkers[idx];
+                                              final sec =
+                                                  (mk['sec'] as num?)?.toInt() ?? 0;
+                                              final label =
+                                                  mk['label']?.toString() ??
+                                                      'Bab ${idx + 1}';
+                                              return GestureDetector(
+                                                onTap: () {
+                                                  _attemptSeek(sec.toDouble());
+                                                  _scheduleControlsAutoHide();
+                                                },
+                                                child: Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                    horizontal: 7,
+                                                    vertical: 3,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.black
+                                                        .withValues(alpha: 0.55),
+                                                    borderRadius:
+                                                        BorderRadius.circular(6),
+                                                    border: Border.all(
+                                                      color: Colors.white24,
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    '${_formatClock(sec)} $label',
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 9.5,
+                                                      fontWeight: FontWeight.w700,
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    ] else
+                                      const Spacer(),
+                                    if (isFullscreen) ...[
+                                      const SizedBox(width: 6),
+                                      InkWell(
+                                        borderRadius: BorderRadius.circular(8),
+                                        onTap: () => _setFullscreen(false),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3.5,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black
+                                                .withValues(alpha: 0.58),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            border: Border.all(
+                                              color: Colors.white30,
+                                            ),
+                                          ),
+                                          child: const Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.fullscreen_exit_rounded,
+                                                color: Colors.white,
+                                                size: 14,
+                                              ),
+                                              SizedBox(width: 3),
+                                              Text(
+                                                'Tutup',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+
+                              // BARIS TENGAH DALAM VIDEO: -10s, Play/Pause Utama, +10s
+                              ValueListenableBuilder<bool>(
+                                valueListenable: _isPlayingNotifier,
+                                builder: (_, isPlaying, _) {
+                                  return ValueListenableBuilder<bool>(
+                                    valueListenable: _isBufferingNotifier,
+                                    builder: (_, isBuffering, _) {
+                                      return Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          IconButton(
+                                            tooltip: 'Mundur 10 detik',
+                                            onPressed: () =>
+                                                _skipRelativeSeconds(-10),
+                                            icon: Container(
+                                              padding: const EdgeInsets.all(7),
                                               decoration: BoxDecoration(
-                                                color: Colors.black.withValues(alpha: 0.55),
+                                                color: Colors.black
+                                                    .withValues(alpha: 0.45),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const Icon(
+                                                Icons.replay_10_rounded,
+                                                color: Colors.white,
+                                                size: 22,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 14),
+                                          GestureDetector(
+                                            key: const Key(
+                                                'lms_video_play_pause_btn'),
+                                            onTap: _togglePlayPause,
+                                            child: Container(
+                                              width: 56,
+                                              height: 56,
+                                              decoration: BoxDecoration(
+                                                color: Colors.black
+                                                    .withValues(alpha: 0.62),
                                                 shape: BoxShape.circle,
                                                 border: Border.all(
                                                   color: AppTheme.accentGold,
                                                   width: 2,
                                                 ),
                                               ),
+                                              alignment: Alignment.center,
+                                              child: isBuffering
+                                                  ? const SizedBox(
+                                                      width: 24,
+                                                      height: 24,
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                        strokeWidth: 2.4,
+                                                        color:
+                                                            AppTheme.accentGold,
+                                                      ),
+                                                    )
+                                                  : Icon(
+                                                      isPlaying
+                                                          ? Icons.pause_rounded
+                                                          : Icons
+                                                              .play_arrow_rounded,
+                                                      color:
+                                                          AppTheme.accentGold,
+                                                      size: 34,
+                                                    ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 14),
+                                          IconButton(
+                                            tooltip: 'Maju 10 detik',
+                                            onPressed: () =>
+                                                _skipRelativeSeconds(10),
+                                            icon: Container(
+                                              padding: const EdgeInsets.all(7),
+                                              decoration: BoxDecoration(
+                                                color: Colors.black
+                                                    .withValues(alpha: 0.45),
+                                                shape: BoxShape.circle,
+                                              ),
                                               child: const Icon(
-                                                Icons.play_arrow_rounded,
-                                                color: AppTheme.accentGold,
-                                                size: 36,
+                                                Icons.forward_10_rounded,
+                                                color: Colors.white,
+                                                size: 22,
                                               ),
                                             ),
-                                    ),
+                                          ),
+                                        ],
+                                      );
+                                    },
                                   );
                                 },
-                              );
-                            },
+                              ),
+
+                              // BARIS BAWAH DALAM VIDEO: Timeline Slider + Durasi + Speed YouTube + Fullscreen
+                              Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(10, 0, 10, 6),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SliderTheme(
+                                      data: SliderTheme.of(context).copyWith(
+                                        trackHeight: 3.2,
+                                        thumbShape:
+                                            const RoundSliderThumbShape(
+                                          enabledThumbRadius: 6.0,
+                                        ),
+                                        overlayShape:
+                                            const RoundSliderOverlayShape(
+                                          overlayRadius: 11.0,
+                                        ),
+                                        activeTrackColor: AppTheme.accentGold,
+                                        inactiveTrackColor: Colors.white30,
+                                        thumbColor: AppTheme.accentGold,
+                                      ),
+                                      child: ValueListenableBuilder<int>(
+                                        valueListenable: _durationSecNotifier,
+                                        builder: (_, durSec, _) {
+                                          final safeDur = durSec > 0
+                                              ? durSec.toDouble()
+                                              : 1.0;
+                                          return ValueListenableBuilder<double>(
+                                            valueListenable:
+                                                _positionSecNotifier,
+                                            builder: (_, posSec, _) {
+                                              return Slider(
+                                                key: const Key(
+                                                  'lms_in_video_timeline_slider',
+                                                ),
+                                                value: posSec.clamp(
+                                                    0.0, safeDur),
+                                                max: safeDur,
+                                                onChangeStart: (_) =>
+                                                    _controlsAutoHideTimer
+                                                        ?.cancel(),
+                                                onChanged: _attemptSeek,
+                                                onChangeEnd: (_) =>
+                                                    _scheduleControlsAutoHide(),
+                                              );
+                                            },
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        ValueListenableBuilder<bool>(
+                                          valueListenable: _isPlayingNotifier,
+                                          builder: (_, isPlaying, _) {
+                                            return InkWell(
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                              onTap: _togglePlayPause,
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 4,
+                                                  vertical: 2,
+                                                ),
+                                                child: Icon(
+                                                  isPlaying
+                                                      ? Icons.pause_rounded
+                                                      : Icons
+                                                          .play_arrow_rounded,
+                                                  color: Colors.white,
+                                                  size: 20,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                        const SizedBox(width: 4),
+                                        ValueListenableBuilder<int>(
+                                          valueListenable: _durationSecNotifier,
+                                          builder: (_, durSec, _) {
+                                            return ValueListenableBuilder<
+                                                double>(
+                                              valueListenable:
+                                                  _positionSecNotifier,
+                                              builder: (_, posSec, _) {
+                                                return Text(
+                                                  '${_formatClock(posSec.round())} / ${_formatClock(durSec)}',
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w800,
+                                                  ),
+                                                );
+                                              },
+                                            );
+                                          },
+                                        ),
+                                        const Spacer(),
+                                        // Tombol Kecepatan Pemutaran ala YouTube (0.75x, 1.0x, 1.1x, 1.25x, 1.5x, 1.75x, 2.0x)
+                                        PopupMenuButton<double>(
+                                          key: const Key(
+                                              'lms_speed_selector_btn'),
+                                          tooltip: 'Kecepatan Pemutaran',
+                                          color: const Color(0xFF1F1610),
+                                          onOpened: () =>
+                                              _controlsAutoHideTimer?.cancel(),
+                                          onCanceled: _scheduleControlsAutoHide,
+                                          onSelected: _setPlaybackSpeed,
+                                          itemBuilder: (context) {
+                                            return supportedPlaybackSpeeds
+                                                .map(
+                                                  (spd) =>
+                                                      PopupMenuItem<double>(
+                                                    value: spd,
+                                                    height: 34,
+                                                    child: Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Icon(
+                                                          _playbackSpeed == spd
+                                                              ? Icons
+                                                                  .check_rounded
+                                                              : Icons
+                                                                  .speed_rounded,
+                                                          size: 15,
+                                                          color:
+                                                              _playbackSpeed ==
+                                                                      spd
+                                                                  ? AppTheme
+                                                                      .accentGold
+                                                                  : Colors
+                                                                      .white54,
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 8),
+                                                        Text(
+                                                          spd == 1.0
+                                                              ? '1.0x (Normal)'
+                                                              : _formatSpeedLabel(
+                                                                  spd),
+                                                          style: TextStyle(
+                                                            color: _playbackSpeed ==
+                                                                    spd
+                                                                ? AppTheme
+                                                                    .accentGold
+                                                                : Colors.white,
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                _playbackSpeed ==
+                                                                        spd
+                                                                    ? FontWeight
+                                                                        .w800
+                                                                    : FontWeight
+                                                                        .w600,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                )
+                                                .toList();
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 3.5,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.black
+                                                  .withValues(alpha: 0.55),
+                                              borderRadius:
+                                                  BorderRadius.circular(7),
+                                              border: Border.all(
+                                                color: AppTheme.accentGold
+                                                    .withValues(alpha: 0.55),
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(
+                                                  Icons.speed_rounded,
+                                                  size: 13,
+                                                  color: AppTheme.accentGold,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  _formatSpeedLabel(
+                                                      _playbackSpeed),
+                                                  style: const TextStyle(
+                                                    color: AppTheme.accentGold,
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w800,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        // Tombol Fullscreen & Landscape
+                                        InkWell(
+                                          key: const Key(
+                                              'lms_fullscreen_toggle_btn'),
+                                          borderRadius:
+                                              BorderRadius.circular(7),
+                                          onTap: _toggleFullscreen,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4.5),
+                                            decoration: BoxDecoration(
+                                              color: Colors.black
+                                                  .withValues(alpha: 0.55),
+                                              borderRadius:
+                                                  BorderRadius.circular(7),
+                                              border: Border.all(
+                                                color: Colors.white30,
+                                              ),
+                                            ),
+                                            child: Icon(
+                                              isFullscreen
+                                                  ? Icons
+                                                      .fullscreen_exit_rounded
+                                                  : Icons.fullscreen_rounded,
+                                              color: Colors.white,
+                                              size: 18,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                      if (_streamSourceBadge != null)
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.62),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: AppTheme.accentGold.withValues(alpha: 0.5),
-                              ),
-                            ),
-                            child: Text(
-                              _streamSourceBadge!,
-                              style: const TextStyle(
-                                color: AppTheme.accentGold,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  )
-                : Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ValueListenableBuilder<bool>(
-                        valueListenable: _isPlayingNotifier,
-                        builder: (_, isPlaying, _) {
-                          return IconButton(
-                            iconSize: 54,
-                            color: AppTheme.accentGold,
-                            onPressed: _togglePlayPause,
-                            icon: Icon(
-                              isPlaying
-                                  ? Icons.pause_circle_filled_rounded
-                                  : Icons.play_circle_filled_rounded,
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 6),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          _streamStatusText ?? 'HLS Player Ready',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 12),
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
-            child: Column(
-              children: [
-                ValueListenableBuilder<int>(
-                  valueListenable: _durationSecNotifier,
-                  builder: (_, durSec, _) {
-                    final safeDur = durSec > 0 ? durSec.toDouble() : 1.0;
-                    return ValueListenableBuilder<double>(
-                      valueListenable: _positionSecNotifier,
-                      builder: (_, posSec, _) {
-                        return Slider(
-                          value: posSec.clamp(0.0, safeDur),
-                          max: safeDur,
-                          activeColor: AppTheme.accentGold,
-                          inactiveColor: Colors.white24,
-                          onChanged: _attemptSeek,
-                        );
-                      },
-                    );
-                  },
-                ),
-                Row(
-                  children: [
-                    ValueListenableBuilder<bool>(
-                      valueListenable: _isPlayingNotifier,
-                      builder: (_, isPlaying, _) {
-                        return IconButton(
-                          visualDensity: VisualDensity.compact,
-                          color: AppTheme.accentGold,
-                          onPressed: _togglePlayPause,
-                          icon: Icon(
-                            isPlaying
-                                ? Icons.pause_circle_filled_rounded
-                                : Icons.play_circle_filled_rounded,
-                            size: 28,
-                          ),
-                        );
-                      },
                     ),
-                    ValueListenableBuilder<int>(
-                      valueListenable: _durationSecNotifier,
-                      builder: (_, durSec, _) {
-                        return ValueListenableBuilder<double>(
-                          valueListenable: _positionSecNotifier,
-                          builder: (_, posSec, _) {
-                            return Text(
-                              '${_formatClock(posSec.round())} / ${_formatClock(durSec)}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ValueListenableBuilder<int>(
-                        valueListenable: _completionPctNotifier,
-                        builder: (_, pct, _) {
-                          return Text(
-                            '• 100-Bit: $pct%',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: Colors.white70, fontSize: 11),
-                          );
-                        },
-                      ),
-                    ),
-                    DropdownButton<double>(
-                      value: _playbackSpeed,
-                      dropdownColor: const Color(0xFF2B1B12),
-                      style: const TextStyle(
-                          color: AppTheme.accentGold, fontSize: 12),
-                      underline: const SizedBox.shrink(),
-                      items: const [0.75, 1.0, 1.25, 1.5]
-                          .map((r) => DropdownMenuItem(
-                                value: r,
-                                child: Text('${r}x'),
-                              ))
-                          .toList(),
-                      onChanged: (r) {
-                        if (r == null) return;
-                        setState(() => _playbackSpeed = r);
-                        if (_player != null) {
-                          unawaited(_player!.setRate(r).catchError((_) {}));
-                        }
-                      },
-                    ),
-                  ],
-                ),
-                if (lesson.chapterMarkers.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  SizedBox(
-                    height: 28,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: lesson.chapterMarkers.length,
-                      separatorBuilder: (_, _) => const SizedBox(width: 6),
-                      itemBuilder: (context, idx) {
-                        final mk = lesson.chapterMarkers[idx];
-                        final sec = (mk['sec'] as num?)?.toInt() ?? 0;
-                        final label = mk['label']?.toString() ?? 'Bab ${idx + 1}';
-                        return InkWell(
-                          borderRadius: BorderRadius.circular(8),
-                          onTap: () => _attemptSeek(sec.toDouble()),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 9, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: AppTheme.accentGold.withValues(alpha: 0.35),
-                              ),
-                            ),
-                            child: Text(
-                              '${_formatClock(sec)} $label',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ],
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

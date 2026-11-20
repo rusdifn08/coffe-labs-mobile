@@ -161,6 +161,8 @@ class LmsVideoSessionManager {
         }
 
         await player.open(Media(playableSource), play: false);
+        await player.setVolume(100.0);
+        await player.setSubtitleTrack(SubtitleTrack.no());
         if (!isTokenActive(token)) {
           await player.pause();
           await player.stop();
