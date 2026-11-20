@@ -5,9 +5,13 @@ import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
-/// Pengelola sesi pemutar video LMS yang aman terhadap bug crash ANGLE Windows
-/// (`egl::Surface::releaseTexImage` di `media_kit_video` 2.0.1) sekaligus
-/// mencegah stall UI thread saat pengguna menekan tombol Back atau berpindah sub-bab.
+import 'lms_media_kit_hot_restart_guard_stub.dart'
+    if (dart.library.ffi) 'lms_media_kit_hot_restart_guard_io.dart';
+
+/// Pengelola sesi pemutar video LMS yang aman terhadap:
+/// 1. Bug crash ANGLE Windows (`egl::Surface::releaseTexImage` di `media_kit_video` 2.0.1),
+/// 2. Fatal Dart VM crash saat Debug Hot Restart (`Callback invoked after it has been deleted`),
+/// 3. Stall UI thread saat pengguna menekan tombol Back atau berpindah sub-bab.
 class LmsVideoSessionManager {
   LmsVideoSessionManager._();
 
@@ -17,12 +21,38 @@ class LmsVideoSessionManager {
   static const int windowsSwMaxWidth = 960;
   static const int windowsSwMaxHeight = 540;
 
+  /// Jeda singkat sebelum `Player.dispose()` dijalankan setelah layar video ditutup:
+  /// - Cukup lama agar perpindahan Sub-Bab Sebelumnya/Berikutnya memakai ulang player hangat (0ms),
+  /// - Cukup singkat agar setelah tombol Back seluruh `mpv_handle` & `NativeCallable` dilepas bersih.
+  static const Duration idleDisposeDelay = Duration(milliseconds: 350);
+
   Player? _player;
   VideoController? _controller;
   StreamSubscription<VideoParams>? _windowsResizeSub;
+  Timer? _idleDisposeTimer;
 
   int _activeToken = 0;
-  Future<void> _opChain = Future<void>.value();
+  Future<void>? _pendingOp;
+
+  Future<T> _enqueue<T>(Future<T> Function() action) {
+    final prev = _pendingOp;
+    final next = (prev == null ? Future<void>.value() : prev.catchError((_) {}))
+        .then((_) => action());
+    late final Future<void> tracked;
+    tracked = next.then((_) {}, onError: (_) {}).whenComplete(() {
+      if (identical(_pendingOp, tracked)) {
+        _pendingOp = null;
+      }
+    });
+    _pendingOp = tracked;
+    return next;
+  }
+
+  /// Membersihkan wakeup callback libmpv dari isolate sebelumnya tepat sebelum
+  /// `MediaKit.ensureInitialized()` dipanggil pada Hot Restart debug desktop.
+  static void sanitizeDebugHotRestartCallbacks() {
+    sanitizeMediaKitHotRestartCallbacksImpl();
+  }
 
   /// Mengembalikan konfigurasi [VideoControllerConfiguration] yang aman per platform.
   ///
@@ -65,11 +95,15 @@ class LmsVideoSessionManager {
 
   int get activeToken => _activeToken;
 
+  bool get hasPendingIdleDispose => _idleDisposeTimer?.isActive ?? false;
+
   bool isTokenActive(int token) => token != 0 && token == _activeToken;
 
   /// Mengambil kepemilikan sesi video baru (menggantikan pemilik sebelumnya secara aman,
   /// termasuk saat transisi `Navigator.pushReplacement`).
   int acquireSession() {
+    _idleDisposeTimer?.cancel();
+    _idleDisposeTimer = null;
     _activeToken++;
     return _activeToken;
   }
@@ -110,12 +144,9 @@ class LmsVideoSessionManager {
     required int token,
     required String playableSource,
   }) {
-    final completer = Completer<(Player, VideoController)?>();
-
-    _opChain = _opChain.then((_) async {
+    return _enqueue<(Player, VideoController)?>(() async {
       if (!isTokenActive(token)) {
-        completer.complete(null);
-        return;
+        return null;
       }
       try {
         _ensureInitialized();
@@ -126,45 +157,44 @@ class LmsVideoSessionManager {
         await player.setRate(1.0);
         if (!isTokenActive(token)) {
           await player.stop();
-          completer.complete(null);
-          return;
+          return null;
         }
 
         await player.open(Media(playableSource), play: false);
         if (!isTokenActive(token)) {
           await player.pause();
           await player.stop();
-          completer.complete(null);
-          return;
+          return null;
         }
 
-        completer.complete((player, controller));
+        return (player, controller);
       } catch (err) {
         debugPrint('LmsVideoSessionManager.openMedia error: $err');
-        completer.complete(null);
+        return null;
       }
     });
-
-    return completer.future;
   }
 
   /// Menjeda pemutaran apabila [token] masih memegang sesi aktif.
   void pauseIfActive(int token) {
     if (!isTokenActive(token) || _player == null) return;
-    _opChain = _opChain.then((_) async {
-      if (!isTokenActive(token) || _player == null) return;
-      try {
-        await _player!.pause();
-      } catch (_) {}
-    });
+    unawaited(
+      _enqueue<void>(() async {
+        if (!isTokenActive(token) || _player == null) return;
+        try {
+          await _player!.pause();
+        } catch (_) {}
+      }),
+    );
   }
 
   /// Melepas sesi saat layar ditutup (`dispose`).
   ///
-  /// Tidak menghancurkan `VideoOutput` native secara sinkron di UI thread (yang
-  /// memicu stall `promise.get_future().wait()` maupun crash `ANGLESurfaceManager`),
-  /// melainkan menghentikan media (`pause` + `stop`) sehingga audio dan buffer frame
-  /// segera dibebaskan tanpa lag saat navigasi Back.
+  /// 1. Menghentikan audio seketika (0ms latency) tanpa memblokir transisi Back.
+  /// 2. Setelah jeda singkat [idleDisposeDelay], bila tidak ada sub-bab baru yang
+  ///    mengambil alih sesi, memanggil `player.dispose()` secara terurut agar
+  ///    `mpv_set_wakeup_callback`, `NativeCallable`, dan `NativeReferenceHolder`
+  ///    dilepas tuntas (mencegah leak & crash Dart VM saat Hot Restart).
   void releaseSession(int token) {
     if (!isTokenActive(token)) return;
     _activeToken++; // Invalidasi token lama segera agar openMedia yang sedang berjalan batal
@@ -175,13 +205,58 @@ class LmsVideoSessionManager {
     // Hentikan audio seketika (0ms latency) tanpa memblokir UI thread
     unawaited(player.pause().catchError((_) {}));
 
-    _opChain = _opChain.then((_) async {
-      // Skip bila layar baru sudah mengambil alih sesi untuk sub-bab lain
-      if (_activeToken != releasedEpoch || _player != player) return;
-      try {
-        await player.pause();
-        await player.stop();
-      } catch (_) {}
+    _idleDisposeTimer?.cancel();
+    _idleDisposeTimer = Timer(idleDisposeDelay, () {
+      _idleDisposeTimer = null;
+      if (_activeToken != releasedEpoch) return;
+      _enqueueDisposeIfIdle(releasedEpoch);
     });
+  }
+
+  void _enqueueDisposeIfIdle(int expectedEpoch) {
+    unawaited(
+      _enqueue<void>(() async {
+        if (_activeToken != expectedEpoch) return;
+        await _disposeActivePlayerLocked();
+      }),
+    );
+  }
+
+  /// Melepas seluruh instance `Player` secara eksplisit (mis. saat shutdown/detached).
+  Future<void> disposeImmediately() {
+    _idleDisposeTimer?.cancel();
+    _idleDisposeTimer = null;
+    _activeToken++;
+    if (_player == null && _windowsResizeSub == null && _pendingOp == null) {
+      return Future<void>.value();
+    }
+    return _enqueue<void>(_disposeActivePlayerLocked);
+  }
+
+  Future<void> _disposeActivePlayerLocked() async {
+    final player = _player;
+    _player = null;
+    _controller = null;
+
+    final sub = _windowsResizeSub;
+    _windowsResizeSub = null;
+    if (sub != null) {
+      try {
+        await sub.cancel();
+      } catch (_) {}
+    }
+
+    if (player == null) return;
+    try {
+      await player.pause();
+    } catch (_) {}
+    try {
+      await player.stop();
+    } catch (_) {}
+    try {
+      await player.dispose();
+    } catch (err) {
+      debugPrint('LmsVideoSessionManager.dispose error: $err');
+    }
   }
 }

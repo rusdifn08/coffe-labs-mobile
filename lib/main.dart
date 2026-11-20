@@ -10,6 +10,7 @@ import 'core/router/app_router.dart';
 import 'data/world_indonesia_beans_service.dart';
 import 'features/admin_control/widgets/active_feature_lock_kickout_overlay.dart';
 import 'features/auth/controllers/auth_controller.dart';
+import 'features/barista_toolkit/data/lms_video_session_manager.dart';
 import 'features/bean_scanner/services/coffee_knowledge_graph_service.dart';
 import 'features/communities/presentation/services/community_deep_link_listener.dart';
 import 'features/monitoring/data/telemetry_batch_outbox_service.dart';
@@ -37,9 +38,12 @@ void main() {
     unawaited(WorldIndonesiaBeansService.instance.ensureLoaded());
   });
 
-  // Inisialisasi native libmpv media_kit secara aman di luar Flutter VM test
+  // Inisialisasi native libmpv media_kit secara aman di luar Flutter VM test.
+  // Pada Windows Debug Hot Restart, kosongkan wakeup callback libmpv isolate lama
+  // sebelum MediaKit.ensureInitialized() mengirim "quit" agar tidak crash Dart VM.
   if (!kIsWeb && !Platform.environment.containsKey('FLUTTER_TEST')) {
     try {
+      LmsVideoSessionManager.sanitizeDebugHotRestartCallbacks();
       MediaKit.ensureInitialized();
     } catch (_) {}
   }

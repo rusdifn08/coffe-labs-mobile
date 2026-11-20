@@ -10,6 +10,7 @@ import '../../../core/router/app_router.dart';
 import '../../../services/auth_service.dart';
 import '../../../theme/app_theme.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../barista_toolkit/data/lms_video_session_manager.dart';
 import '../controllers/system_control_sync_controller.dart';
 import '../models/admin_control_models.dart';
 
@@ -83,6 +84,8 @@ class _ActiveFeatureLockKickoutWatcherState
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(ref.read(systemControlProvider.notifier).syncFromRest());
+    } else if (state == AppLifecycleState.detached) {
+      unawaited(LmsVideoSessionManager.instance.disposeImmediately());
     }
   }
 

@@ -395,8 +395,8 @@ void main() {
     });
 
     test(
-      'LmsVideoSessionManager enforces safe Windows S/W config (prevents ANGLE Surface.cpp:528 crash) & guards session tokens',
-      () {
+      'LmsVideoSessionManager enforces safe Windows S/W config (prevents ANGLE Surface.cpp:528 crash) & guards session tokens and hot-restart callbacks',
+      () async {
         final winCfg = LmsVideoSessionManager.buildVideoControllerConfig(isWindows: true);
         expect(winCfg.enableHardwareAcceleration, isFalse);
         expect(winCfg.hwdec, 'no');
@@ -409,6 +409,9 @@ void main() {
         expect(LmsVideoSessionManager.computeWindowsSwSize(1920, 1080), (960, 540));
         expect(LmsVideoSessionManager.computeWindowsSwSize(1280, 720), (960, 540));
         expect(LmsVideoSessionManager.computeWindowsSwSize(640, 360), (640, 360));
+
+        // Guard hot-restart callback sanitizer harus aman dipanggil (no-op di FLUTTER_TEST)
+        expect(LmsVideoSessionManager.sanitizeDebugHotRestartCallbacks, returnsNormally);
 
         // Token ownership safety during pushReplacement
         final mgr = LmsVideoSessionManager.instance;
@@ -423,9 +426,11 @@ void main() {
         mgr.releaseSession(t1);
         expect(mgr.isTokenActive(t2), isTrue);
 
-        // Releasing active Screen 2 invalidates t2 cleanly
+        // Releasing active Screen 2 invalidates t2 cleanly & disposeImmediately completes safely
         mgr.releaseSession(t2);
         expect(mgr.isTokenActive(t2), isFalse);
+        await mgr.disposeImmediately();
+        expect(mgr.hasPendingIdleDispose, isFalse);
       },
     );
 
