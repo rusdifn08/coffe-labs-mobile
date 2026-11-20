@@ -31,6 +31,8 @@ class PayoutChannelOption {
 }
 
 class AffiliateProgramTerms {
+  final bool isProgramActive;
+  final bool allowFreeTierAffiliates;
   final int buyerDiscountBps;
   final int affiliateCommissionBps;
   final int minWithdrawalIdr;
@@ -39,6 +41,8 @@ class AffiliateProgramTerms {
   final int businessExampleCommissionIdr;
 
   const AffiliateProgramTerms({
+    this.isProgramActive = true,
+    this.allowFreeTierAffiliates = false,
     this.buyerDiscountBps = 1000,
     this.affiliateCommissionBps = 2000,
     this.minWithdrawalIdr = 100000,
@@ -52,6 +56,8 @@ class AffiliateProgramTerms {
 
   factory AffiliateProgramTerms.fromJson(Map<String, dynamic> j) {
     return AffiliateProgramTerms(
+      isProgramActive: j['is_program_active'] != false,
+      allowFreeTierAffiliates: j['allow_free_tier_affiliates'] == true,
       buyerDiscountBps: ((j['buyer_discount_bps'] as num?) ?? 1000).toInt(),
       affiliateCommissionBps:
           ((j['affiliate_commission_bps'] as num?) ?? 2000).toInt(),

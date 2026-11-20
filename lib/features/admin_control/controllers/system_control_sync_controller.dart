@@ -67,6 +67,13 @@ final dynamicPlansProvider = Provider<List<DynamicPlanPricingItem>>((ref) {
   return ref.watch(systemControlProvider.select((s) => s.snapshot.plans));
 });
 
+/// Selector konfigurasi komisi afiliasi (10%/20%) & akses Pro/Free real-time.
+final affiliateControlProvider = Provider<AffiliateControlConfig>((ref) {
+  return ref.watch(
+    systemControlProvider.select((s) => s.snapshot.affiliateConfig),
+  );
+});
+
 final dynamicPlanPricingProvider =
     Provider.family<DynamicPlanPricingItem?, String>((ref, planCode) {
   final target = planCode.toUpperCase();
@@ -283,6 +290,36 @@ class SystemControlSyncController extends Notifier<SystemControlState> {
         durationDays: durationDays,
         isActive: isActive,
         isHighlighted: isHighlighted,
+        reasonNote: reasonNote,
+      );
+      applyIncomingSnapshot(snap, force: true);
+      return true;
+    } catch (e) {
+      state = state.copyWith(errorMessage: e.toString());
+      return false;
+    } finally {
+      if (!_disposed) {
+        state = state.copyWith(isMutating: false);
+      }
+    }
+  }
+
+  Future<bool> updateAffiliateConfig({
+    required bool isProgramActive,
+    required int affiliateCommissionPercent,
+    required int buyerDiscountPercent,
+    required bool allowFreeTierAffiliates,
+    int? minWithdrawalIdr,
+    String? reasonNote,
+  }) async {
+    state = state.copyWith(isMutating: true, clearError: true);
+    try {
+      final snap = await _api.updateAffiliateConfig(
+        isProgramActive: isProgramActive,
+        affiliateCommissionPercent: affiliateCommissionPercent,
+        buyerDiscountPercent: buyerDiscountPercent,
+        allowFreeTierAffiliates: allowFreeTierAffiliates,
+        minWithdrawalIdr: minWithdrawalIdr,
         reasonNote: reasonNote,
       );
       applyIncomingSnapshot(snap, force: true);

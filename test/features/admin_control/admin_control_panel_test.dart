@@ -107,6 +107,33 @@ class _FakeAdminControlApiService extends AdminControlApiService {
       connectedClients: currentSnapshot.connectedClients,
       features: currentSnapshot.features,
       plans: updatedPlans,
+      affiliateConfig: currentSnapshot.affiliateConfig,
+      updatedAt: DateTime.now(),
+    );
+    return currentSnapshot;
+  }
+
+  @override
+  Future<SystemControlSnapshot> updateAffiliateConfig({
+    required bool isProgramActive,
+    required int affiliateCommissionPercent,
+    int buyerDiscountPercent = 10,
+    required bool allowFreeTierAffiliates,
+    int? minWithdrawalIdr,
+    String? reasonNote,
+  }) async {
+    currentSnapshot = SystemControlSnapshot(
+      configVersion: currentSnapshot.configVersion + 1,
+      connectedClients: currentSnapshot.connectedClients,
+      features: currentSnapshot.features,
+      plans: currentSnapshot.plans,
+      affiliateConfig: AffiliateControlConfig(
+        isProgramActive: isProgramActive,
+        affiliateCommissionPercent: affiliateCommissionPercent,
+        buyerDiscountPercent: buyerDiscountPercent,
+        allowFreeTierAffiliates: allowFreeTierAffiliates,
+        minWithdrawalIdr: minWithdrawalIdr ?? 20000,
+      ),
       updatedAt: DateTime.now(),
     );
     return currentSnapshot;
@@ -535,9 +562,13 @@ void main() {
       expect(find.text('Unlock Semua'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
-      // Tab 2: Dynamic Pricing Pro & Business
+      // Tab 2: Dynamic Pricing Pro & Business + Affiliate Control (10% / 20% & Pro / Free)
       await tester.tap(find.text('Harga Pro/Bisnis'));
       await tester.pumpAndSettle();
+      expect(find.text('KONTROL AFILIASI'), findsOneWidget);
+      expect(find.text('10%'), findsOneWidget);
+      expect(find.text('20%'), findsOneWidget);
+      expect(find.textContaining('Pro & Free'), findsOneWidget);
       expect(find.textContaining('Coffee Labs Pro Lifetime'), findsOneWidget);
       expect(find.textContaining('Simpan & Update Real-Time'), findsWidgets);
       expect(tester.takeException(), isNull);

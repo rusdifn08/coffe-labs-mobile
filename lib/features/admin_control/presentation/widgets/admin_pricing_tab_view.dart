@@ -19,9 +19,18 @@ class AdminPricingTabView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final affCfg = ref.watch(affiliateControlProvider);
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
       children: [
+        _AdminAffiliateControlCard(
+          key: ValueKey(
+            'aff_${affCfg.affiliateCommissionPercent}_${affCfg.allowFreeTierAffiliates}_${affCfg.buyerDiscountPercent}',
+          ),
+          config: affCfg,
+          isMutating: isMutating,
+        ),
+        const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(13),
           decoration: BoxDecoration(
@@ -31,15 +40,15 @@ class AdminPricingTabView extends ConsumerWidget {
               color: const Color(0xFFD97706).withValues(alpha: 0.35),
             ),
           ),
-          child: const Row(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.shield_outlined, size: 18, color: Color(0xFF92400E)),
-              SizedBox(width: 8),
+              const Icon(Icons.shield_outlined, size: 18, color: Color(0xFF92400E)),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Perubahan harga langsung aktif real-time di layar Upgrade, QRIS Dinamis & Komisi Afiliasi 20%. Invoice QRIS yang masih PENDING tetap aman.',
-                  style: TextStyle(
+                  'Perubahan harga langsung aktif real-time di layar Upgrade, QRIS Dinamis & Komisi Afiliasi ${affCfg.affiliateCommissionPercent}%. Invoice QRIS yang masih PENDING tetap aman.',
+                  style: const TextStyle(
                     fontSize: 11.5,
                     color: Color(0xFF78350F),
                     height: 1.35,
@@ -61,6 +70,272 @@ class AdminPricingTabView extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _AdminAffiliateControlCard extends ConsumerStatefulWidget {
+  final AffiliateControlConfig config;
+  final bool isMutating;
+
+  const _AdminAffiliateControlCard({
+    super.key,
+    required this.config,
+    required this.isMutating,
+  });
+
+  @override
+  ConsumerState<_AdminAffiliateControlCard> createState() =>
+      _AdminAffiliateControlCardState();
+}
+
+class _AdminAffiliateControlCardState
+    extends ConsumerState<_AdminAffiliateControlCard> {
+  late int _commissionPct;
+  late int _discountPct;
+  late bool _allowFreeTier;
+  late bool _isProgramActive;
+
+  @override
+  void initState() {
+    super.initState();
+    _commissionPct = widget.config.affiliateCommissionPercent;
+    _discountPct = widget.config.buyerDiscountPercent;
+    _allowFreeTier = widget.config.allowFreeTierAffiliates;
+    _isProgramActive = widget.config.isProgramActive;
+  }
+
+  Future<void> _saveAffiliate() async {
+    final ok = await ref
+        .read(systemControlProvider.notifier)
+        .updateAffiliateConfig(
+          isProgramActive: _isProgramActive,
+          affiliateCommissionPercent: _commissionPct,
+          buyerDiscountPercent: _discountPct,
+          allowFreeTierAffiliates: _allowFreeTier,
+          minWithdrawalIdr: widget.config.minWithdrawalIdr,
+        );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: ok ? const Color(0xFF047857) : const Color(0xFFDC2626),
+        content: Text(
+          ok
+              ? 'Aturan Afiliasi ($_commissionPct% • ${_allowFreeTier ? "Pro & Free" : "Khusus Pro"}) aktif real-time!'
+              : 'Gagal menyimpan aturan afiliasi.',
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: const Color(0xFF047857).withValues(alpha: 0.4),
+          width: 1.4,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                child: const Text(
+                  'KONTROL AFILIASI',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF047857),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Komisi $_commissionPct% • ${_allowFreeTier ? "Pro & Free" : "Khusus Pro"}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.textDark,
+                  ),
+                ),
+              ),
+              Switch.adaptive(
+                value: _isProgramActive,
+                activeThumbColor: const Color(0xFF047857),
+                onChanged: (v) => setState(() => _isProgramActive = v),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            '1. Pilih Persentase Komisi Afiliator:',
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.textDark,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [10, 15, 20, 25].map((pct) {
+              final selected = _commissionPct == pct;
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: () => setState(() => _commissionPct = pct),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? AppTheme.primaryBrown
+                            : AppTheme.bgCream,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: selected
+                              ? AppTheme.primaryBrown
+                              : AppTheme.borderWarm,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '$pct%',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          color: selected ? Colors.white : AppTheme.textDark,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            '2. Kontrol Akses Peserta Afiliasi:',
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.textDark,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: () => setState(() => _allowFreeTier = false),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: !_allowFreeTier
+                          ? AppTheme.primaryBrown
+                          : AppTheme.bgCream,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: !_allowFreeTier
+                            ? AppTheme.primaryBrown
+                            : AppTheme.borderWarm,
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '🔒 Khusus Pro',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        color: !_allowFreeTier
+                            ? Colors.white
+                            : AppTheme.textDark,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: () => setState(() => _allowFreeTier = true),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _allowFreeTier
+                          ? const Color(0xFF047857)
+                          : AppTheme.bgCream,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: _allowFreeTier
+                            ? const Color(0xFF047857)
+                            : AppTheme.borderWarm,
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '🌍 Pro & Free',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        color:
+                            _allowFreeTier ? Colors.white : AppTheme.textDark,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            height: 40,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF047857),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(11),
+                ),
+              ),
+              onPressed: widget.isMutating ? null : _saveAffiliate,
+              icon: const Icon(Icons.bolt_rounded, size: 16),
+              label: const Text(
+                'Terapkan Komisi & Akses Afiliasi',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -412,6 +412,61 @@ class AdminControlAuditLogItem {
   }
 }
 
+class AffiliateControlConfig {
+  final bool isProgramActive;
+  final int affiliateCommissionBps;
+  final int affiliateCommissionPercent;
+  final int buyerDiscountBps;
+  final int buyerDiscountPercent;
+  final bool allowFreeTierAffiliates;
+  final int minWithdrawalIdr;
+
+  const AffiliateControlConfig({
+    this.isProgramActive = true,
+    this.affiliateCommissionBps = 2000,
+    this.affiliateCommissionPercent = 20,
+    this.buyerDiscountBps = 1000,
+    this.buyerDiscountPercent = 10,
+    this.allowFreeTierAffiliates = false,
+    this.minWithdrawalIdr = 100000,
+  });
+
+  factory AffiliateControlConfig.fromJson(Map<String, dynamic>? j) {
+    if (j == null) return const AffiliateControlConfig();
+    final commBps = ((j['affiliate_commission_bps'] as num?) ??
+            (((j['affiliate_commission_percent'] as num?) ?? 20) * 100))
+        .toInt();
+    final discBps = ((j['buyer_discount_bps'] as num?) ??
+            (((j['buyer_discount_percent'] as num?) ?? 10) * 100))
+        .toInt();
+    return AffiliateControlConfig(
+      isProgramActive: j['is_program_active'] != false,
+      affiliateCommissionBps: commBps,
+      affiliateCommissionPercent:
+          ((j['affiliate_commission_percent'] as num?) ?? (commBps ~/ 100))
+              .toInt()
+              .clamp(1, 50),
+      buyerDiscountBps: discBps,
+      buyerDiscountPercent:
+          ((j['buyer_discount_percent'] as num?) ?? (discBps ~/ 100))
+              .toInt()
+              .clamp(0, 50),
+      allowFreeTierAffiliates: j['allow_free_tier_affiliates'] == true,
+      minWithdrawalIdr: ((j['min_withdrawal_idr'] as num?) ?? 100000).toInt(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'is_program_active': isProgramActive,
+        'affiliate_commission_bps': affiliateCommissionBps,
+        'affiliate_commission_percent': affiliateCommissionPercent,
+        'buyer_discount_bps': buyerDiscountBps,
+        'buyer_discount_percent': buyerDiscountPercent,
+        'allow_free_tier_affiliates': allowFreeTierAffiliates,
+        'min_withdrawal_idr': minWithdrawalIdr,
+      };
+}
+
 class SystemControlSnapshot {
   final int configVersion;
   final bool globalMaintenanceMode;
@@ -420,6 +475,7 @@ class SystemControlSnapshot {
   final Map<String, FeatureControlItem> featuresByKey;
   final List<FeatureControlItem> features;
   final List<DynamicPlanPricingItem> plans;
+  final AffiliateControlConfig affiliateConfig;
   final DateTime? updatedAt;
 
   SystemControlSnapshot({
@@ -429,6 +485,7 @@ class SystemControlSnapshot {
     this.connectedClients = 0,
     required this.features,
     required this.plans,
+    this.affiliateConfig = const AffiliateControlConfig(),
     this.updatedAt,
   }) : featuresByKey = {
           for (final f in features) f.featureKey.toUpperCase(): f,
@@ -438,6 +495,7 @@ class SystemControlSnapshot {
         configVersion: 0,
         features: defaultToolkitFeatures,
         plans: defaultDynamicPlans,
+        affiliateConfig: const AffiliateControlConfig(),
       );
 
   FeatureControlItem? featureForKey(String featureKey) =>
@@ -455,6 +513,9 @@ class SystemControlSnapshot {
   factory SystemControlSnapshot.fromJson(Map<String, dynamic> j) {
     final rawFeatures = j['features'] as List<dynamic>? ?? const [];
     final rawPlans = j['plans'] as List<dynamic>? ?? const [];
+    final rawAff = j['affiliate_config'] is Map
+        ? Map<String, dynamic>.from(j['affiliate_config'] as Map)
+        : null;
     return SystemControlSnapshot(
       configVersion: ((j['config_version'] as num?) ?? 1).toInt(),
       globalMaintenanceMode: j['global_maintenance_mode'] == true,
@@ -468,6 +529,7 @@ class SystemControlSnapshot {
           .whereType<Map>()
           .map((e) => DynamicPlanPricingItem.fromJson(Map<String, dynamic>.from(e)))
           .toList(),
+      affiliateConfig: AffiliateControlConfig.fromJson(rawAff),
       updatedAt: j['updated_at'] != null
           ? DateTime.tryParse(j['updated_at'].toString())
           : null,
@@ -481,6 +543,7 @@ class SystemControlSnapshot {
         'connected_clients': connectedClients,
         'features': features.map((f) => f.toJson()).toList(),
         'plans': plans.map((p) => p.toJson()).toList(),
+        'affiliate_config': affiliateConfig.toJson(),
         'updated_at': updatedAt?.toUtc().toIso8601String(),
       };
 

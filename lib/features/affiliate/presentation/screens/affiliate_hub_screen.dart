@@ -310,9 +310,9 @@ class _AffiliateHubScreenState extends ConsumerState<AffiliateHubScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              const Text(
-                'Jadi Partner Afiliasi Coffee Labs & Raih Komisi 20%!',
-                style: TextStyle(
+              Text(
+                'Jadi Partner Afiliasi Coffee Labs & Raih Komisi ${terms.commissionPercent}%!',
+                style: const TextStyle(
                   color: Color(0xFFF9F5EE),
                   fontSize: 17,
                   fontWeight: FontWeight.w900,

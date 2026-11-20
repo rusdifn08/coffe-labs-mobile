@@ -195,4 +195,28 @@ class AdminControlApiService {
         .map((e) => AdminControlAuditLogItem.fromJson(Map<String, dynamic>.from(e)))
         .toList();
   }
+
+  Future<SystemControlSnapshot> updateAffiliateConfig({
+    required bool isProgramActive,
+    required int affiliateCommissionPercent,
+    required int buyerDiscountPercent,
+    required bool allowFreeTierAffiliates,
+    int? minWithdrawalIdr,
+    String? reasonNote,
+  }) async {
+    final resp = await _dio.put<dynamic>(
+      '/api/v1/admin/control/affiliate',
+      options: await _authOptions(),
+      data: {
+        'is_program_active': isProgramActive,
+        'affiliate_commission_percent': affiliateCommissionPercent.clamp(1, 50),
+        'buyer_discount_percent': buyerDiscountPercent.clamp(0, 50),
+        'allow_free_tier_affiliates': allowFreeTierAffiliates,
+        'min_withdrawal_idr': minWithdrawalIdr,
+        'reason_note': reasonNote,
+      },
+    );
+    final payload = Map<String, dynamic>.from(resp.data['data'] as Map);
+    return SystemControlSnapshot.fromJson(payload);
+  }
 }

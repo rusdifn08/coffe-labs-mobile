@@ -1,11 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../admin_control/controllers/system_control_sync_controller.dart';
 import '../screens/affiliate_hub_screen.dart';
 
-/// Kartu kompak Program Afiliasi Coffee Labs 20% pada halaman Profil.
-/// Aktif otomatis untuk akun Pro, Business & Admin; menampilkan badge Pro untuk Trial.
-class AffiliateProfileLauncherCard extends StatelessWidget {
+/// Kartu kompak Program Afiliasi Coffee Labs pada halaman Profil.
+/// Persentase komisi (mis. 10% atau 20%) & hak akses (Khusus Pro vs Pro & Free)
+/// tersinkron real-time dari Admin Control Panel.
+class AffiliateProfileLauncherCard extends ConsumerWidget {
   final bool isProEligible;
   final VoidCallback? onReturned;
 
@@ -16,11 +19,16 @@ class AffiliateProfileLauncherCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final affCfg = ref.watch(affiliateControlProvider);
+    final commPct = affCfg.affiliateCommissionPercent;
+    final effectiveEligible =
+        isProEligible || affCfg.allowFreeTierAffiliates;
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isProEligible
+          colors: effectiveEligible
               ? const [Color(0xFF064E3B), Color(0xFF065F46)]
               : const [Color(0xFF2B1D12), Color(0xFF3E2717)],
           begin: Alignment.topLeft,
@@ -28,14 +36,14 @@ class AffiliateProfileLauncherCard extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isProEligible
+          color: effectiveEligible
               ? const Color(0xFF34D399).withValues(alpha: 0.45)
               : const Color(0xFFD4A373).withValues(alpha: 0.45),
           width: 1.1,
         ),
         boxShadow: [
           BoxShadow(
-            color: (isProEligible
+            color: (effectiveEligible
                     ? const Color(0xFF064E3B)
                     : const Color(0xFF2B1D12))
                 .withValues(alpha: 0.16),
@@ -67,10 +75,10 @@ class AffiliateProfileLauncherCard extends StatelessWidget {
                   ),
                   alignment: Alignment.center,
                   child: Icon(
-                    isProEligible
+                    effectiveEligible
                         ? CupertinoIcons.money_dollar_circle_fill
                         : CupertinoIcons.gift_fill,
-                    color: isProEligible
+                    color: effectiveEligible
                         ? const Color(0xFF6EE7B7)
                         : const Color(0xFFD4A373),
                     size: 21,
@@ -82,9 +90,9 @@ class AffiliateProfileLauncherCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        'Program Afiliasi 20%',
-                        style: TextStyle(
+                      Text(
+                        'Program Afiliasi $commPct%',
+                        style: const TextStyle(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
@@ -95,9 +103,9 @@ class AffiliateProfileLauncherCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        isProEligible
+                        effectiveEligible
                             ? 'Bagikan kode referral & tarik saldo ke Bank/E-Wallet'
-                            : 'Aktifkan akun Pro untuk dapat kode & komisi 20%',
+                            : 'Aktifkan akun Pro untuk dapat kode & komisi $commPct%',
                         style: TextStyle(
                           fontSize: 11,
                           color: Colors.white.withValues(alpha: 0.84),
@@ -115,15 +123,15 @@ class AffiliateProfileLauncherCard extends StatelessWidget {
                     vertical: 2.5,
                   ),
                   decoration: BoxDecoration(
-                    color: isProEligible
+                    color: effectiveEligible
                         ? const Color(0xFFDCFCE7)
                         : const Color(0xFFD4A373),
                     borderRadius: BorderRadius.circular(7),
                   ),
                   child: Text(
-                    isProEligible ? 'KOMISI 20%' : 'PRO',
+                    effectiveEligible ? 'KOMISI $commPct%' : 'PRO',
                     style: TextStyle(
-                      color: isProEligible
+                      color: effectiveEligible
                           ? const Color(0xFF065F46)
                           : const Color(0xFF12100E),
                       fontSize: 9.5,
