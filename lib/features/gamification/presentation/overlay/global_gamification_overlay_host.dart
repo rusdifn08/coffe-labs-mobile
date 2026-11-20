@@ -3,9 +3,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../auth/controllers/auth_controller.dart';
-import '../controllers/gamification_reward_queue_controller.dart';
-import '../models/gamification_reward_delta.dart';
+import '../../../auth/controllers/auth_controller.dart';
+import '../../controllers/gamification_reward_queue_controller.dart';
+import '../../models/gamification_reward_delta.dart';
 import 'exp_orb_bezier_painter.dart';
 
 /// Root-level 120 FPS Floating Profile EXP Animation Host.

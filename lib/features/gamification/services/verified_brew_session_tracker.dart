@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
-import '../models/coffee_level.dart';
 import '../models/gamification_reward_delta.dart';
 import 'gamification_service.dart';
 
