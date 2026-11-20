@@ -139,9 +139,27 @@ class AuthAndRefreshInterceptor extends QueuedInterceptor {
 
 /// Interceptor Pemetaan Error Global (401, 403, 404, 500, Timeout) & Logging Diagnostik.
 class GlobalErrorAndLoggingInterceptor extends Interceptor {
+  static const List<String> _silentPathFragments = [
+    '/monitoring/heartbeat',
+    '/monitoring/telemetry',
+    '/system/control-snapshot',
+  ];
+
+  static bool shouldSilenceLogs(RequestOptions options) {
+    if (options.extra['silentTelemetry'] == true ||
+        options.extra['silentLog'] == true) {
+      return true;
+    }
+    final path = options.uri.path.isNotEmpty ? options.uri.path : options.path;
+    for (final fragment in _silentPathFragments) {
+      if (path.contains(fragment)) return true;
+    }
+    return false;
+  }
+
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    if (kDebugMode) {
+    if (kDebugMode && !shouldSilenceLogs(options)) {
       debugPrint('🌐 [DIO REQ] ${options.method} ${options.uri}');
     }
     handler.next(options);
@@ -149,7 +167,7 @@ class GlobalErrorAndLoggingInterceptor extends Interceptor {
 
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
-    if (kDebugMode) {
+    if (kDebugMode && !shouldSilenceLogs(response.requestOptions)) {
       debugPrint('✅ [DIO RES] ${response.statusCode} ${response.requestOptions.uri}');
     }
     handler.next(response);
@@ -157,7 +175,7 @@ class GlobalErrorAndLoggingInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    if (kDebugMode && err.requestOptions.extra['silentTelemetry'] != true) {
+    if (kDebugMode && !shouldSilenceLogs(err.requestOptions)) {
       debugPrint('❌ [DIO ERR] ${err.response?.statusCode ?? err.type} ${err.requestOptions.uri}: ${err.message}');
     }
     handler.next(err);

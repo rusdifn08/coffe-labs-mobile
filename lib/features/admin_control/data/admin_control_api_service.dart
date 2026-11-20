@@ -70,7 +70,10 @@ class AdminControlApiService {
       queryParameters: sinceVersion != null && sinceVersion > 0
           ? {'since_version': sinceVersion}
           : null,
-      options: Options(validateStatus: (s) => s != null && (s == 200 || s == 304)),
+      options: Options(
+        validateStatus: (s) => s != null && (s == 200 || s == 304),
+        extra: const {'silentLog': true},
+      ),
     );
     if (resp.statusCode == 304 || resp.data == null) return null;
     final body = resp.data;
