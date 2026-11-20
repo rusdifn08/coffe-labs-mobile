@@ -14,6 +14,7 @@ import 'features/auth/controllers/auth_controller.dart';
 import 'features/barista_toolkit/data/lms_video_session_manager.dart';
 import 'features/bean_scanner/services/coffee_knowledge_graph_service.dart';
 import 'features/communities/presentation/services/community_deep_link_listener.dart';
+import 'features/gamification/presentation/overlay/global_gamification_overlay_host.dart';
 import 'features/monitoring/data/telemetry_batch_outbox_service.dart';
 import 'features/notifications/data/services/device_token_lifecycle_service.dart';
 import 'features/notifications/data/services/local_push_orchestrator.dart';
@@ -159,7 +160,9 @@ class CoffeeHubApp extends ConsumerWidget {
             : (child ?? const SizedBox());
         return ActiveFeatureLockKickoutWatcher(
           router: router,
-          child: CommunityDeepLinkListener(child: content),
+          child: CommunityDeepLinkListener(
+            child: GlobalGamificationOverlayHost(child: content),
+          ),
         );
       },
     );

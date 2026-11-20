@@ -21,7 +21,10 @@ import '../features/brew/timer/widgets/brew_spec_header_bar.dart';
 import '../features/brew/timer/widgets/brew_iced_banner.dart';
 import '../features/brew/timer/widgets/brew_scale_live_badge.dart';
 import '../features/brew/tts/brewing_tts_service.dart';
+import '../core/network/dio_client.dart';
+import '../features/gamification/controllers/gamification_reward_queue_controller.dart';
 import '../features/gamification/services/gamification_service.dart';
+import '../features/gamification/services/verified_brew_session_tracker.dart';
 import '../features/monitoring/data/telemetry_batch_outbox_service.dart';
 import '../features/brew/timer/widgets/barista_espresso_cockpit.dart';
 import '../features/live_brew/domain/live_brew_models.dart';
@@ -50,6 +53,7 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
   bool _useBaristaCockpit = true;
   final ScrollController _stepScrollController = ScrollController();
   int _lastScrolledStepIndex = -1;
+  VerifiedBrewSessionTracker? _brewTracker;
 
   // TTS Tracking sets to prevent duplicate vocal prompts
   final Set<int> _announcedStepIndices = {};
@@ -89,7 +93,6 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
         .toList();
 
     _recomputeTotalSeconds();
-    ApiService.recordBrew(_recipe);
     TrialService.recordTrialBrew();
 
     unawaited(BrewingTTSService.instance.preloadRecipeSteps(_recipe));
@@ -198,6 +201,23 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
 
   void _startMainTimer() {
     _prepTimer?.cancel();
+    if (_brewTracker == null) {
+      _brewTracker = VerifiedBrewSessionTracker(ref.read(dioClientProvider));
+      unawaited(
+        _brewTracker!.startSession(
+          methodId: (_recipe['methodId'] ?? _recipe['method'] ?? 'hario_v60').toString(),
+          methodDisplayName: (_recipe['method'] ?? 'Manual Brew').toString(),
+          archetype: 'POUR_OVER',
+          recipeId: (_recipe['id'] ?? title).toString(),
+          recipeTitle: title,
+          targetDurationSec: totalSeconds,
+          totalStepsCount: steps.length,
+          beanName: _recipe['beanName']?.toString(),
+        ),
+      );
+    } else {
+      _brewTracker!.resume();
+    }
     TelemetryBatchOutboxService.instance.setBrewingActive(true);
     _syncMirrorStartOrResume();
     setState(() {
@@ -298,6 +318,7 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
     if (_isRunning || _isPreparing) {
       _timer?.cancel();
       _prepTimer?.cancel();
+      _brewTracker?.pause();
       AudioService.stopBgm();
       BrewingTTSService.instance.stop();
       TelemetryBatchOutboxService.instance.setBrewingActive(false);
@@ -422,7 +443,26 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
       completed: true,
       stepsCompleted: steps.length,
     );
-    GamificationService.instance.recordBrewCompleted();
+    ApiService.recordBrew(_recipe);
+    final tracker = _brewTracker;
+    if (tracker != null) {
+      unawaited(
+        tracker
+            .completeSession(
+              methodDisplayName: (_recipe['method'] ?? 'Manual Brew').toString(),
+              coffeeDoseG: (_recipe['coffeeWeightGrams'] as num?)?.toDouble(),
+              waterTotalMl: totalWaterGrams.toDouble(),
+              waterTempC: waterTempCelsius,
+            )
+            .then((delta) {
+          if (mounted) {
+            ref.read(gamificationRewardQueueProvider.notifier).enqueue(delta);
+          }
+        }),
+      );
+    } else {
+      GamificationService.instance.recordBrewCompleted();
+    }
     if (mounted) BrewSensoryEvaluationSheet.show(context, _recipe);
   }
 
