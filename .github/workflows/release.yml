@@ -49,7 +49,7 @@ jobs:
         run: |
           flutter build apk --release --target-platform android-arm64 --split-per-abi
           mkdir -p dist-android
-          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk dist-android/CoffeeLabs-arm64-v8a.apk
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk dist-android/CoffeLabs25.apk
 
       - name: Verify Direct Download APK Assets
         run: |
@@ -96,7 +96,7 @@ jobs:
           cd build/ios/iphoneos
           mkdir -p Payload
           cp -r Runner.app Payload/
-          zip -9 -r ../../../dist-ios/CoffeeLabs-iOS-Release.ipa Payload
+          zip -9 -r ../../../dist-ios/CoffeLabs25.ipa Payload
           cd ../../..
 
       - name: Upload iOS Release Asset
