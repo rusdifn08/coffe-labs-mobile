@@ -23,6 +23,15 @@ class BaristaToolkitApiService {
   final Dio _dio;
   BaristaToolkitApiService(this._dio);
 
+  static Future<List<LmsCourseModel>>? _inFlightCoursesFetch;
+  static List<LmsCourseModel>? _cachedRemoteCourses;
+  static DateTime? _lastCoursesFetchAt;
+
+  static void invalidateLmsCoursesCache() {
+    _cachedRemoteCourses = null;
+    _lastCoursesFetchAt = null;
+  }
+
   /// Mengonversi path relatif Object Storage backend (`/api/v1/...`) menjadi URL absolut lengkap.
   String resolveMediaUrl(String rawUrl) {
     final trimmed = rawUrl.trim();
@@ -106,14 +115,36 @@ class BaristaToolkitApiService {
         .toList();
   }
 
-  Future<List<LmsCourseModel>> fetchLmsCourses() async {
+  Future<List<LmsCourseModel>> fetchLmsCourses({bool forceRefresh = false}) async {
+    final now = DateTime.now();
+    if (!forceRefresh &&
+        _cachedRemoteCourses != null &&
+        _lastCoursesFetchAt != null &&
+        now.difference(_lastCoursesFetchAt!) < const Duration(seconds: 15)) {
+      return reconcileCoursesAccess(_cachedRemoteCourses!);
+    }
+    if (!forceRefresh && _inFlightCoursesFetch != null) {
+      return _inFlightCoursesFetch!;
+    }
+    final future = _fetchLmsCoursesInternal();
+    _inFlightCoursesFetch = future;
+    try {
+      return await future;
+    } finally {
+      if (identical(_inFlightCoursesFetch, future)) {
+        _inFlightCoursesFetch = null;
+      }
+    }
+  }
+
+  Future<List<LmsCourseModel>> _fetchLmsCoursesInternal() async {
     final (user, plan) = await _resolveCurrentSessionTier();
     final fullTrial = TrialService.isFullNonBusinessTrialActiveSync(user: user);
     try {
       final res = await _dio.get<Map<String, dynamic>>('/api/v1/toolkit/lms/courses');
       final list = res.data?['data'] as List? ?? [];
       if (list.isNotEmpty) {
-        return list.map((e) {
+        final mapped = list.map((e) {
           final model = LmsCourseModel.fromJson(Map<String, dynamic>.from(e as Map));
           final localAllowed = ToolkitTierAccess.isUnlockedFor(
             requiredTier: model.requiredTier,
@@ -123,6 +154,9 @@ class BaristaToolkitApiService {
           );
           return model.copyWith(isUnlocked: model.isUnlocked || localAllowed);
         }).toList();
+        _cachedRemoteCourses = mapped;
+        _lastCoursesFetchAt = DateTime.now();
+        return mapped;
       }
     } catch (_) {}
     final offline = await BaristaToolkitFallbackSeed.loadOfflineCoursesAsync();
@@ -153,6 +187,7 @@ class BaristaToolkitApiService {
     required int lastPositionSec,
     List<int>? quizAnswers,
   }) async {
+    invalidateLmsCoursesCache();
     final res = await _dio.post<Map<String, dynamic>>(
       '/api/v1/toolkit/lms/lessons/$lessonId/progress',
       data: {

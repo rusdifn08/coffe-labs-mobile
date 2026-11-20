@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -58,27 +60,45 @@ class _LmsProgramSyllabusScreenState
     super.dispose();
   }
 
+  bool _isLoadingCourses = false;
+
   void _onAccessChanged() {
-    if (mounted) _load();
+    if (!mounted) return;
+    unawaited(_reconcileLocalAccessOnly());
+  }
+
+  Future<void> _reconcileLocalAccessOnly() async {
+    final api = ref.read(baristaToolkitApiProvider);
+    final updated = await api.reconcileCoursesAccess(_courses);
+    if (!mounted) return;
+    setState(() {
+      _courses = updated;
+    });
   }
 
   Future<void> _load() async {
-    final api = ref.read(baristaToolkitApiProvider);
-    final offlineRaw = await BaristaToolkitFallbackSeed.loadOfflineCoursesAsync();
-    var courses = await api.reconcileCoursesAccess(offlineRaw);
+    if (_isLoadingCourses) return;
+    _isLoadingCourses = true;
     try {
-      final remote = await api.fetchLmsCourses();
-      if (remote.isNotEmpty) {
-        courses = remote;
-      }
-    } catch (_) {}
-    if (!mounted) return;
-    setState(() {
-      _courses = courses;
-      if (_expandedCourseIds.length <= 2 && courses.isNotEmpty) {
-        _expandedCourseIds.add(courses.first.id);
-      }
-    });
+      final api = ref.read(baristaToolkitApiProvider);
+      final offlineRaw = await BaristaToolkitFallbackSeed.loadOfflineCoursesAsync();
+      var courses = await api.reconcileCoursesAccess(offlineRaw);
+      try {
+        final remote = await api.fetchLmsCourses();
+        if (remote.isNotEmpty) {
+          courses = remote;
+        }
+      } catch (_) {}
+      if (!mounted) return;
+      setState(() {
+        _courses = courses;
+        if (_expandedCourseIds.length <= 2 && courses.isNotEmpty) {
+          _expandedCourseIds.add(courses.first.id);
+        }
+      });
+    } finally {
+      _isLoadingCourses = false;
+    }
   }
 
   List<LmsCourseModel> get _filteredCourses {

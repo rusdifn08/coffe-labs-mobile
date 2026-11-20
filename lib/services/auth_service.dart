@@ -744,11 +744,10 @@ class AuthService {
           final rawFreshToken = (data['fresh_access_token'] ?? data['token'])?.toString().trim();
           final effectiveToken =
               (rawFreshToken != null && rawFreshToken.isNotEmpty) ? rawFreshToken : token;
-          final tokenRotated = effectiveToken != token;
           final prefs = await SharedPreferences.getInstance();
           final oldUserJson = prefs.getString(_userKey);
           final newUserJson = json.encode(user.toJson());
-          final hasChanged = oldUserJson != newUserJson || tokenRotated;
+          final hasChanged = oldUserJson != newUserJson;
 
           await persistSessionMirrors(prefs, user: user, token: effectiveToken);
           updateCachedSessionState(

@@ -28,6 +28,8 @@ class TrialService {
   static Set<int> _cachedCanonicalFreeIds = <int>{};
   static int _cachedCanonicalLimit = -1;
 
+  static DateTime? _lastPolicySyncTime;
+
   static TrialAccessPolicy get currentPolicySync => _cachedPolicy;
   static bool? get cachedIsTrialMode => _cachedIsTrialMode;
 
@@ -37,6 +39,7 @@ class TrialService {
     _cachedIsTrialMode = null;
     _cachedCanonicalFreeIds = <int>{};
     _cachedCanonicalLimit = -1;
+    _lastPolicySyncTime = null;
   }
 
   /// Muat kebijakan Trial dari cache lokal atau backend NeonDB (/api/v1/app/trial-policy).
@@ -56,13 +59,20 @@ class TrialService {
     }
 
     if (refreshFromBackend) {
-      await syncPolicyFromBackend();
+      await syncPolicyFromBackend(force: true);
     }
     return _cachedPolicy;
   }
 
   /// Sinkronisasi kebijakan Trial terbaru dari backend Rust Axum.
-  static Future<TrialAccessPolicy> syncPolicyFromBackend() async {
+  static Future<TrialAccessPolicy> syncPolicyFromBackend({bool force = false}) async {
+    final now = DateTime.now();
+    if (!force &&
+        _lastPolicySyncTime != null &&
+        now.difference(_lastPolicySyncTime!) < const Duration(seconds: 30)) {
+      return _cachedPolicy;
+    }
+    _lastPolicySyncTime = now;
     try {
       final baseUrl = await AuthService.getBaseUrl();
       final uri = Uri.parse('$baseUrl/api/v1/app/trial-policy');
@@ -94,8 +104,6 @@ class TrialService {
     _cachedCanonicalLimit = -1;
     await prefs.setString(_trialPolicyJsonKey, newEncoded);
     if (notify && oldEncoded != newEncoded) {
-      changeNotifier.value++;
-    } else if (notify) {
       changeNotifier.value++;
     }
   }

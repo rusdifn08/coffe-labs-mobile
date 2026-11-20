@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,6 +38,7 @@ class _EbookLibraryScreenState extends ConsumerState<EbookLibraryScreen> {
   final Map<String, _DownloadState> _downloadingMap = {};
   String _selectedFilter = 'ALL';
   bool _loading = true;
+  bool _isLoadingCatalog = false;
 
   @override
   void initState() {
@@ -56,48 +59,62 @@ class _EbookLibraryScreenState extends ConsumerState<EbookLibraryScreen> {
   }
 
   void _onAccessChanged() {
-    if (mounted) {
-      _loadCatalog();
-    }
+    if (!mounted) return;
+    unawaited(_reconcileLocalBooksAccessOnly());
+  }
+
+  Future<void> _reconcileLocalBooksAccessOnly() async {
+    final api = ref.read(baristaToolkitApiProvider);
+    final updated = await api.reconcileEbooksAccess(_books);
+    if (!mounted) return;
+    setState(() {
+      _books = updated;
+    });
   }
 
   Future<void> _loadCatalog() async {
-    final api = ref.read(baristaToolkitApiProvider);
-    final vault = EncryptedEbookVaultService.instance;
-
-    Future<void> applyBooks(List<EbookCatalogItem> books) async {
-      final dlMap = <String, bool>{};
-      final szMap = <String, int>{};
-      for (final book in books) {
-        final isDl = await vault.isBookDownloadedOffline(book.bookCode);
-        dlMap[book.bookCode] = isDl;
-        if (isDl) {
-          szMap[book.bookCode] = await vault.getOfflineVaultSizeBytes(book.bookCode);
-        }
-      }
-      if (!mounted) return;
-      setState(() {
-        _books = books;
-        _downloadedMap
-          ..clear()
-          ..addAll(dlMap);
-        _localBytesMap
-          ..clear()
-          ..addAll(szMap);
-        _loading = false;
-      });
-    }
-
-    final offlineRaw = await BaristaToolkitFallbackSeed.offlineEbooks();
-    final offline = await api.reconcileEbooksAccess(offlineRaw);
-    await applyBooks(offline);
-
+    if (_isLoadingCatalog) return;
+    _isLoadingCatalog = true;
     try {
-      final remote = await api.fetchEbooks();
-      if (remote.isNotEmpty) {
-        await applyBooks(remote);
+      final api = ref.read(baristaToolkitApiProvider);
+      final vault = EncryptedEbookVaultService.instance;
+
+      Future<void> applyBooks(List<EbookCatalogItem> books) async {
+        final dlMap = <String, bool>{};
+        final szMap = <String, int>{};
+        for (final book in books) {
+          final isDl = await vault.isBookDownloadedOffline(book.bookCode);
+          dlMap[book.bookCode] = isDl;
+          if (isDl) {
+            szMap[book.bookCode] = await vault.getOfflineVaultSizeBytes(book.bookCode);
+          }
+        }
+        if (!mounted) return;
+        setState(() {
+          _books = books;
+          _downloadedMap
+            ..clear()
+            ..addAll(dlMap);
+          _localBytesMap
+            ..clear()
+            ..addAll(szMap);
+          _loading = false;
+        });
       }
-    } catch (_) {}
+
+      final offlineRaw = await BaristaToolkitFallbackSeed.offlineEbooks();
+      final offline = await api.reconcileEbooksAccess(offlineRaw);
+      await applyBooks(offline);
+
+      try {
+        final remote = await api.fetchEbooks();
+        if (remote.isNotEmpty) {
+          await applyBooks(remote);
+        }
+      } catch (_) {}
+    } finally {
+      _isLoadingCatalog = false;
+    }
   }
 
   Future<void> _refreshSingleBookStatus(String bookCode) async {
