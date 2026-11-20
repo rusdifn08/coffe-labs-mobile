@@ -1,22 +1,22 @@
 package com.supernovalabs.coffeelabs
 
 import android.content.Intent
-import android.net.Uri
-import android.os.Build
-import android.provider.Settings
 import android.view.KeyEvent
-import androidx.core.content.FileProvider
 import com.supernovalabs.coffeelabs.kiosk.KioskDirectBootStore
 import com.supernovalabs.coffeelabs.kiosk.KioskManager
-import com.supernovalabs.coffeelabs.qris_bridge.LivinMerchantNotificationListener
 import com.supernovalabs.coffeelabs.qris_bridge.QrisBridgeStore
+import com.supernovalabs.coffeelabs.qris_bridge.QrisNotificationGatewayProvider
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
-import java.io.File
 
 class MainActivity : FlutterActivity() {
-    private val APK_CHANNEL = "com.coffeelabs.app/apk_installer"
+    // Channel "apk_installer" DIHAPUS PERMANEN.
+    // Alasannya: aplikasi yang bisa memicu instalasi APK lain
+    // (REQUEST_INSTALL_PACKAGES + ACTION_VIEW package-archive) adalah signature
+    // dropper di classifier Play Protect. Channel itu juga tidak pernah dipanggil
+    // dari sisi Dart — 100% dead code. Update aplikasi sekarang lewat browser
+    // (download manual) atau Play In-App Updates, bukan self-install.
     private val KIOSK_CHANNEL = "com.coffeelabs.app/kiosk_engine"
     private val QRIS_BRIDGE_CHANNEL = "com.coffeelabs.app/qris_bridge"
 
@@ -27,73 +27,7 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         kioskManager = KioskManager(this)
 
-        // 1. Channel APK Installer
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, APK_CHANNEL).setMethodCallHandler { call, result ->
-            when (call.method) {
-                "canRequestPackageInstalls" -> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        result.success(packageManager.canRequestPackageInstalls())
-                    } else {
-                        result.success(true)
-                    }
-                }
-                "openInstallPermissionSettings" -> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        try {
-                            val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
-                                data = Uri.parse("package:$packageName")
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            }
-                            startActivity(intent)
-                            result.success(true)
-                        } catch (e: Exception) {
-                            result.error("SETTINGS_ERROR", e.localizedMessage, null)
-                        }
-                    } else {
-                        result.success(true)
-                    }
-                }
-                "installApk" -> {
-                    val filePath = call.argument<String>("filePath")
-                    if (filePath.isNullOrEmpty()) {
-                        result.error("INVALID_PATH", "File path must not be null or empty", null)
-                        return@setMethodCallHandler
-                    }
-
-                    val apkFile = File(filePath)
-                    if (!apkFile.exists()) {
-                        result.error("FILE_NOT_FOUND", "APK file does not exist at $filePath", null)
-                        return@setMethodCallHandler
-                    }
-
-                    try {
-                        val apkUri: Uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                            FileProvider.getUriForFile(
-                                this,
-                                "$packageName.fileProvider",
-                                apkFile
-                            )
-                        } else {
-                            Uri.fromFile(apkFile)
-                        }
-
-                        val intent = Intent(Intent.ACTION_VIEW).apply {
-                            setDataAndType(apkUri, "application/vnd.android.package-archive")
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-
-                        startActivity(intent)
-                        result.success(true)
-                    } catch (e: Exception) {
-                        result.error("INSTALL_ERROR", e.localizedMessage, null)
-                    }
-                }
-                else -> result.notImplemented()
-            }
-        }
-
-        // 2. Channel Strict Kiosk Engine & Direct-Boot
+        // 1. Channel Strict Kiosk Engine & Direct-Boot
         val kChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, KIOSK_CHANNEL)
         kioskMethodChannel = kChannel
         kChannel.setMethodCallHandler { call, result ->
@@ -177,7 +111,7 @@ class MainActivity : FlutterActivity() {
                     result.success(
                         mapOf(
                             "enabled" to QrisBridgeStore.isEnabled(this),
-                            "hasNotificationAccess" to LivinMerchantNotificationListener.isNotificationAccessEnabled(this),
+                            "hasNotificationAccess" to QrisNotificationGatewayProvider.get().isNotificationAccessEnabled(this),
                             "apiBaseUrl" to QrisBridgeStore.getBaseUrl(this),
                             "hasSecret" to QrisBridgeStore.getSecret(this).isNotBlank(),
                             "recentLogsJson" to QrisBridgeStore.getLogsJson(this),
@@ -193,7 +127,7 @@ class MainActivity : FlutterActivity() {
                 }
                 "openNotificationAccessSettings" -> {
                     try {
-                        LivinMerchantNotificationListener.openNotificationAccessSettings(this)
+                        QrisNotificationGatewayProvider.get().openNotificationAccessSettings(this)
                         result.success(true)
                     } catch (e: Exception) {
                         result.error("NOTIF_SETTINGS_ERROR", e.localizedMessage, null)

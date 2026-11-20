@@ -37,6 +37,49 @@ android {
         versionName = flutter.versionName
     }
 
+    // ==========================================================================
+    // DISTRIBUTION FLAVORS — pemisahan WAJIB untuk lulus Google Play Protect
+    // ==========================================================================
+    // Kenapa harus dipisah, bukan sekadar di-flag di runtime:
+    // Class `LivinMerchantNotificationListener` adalah turunan
+    // NotificationListenerService yang menyaring paket BANK (id.bmri.livinmerchant),
+    // mengekstrak nominal Rupiah, lalu mengirimnya ke server. Pola itu identik
+    // dengan signature banking-trojan yang dipakai classifier Play Protect.
+    // Selama class + string paket bank itu ada di dalam dex, APK akan dinilai
+    // berisiko tinggi — tidak peduli niatnya legitimate atau tidak.
+    //
+    //   store    : DISTRIBUSI PUBLIK (Play Store + APK GitHub).
+    //              Tanpa notification-listener bank, tanpa device-admin,
+    //              tanpa APK installer. → lulus Play Protect.
+    //   merchant : INTERNAL ONLY (HP merchant/admin milik toko sendiri).
+    //              Semua kapabilitas kiosk + QRIS bridge utuh.
+    //
+    // Build:  flutter build apk --flavor store    --release
+    //         flutter build apk --flavor merchant --release
+    // ==========================================================================
+    flavorDimensions += "distribution"
+
+    productFlavors {
+        create("store") {
+            dimension = "distribution"
+            // Package ID publik — TIDAK diubah, agar upgrade tetap mulus.
+            resValue("string", "app_flavor_label", "Coffee Labs")
+        }
+        create("merchant") {
+            dimension = "distribution"
+            // Package berbeda supaya bisa hidup berdampingan dengan build store
+            // di satu perangkat (admin pakai dua-duanya).
+            applicationIdSuffix = ".merchant"
+            versionNameSuffix = "-merchant"
+            resValue("string", "app_flavor_label", "Coffee Labs Merchant")
+        }
+    }
+
+    // Source set lokasi class sudah otomatis: AGP membaca `src/<flavor>/kotlin`
+    // dan `src/<flavor>/res` tanpa deklarasi tambahan (konvensi default).
+    // Karena itu `LivinMerchantNotificationListener` cukup dipindah ke
+    // src/merchant/kotlin/... dan otomatis TIDAK ikut ter-compile di flavor store.
+
     signingConfigs {
         create("release") {
             val keyPropStoreFile = keystoreProperties.getProperty("storeFile")

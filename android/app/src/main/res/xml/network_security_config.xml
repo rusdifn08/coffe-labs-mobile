@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Network Security Posture — Play Protect Clean
+
+    Semua trafik produksi WAJIB HTTPS. Hanya loopback/emulator yang boleh
+    cleartext, dan itu pun hanya untuk mode dev lokal.
+
+    Catatan: `10.0.2.2` = alias host machine dari Android Emulator.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Dev lokal saja: backend Rust di :3000 & media server lokal -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>

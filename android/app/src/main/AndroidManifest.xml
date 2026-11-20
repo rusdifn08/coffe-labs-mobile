@@ -1,35 +1,81 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ======================================================================
+         PERMISSION POSTURE — PLAY PROTECT CLEAN
+         ======================================================================
+         Setiap permission di bawah ini harus punya pemakai nyata di kode.
+         Permission yang tidak dipakai = sinyal risiko di classifier Play Protect.
+
+         DILARANG ditambahkan kembali tanpa alasan kuat:
+           - REQUEST_INSTALL_PACKAGES  -> signature "dropper" (install APK lain).
+                                          Sudah dihapus: tidak ada caller di Dart.
+                                          Self-update wajib lewat Browser / Play
+                                          In-App Updates, BUKAN install APK sendiri.
+           - SYSTEM_ALERT_WINDOW       -> signature "overlay attack". Kiosk lock
+                                          cukup pakai lockTaskMode + immersive
+                                          insets, tidak menggambar overlay apa pun.
+         ====================================================================== -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+
+    <!-- Nota Rasa & Label: kamera dipakai untuk OPTIK (ML Kit) + video -->
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+
+    <!-- Peta Kedai Kopi (flutter_map + geolocator): runtime-gated -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+
+    <!-- Timbangan & Printer Thermal BLE -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
-    <!-- Strict Kiosk Lock, Direct Auto-Boot & System UI Suppressor Permissions -->
+    <!-- Strict Kiosk Lock & Direct Auto-Boot -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
     <uses-permission android:name="android.permission.REORDER_TASKS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
-    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!--
+         DISABLE_KEYGUARD = protectionLevel NORMAL (auto-granted, bukan runtime,
+         bukan permission sensitif). Dibutuhkan HANYA sebagai fallback kiosk di
+         Android 7–8.0 (API 24–26) yang belum punya setShowWhenLocked/setTurnScreenOn.
+         Di API 27+ kode memakai API modern, permission ini diabaikan OS.
+    -->
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
+
+    <!--
+         ALARM: SCHEDULE_EXACT_ALARM (user-grantable, targetSdk 36 default DENIED)
+         dinaikkan menjadi USE_EXACT_ALARM karena fitur inti aplikasi adalah
+         timer seduh presisi (Cold Brew 12-18 jam, Kyoto drip, overnight).
+         Ini kategori yang diizinkan Google untuk alarm/timer aplikasi.
+         Manifest merger menambahkan satu-satunya permission asing yang tersisa
+         (READ_PHONE_STATE) akibat library TFLite GPU bertarget SDK kuno —
+         eksplisit dibuang karena aplikasi tidak pernah membaca state telepon.
+    -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" tools:node="remove" />
 
     <application
-        android:label="Coffee Labs"
+        android:label="@string/app_flavor_label"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:usesCleartextTraffic="false"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:extractNativeLibs="false"
+        android:enableOnBackInvokedCallback="true"
+        tools:targetApi="34">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -93,11 +139,15 @@
             </intent-filter>
         </activity-alias>
 
-        <!-- DIRECT-BOOT & COLD-BOOT AUTO-START RECEIVER -->
+        <!-- DIRECT-BOOT & COLD-BOOT AUTO-START RECEIVER
+             exported="false": BOOT_COMPLETED adalah protected broadcast yang
+             hanya dikirim oleh sistem. exported="true" di sini tidak menambah
+             fungsi apa pun, tapi membuat app lain bisa memicu auto-launch
+             kiosk secara paksa. Ditutup. -->
         <receiver
             android:name=".kiosk.BootCompletedReceiver"
             android:enabled="true"
-            android:exported="true"
+            android:exported="false"
             android:directBootAware="true">
             <intent-filter android:priority="999">
                 <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
@@ -124,16 +174,11 @@
             </intent-filter>
         </receiver>
 
-        <!-- ZERO-GATEWAY LIVIN' MERCHANT NOTIFICATION BRIDGE (Opt-In Admin/Merchant Phone Only) -->
-        <service
-            android:name=".qris_bridge.LivinMerchantNotificationListener"
-            android:label="Coffee Labs Livin' Merchant QRIS Bridge"
-            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
-            </intent-filter>
-        </service>
+        <!-- ZERO-GATEWAY LIVIN' MERCHANT NOTIFICATION BRIDGE
+             DIPINDAHKAN ke src/merchant/AndroidManifest.xml (flavor merchant).
+             Build publik/store TIDAK boleh memuat NotificationListenerService
+             yang membaca notifikasi aplikasi bank — pola itu adalah signature
+             banking-trojan di classifier Play Protect. -->
 
         <!-- EXACT OS BACKGROUND ALARMS FOR LONG-HORIZON BREWING (Cold Brew, Kyoto, Overnight) -->
         <receiver

@@ -353,24 +353,104 @@ flutter test
 
 ## 📦 Panduan Build & Rilis
 
-### 1. Build APK Android (Release)
+### 1. Build APK Android — Flavor `store` (PUBLIK / Play Store)
+
+> ⚠️ **Selalu pakai `--flavor store` untuk distribusi publik.**
+> Flavor `store` adalah satu-satunya build yang lulus Google Play Protect.
+> Lihat bagian **Kepatuhan Google Play Protect** di bawah untuk alasannya.
+
 ```bash
-flutter build apk --release --split-per-abi
+flutter build apk --flavor store --release --split-per-abi
 ```
 File APK biner arm64 akan tersedia di:
-`build/app/outputs/flutter-apk/app-arm64-v8a-release.apk`
+`build/app/outputs/flutter-apk/app-store-arm64-v8a-release.apk`
 
 ### 2. Build Android App Bundle (Google Play Store)
 ```bash
-flutter build appbundle --release
+flutter build appbundle --flavor store --release
 ```
 File AAB akan tersedia di:
-`build/app/outputs/bundle/release/app-release.aab`
+`build/app/outputs/bundle/storeRelease/app-store-release.aab`
+
+### 2b. Build APK Android — Flavor `merchant` (INTERNAL SAJA)
+
+```bash
+flutter build apk --flavor merchant --release --split-per-abi
+```
+
+Flavor `merchant` memuat **QRIS Notification Bridge** (membaca notifikasi
+`id.bmri.livinmerchant`). Package ID berbeda (`.merchant`) sehingga bisa
+dipasang berdampingan dengan build store.
+
+> 🚫 **JANGAN pernah mengunggah build `merchant` ke Play Store atau
+> membagikannya ke publik.** NotificationListenerService yang menyaring paket
+> bank adalah signature banking-trojan — APK akan diblokir Play Protect.
 
 ### 3. Build iOS (Archive & IPA)
 ```bash
 flutter build ipa --release
 ```
+
+---
+
+## 🛡️ Kepatuhan Google Play Protect
+
+Kalau muncul dialog **"Aplikasi diblokir untuk melindungi perangkat Anda"**,
+itu bukan bug — itu classifier Play Protect menilai *profil kapabilitas* APK.
+Yang dinilai bukan niat, tapi apa yang **bisa** dilakukan aplikasi.
+
+### Penyebab blokir (dan status perbaikannya)
+
+| # | Pemicu | Kenapa dinilai berbahaya | Status |
+| :- | :--- | :--- | :--- |
+| 1 | `REQUEST_INSTALL_PACKAGES` + `ACTION_VIEW` ke `application/vnd.android.package-archive` | Pola **dropper**: aplikasi bisa memasang APK lain. Tidak ada caller di Dart — murni dead code. | ✅ Dihapus total |
+| 2 | `SYSTEM_ALERT_WINDOW` | Pola **overlay attack** (clickjacking). Kiosk lock tidak butuh ini. | ✅ Dihapus |
+| 3 | `NotificationListenerService` menyaring paket bank `id.bmri.livinmerchant` | Signature **banking trojan**: membaca notifikasi finansial lalu mengirim ke server. | ✅ Dipindah ke flavor `merchant` |
+| 4 | APK release ditandatangani **debug keystore AOSP** (fallback CI) | Sertifikat `CN=Android Debug` = APK tidak tepercaya. | ✅ CI wajib pakai release keystore |
+| 5 | `READ_PHONE_STATE` bocor dari library TFLite GPU (targetSdk kuno) | Permission identitas perangkat tanpa pemakai nyata. | ✅ Dibuang via `tools:node="remove"` |
+| 6 | `allowBackup` default `true` | Token sesi & log bridge ikut ter-backup ke cloud. | ✅ `false` + `dataExtractionRules` |
+| 7 | Cleartext HTTP diizinkan | Trafik bisa disadap. | ✅ Diblokir, kecuali loopback dev |
+| 8 | `BootCompletedReceiver` `exported="true"` | App lain bisa memicu auto-launch kiosk. | ✅ `exported="false"` |
+
+### Permission yang masih ada (semuanya punya pemakai nyata)
+
+| Permission | Dipakai oleh |
+| :--- | :--- |
+| `CAMERA` | ML Kit text recognition & object detection (Nota Rasa) |
+| `RECORD_AUDIO` | Video note (`camera_android_camerax`) |
+| `ACCESS_FINE_LOCATION` / `COARSE` | Peta kedai kopi (`flutter_map` + `geolocator`) |
+| `BLUETOOTH_SCAN` / `CONNECT` | Timbangan BLE & printer thermal |
+| `USE_EXACT_ALARM` / `SCHEDULE_EXACT_ALARM` | Timer seduh presisi (Cold Brew 12–18 jam) |
+| `RECEIVE_BOOT_COMPLETED` | Auto-boot kiosk kedai |
+| `FOREGROUND_SERVICE_MEDIA_PLAYBACK` | Pemandu suara barista saat layar mati |
+
+### Verifikasi mandiri sebelum rilis
+
+```bash
+# 1. Sertifikat harus "Coffe Labs", BUKAN "Android Debug"
+apksigner verify --print-certs build/app/outputs/flutter-apk/app-store-arm64-v8a-release.apk
+
+# 2. Tiga permission berisiko harus TIDAK muncul
+aapt2 dump permissions build/app/outputs/flutter-apk/app-store-arm64-v8a-release.apk | \
+  grep -E "REQUEST_INSTALL_PACKAGES|SYSTEM_ALERT_WINDOW|READ_PHONE_STATE" && echo "GAGAL" || echo "LOLOS"
+
+# 3. Notification listener bank harus absen
+aapt2 dump xmltree build/app/outputs/flutter-apk/app-store-arm64-v8a-release.apk \
+  --file AndroidManifest.xml | grep -c NotificationListenerService   # harus 0
+```
+
+CI (`.github/workflows/release.yml`) menjalankan ketiga pemeriksaan ini sebagai
+**gate wajib** — job gagal dan tidak ada artefak yang dipublikasikan kalau salah
+satu tidak lolos.
+
+### Secret yang dibutuhkan di GitHub
+
+| Secret | Isi |
+| :--- | :--- |
+| `ANDROID_KEYSTORE_BASE64` | `base64 -w0 android/app/upload-keystore.jks` |
+| `ANDROID_KEYSTORE_PASSWORD` | password store |
+| `ANDROID_KEY_ALIAS` | `upload` |
+| `ANDROID_KEY_PASSWORD` | password key |
 
 ### 4. Rilis Pembaruan Instan OTA (Shorebird)
 ```bash

@@ -36,20 +36,70 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Setup Android Debug/CI Keystore
+      - name: Decode Release Keystore
+        # WAJIB. Tanpa keystore asli, build.gradle.kts akan jatuh ke fallback
+        # debug keystore (~/.android/debug.keystore) dan APK release akan
+        # ditandatangani dengan kunci debug AOSP. Itu membuat APK dinilai
+        # tidak tepercaya oleh Google Play Protect dan memblokir instalasi.
+        # Kredensial disimpan sebagai GitHub Secrets (base64 dari file .jks).
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          mkdir -p ~/.android ~/.config/.android
-          keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=CoffeeLabs,O=CoffeeLabs,C=ID"
-          cp ~/.android/debug.keystore ~/.config/.android/debug.keystore
+          set -euo pipefail
+          if [ -z "${ANDROID_KEYSTORE_BASE64:-}" ]; then
+            echo "::error::Secret ANDROID_KEYSTORE_BASE64 kosong. Build akan memakai debug keystore dan Play Protect akan memblokir APK. Abort."
+            exit 1
+          fi
+          mkdir -p android/app
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
+          cat > android/key.properties <<EOF
+          storePassword=${ANDROID_KEYSTORE_PASSWORD}
+          keyPassword=${ANDROID_KEY_PASSWORD}
+          keyAlias=${ANDROID_KEY_ALIAS}
+          storeFile=upload-keystore.jks
+          EOF
+          echo "Keystore siap: $(ls -l android/app/upload-keystore.jks | awk '{print $5}') bytes"
 
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Build Compressed Split-per-ABI APKs
+      - name: Build Compressed Split-per-ABI APKs (flavor: store)
+        # Flavor `store` = build PUBLIK. Tidak memuat notification-listener
+        # bank, tidak memuat APK installer. Ini yang lulus Play Protect.
+        # Build `merchant` (internal toko) dibangun terpisah, JANGAN dipublikasikan.
         run: |
-          flutter build apk --release --target-platform android-arm64 --split-per-abi
+          set -euo pipefail
+          flutter build apk --flavor store --release \
+            --target-platform android-arm64 --split-per-abi
           mkdir -p dist-android
-          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk dist-android/CoffeLabs25.apk
+          cp build/app/outputs/flutter-apk/app-store-arm64-v8a-release.apk dist-android/CoffeLabs25.apk
+
+      - name: Verify Signature & Manifest Posture (GATE)
+        # Gerbang mutlak: kalau APK masih debug-signed atau masih membawa
+        # permission berisiko, job GAGAL dan tidak ada yang dipublikasikan.
+        run: |
+          set -euo pipefail
+          APK=dist-android/CoffeLabs25.apk
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          echo "=== Sertifikat penanda tangan ==="
+          "$BT/apksigner" verify --print-certs "$APK"
+          if "$BT/apksigner" verify --print-certs "$APK" | grep -qi "CN=Android Debug"; then
+            echo "::error::APK masih debug-signed (CN=Android Debug). Play Protect akan memblokir."
+            exit 1
+          fi
+          echo "=== Permission berisiko harus ABSEN ==="
+          "$BT/aapt2" dump permissions "$APK" > /tmp/perms.txt || true
+          cat /tmp/perms.txt
+          for bad in REQUEST_INSTALL_PACKAGES SYSTEM_ALERT_WINDOW READ_PHONE_STATE; do
+            if grep -q "android.permission.$bad" /tmp/perms.txt; then
+              echo "::error::Permission $bad masih ada di APK publik. Play Protect akan memblokir."
+              exit 1
+            fi
+          done
+          echo "=== Lolos gate Play Protect ==="
 
       - name: Verify Direct Download APK Assets
         run: |
