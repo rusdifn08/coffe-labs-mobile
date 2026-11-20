@@ -20,6 +20,7 @@ import '../features/multi_method_brewing/presentation/screens/sca_cupping_multi_
 import '../features/multi_method_brewing/presentation/screens/steep_and_release_immersion_screen.dart';
 import '../features/multi_method_brewing/presentation/screens/thermal_cue_brewer_screen.dart';
 import '../features/recipe_detail/utils/recipe_attribute_deducer.dart';
+import '../features/recipe_detail/utils/recipe_dose_scale_utils.dart';
 import '../features/recipe_detail/widgets/grinder_converter_sheet.dart';
 import '../features/recipe_detail/widgets/recipe_params_summary.dart';
 import '../features/recipe_detail/widgets/recipe_specs_card.dart';
@@ -62,8 +63,6 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
     _loadFavorite();
   }
 
-  double get _scaleFactor => _scaledCoffeeGrams / _baseCoffeeGrams;
-
   /// Menyuntikkan identitas biji kopi hasil scan kamera (Smart Coffee Bag Scanner)
   /// ke dalam resep, sehingga header Brew Timer otomatis menampilkan nama kopi
   /// yang benar-benar dipindai (mis. "Halu Banana", "Puntang Wine").
@@ -96,33 +95,11 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
   Map<String, dynamic> _buildScaledRecipe() {
     Map<String, dynamic> source = _recipe;
     if (_scaledCoffeeGrams != _baseCoffeeGrams) {
-      final factor = _scaleFactor;
-      final baseWater = _recipe['totalWaterWeightGrams'] as int;
-      final baseIce = _recipe['iceWeightGrams'] as int;
-      final rawSteps = _recipe['steps'] as List<dynamic>;
-
-      int sumStepWater = 0;
-      final List<Map<String, dynamic>> scaledSteps = [];
-      for (final s in rawSteps) {
-        final map = Map<String, dynamic>.from(s as Map);
-        final w = (map['waterAddedGrams'] ?? map['waterGrams'] ?? 0) as int;
-        final scaledW = (w * factor).round();
-        sumStepWater += scaledW;
-        map['waterAddedGrams'] = scaledW;
-        map['waterGrams'] = scaledW;
-        map['cumulativeWaterGrams'] = sumStepWater;
-        scaledSteps.add(map);
-      }
-
-      final scaledTotalWater = sumStepWater > 0 ? sumStepWater : (baseWater * factor).round();
-      final scaledIce = (baseIce * factor).round();
-
-      final copy = Map<String, dynamic>.from(_recipe);
-      copy['coffeeWeightGrams'] = _scaledCoffeeGrams;
-      copy['totalWaterWeightGrams'] = scaledTotalWater;
-      copy['iceWeightGrams'] = scaledIce;
-      copy['steps'] = scaledSteps;
-      source = copy;
+      source = RecipeDoseScaleUtils.scaleRecipe(
+        _recipe,
+        baseCoffeeGrams: _baseCoffeeGrams,
+        scaledCoffeeGrams: _scaledCoffeeGrams,
+      );
     }
 
     return _applyScannedBeanIdentity(source);

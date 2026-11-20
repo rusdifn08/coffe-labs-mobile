@@ -26,6 +26,7 @@ import '../features/monitoring/data/telemetry_batch_outbox_service.dart';
 import '../features/brew/timer/widgets/barista_espresso_cockpit.dart';
 import '../features/live_brew/domain/live_brew_models.dart';
 import '../features/live_brew/presentation/controllers/barista_live_transmitter_controller.dart';
+import '../features/live_brew/presentation/controllers/live_brew_mirror_controller.dart';
 import '../features/live_brew/presentation/widgets/table_qr_manager_modal.dart';
 
 class BrewTimerScreen extends ConsumerStatefulWidget {
@@ -42,6 +43,8 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
   Timer? _prepTimer;
   int _elapsedSeconds = 0;
   int _prepSeconds = 5; // 5s lead time for T-5 vocal announcement and countdown
+  final ValueNotifier<int> _elapsedSecondsNotifier = ValueNotifier<int>(0);
+  final ValueNotifier<int> _prepSecondsNotifier = ValueNotifier<int>(5);
   bool _isRunning = false;
   bool _isPreparing = false;
   bool _useBaristaCockpit = true;
@@ -91,7 +94,6 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
 
     unawaited(BrewingTTSService.instance.preloadRecipeSteps(_recipe));
 
-    SmartScaleService.instance.addListener(_onScaleChanged);
     SmartScaleService.instance.onAutoStartBrewTimer = () {
       if (_isPreparing) {
         _startMainTimer();
@@ -119,10 +121,6 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
     );
   }
 
-  void _onScaleChanged() {
-    if (mounted) setState(() {});
-  }
-
   void _recomputeTotalSeconds() {
     int computedTotal = 0;
     for (final s in steps) {
@@ -133,10 +131,11 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
 
   @override
   void dispose() {
-    SmartScaleService.instance.removeListener(_onScaleChanged);
     SmartScaleService.instance.onAutoStartBrewTimer = null;
     _timer?.cancel();
     _prepTimer?.cancel();
+    _elapsedSecondsNotifier.dispose();
+    _prepSecondsNotifier.dispose();
     AudioService.stopBgm();
     BrewingTTSService.instance.stop();
     TelemetryBatchOutboxService.instance.setBrewingActive(false);
@@ -171,9 +170,36 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
     );
   }
 
+  void _syncMirrorStartOrResume() {
+    final mirrorState = ref.read(liveBrewMirrorProvider);
+    if (mirrorState.activeSession == null) return;
+    final ctrl = ref.read(liveBrewMirrorProvider.notifier);
+    if ((mirrorState.activeSession!.selectedRecipeTitle ?? '').isEmpty) {
+      ctrl.broadcastRecipeSelection(
+        methodId: (_recipe['methodId'] ?? _recipe['method'] ?? 'v60').toString(),
+        methodName: (_recipe['method'] ?? 'Manual Brew').toString(),
+        recipeTitle: title,
+        recipeSnapshot: _recipe,
+      );
+    }
+    ctrl.timerStartOrResume();
+  }
+
+  void _syncMirrorStepIfActive(int stepIndex) {
+    final mirrorState = ref.read(liveBrewMirrorProvider);
+    if (mirrorState.activeSession == null) return;
+    ref.read(liveBrewMirrorProvider.notifier).advanceStepOrTelemetry(
+          stepIndex: stepIndex,
+          weightG: SmartScaleService.instance.currentWeight,
+          flowRateMlS: SmartScaleService.instance.flowRate,
+          tempC: waterTempCelsius.toDouble(),
+        );
+  }
+
   void _startMainTimer() {
     _prepTimer?.cancel();
     TelemetryBatchOutboxService.instance.setBrewingActive(true);
+    _syncMirrorStartOrResume();
     setState(() {
       _isPreparing = false;
       _isRunning = true;
@@ -189,7 +215,21 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_elapsedSeconds < totalSeconds) {
-        setState(() => _elapsedSeconds++);
+        final prevActive = _getActiveStepIndex();
+        final prevEndingSoon = _isEndingSoon();
+        final wasZero = _elapsedSeconds == 0;
+        _elapsedSeconds++;
+        _elapsedSecondsNotifier.value = _elapsedSeconds;
+        final nextActive = _getActiveStepIndex();
+        final nextEndingSoon = _isEndingSoon();
+        if (wasZero ||
+            nextActive != prevActive ||
+            nextEndingSoon != prevEndingSoon) {
+          if (nextActive != prevActive) {
+            _syncMirrorStepIfActive(nextActive);
+          }
+          setState(() {});
+        }
         _checkAutoScroll();
 
         if (_elapsedSeconds % 2 == 0) {
@@ -225,6 +265,13 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
         }
       } else {
         _timer?.cancel();
+        if (ref.read(liveBrewMirrorProvider).activeSession != null) {
+          ref.read(liveBrewMirrorProvider.notifier).completeAndServe(
+                finalWeightG: SmartScaleService.instance.currentWeight > 0
+                    ? SmartScaleService.instance.currentWeight
+                    : totalWaterGrams.toDouble(),
+              );
+        }
         setState(() => _isRunning = false);
         AudioService.stopBgm();
         AudioService.playEnjoy();
@@ -254,6 +301,9 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
       AudioService.stopBgm();
       BrewingTTSService.instance.stop();
       TelemetryBatchOutboxService.instance.setBrewingActive(false);
+      if (ref.read(liveBrewMirrorProvider).activeSession != null) {
+        ref.read(liveBrewMirrorProvider.notifier).timerPause();
+      }
       setState(() {
         _isRunning = false;
         _isPreparing = false;
@@ -277,7 +327,8 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
               AudioService.playTick();
               BrewingTTSService.instance.speakCountdown(nextPrep);
             }
-            setState(() => _prepSeconds = nextPrep);
+            _prepSeconds = nextPrep;
+            _prepSecondsNotifier.value = nextPrep;
           } else {
             _prepTimer?.cancel();
             AudioService.playTransition();
@@ -293,11 +344,16 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
   void _resetTimer() {
     _timer?.cancel();
     _prepTimer?.cancel();
+    if (ref.read(liveBrewMirrorProvider).activeSession != null) {
+      ref.read(liveBrewMirrorProvider.notifier).timerReset();
+    }
     AudioService.stopBgm();
     BrewingTTSService.instance.stop();
     _announcedStepIndices.clear();
     _lastCountdownSec = -1;
     _lastCountdownStepIndex = -1;
+    _elapsedSecondsNotifier.value = 0;
+    _prepSecondsNotifier.value = 5;
     setState(() {
       _elapsedSeconds = 0;
       _prepSeconds = 5;
@@ -317,6 +373,7 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
     for (int i = 0; i < clamped; i++) {
       startSec += _stepDuration(steps[i]);
     }
+    _elapsedSecondsNotifier.value = startSec;
     setState(() {
       if (_isPreparing) {
         _prepTimer?.cancel();
@@ -429,7 +486,9 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
             icon: Icon(
               Icons.qr_code_2_rounded,
               size: 21,
-              color: ref.watch(baristaLiveTransmitterProvider).isBroadcasting
+              color: ref.watch(
+                baristaLiveTransmitterProvider.select((s) => s.isBroadcasting),
+              )
                   ? const Color(0xFFDC2626)
                   : null,
             ),
@@ -491,17 +550,9 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              CircularBrewTimer(
-                                steps: steps,
-                                totalSeconds: totalSeconds,
-                                elapsedSeconds: _elapsedSeconds,
-                                isPreparing: _isPreparing,
-                                prepSeconds: _prepSeconds,
+                              _buildIsolatedCircularTimer(
+                                family: family,
                                 activeTargetWater: activeTargetWater,
-                                isEndingSoon: _isEndingSoon(),
-                                onSkipCountdown: _startMainTimer,
-                                formatTime: _formatTime,
-                                methodFamily: family,
                               ),
                             ],
                           ),
@@ -590,18 +641,10 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
 
               const SizedBox(height: 6),
 
-              // Circular Timer Display
-              CircularBrewTimer(
-                steps: steps,
-                totalSeconds: totalSeconds,
-                elapsedSeconds: _elapsedSeconds,
-                isPreparing: _isPreparing,
-                prepSeconds: _prepSeconds,
+              // Circular Timer Display (isolated via RepaintBoundary & ValueNotifier)
+              _buildIsolatedCircularTimer(
+                family: family,
                 activeTargetWater: activeTargetWater,
-                isEndingSoon: _isEndingSoon(),
-                onSkipCountdown: _startMainTimer,
-                formatTime: _formatTime,
-                methodFamily: family,
               ),
 
               const SizedBox(height: 10),
@@ -663,6 +706,36 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
                 onAdd10Sec: _add10SecondsToActiveStep,
               ),
             ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildIsolatedCircularTimer({
+    required BrewMethodFamily family,
+    required int activeTargetWater,
+  }) {
+    return RepaintBoundary(
+      child: ValueListenableBuilder<int>(
+        valueListenable: _elapsedSecondsNotifier,
+        builder: (_, elapsed, _) {
+          return ValueListenableBuilder<int>(
+            valueListenable: _prepSecondsNotifier,
+            builder: (_, prep, _) {
+              return CircularBrewTimer(
+                steps: steps,
+                totalSeconds: totalSeconds,
+                elapsedSeconds: elapsed,
+                isPreparing: _isPreparing,
+                prepSeconds: prep,
+                activeTargetWater: activeTargetWater,
+                isEndingSoon: _isEndingSoon(),
+                onSkipCountdown: _startMainTimer,
+                formatTime: _formatTime,
+                methodFamily: family,
+              );
+            },
           );
         },
       ),

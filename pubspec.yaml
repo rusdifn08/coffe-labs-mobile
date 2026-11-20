@@ -106,6 +106,17 @@ dependencies:
   flutter_angle: ^0.4.2
   archive: ^4.6.0
   xml: ^7.0.1
+  geolocator: ^14.1.2
+  geocoding: ^5.0.1
+  flutter_compass: ^0.8.1
+  flutter_map: ^6.2.1
+  flutter_map_supercluster: ^5.0.0-dev.1
+  flutter_map_cancellable_tile_provider: ^2.0.0
+  latlong2: ^0.9.1
+  mobile_scanner: ^7.5.0
+  print_bluetooth_thermal: ^1.2.5
+  esc_pos_utils_plus: ^2.0.4
+  gal: ^3.0.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

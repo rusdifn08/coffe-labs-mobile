@@ -22,10 +22,13 @@ class VoiceTextNormalizer {
         final tempPart = (waterTempCelsius != null && waterTempCelsius > 0 && stepIndex == 0)
             ? ' bersuhu $waterTempCelsius derajat celcius'
             : '';
+        final targetPart = (cumulativeWaterGrams != null && cumulativeWaterGrams > stepWaterGrams)
+            ? ' hingga mencapai total $cumulativeWaterGrams gram'
+            : '';
         final durPart = (durationSeconds != null && durationSeconds > 0)
             ? ' selama $durationSeconds detik'
             : '';
-        body = 'Tuang $stepWaterGrams gram air$tempPart secara perlahan$durPart.';
+        body = 'Tuang $stepWaterGrams gram air$tempPart secara perlahan$targetPart$durPart.';
       } else if (durationSeconds != null && durationSeconds > 0) {
         body = 'Pertahankan tahapan ini selama $durationSeconds detik.';
       }
@@ -36,7 +39,10 @@ class VoiceTextNormalizer {
         final tempPart = (waterTempCelsius != null && waterTempCelsius > 0 && stepIndex == 0)
             ? ' suhu $waterTempCelsius derajat celcius'
             : '';
-        body = 'Tuang $stepWaterGrams gram air$tempPart. $body';
+        final targetPart = (cumulativeWaterGrams != null && cumulativeWaterGrams > stepWaterGrams)
+            ? ' hingga total $cumulativeWaterGrams gram'
+            : '';
+        body = 'Tuang $stepWaterGrams gram air$tempPart$targetPart. $body';
       }
     }
 

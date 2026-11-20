@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../core/performance/transition_aware_deferred_builder.dart';
 import '../features/brew_methods/models/brew_method_item.dart';
 import '../features/brew_methods/widgets/brew_method_card.dart';
 import '../services/api_service.dart';
@@ -139,7 +140,7 @@ class _BrewMethodsScreenState extends State<BrewMethodsScreen> {
                 ),
               ),
 
-              // 3-Column Grid of Brew Methods
+              // 3-Column Grid of Brew Methods (deferred during route animation)
               Expanded(
                 child: filtered.isEmpty
                     ? Center(
@@ -148,23 +149,30 @@ class _BrewMethodsScreenState extends State<BrewMethodsScreen> {
                           style: TextStyle(color: Colors.grey.shade500),
                         ),
                       )
-                    : GridView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
-                        itemCount: filtered.length,
-                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 150,
-                          mainAxisExtent: 175,
-                          crossAxisSpacing: 14,
-                          mainAxisSpacing: 16,
+                    : TransitionAwareDeferredBuilder(
+                        lightweightPlaceholder: const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF6B4423),
+                          ),
                         ),
-                        itemBuilder: (context, index) {
-                          final item = filtered[index];
-                          return BrewMethodCard(
-                            item: item,
-                            isEn: isEn,
-                            onTap: () => _onMethodTapped(item),
-                          );
-                        },
+                        heavyBuilder: (_) => GridView.builder(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+                          itemCount: filtered.length,
+                          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 150,
+                            mainAxisExtent: 175,
+                            crossAxisSpacing: 14,
+                            mainAxisSpacing: 16,
+                          ),
+                          itemBuilder: (context, index) {
+                            final item = filtered[index];
+                            return BrewMethodCard(
+                              item: item,
+                              isEn: isEn,
+                              onTap: () => _onMethodTapped(item),
+                            );
+                          },
+                        ),
                       ),
               ),
             ],

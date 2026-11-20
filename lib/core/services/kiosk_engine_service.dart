@@ -35,6 +35,13 @@ class KioskBootState {
 
 class KioskEngineService {
   static const MethodChannel _channel = MethodChannel('com.coffeelabs.app/kiosk_engine');
+  static KioskBootState? _cachedBootState;
+
+  static KioskBootState? get cachedBootState => _cachedBootState;
+
+  static void resetBootStateCache() {
+    _cachedBootState = null;
+  }
 
   /// Hitung SHA-256 hash dari PIN 4-6 digit secara konsisten
   static String hashPin(String rawPin) {
@@ -42,15 +49,22 @@ class KioskEngineService {
     return sha256.convert(bytes).toString();
   }
 
-  /// Ambil status Kiosk & data Direct-Boot saat app cold-boot
-  static Future<KioskBootState> getKioskBootState() async {
+  /// Ambil status Kiosk & data Direct-Boot saat app cold-boot (dengan fast-path cache)
+  static Future<KioskBootState> getKioskBootState({bool forceRefresh = false}) async {
+    if (!forceRefresh && _cachedBootState != null) {
+      return _cachedBootState!;
+    }
     try {
       final res = await _channel.invokeMethod<Map<dynamic, dynamic>>('getKioskBootState');
       if (res != null) {
-        return KioskBootState.fromMap(res);
+        final state = KioskBootState.fromMap(res);
+        _cachedBootState = state;
+        return state;
       }
     } catch (_) {}
-    return const KioskBootState(isLocked: false, bootIntoAod: false);
+    const fallback = KioskBootState(isLocked: false, bootIntoAod: false);
+    _cachedBootState = fallback;
+    return fallback;
   }
 
   /// Ambil salinan payload konfigurasi dan menu dari Direct-Boot Device Protected Storage
@@ -79,7 +93,14 @@ class KioskEngineService {
         },
       );
       if (res != null) {
-        return Map<String, dynamic>.from(res);
+        final map = Map<String, dynamic>.from(res);
+        _cachedBootState = KioskBootState(
+          isLocked: map['locked'] != false,
+          bootIntoAod: _cachedBootState?.bootIntoAod ?? false,
+          cachedMenuJson: _cachedBootState?.cachedMenuJson,
+          cachedConfigJson: _cachedBootState?.cachedConfigJson,
+        );
+        return map;
       }
     } catch (e) {
       return {'locked': false, 'error': e.toString()};
@@ -91,6 +112,7 @@ class KioskEngineService {
   static Future<bool> disableStrictKiosk() async {
     try {
       final res = await _channel.invokeMethod<bool>('disableStrictKiosk');
+      _cachedBootState = const KioskBootState(isLocked: false, bootIntoAod: false);
       return res ?? true;
     } catch (_) {
       return false;

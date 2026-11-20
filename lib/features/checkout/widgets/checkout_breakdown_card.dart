@@ -66,22 +66,31 @@ class CheckoutBreakdownCard extends StatelessWidget {
 
   Widget _buildRow(String label, String value, {bool isBold = false, double fontSize = 12, Color? color}) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: fontSize,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-            color: AppTheme.textMuted,
+        Flexible(
+          flex: 2,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: fontSize,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              color: AppTheme.textMuted,
+            ),
           ),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: fontSize,
-            fontWeight: isBold ? FontWeight.w900 : FontWeight.w700,
-            color: color ?? AppTheme.textDark,
+        const SizedBox(width: 12),
+        Expanded(
+          flex: 3,
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: TextStyle(
+              fontSize: fontSize,
+              fontWeight: isBold ? FontWeight.w900 : FontWeight.w700,
+              color: color ?? AppTheme.textDark,
+            ),
           ),
         ),
       ],

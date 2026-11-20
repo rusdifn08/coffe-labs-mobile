@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/network/isolate_json_transformer.dart';
 import '../../../data/roastery_catalog.dart';
 import '../../../data/visual/beans_part_1.dart';
 import '../../../data/visual/beans_part_2.dart';
@@ -115,7 +116,18 @@ class CoffeeKnowledgeGraphService {
     'roastery',
     'roasters',
     'roaster',
+    'roasting',
+    'roas',
     'roast',
+    'date',
+    'better',
+    'brew',
+    'quality',
+    'dari',
+    'untuk',
+    'cita',
+    'rasa',
+    'terbaik',
     'filter',
     'espresso',
     'whole',
@@ -138,6 +150,27 @@ class CoffeeKnowledgeGraphService {
     'fresh',
     'sample',
     'lot',
+    // Non-coffee receipt/packaging/UI stopwords (anti-hallucination guard)
+    'struk',
+    'belanja',
+    'total',
+    'subtotal',
+    'terima',
+    'kasih',
+    'harga',
+    'bayar',
+    'tunai',
+    'kembalian',
+    'diskon',
+    'promo',
+    'tanggal',
+    'waktu',
+    'kasir',
+    'invoice',
+    'receipt',
+    'change',
+    'thank',
+    'thanks',
   };
 
   /// Kamus normalisasi kesalahan pembacaan OCR umum pada kemasan kopi.
@@ -229,21 +262,24 @@ class CoffeeKnowledgeGraphService {
 
     try {
       final kgStr = await rootBundle.loadString('assets/data/coffee_knowledge_graph.json');
-      _loadKnowledgeGraphJson(json.decode(kgStr));
+      final decoded = await IsolateJsonTransformer.parseJsonInBackground(kgStr);
+      _loadKnowledgeGraphJson(decoded);
     } catch (e) {
       debugPrint('CoffeeKnowledgeGraphService kg notice: $e');
     }
 
     try {
       final initStr = await rootBundle.loadString('assets/data/initial_classes.json');
-      _loadInitialClassesJson(json.decode(initStr));
+      final decoded = await IsolateJsonTransformer.parseJsonInBackground(initStr);
+      _loadInitialClassesJson(decoded);
     } catch (e) {
       debugPrint('CoffeeKnowledgeGraphService initial_classes notice: $e');
     }
 
     try {
       final coffeeStr = await rootBundle.loadString('assets/data/coffee.json');
-      _loadCoffeeCatalogJson(json.decode(coffeeStr));
+      final decoded = await IsolateJsonTransformer.parseJsonInBackground(coffeeStr);
+      _loadCoffeeCatalogJson(decoded);
     } catch (e) {
       debugPrint('CoffeeKnowledgeGraphService coffee.json notice: $e');
     }
@@ -617,7 +653,8 @@ class CoffeeKnowledgeGraphService {
       return (canonicalName: bestCanonical, matchedAlias: bestAlias);
     }
 
-    // Fuzzy token check hanya terhadap alias multi-karakter non-generik >= 5 huruf
+    // Fuzzy token check HANYA terhadap single-word brand alias non-generik >= 5 huruf
+    // dengan verifikasi ganda (Jaro-Winkler >= 0.93 + Levenshtein <= 1/2) agar NOL halusinasi.
     final words = repaired
         .split(RegExp(r'[^a-z0-9]+'))
         .where((w) => w.length >= 5 && !_genericTokens.contains(w))
@@ -625,10 +662,12 @@ class CoffeeKnowledgeGraphService {
     double bestScore = 0.0;
     for (final w in words) {
       for (final entry in _roasteryAliasMap.entries) {
-        final aliasFirst = entry.key.split(' ').first;
-        if (aliasFirst.length < 5 || _genericTokens.contains(aliasFirst)) continue;
-        final score = jaroWinkler(w, aliasFirst);
-        if (score >= 0.91 && score > bestScore) {
+        final alias = entry.key;
+        if (alias.contains(' ') || alias.length < 5 || _genericTokens.contains(alias)) continue;
+        final maxDist = alias.length >= 9 ? 2 : 1;
+        if ((w.length - alias.length).abs() > maxDist) continue;
+        final score = jaroWinkler(w, alias);
+        if (score >= 0.93 && _levenshtein(w, alias) <= maxDist && score > bestScore) {
           bestScore = score;
           bestCanonical = entry.value;
           bestAlias = w;
@@ -733,10 +772,20 @@ class CoffeeKnowledgeGraphService {
         }
       }
 
-      // Cek apakah ada token brand di teks lengkap
+      // Cek apakah ada token brand di teks lengkap (verifikasi ketat: exact atau JW>=0.93 + edit<=1/2)
       if (!brandMatched && entry.brandTokens.isNotEmpty) {
         brandMatched = entry.brandTokens.any(
-          (bt) => bt.length >= 4 && fullTokens.any((ft) => ft == bt || jaroWinkler(ft, bt) >= 0.90),
+          (bt) =>
+              bt.length >= 4 &&
+              !_genericTokens.contains(bt) &&
+              fullTokens.any((ft) {
+                if (ft == bt) return true;
+                if (ft.length < 5 || bt.length < 5) return false;
+                final maxDist = bt.length >= 9 ? 2 : 1;
+                return (ft.length - bt.length).abs() <= maxDist &&
+                    jaroWinkler(ft, bt) >= 0.93 &&
+                    _levenshtein(ft, bt) <= maxDist;
+              }),
         );
       }
 
@@ -754,9 +803,12 @@ class CoffeeKnowledgeGraphService {
             break;
           }
           if (tok.length >= 5 && pt.length >= 5) {
-            final jw = jaroWinkler(tok, pt);
-            if (jw >= 0.87 && jw > bestTok) {
-              bestTok = jw;
+            final maxDist = pt.length >= 9 ? 2 : 1;
+            if ((tok.length - pt.length).abs() <= maxDist && _levenshtein(tok, pt) <= maxDist) {
+              final jw = jaroWinkler(tok, pt);
+              if (jw >= 0.89 && jw > bestTok) {
+                bestTok = jw;
+              }
             }
           }
         }
@@ -919,14 +971,37 @@ class CoffeeKnowledgeGraphService {
         .where((w) => w.length >= 5 && !_genericTokens.contains(w));
     for (final profile in _terroirs) {
       for (final kw in profile.keywords) {
-        if (kw.length < 5) continue;
+        if (kw.length < 5 || kw.contains(' ')) continue;
+        final maxDist = kw.length >= 9 ? 2 : 1;
         for (final word in words) {
-          if (jaroWinkler(word, kw) >= 0.91) return profile;
+          if ((word.length - kw.length).abs() > maxDist) continue;
+          if (jaroWinkler(word, kw) >= 0.93 && _levenshtein(word, kw) <= maxDist) {
+            return profile;
+          }
         }
       }
     }
 
     return null;
+  }
+
+  static int _levenshtein(String a, String b) {
+    if (a == b) return 0;
+    if (a.isEmpty) return b.length;
+    if (b.isEmpty) return a.length;
+    var prev = List<int>.generate(b.length + 1, (i) => i);
+    var curr = List<int>.filled(b.length + 1, 0);
+    for (int i = 1; i <= a.length; i++) {
+      curr[0] = i;
+      for (int j = 1; j <= b.length; j++) {
+        final cost = a.codeUnitAt(i - 1) == b.codeUnitAt(j - 1) ? 0 : 1;
+        curr[j] = min(min(curr[j - 1] + 1, prev[j] + 1), prev[j - 1] + cost);
+      }
+      final tmp = prev;
+      prev = curr;
+      curr = tmp;
+    }
+    return prev[b.length];
   }
 
   bool isKnownRoastery(String text) => matchKnownRoastery(text) != null;

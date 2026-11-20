@@ -11,8 +11,11 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_blue_plus_winrt
   flutter_secure_storage_windows
   flutter_tts
+  gal
+  geolocator_windows
   media_kit_libs_windows_video
   media_kit_video
+  print_bluetooth_thermal
   printing
   rive_native
   screen_brightness_windows

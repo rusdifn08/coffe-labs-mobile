@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:coffee_hub_mobile/features/recipe_feed/models/recipe_sort_option.dart';
+import 'package:coffee_hub_mobile/features/recipe_feed/utils/recipe_filter_matcher.dart';
 import 'package:coffee_hub_mobile/features/recipe_feed/widgets/recipe_feed_search_bar.dart';
 import 'package:coffee_hub_mobile/features/recipe_feed/widgets/recipe_filter_modal.dart';
 import 'package:coffee_hub_mobile/features/recipe_feed/widgets/recipe_sort_modal.dart';
@@ -242,75 +243,170 @@ void main() {
       expect(selected, RecipeSortOption.fastestBrew);
     });
 
-    testWidgets('RecipeFilterModal properly calls onApplyFilters with selected criteria', (tester) async {
-      Map<String, String>? appliedFilters;
+    testWidgets(
+      'RecipeFilterModal renders Metode Seduh 3D, core Tasting Notes, flag-only Indonesia, bottom +/- Pouring stepper, and removes Barista & Teknik Seduh',
+      (tester) async {
+        tester.view.physicalSize = const Size(375, 780);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) => Scaffold(
-              body: ElevatedButton(
-                onPressed: () {
-                  RecipeFilterModal.show(
-                    context: context,
-                    selectedPourFilter: 'Semua',
-                    selectedDripperFilter: 'Semua',
-                    selectedBaristaFilter: 'Semua',
-                    selectedCategory: 'All',
-                    selectedOriginFilter: 'Semua',
-                    selectedNoteFilter: 'Semua',
-                    selectedNoteCategoryTab: 'floral',
-                    uniqueBaristas: const [],
-                    categories: const ['All', 'V60', 'Aeropress'],
-                    pourFilterOptions: const ['Semua', 'Single Pour', '2x Pouring'],
-                    originFilterOptions: const ['Semua', 'Indonesia 🇮🇩'],
-                    onApplyFilters: ({
-                      required String pourFilter,
-                      required String dripperFilter,
-                      required String baristaFilter,
-                      required String category,
-                      required String originFilter,
-                      required String noteFilter,
-                      required String noteCategoryTab,
-                    }) {
-                      appliedFilters = {
-                        'pour': pourFilter,
-                        'dripper': dripperFilter,
-                        'barista': baristaFilter,
-                        'category': category,
-                        'origin': originFilter,
-                        'note': noteFilter,
-                        'tab': noteCategoryTab,
-                      };
-                    },
-                    onResetAll: () {},
-                  );
-                },
-                child: const Text('Open Filter'),
+        Map<String, String>? appliedFilters;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: ElevatedButton(
+                  onPressed: () {
+                    RecipeFilterModal.show(
+                      context: context,
+                      selectedPourFilter: 'Semua',
+                      selectedDripperFilter: 'Semua',
+                      selectedOriginFilter: 'Semua',
+                      selectedNoteFilter: 'Semua',
+                      onApplyFilters: ({
+                        required String pourFilter,
+                        required String dripperFilter,
+                        required String baristaFilter,
+                        required String category,
+                        required String originFilter,
+                        required String noteFilter,
+                        required String noteCategoryTab,
+                      }) {
+                        appliedFilters = {
+                          'pour': pourFilter,
+                          'dripper': dripperFilter,
+                          'barista': baristaFilter,
+                          'category': category,
+                          'origin': originFilter,
+                          'note': noteFilter,
+                          'tab': noteCategoryTab,
+                        };
+                      },
+                      onResetAll: () {},
+                    );
+                  },
+                  child: const Text('Open Filter'),
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      // Open Filter Modal
-      await tester.tap(find.text('Open Filter'));
-      await tester.pumpAndSettle();
+        // Open Filter Modal
+        await tester.tap(find.text('Open Filter'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
 
-      // Select 'Single Pour'
-      expect(find.text('Single Pour'), findsOneWidget);
-      await tester.tap(find.text('Single Pour'));
-      await tester.pumpAndSettle();
+        // 1. Metode Seduh replaces Pilih Dripper; Barista & Teknik Seduh are removed
+        expect(find.text('Metode Seduh'), findsOneWidget);
+        expect(find.textContaining('Pilih Dripper'), findsNothing);
+        expect(find.textContaining('Pilih Barista'), findsNothing);
+        expect(find.textContaining('Teknik Seduh'), findsNothing);
 
-      // Tap 'Terapkan Filter'
-      final applyButton = find.textContaining('Terapkan Filter');
-      expect(applyButton, findsOneWidget);
-      await tester.tap(applyButton);
-      await tester.pumpAndSettle();
+        // 2. No preset pour choice chips; only +/- stepper at the bottom
+        expect(find.text('1-2x Pour'), findsNothing);
+        expect(find.text('Full Immersion'), findsNothing);
+        expect(find.text('5x+ Pouring'), findsNothing);
 
-      // Verify that appliedFilters was called with 'Single Pour'
-      expect(appliedFilters, isNotNull);
-      expect(appliedFilters!['pour'], 'Single Pour');
+        // 3. Streamlined core Tasting Notes
+        expect(find.text('Floral'), findsOneWidget);
+        expect(find.text('Fruity'), findsOneWidget);
+        expect(find.text('Chocolaty'), findsOneWidget);
+
+        // Select 'Aeropress' 3D method & 'Floral' note
+        await tester.tap(find.text('Aeropress'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Floral'));
+        await tester.pumpAndSettle();
+
+        // 4. Flag-only Indonesia button (no verbose 'Barista Indonesia' text)
+        final modalVerticalScrollable = find.byWidgetPredicate(
+          (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
+        );
+        expect(find.textContaining('Barista Indonesia'), findsNothing);
+        final indoFlagBtn = find.byKey(const Key('origin_indonesia_flag_btn'));
+        await tester.scrollUntilVisible(
+          indoFlagBtn,
+          150,
+          scrollable: modalVerticalScrollable.first,
+        );
+        await tester.pumpAndSettle();
+        expect(indoFlagBtn, findsOneWidget);
+        expect(
+          find.descendant(of: indoFlagBtn, matching: find.byType(BaristaFlagBadge)),
+          findsOneWidget,
+        );
+        await tester.tap(indoFlagBtn);
+        await tester.pumpAndSettle();
+
+        // 5. Jumlah Pouring at bottom (below Asal Barista & Durasi) with only - and +
+        final pourTitleFinder = find.text('Jumlah Pouring');
+        await tester.scrollUntilVisible(
+          pourTitleFinder,
+          150,
+          scrollable: modalVerticalScrollable.first,
+        );
+        await tester.pumpAndSettle();
+        final originTitleY = tester.getTopLeft(find.text('Asal Barista & Durasi')).dy;
+        final pourTitleY = tester.getTopLeft(pourTitleFinder).dy;
+        expect(pourTitleY, greaterThan(originTitleY));
+
+        final incBtn = find.byKey(const Key('pour_increment_btn'));
+        final decBtn = find.byKey(const Key('pour_decrement_btn'));
+        await tester.scrollUntilVisible(
+          incBtn,
+          150,
+          scrollable: modalVerticalScrollable.first,
+        );
+        await tester.pumpAndSettle();
+
+        // Tap + three times -> 3x, then - once -> 2x
+        await tester.tap(incBtn);
+        await tester.tap(incBtn);
+        await tester.tap(incBtn);
+        await tester.pumpAndSettle();
+        expect(find.text('3x'), findsOneWidget);
+
+        await tester.tap(decBtn);
+        await tester.pumpAndSettle();
+        expect(find.text('2x'), findsOneWidget);
+
+        // Apply filters
+        final applyButton = find.textContaining('Terapkan Filter');
+        expect(applyButton, findsOneWidget);
+        await tester.tap(applyButton);
+        await tester.pumpAndSettle();
+
+        expect(appliedFilters, isNotNull);
+        expect(appliedFilters!['dripper'], 'AeroPress');
+        expect(appliedFilters!['note'], 'Floral');
+        expect(appliedFilters!['origin'], 'Indonesia');
+        expect(appliedFilters!['pour'], '2x Pour');
+      },
+    );
+
+    test('RecipeFilterMatcher handles exact numeric pours, 3D methods, and core tasting notes', () {
+      final v60Recipe = {
+        'title': 'Kasuya V60 Floral',
+        'method': 'Hario V60',
+        'category': 'V60 Pour Over',
+        'tastingNotes': 'Jasmine, White Peach, Milk Chocolate',
+        'steps': [
+          {'title': 'Bloom', 'waterAddedGrams': 40, 'durationSeconds': 30},
+          {'title': 'Pour 2', 'waterAddedGrams': 100, 'durationSeconds': 45},
+          {'title': 'Pour 3', 'waterAddedGrams': 100, 'durationSeconds': 45},
+        ],
+      };
+
+      expect(RecipeFilterMatcher.matchesPour(v60Recipe, '3x Pour'), isTrue);
+      expect(RecipeFilterMatcher.matchesPour(v60Recipe, '2x Pour'), isFalse);
+      expect(RecipeFilterMatcher.matchesDripper(v60Recipe, 'V60'), isTrue);
+      expect(RecipeFilterMatcher.matchesDripper(v60Recipe, 'AeroPress'), isFalse);
+      expect(RecipeFilterMatcher.matchesNote(v60Recipe, 'Floral'), isTrue);
+      expect(RecipeFilterMatcher.matchesNote(v60Recipe, 'Fruity'), isTrue);
+      expect(RecipeFilterMatcher.matchesNote(v60Recipe, 'Chocolaty'), isTrue);
+      expect(RecipeFilterMatcher.matchesNote(v60Recipe, 'Nutty'), isFalse);
     });
   });
 }

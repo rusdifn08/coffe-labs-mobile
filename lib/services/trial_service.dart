@@ -24,14 +24,17 @@ class TrialService {
 
   static TrialAccessPolicy _cachedPolicy = TrialAccessPolicy.strictLimited;
   static bool _policyLoadedFromDisk = false;
+  static bool? _cachedIsTrialMode;
   static Set<int> _cachedCanonicalFreeIds = <int>{};
   static int _cachedCanonicalLimit = -1;
 
   static TrialAccessPolicy get currentPolicySync => _cachedPolicy;
+  static bool? get cachedIsTrialMode => _cachedIsTrialMode;
 
   static void resetPolicyMemoryCache() {
     _cachedPolicy = TrialAccessPolicy.strictLimited;
     _policyLoadedFromDisk = false;
+    _cachedIsTrialMode = null;
     _cachedCanonicalFreeIds = <int>{};
     _cachedCanonicalLimit = -1;
   }
@@ -135,11 +138,14 @@ class TrialService {
   /// Cek apakah pengguna sedang berada di Mode Trial / Tamu
   static Future<bool> isTrialMode() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_trialModeKey) ?? false;
+    final val = prefs.getBool(_trialModeKey) ?? false;
+    _cachedIsTrialMode = val;
+    return val;
   }
 
   /// Aktifkan / nonaktifkan mode trial
   static Future<void> setTrialMode(bool isTrial) async {
+    _cachedIsTrialMode = isTrial;
     final prefs = await SharedPreferences.getInstance();
     final current = prefs.getBool(_trialModeKey);
     if (current == isTrial) return;

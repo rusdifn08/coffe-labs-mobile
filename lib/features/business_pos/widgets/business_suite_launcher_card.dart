@@ -2,7 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/business_pos_models.dart';
+import '../../../models/subscription_plan.dart';
 import '../../../providers/workspace_mode_provider.dart';
+import '../../profile/widgets/subscription_checkout_sheet.dart';
 import '../screens/business_main_layout.dart';
 
 class BusinessSuiteLauncherCard extends ConsumerWidget {
@@ -46,7 +48,7 @@ class BusinessSuiteLauncherCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Fitur Mode Kasir (POS) dan AMOLED Always-On Menu Display khusus bagi pengguna dengan langganan Business (bukan Pro).',
+              'Fitur Dashboard Kafe, Mode Kasir (POS), Stok Opname, & AMOLED Always-On Menu Display khusus untuk pengguna dengan lisensi Business (bukan Pro).',
               style: TextStyle(color: Color(0xFFC7C7C7), fontSize: 13, height: 1.4),
             ),
             SizedBox(height: 14),
@@ -55,10 +57,11 @@ class BusinessSuiteLauncherCard extends ConsumerWidget {
               style: TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold, fontSize: 12),
             ),
             SizedBox(height: 6),
-            Text('• Layar Kiosk True Pitch-Black OLED (#000000)', style: TextStyle(color: Colors.white70, fontSize: 12)),
-            Text('• Anti Burn-In Pixel-Shifting & Kiosk PIN Lock', style: TextStyle(color: Colors.white70, fontSize: 12)),
-            Text('• Validasi Transparansi Foto Menu Otomatis', style: TextStyle(color: Colors.white70, fontSize: 12)),
-            Text('• Kasir POS Cepat dengan Transaksi Bar Terintegrasi', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            Text('• Seluruh Fitur Coffee Labs Pro (500+ Resep, Unlimited Brew & Toolkit Barista)', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            Text('• Kasir POS Lengkap (Cash, QRIS, Kartu, Diskon & Rekap Tutup Shift)', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            Text('• Display Kiosk True Pitch-Black OLED + Anti Burn-In & PIN Lock', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            Text('• Stok Opname Bahan Kafe, Peringatan Stok Rendah & Kapasitas Cup', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            Text('• Struk Thermal Bluetooth Tanpa Batas & QR Live Brew Pelanggan', style: TextStyle(color: Colors.white70, fontSize: 12)),
           ],
         ),
         actions: [
@@ -67,7 +70,13 @@ class BusinessSuiteLauncherCard extends ConsumerWidget {
             child: const Text('Nanti Saja', style: TextStyle(color: Colors.white60)),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () {
+              Navigator.pop(ctx);
+              SubscriptionCheckoutSheet.show(
+                context,
+                plan: SubscriptionPlan.business,
+              );
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFD4AF37),
               foregroundColor: Colors.black,

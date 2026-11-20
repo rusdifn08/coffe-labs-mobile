@@ -19,7 +19,7 @@ class ScaleSampleFrame {
   });
 }
 
-/// Jembatan Smart Scale Bluetooth (`flutter_blue_plus` via `SmartScaleService`) +
+/// Jembatan Smart Scale Bluetooth hardware (`flutter_blue_plus` via `SmartScaleService`) +
 /// Filter EWMA Laju Tuang (alpha = 0.28) pada frekuensi 10Hz (setiap 100ms).
 class BleCoffeeScaleBridge {
   final EwmaFlowFilter _ewmaFilter = EwmaFlowFilter();
@@ -40,10 +40,8 @@ class BleCoffeeScaleBridge {
     _ticker10Hz = Timer.periodic(const Duration(milliseconds: 100), (_) {
       _elapsedMs += 100;
       final ble = SmartScaleService.instance;
-      final hasBle = ble.isConnected && !ble.isSimulationMode;
-      final weight = hasBle
-          ? ble.currentWeight
-          : (ble.isSimulationMode ? ble.currentWeight : activeWeightFallback());
+      final hasBle = ble.isConnected;
+      final weight = hasBle ? ble.currentWeight : activeWeightFallback();
 
       final smoothedFlow = _ewmaFilter.update(weight, _elapsedMs);
       onTick(

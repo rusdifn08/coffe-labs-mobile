@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/world_indonesia_beans_service.dart';
 import '../features/bean_dial_in/widgets/compact_dial_in_sections.dart';
 import '../features/beans/controllers/bean_inventory_controller.dart';
 import '../models/bean_ai_customization_models.dart';
@@ -45,11 +46,26 @@ class _BeanRecipeRecommenderScreenState
 
   final List<String> _popularOrigins = const [
     'Aceh Gayo Pantan Musara',
+    'Sumatra Kerinci Kayu Aro',
+    'Sumatra Solok Radjo',
     'Gunung Halu West Java',
+    'Gunung Puntang West Java',
+    'Temanggung Sindoro',
+    'Java Ijen Raung',
     'Bali Kintamani Ulian',
+    'Flores Bajawa & Colol',
     'Toraja Sapan',
-    'Flores Bajawa',
+    'Papua Wamena & Tiom',
+    'Liberika Tungkal Jambi',
+    'Excelsa Wonosalam',
     'Ethiopia Yirgacheffe',
+    'Ethiopia Guji Uraga',
+    'Colombia Huila Pink Bourbon',
+    'Panama Boquete Geisha',
+    'Kenya Nyeri SL28',
+    'Costa Rica Tarrazú Honey',
+    'Brazil Cerrado Mineiro',
+    'Guatemala Huehuetenango',
   ];
 
   late RecommendedBrewRecipe _recipe;
@@ -57,13 +73,24 @@ class _BeanRecipeRecommenderScreenState
   @override
   void initState() {
     super.initState();
-    _catalogBeans = CuratedRoasteryBean.getAllCatalogBeans();
+    _catalogBeans = WorldIndonesiaBeansService.instance.mergeWithCuratedBeans(
+      CuratedRoasteryBean.getAllCatalogBeans(),
+    );
     _selectedCatalogBean = _catalogBeans.firstWhere(
       (b) => b.roasteryName.contains('Space') || b.badge != null,
       orElse: () => _catalogBeans.first,
     );
     _dripper = _selectedCatalogBean.recommendedDripper;
     _recalculate();
+    WorldIndonesiaBeansService.instance.ensureLoaded().then((_) {
+      if (!mounted) return;
+      final merged = WorldIndonesiaBeansService.instance.mergeWithCuratedBeans(
+        CuratedRoasteryBean.getAllCatalogBeans(),
+      );
+      if (merged.length != _catalogBeans.length) {
+        setState(() => _catalogBeans = merged);
+      }
+    });
   }
 
   @override

@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'core/network/dio_client.dart';
 import 'core/router/app_router.dart';
+import 'data/world_indonesia_beans_service.dart';
+import 'features/admin_control/widgets/active_feature_lock_kickout_overlay.dart';
 import 'features/auth/controllers/auth_controller.dart';
 import 'features/bean_scanner/services/coffee_knowledge_graph_service.dart';
 import 'features/communities/presentation/services/community_deep_link_listener.dart';
@@ -22,11 +24,18 @@ import 'theme/app_theme.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Batasi cache tekstur gambar GPU agar perangkat RAM rendah tidak OOM & bebas jank
+  PaintingBinding.instance.imageCache.maximumSize = 150;
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 64 * 1024 * 1024;
+
   // Inisialisasi sqflite FFI untuk platform desktop (Windows / Linux / macOS)
   PrototypeDatabase.ensureFfiInitialized();
 
-  // Pra-muat Knowledge Graph Kopi (coffee.json, knowledge graph, catalog) di background
-  unawaited(CoffeeKnowledgeGraphService.instance.initialize());
+  // Pra-muat Knowledge Graph Kopi (v3.0) & Katalog Biji Sabang-Merauke/Dunia setelah frame pertama tampil
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(CoffeeKnowledgeGraphService.instance.initialize());
+    unawaited(WorldIndonesiaBeansService.instance.ensureLoaded());
+  });
 
   // Inisialisasi native libmpv media_kit secara aman di luar Flutter VM test
   if (!kIsWeb && !Platform.environment.containsKey('FLUTTER_TEST')) {
@@ -118,7 +127,10 @@ class CoffeeHubApp extends ConsumerWidget {
         final content = (!kIsWeb && Platform.isWindows)
             ? ExcludeSemantics(child: child ?? const SizedBox())
             : (child ?? const SizedBox());
-        return CommunityDeepLinkListener(child: content);
+        return ActiveFeatureLockKickoutWatcher(
+          router: router,
+          child: CommunityDeepLinkListener(child: content),
+        );
       },
     );
   }

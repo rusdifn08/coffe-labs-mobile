@@ -75,16 +75,33 @@ class UserProfileHeaderCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(
-                      height: 25,
-                      child: ProfessionalRunningText(
-                        text: displayName,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textDark),
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            displayName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.textDark,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                        ),
+                        if (_hasInlineTierBadge) ...[
+                          const SizedBox(width: 7),
+                          _buildInlineTierBadge(),
+                        ],
+                      ],
                     ),
                     const SizedBox(height: 3),
                     Text(
                       currentUser != null ? '@${currentUser!.username}' : '@tamu_trial',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 12.5, color: AppTheme.textMuted),
                     ),
                     const SizedBox(height: 8),
@@ -92,10 +109,10 @@ class UserProfileHeaderCard extends StatelessWidget {
                       spacing: 6,
                       runSpacing: 4,
                       children: [
-                        _buildRoleBadge(),
+                        if (!_hasInlineTierBadge) _buildSecondaryRoleBadge(),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          constraints: const BoxConstraints(maxWidth: 160),
+                          constraints: const BoxConstraints(maxWidth: 165),
                           decoration: BoxDecoration(
                             color: lvl.accentColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
@@ -259,68 +276,154 @@ class UserProfileHeaderCard extends StatelessWidget {
     );
   }
 
-  Widget _buildRoleBadge() {
+  bool get _hasInlineTierBadge =>
+      isAdmin ||
+      currentTier == SubscriptionTier.business ||
+      currentTier == SubscriptionTier.pro;
+
+  Widget _buildInlineTierBadge() {
     if (isAdmin) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+        key: const Key('profile_tier_badge_admin'),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
         decoration: BoxDecoration(
-          color: Colors.amber.shade100,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.amber.shade700),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(CupertinoIcons.shield_lefthalf_fill, size: 12, color: Colors.amber.shade900),
-            const SizedBox(width: 4),
-            Text(
-              'ADMINISTRATOR',
-              style: TextStyle(color: Colors.amber.shade900, fontSize: 10, fontWeight: FontWeight.bold),
+          gradient: const LinearGradient(
+            colors: [Color(0xFF7F1D1D), Color(0xFF450A0A)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: const Color(0xFFFDE68A), width: 1.0),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF991B1B).withValues(alpha: 0.28),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
             ),
           ],
-        ),
-      );
-    } else if (currentTier == SubscriptionTier.business) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-        decoration: BoxDecoration(
-          color: Colors.amber.shade50,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.amber.shade800),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(CupertinoIcons.briefcase_fill, size: 12, color: Colors.amber.shade900),
-            const SizedBox(width: 4),
-            Text(
-              'BUSINESS CAFE',
-              style: TextStyle(color: Colors.amber.shade900, fontSize: 10, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-      );
-    } else if (currentTier == SubscriptionTier.pro) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-        decoration: BoxDecoration(
-          color: Colors.brown.shade50,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppTheme.primaryBrown),
         ),
         child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(CupertinoIcons.sparkles, size: 12, color: AppTheme.primaryBrown),
-            SizedBox(width: 4),
+            Icon(
+              CupertinoIcons.shield_lefthalf_fill,
+              size: 10.5,
+              color: Color(0xFFFDE68A),
+            ),
+            SizedBox(width: 3.5),
             Text(
-              'COFFEE LABS PRO',
-              style: TextStyle(color: AppTheme.primaryBrown, fontSize: 10, fontWeight: FontWeight.bold),
+              'ADMIN',
+              style: TextStyle(
+                color: Color(0xFFFEF3C7),
+                fontSize: 9.2,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.85,
+                height: 1.0,
+              ),
             ),
           ],
         ),
       );
-    } else if (isTrial) {
+    }
+
+    if (currentTier == SubscriptionTier.business) {
+      return Container(
+        key: const Key('profile_tier_badge_business'),
+        padding: const EdgeInsets.symmetric(horizontal: 8.5, vertical: 3.5),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFF14110F),
+              Color(0xFF2E2318),
+              Color(0xFF17130F),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: const Color(0xFFF2C96B), width: 1.1),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFD4AF37).withValues(alpha: 0.34),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.workspace_premium_rounded,
+              size: 11.5,
+              color: Color(0xFFF6CE69),
+            ),
+            SizedBox(width: 3.5),
+            Text(
+              'BUSINESS',
+              style: TextStyle(
+                color: Color(0xFFFFE7A3),
+                fontSize: 9.2,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.85,
+                height: 1.0,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Coffee Labs PRO — Premium Espresso-Bronze & Champagne Gold Pill
+    return Container(
+      key: const Key('profile_tier_badge_pro'),
+      padding: const EdgeInsets.symmetric(horizontal: 8.5, vertical: 3.5),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF2B1810),
+            Color(0xFF5C3317),
+            Color(0xFF8C5324),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFF0C36D), width: 1.0),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFC88A32).withValues(alpha: 0.32),
+            blurRadius: 7,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.auto_awesome_rounded,
+            size: 11,
+            color: Color(0xFFFFDE8A),
+          ),
+          SizedBox(width: 3.5),
+          Text(
+            'PRO',
+            style: TextStyle(
+              color: Color(0xFFFFF5D6),
+              fontSize: 9.5,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.0,
+              height: 1.0,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSecondaryRoleBadge() {
+    if (isTrial) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
         decoration: BoxDecoration(
@@ -340,26 +443,25 @@ class UserProfileHeaderCard extends StatelessWidget {
           ],
         ),
       );
-    } else {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-        decoration: BoxDecoration(
-          color: Colors.green.shade50,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.green.shade600),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(CupertinoIcons.checkmark_seal_fill, size: 12, color: Colors.green.shade700),
-            const SizedBox(width: 4),
-            Text(
-              'VERIFIED BARISTA',
-              style: TextStyle(color: Colors.green.shade700, fontSize: 10, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-      );
     }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.green.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.green.shade600),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(CupertinoIcons.checkmark_seal_fill, size: 12, color: Colors.green.shade700),
+          const SizedBox(width: 4),
+          Text(
+            'VERIFIED BARISTA',
+            style: TextStyle(color: Colors.green.shade700, fontSize: 10, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
   }
 }

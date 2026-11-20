@@ -59,6 +59,13 @@ class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
   bool _isSplitMode = false;
   dynamic _selectedInspectionRecipe;
 
+  // Memoization cache untuk daftar resep agar tidak mengulang sanitasi/filter/sort 478+ resep saat rebuild UI
+  List<dynamic>? _lastRawRecipesRef;
+  int _lastRawRecipesLength = -1;
+  String? _lastFilterSignature;
+  Set<int> _cachedCanonicalFreeIds = const <int>{};
+  List<dynamic> _cachedFilteredRecipes = const <dynamic>[];
+
   List<String> get _categories => RecipeFilterMatcher.categories;
   List<String> get _pourFilterOptions => RecipeFilterMatcher.pourFilterOptions(LanguageService.isEnglish);
   List<String> get _originFilterOptions => RecipeFilterMatcher.originFilterOptions(LanguageService.isEnglish);
@@ -171,10 +178,17 @@ class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
   }
 
   void _openFilterModal() {
+    final effectiveSelectedMethod =
+        (_selectedDripperFilter != 'Semua' && _selectedDripperFilter != 'All')
+            ? _selectedDripperFilter
+            : (_selectedMethodFilter != 'All'
+                ? _selectedMethodFilter
+                : (LanguageService.isEnglish ? 'All' : 'Semua'));
+
     RecipeFilterModal.show(
       context: context,
       selectedPourFilter: _selectedPourFilter,
-      selectedDripperFilter: _selectedDripperFilter,
+      selectedDripperFilter: effectiveSelectedMethod,
       selectedBaristaFilter: _selectedBaristaFilter,
       selectedCategory: _selectedCategory,
       selectedOriginFilter: _selectedOriginFilter,
@@ -196,6 +210,8 @@ class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
         setState(() {
           _selectedPourFilter = pourFilter;
           _selectedDripperFilter = dripperFilter;
+          _selectedMethodFilter = 'All';
+          _currentMethodTitle = null;
           _selectedBaristaFilter = baristaFilter;
           _selectedCategory = category;
           _selectedOriginFilter = originFilter;
@@ -297,124 +313,141 @@ class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
         body: Center(child: Text('Gagal memuat resep: $err')),
       ),
       data: (allRecipes) {
-        // KUNCI KEAMANAN: Hitung daftar ID resep bebas dari katalog PENUH (sebelum search/filter/sort).
-        final Set<int> canonicalFreeIds =
-            TrialService.computeCanonicalFreeIds(allRecipes);
-        final List<dynamic> filteredRecipes = allRecipes.where((raw) {
-          final r = ApiService.sanitizeRecipe(raw);
-          final catLower = _selectedCategory.toLowerCase();
-          bool matchesCategory = _selectedCategory == 'All' ||
-              r['category'] == _selectedCategory ||
-              (r['category'] ?? '').toString().toLowerCase().contains(catLower) ||
-              (r['method'] ?? '').toString().toLowerCase().contains(catLower) ||
-              (r['title'] ?? '').toString().toLowerCase().contains(catLower);
-          final authorStr = (r['author'] ?? '').toString();
-          final cleanAuthor = BaristaUtils.cleanName(authorStr);
-          bool matchesBarista = _selectedBaristaFilter == 'Semua' ||
-              _selectedBaristaFilter == 'All' ||
-              cleanAuthor.toLowerCase() == _selectedBaristaFilter.toLowerCase();
+        final scannedBean = ref.watch(selectedBrewBeanProvider);
+        final policy = TrialService.currentPolicySync;
+        final filterSig =
+            '$_searchQuery|$_selectedMethodFilter|$_selectedCategory|$_selectedPourFilter|$_selectedDripperFilter|$_selectedBaristaFilter|$_selectedNoteFilter|$_selectedOriginFilter|${_selectedSort.name}|${scannedBean?.fullDisplayName ?? ''}|${policy.maxFreeRecipes}|${policy.unlockAllRecipes}';
 
-          final isIndo = BaristaUtils.countryCode(authorStr) == 'id';
-          final iceGrams = (r['iceWeightGrams'] ?? 0) as num;
-          final isIced = iceGrams > 0 || (r['category'] ?? '').toString().toLowerCase().contains('iced');
-          final totalSecs = (r['totalTimeSeconds'] ?? 180) as num;
+        if (!identical(_lastRawRecipesRef, allRecipes) ||
+            _lastRawRecipesLength != allRecipes.length) {
+          _lastRawRecipesRef = allRecipes;
+          _lastRawRecipesLength = allRecipes.length;
+          // KUNCI KEAMANAN: Hitung daftar ID resep bebas dari katalog PENUH (sebelum search/filter/sort).
+          _cachedCanonicalFreeIds = TrialService.computeCanonicalFreeIds(allRecipes);
+          _lastFilterSignature = null;
+        }
 
-          bool matchesOrigin = true;
-          if (_selectedOriginFilter.contains('Indonesia')) {
-            matchesOrigin = isIndo;
-          } else if (_selectedOriginFilter.contains('Internasional') || _selectedOriginFilter.contains('International')) {
-            matchesOrigin = !isIndo;
-          } else if (_selectedOriginFilter.contains('Es') || _selectedOriginFilter.contains('Iced')) {
-            matchesOrigin = isIced;
-          } else if (_selectedOriginFilter.contains('Cepat') || _selectedOriginFilter.contains('Fast')) {
-            matchesOrigin = totalSecs <= 135;
+        if (_lastFilterSignature != filterSig) {
+          _lastFilterSignature = filterSig;
+          final computed = allRecipes.where((raw) {
+            final r = ApiService.sanitizeRecipe(raw);
+            final catLower = _selectedCategory.toLowerCase();
+            bool matchesCategory = _selectedCategory == 'All' ||
+                r['category'] == _selectedCategory ||
+                (r['category'] ?? '').toString().toLowerCase().contains(catLower) ||
+                (r['method'] ?? '').toString().toLowerCase().contains(catLower) ||
+                (r['title'] ?? '').toString().toLowerCase().contains(catLower);
+            final authorStr = (r['author'] ?? '').toString();
+            final cleanAuthor = BaristaUtils.cleanName(authorStr);
+            bool matchesBarista = _selectedBaristaFilter == 'Semua' ||
+                _selectedBaristaFilter == 'All' ||
+                cleanAuthor.toLowerCase() == _selectedBaristaFilter.toLowerCase();
+
+            final isIndo = BaristaUtils.countryCode(authorStr) == 'id';
+            final iceGrams = (r['iceWeightGrams'] ?? 0) as num;
+            final isIced = iceGrams > 0 || (r['category'] ?? '').toString().toLowerCase().contains('iced');
+            final totalSecs = (r['totalTimeSeconds'] ?? 180) as num;
+
+            bool matchesOrigin = true;
+            if (_selectedOriginFilter.contains('Indonesia')) {
+              matchesOrigin = isIndo;
+            } else if (_selectedOriginFilter.contains('Internasional') || _selectedOriginFilter.contains('International')) {
+              matchesOrigin = !isIndo;
+            } else if (_selectedOriginFilter.contains('Es') || _selectedOriginFilter.contains('Iced')) {
+              matchesOrigin = isIced;
+            } else if (_selectedOriginFilter.contains('Cepat') || _selectedOriginFilter.contains('Fast')) {
+              matchesOrigin = totalSecs <= 135;
+            }
+
+            final q = _searchQuery.toLowerCase();
+            bool matchesSearch = q.isEmpty ||
+                authorStr.toLowerCase().contains(q) ||
+                (r['title'] != null && r['title'].toString().toLowerCase().contains(q)) ||
+                (r['method'] != null && r['method'].toString().toLowerCase().contains(q)) ||
+                (r['beanName'] != null && r['beanName'].toString().toLowerCase().contains(q)) ||
+                (r['tastingNotes'] != null && r['tastingNotes'].toString().toLowerCase().contains(q)) ||
+                (r['category'] != null && r['category'].toString().toLowerCase().contains(q));
+
+            final matchesMethod = RecipeFilterMatcher.matchesMethod(r, _selectedMethodFilter);
+
+            return matchesCategory &&
+                matchesMethod &&
+                matchesBarista &&
+                matchesOrigin &&
+                RecipeFilterMatcher.matchesPour(r, _selectedPourFilter) &&
+                RecipeFilterMatcher.matchesDripper(r, _selectedDripperFilter) &&
+                RecipeFilterMatcher.matchesNote(r, _selectedNoteFilter) &&
+                matchesSearch;
+          }).toList();
+
+          switch (_selectedSort) {
+            case RecipeSortOption.alphabetical:
+              computed.sort((a, b) {
+                final titleA = (a['title'] ?? '').toString().toLowerCase();
+                final titleB = (b['title'] ?? '').toString().toLowerCase();
+                return titleA.compareTo(titleB);
+              });
+              break;
+
+            case RecipeSortOption.newest:
+              computed.sort((a, b) {
+                final isCustomA = a['isCustom'] == true ? 1 : 0;
+                final isCustomB = b['isCustom'] == true ? 1 : 0;
+                if (isCustomA != isCustomB) return isCustomB.compareTo(isCustomA);
+                final idA = int.tryParse(a['id']?.toString() ?? '') ?? 0;
+                final idB = int.tryParse(b['id']?.toString() ?? '') ?? 0;
+                return idB.compareTo(idA);
+              });
+              break;
+
+            case RecipeSortOption.fastestBrew:
+              computed.sort((a, b) {
+                final timeA = (a['totalTimeSeconds'] as num?)?.toInt() ?? 180;
+                final timeB = (b['totalTimeSeconds'] as num?)?.toInt() ?? 180;
+                return timeA.compareTo(timeB);
+              });
+              break;
+
+            case RecipeSortOption.coffeeDose:
+              computed.sort((a, b) {
+                final doseA = (a['coffeeWeightGrams'] as num?)?.toInt() ?? 15;
+                final doseB = (b['coffeeWeightGrams'] as num?)?.toInt() ?? 15;
+                return doseA.compareTo(doseB);
+              });
+              break;
+
+            case RecipeSortOption.baristaName:
+              computed.sort((a, b) {
+                final authorA = BaristaUtils.cleanName((a['author'] ?? '').toString()).toLowerCase();
+                final authorB = BaristaUtils.cleanName((b['author'] ?? '').toString()).toLowerCase();
+                return authorA.compareTo(authorB);
+              });
+              break;
+
+            case RecipeSortOption.defaultCurated:
+              break;
           }
 
-          final q = _searchQuery.toLowerCase();
-          bool matchesSearch = q.isEmpty ||
-              authorStr.toLowerCase().contains(q) ||
-              (r['title'] != null && r['title'].toString().toLowerCase().contains(q)) ||
-              (r['method'] != null && r['method'].toString().toLowerCase().contains(q)) ||
-              (r['beanName'] != null && r['beanName'].toString().toLowerCase().contains(q)) ||
-              (r['tastingNotes'] != null && r['tastingNotes'].toString().toLowerCase().contains(q)) ||
-              (r['category'] != null && r['category'].toString().toLowerCase().contains(q));
-
-          final matchesMethod = RecipeFilterMatcher.matchesMethod(r, _selectedMethodFilter);
-
-          return matchesCategory &&
-              matchesMethod &&
-              matchesBarista &&
-              matchesOrigin &&
-              RecipeFilterMatcher.matchesPour(r, _selectedPourFilter) &&
-              RecipeFilterMatcher.matchesDripper(r, _selectedDripperFilter) &&
-              RecipeFilterMatcher.matchesNote(r, _selectedNoteFilter) &&
-              matchesSearch;
-        }).toList();
-
-        // Terapkan sortir berdasarkan 5 kategori (+ default)
-        switch (_selectedSort) {
-          case RecipeSortOption.alphabetical:
-            filteredRecipes.sort((a, b) {
+          if (scannedBean != null && scannedBean.recommendedRecipes.isNotEmpty) {
+            final targetSlugs = scannedBean.recommendedRecipes.map((r) => r.slug.toLowerCase()).toSet();
+            computed.sort((a, b) {
               final titleA = (a['title'] ?? '').toString().toLowerCase();
               final titleB = (b['title'] ?? '').toString().toLowerCase();
-              return titleA.compareTo(titleB);
+              final isMatchA = targetSlugs.any((s) => titleA.contains(s.replaceAll('-', ' '))) ||
+                  (scannedBean.process.toLowerCase().contains('natural') && titleA.contains('natural'));
+              final isMatchB = targetSlugs.any((s) => titleB.contains(s.replaceAll('-', ' '))) ||
+                  (scannedBean.process.toLowerCase().contains('natural') && titleB.contains('natural'));
+              if (isMatchA && !isMatchB) return -1;
+              if (!isMatchA && isMatchB) return 1;
+              return 0;
             });
-            break;
+          }
 
-          case RecipeSortOption.newest:
-            filteredRecipes.sort((a, b) {
-              final isCustomA = a['isCustom'] == true ? 1 : 0;
-              final isCustomB = b['isCustom'] == true ? 1 : 0;
-              if (isCustomA != isCustomB) return isCustomB.compareTo(isCustomA);
-              final idA = int.tryParse(a['id']?.toString() ?? '') ?? 0;
-              final idB = int.tryParse(b['id']?.toString() ?? '') ?? 0;
-              return idB.compareTo(idA);
-            });
-            break;
-
-          case RecipeSortOption.fastestBrew:
-            filteredRecipes.sort((a, b) {
-              final timeA = (a['totalTimeSeconds'] as num?)?.toInt() ?? 180;
-              final timeB = (b['totalTimeSeconds'] as num?)?.toInt() ?? 180;
-              return timeA.compareTo(timeB);
-            });
-            break;
-
-          case RecipeSortOption.coffeeDose:
-            filteredRecipes.sort((a, b) {
-              final doseA = (a['coffeeWeightGrams'] as num?)?.toInt() ?? 15;
-              final doseB = (b['coffeeWeightGrams'] as num?)?.toInt() ?? 15;
-              return doseA.compareTo(doseB);
-            });
-            break;
-
-          case RecipeSortOption.baristaName:
-            filteredRecipes.sort((a, b) {
-              final authorA = BaristaUtils.cleanName((a['author'] ?? '').toString()).toLowerCase();
-              final authorB = BaristaUtils.cleanName((b['author'] ?? '').toString()).toLowerCase();
-              return authorA.compareTo(authorB);
-            });
-            break;
-
-          case RecipeSortOption.defaultCurated:
-            break;
+          _cachedFilteredRecipes = computed;
         }
 
-        final scannedBean = ref.watch(selectedBrewBeanProvider);
-        if (scannedBean != null && scannedBean.recommendedRecipes.isNotEmpty) {
-          final targetSlugs = scannedBean.recommendedRecipes.map((r) => r.slug.toLowerCase()).toSet();
-          filteredRecipes.sort((a, b) {
-            final titleA = (a['title'] ?? '').toString().toLowerCase();
-            final titleB = (b['title'] ?? '').toString().toLowerCase();
-            final isMatchA = targetSlugs.any((s) => titleA.contains(s.replaceAll('-', ' '))) ||
-                (scannedBean.process.toLowerCase().contains('natural') && titleA.contains('natural'));
-            final isMatchB = targetSlugs.any((s) => titleB.contains(s.replaceAll('-', ' '))) ||
-                (scannedBean.process.toLowerCase().contains('natural') && titleB.contains('natural'));
-            if (isMatchA && !isMatchB) return -1;
-            if (!isMatchA && isMatchB) return 1;
-            return 0;
-          });
-        }
+        final Set<int> canonicalFreeIds = _cachedCanonicalFreeIds;
+        final List<dynamic> filteredRecipes = _cachedFilteredRecipes;
 
         final showBackButton = Navigator.canPop(context) || _selectedMethodFilter != 'All';
 

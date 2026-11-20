@@ -31,43 +31,45 @@ class CheckoutCourierSelector extends StatelessWidget {
         ...courierOptions.map((c) {
           final isSel = selectedCourier == c['name'];
           final fee = c['fee'] as int;
-          return Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            decoration: BoxDecoration(
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Material(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: isSel ? AppTheme.primaryBrown : Colors.transparent,
-                width: isSel ? 1.5 : 1.0,
-              ),
-            ),
-            child: ListTile(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.bgCream,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(c['icon'] as IconData, size: 18, color: AppTheme.primaryBrown),
-              ),
-              title: Text(
-                c['name'] as String,
-                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
-              ),
-              subtitle: Text(
-                c['desc'] as String,
-                style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
-              ),
-              trailing: Text(
-                hasFreeShip ? (isEn ? 'FREE' : 'GRATIS') : CurrencyFormatter.formatRp(fee),
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w900,
-                  color: hasFreeShip ? Colors.green : AppTheme.primaryBrown,
+              clipBehavior: Clip.antiAlias,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: BorderSide(
+                  color: isSel ? AppTheme.primaryBrown : Colors.transparent,
+                  width: isSel ? 1.5 : 1.0,
                 ),
               ),
-              onTap: () => onCourierSelected(c['name'] as String, fee),
+              child: ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.bgCream,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(c['icon'] as IconData, size: 18, color: AppTheme.primaryBrown),
+                ),
+                title: Text(
+                  c['name'] as String,
+                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  c['desc'] as String,
+                  style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                ),
+                trailing: Text(
+                  hasFreeShip ? (isEn ? 'FREE' : 'GRATIS') : CurrencyFormatter.formatRp(fee),
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w900,
+                    color: hasFreeShip ? Colors.green : AppTheme.primaryBrown,
+                  ),
+                ),
+                onTap: () => onCourierSelected(c['name'] as String, fee),
+              ),
             ),
           );
         }),

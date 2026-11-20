@@ -23,10 +23,13 @@ class MainLayout extends StatefulWidget {
 
 class _MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
+  final Set<int> _visitedTabs = {0};
 
   @override
   void initState() {
     super.initState();
+    _currentIndex = MainNavigationService.currentTabNotifier.value;
+    _visitedTabs.add(_currentIndex);
     GamificationService.instance.checkDailyStreak();
     MainNavigationService.currentTabNotifier.addListener(_onTabNavChange);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -42,11 +45,15 @@ class _MainLayoutState extends State<MainLayout> {
 
   void _onTabNavChange() {
     if (mounted && _currentIndex != MainNavigationService.currentTabNotifier.value) {
-      setState(() => _currentIndex = MainNavigationService.currentTabNotifier.value);
+      setState(() {
+        _currentIndex = MainNavigationService.currentTabNotifier.value;
+        _visitedTabs.add(_currentIndex);
+      });
     }
   }
 
   void _onTabSelected(int index) {
+    _visitedTabs.add(index);
     if (index == 2) {
       HapticFeedback.mediumImpact();
     } else {
@@ -64,12 +71,22 @@ class _MainLayoutState extends State<MainLayout> {
     ProfileScreen(),
   ];
 
+  List<Widget> _buildLazyTabChildren() {
+    return List<Widget>.generate(_pages.length, (i) {
+      if (!_visitedTabs.contains(i) && i != _currentIndex) {
+        return const SizedBox.shrink();
+      }
+      return RepaintBoundary(child: _pages[i]);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final isLandscape = mediaQuery.orientation == Orientation.landscape;
     final isWide = mediaQuery.size.width >= 750;
     final useSideNav = isLandscape || isWide;
+    final children = _buildLazyTabChildren();
 
     if (useSideNav) {
       return Scaffold(
@@ -80,7 +97,7 @@ class _MainLayoutState extends State<MainLayout> {
             Expanded(
               child: IndexedStack(
                 index: _currentIndex,
-                children: _pages,
+                children: children,
               ),
             ),
           ],
@@ -91,7 +108,7 @@ class _MainLayoutState extends State<MainLayout> {
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: _pages,
+        children: children,
       ),
       bottomNavigationBar: _buildCustomElevatedNavBar(),
     );

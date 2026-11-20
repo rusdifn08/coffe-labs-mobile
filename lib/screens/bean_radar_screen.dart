@@ -1,223 +1,288 @@
-import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../data/roastery_catalog.dart';
-import '../features/bean_radar/widgets/nearby_roastery_card.dart';
-import '../features/bean_radar/widgets/radar_city_picker_sheet.dart';
-import '../features/bean_radar/widgets/radar_radius_filter.dart';
-import '../features/bean_radar/widgets/radar_visualizer.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
+
+import '../core/performance/transition_aware_deferred_builder.dart';
+import '../features/beans_radar/data/beans_radar_repository.dart';
+import '../features/beans_radar/models/beans_radar_models.dart';
+import '../features/beans_radar/presentation/controllers/radar_gps_controller.dart';
+import '../features/beans_radar/presentation/widgets/beans_radar_bottom_sheet.dart';
+import '../features/beans_radar/presentation/widgets/coffee_place_detail_sheet.dart';
+import '../features/beans_radar/presentation/widgets/radar_active_route_bar.dart';
+import '../features/beans_radar/presentation/widgets/radar_floating_controls.dart';
+import '../features/beans_radar/presentation/widgets/radar_map_canvas.dart';
+import '../features/roastery/controllers/roastery_catalog_controller.dart';
+import '../features/roastery/screens/roastery_detail_screen.dart';
 import '../models/roastery.dart';
 import '../theme/app_theme.dart';
 
-class BeanRadarScreen extends StatefulWidget {
-  const BeanRadarScreen({super.key});
+class BeanRadarScreen extends ConsumerStatefulWidget {
+  final bool enableNetworkTiles;
+  final RadarAppMode initialMode;
+
+  const BeanRadarScreen({
+    super.key,
+    this.enableNetworkTiles = true,
+    this.initialMode = RadarAppMode.beans,
+  });
 
   @override
-  State<BeanRadarScreen> createState() => _BeanRadarScreenState();
+  ConsumerState<BeanRadarScreen> createState() => _BeanRadarScreenState();
 }
 
-class _BeanRadarScreenState extends State<BeanRadarScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _pulseController;
-
-  // Lokasi default (Jakarta Pusat)
-  double _userLat = -6.1944;
-  double _userLng = 106.8229;
-  String _currentLocationName = 'Jakarta Pusat (Monas / Thamrin)';
-  bool _isLocating = false;
-  double _selectedRadiusKm = 50.0;
-
-  final Map<String, List<double>> _cityPresets = {
-    'Jakarta Pusat': [-6.1944, 106.8229],
-    'Jakarta Selatan (Senopati/Gandaria)': [-6.2411, 106.7915],
-    'Bandung (Dago / Citarum)': [-6.9015, 107.6228],
-    'Tangerang (Gading Serpong)': [-6.2520, 106.6310],
-    'Bekasi (Grand Galaxy)': [-6.2625, 106.9741],
-    'Yogyakarta (Sleman / Kaliurang)': [-7.7335, 110.3952],
-    'Bali (Kintamani / Tabanan)': [-8.2431, 115.3340],
-    'Bandar Lampung': [-5.4412, 105.2638],
-    'Subang (Ciater)': [-6.7452, 107.6534],
-    'Sukabumi': [-6.9182, 106.9295],
-  };
+class _BeanRadarScreenState extends ConsumerState<BeanRadarScreen> {
+  final MapController _mapController = MapController();
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2400),
-    )..repeat();
+    Future.microtask(() {
+      ref
+          .read(beansRadarGpsProvider.notifier)
+          .setRadarMode(widget.initialMode, reload: true);
+    });
   }
 
   @override
   void dispose() {
-    _pulseController.dispose();
+    _searchController.dispose();
+    _mapController.dispose();
     super.dispose();
   }
 
-  // Haversine formula distance in kilometers
-  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-    const p = 0.017453292519943295; // Math.PI / 180
-    final a = 0.5 -
-        math.cos((lat2 - lat1) * p) / 2 +
-        math.cos(lat1 * p) * math.cos(lat2 * p) * (1 - math.cos((lon2 - lon1) * p)) / 2;
-    return 12742 * math.asin(math.sqrt(a)); // 2 * R; R = 6371 km
+  void _safeMoveMap(double lat, double lng, {double zoom = 13.8}) {
+    try {
+      _mapController.move(LatLng(lat, lng), zoom);
+    } catch (_) {}
   }
 
-  Future<void> _refreshLocation() async {
-    setState(() => _isLocating = true);
-    await Future.delayed(const Duration(milliseconds: 900));
-    if (!mounted) return;
-    setState(() {
-      _isLocating = false;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Lokasi berhasil dikalibrasi ke $_currentLocationName'),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
+  void _openCityPicker(RadarGpsController ctrl, RadarGpsState state) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: AppTheme.bgCream,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Pilih Kota Eksplorasi Kopi',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 10),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: RadarGpsController.indonesiaCityHubs.entries.map((e) {
+                  final selected = e.key == state.locationLabel;
+                  return ListTile(
+                    dense: true,
+                    leading: Icon(
+                      CupertinoIcons.location_solid,
+                      color:
+                          selected ? AppTheme.primaryBrown : AppTheme.textMuted,
+                    ),
+                    title: Text(
+                      e.key,
+                      style: TextStyle(
+                        fontWeight:
+                            selected ? FontWeight.w800 : FontWeight.w600,
+                      ),
+                    ),
+                    onTap: () async {
+                      Navigator.pop(ctx);
+                      await ctrl.selectCityPreset(
+                        e.key,
+                        e.value[0],
+                        e.value[1],
+                      );
+                      _safeMoveMap(e.value[0], e.value[1], zoom: 13.4);
+                    },
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  void _openLinkedRoastery(RadarPlaceCard place) {
+    final roasteryId = place.linkedRoasteryId;
+    if (roasteryId == null) return;
+    final catalog = ref.read(roasteryCatalogProvider).allMergedRoasteries;
+    Roastery? matched;
+    for (final r in catalog) {
+      if (r.id == roasteryId) {
+        matched = r;
+        break;
+      }
+    }
+    if (matched == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RoasteryDetailScreen(roastery: matched!),
+      ),
+    );
+  }
+
+  Future<void> _openPlaceDetail(
+    RadarPlaceCard place,
+    RadarGpsState state,
+  ) async {
+    final ctrl = ref.read(beansRadarGpsProvider.notifier);
+    ctrl.selectPlace(place.id);
+    _safeMoveMap(place.latitude, place.longitude, zoom: 15.0);
+    await CoffeePlaceDetailSheet.show(
+      context: context,
+      place: place,
+      repository: ref.read(beansRadarRepositoryProvider),
+      originLat: state.queryLat,
+      originLng: state.queryLng,
+      onOpenLinkedRoastery: place.linkedRoasteryId != null
+          ? () => _openLinkedRoastery(place)
+          : null,
+      onShowInAppRoute: () => ctrl.requestInAppRoute(place),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Hitung jarak ke seluruh roastery
-    final allRoasteries = RoasteryCatalog.list;
-    final List<Map<String, dynamic>> nearbyList = [];
+    final radarState = ref.watch(beansRadarGpsProvider);
+    final radarCtrl = ref.read(beansRadarGpsProvider.notifier);
 
-    for (final r in allRoasteries) {
-      final dist = _calculateDistance(_userLat, _userLng, r.latitude, r.longitude);
-      if (dist <= _selectedRadiusKm) {
-        nearbyList.add({
-          'roastery': r,
-          'distance': dist,
-        });
+    ref.listen<RadarGpsState>(beansRadarGpsProvider, (prev, next) {
+      if (prev != null &&
+          next.cameraRevision != prev.cameraRevision &&
+          next.hasUsableLocation) {
+        _safeMoveMap(next.queryLat, next.queryLng, zoom: 13.6);
       }
-    }
+      if (next.routeError != null && next.routeError != prev?.routeError) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.routeError!),
+            backgroundColor: const Color(0xFF991B1B),
+          ),
+        );
+      }
+    });
 
-    // Urutkan dari yang paling dekat
-    nearbyList.sort((a, b) => (a['distance'] as double).compareTo(b['distance'] as double));
+    final hasRouteHud =
+        radarState.activeRoute != null || radarState.isLoadingRoute;
 
     return Scaffold(
       backgroundColor: AppTheme.bgCream,
-      appBar: AppBar(
-        title: const Text('Beans Radar'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            tooltip: 'Kalibrasi Lokasi',
-            icon: _isLocating
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryBrown),
-                  )
-                : const Icon(CupertinoIcons.location_fill),
-            onPressed: _refreshLocation,
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Visual Radar Widget
-          RadarVisualizer(
-            pulseController: _pulseController,
-            hasNearbyItems: nearbyList.isNotEmpty,
-            currentLocationName: _currentLocationName,
-            onSelectCity: () => RadarCityPickerSheet.show(
-              context: context,
-              cityPresets: _cityPresets,
-              currentLocationName: _currentLocationName,
-              onSelectCity: (name, lat, lng) {
-                setState(() {
-                  _currentLocationName = name;
-                  _userLat = lat;
-                  _userLng = lng;
-                });
-              },
-            ),
-          ),
-
-          // Radius filter bar
-          RadarRadiusFilter(
-            selectedRadiusKm: _selectedRadiusKm,
-            onRadiusChanged: (r) => setState(() => _selectedRadiusKm = r),
-          ),
-
-          // Roastery List Container
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: AppTheme.surfaceWhite,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      body: TransitionAwareDeferredBuilder(
+        lightweightPlaceholder: const Center(
+          child: CircularProgressIndicator(color: AppTheme.primaryBrown),
+        ),
+        heavyBuilder: (_) => Stack(
+          children: [
+            Positioned.fill(
+              child: RadarMapCanvas(
+                mapController: _mapController,
+                centerLat: radarState.queryLat,
+                centerLng: radarState.queryLng,
+                userLat: radarState.userLat,
+                userLng: radarState.userLng,
+                hasUserLocation: radarState.hasUsableLocation,
+                compassHeadingDeg: radarState.compassHeadingDeg,
+                places: radarState.places,
+                selectedPlaceId: radarState.selectedPlaceId,
+                activeRoute: radarState.activeRoute,
+                enableNetworkTiles: widget.enableNetworkTiles,
+                onPlaceTapped: (place) => _openPlaceDetail(place, radarState),
+                onCameraMoved: radarCtrl.onMapBoundsMoved,
               ),
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Kopi & Roastery Terdekat (${nearbyList.length})',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(CupertinoIcons.checkmark_seal_fill, size: 11, color: Colors.green),
-                            SizedBox(width: 3),
-                            Text('Ready Beans', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green)),
-                          ],
-                        ),
-                      ),
-                    ],
+                  RadarFloatingControls(
+                    searchController: _searchController,
+                    state: radarState,
+                    onBack: () => Navigator.maybePop(context),
+                    onRecenterGps: () async {
+                      if (radarState.permissionDeniedForever) {
+                        await Geolocator.openAppSettings();
+                        return;
+                      }
+                      if (radarState.gpsServiceDisabled) {
+                        await Geolocator.openLocationSettings();
+                      }
+                      final ok = await radarCtrl.acquireLiveGps();
+                      final latest = ref.read(beansRadarGpsProvider);
+                      if (ok || latest.hasUsableLocation) {
+                        _safeMoveMap(
+                          latest.userLat,
+                          latest.userLng,
+                          zoom: 14.2,
+                        );
+                      }
+                    },
+                    onOpenCityPicker: () =>
+                        _openCityPicker(radarCtrl, radarState),
+                    onSearchChanged: radarCtrl.onSearchChanged,
+                    onRadarModeChanged: (m) => radarCtrl.setRadarMode(m),
+                    onCategoryChanged: radarCtrl.setCategory,
+                    onToggleOpenNow: radarCtrl.toggleOpenNow,
+                    onToggleMinRating: radarCtrl.toggleMinRating45,
+                    onRadiusChanged: radarCtrl.setRadiusKm,
+                    onSearchThisArea: radarCtrl.searchPendingMapArea,
                   ),
-                  const SizedBox(height: 12),
-
-                  Expanded(
-                    child: nearbyList.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(CupertinoIcons.location_slash, size: 40, color: Colors.grey),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Tidak ada roastery dalam radius ${_selectedRadiusKm.toInt()} km.',
-                                  style: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
-                                ),
-                                const SizedBox(height: 8),
-                                TextButton(
-                                  onPressed: () => setState(() => _selectedRadiusKm = 500.0),
-                                  child: const Text('Perluas Radius ke Seluruh Indonesia'),
-                                ),
-                              ],
-                            ),
-                          )
-                        : ListView.separated(
-                            itemCount: nearbyList.length,
-                            separatorBuilder: (_, index) => const SizedBox(height: 12),
-                            padding: const EdgeInsets.only(bottom: 24),
-                            itemBuilder: (context, index) {
-                              final item = nearbyList[index];
-                              final Roastery r = item['roastery'] as Roastery;
-                              final double dist = item['distance'] as double;
-                              return NearbyRoasteryCard(roastery: r, distanceKm: dist);
-                            },
-                          ),
-                  ),
+                  if (hasRouteHud) ...[
+                    const SizedBox(height: 8),
+                    RadarActiveRouteBar(
+                      route: radarState.activeRoute,
+                      isLoading: radarState.isLoadingRoute,
+                      selectedMode: radarState.routeMode,
+                      onModeChanged: radarCtrl.changeRouteMode,
+                      onCloseRoute: radarCtrl.clearActiveRoute,
+                      onLaunchExternalNavigation: radarState.activeRoute != null
+                          ? () => CoffeePlaceDetailSheet.launchDirections(
+                                radarState.activeRoute!.destination,
+                              )
+                          : null,
+                    ),
+                  ],
                 ],
               ),
             ),
-          ),
-        ],
+            Positioned.fill(
+              child: BeansRadarBottomSheet(
+                state: radarState,
+                onSortChanged: radarCtrl.setSortMode,
+                onSelectPlaceCard: (p) => _openPlaceDetail(p, radarState),
+                // Sekarang "Lihat Rute" langsung menggambar rute jalan di dalam peta aplikasi!
+                onOpenRoute: (p) => radarCtrl.requestInAppRoute(p),
+                onOpenLineup: _openLinkedRoastery,
+                onExpandNationwide: () => radarCtrl.setRadiusKm(150.0),
+                onRetryGps: () async {
+                  if (radarState.gpsServiceDisabled) {
+                    await Geolocator.openLocationSettings();
+                  }
+                  await radarCtrl.acquireLiveGps();
+                },
+                onPickCityManual: () => _openCityPicker(radarCtrl, radarState),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

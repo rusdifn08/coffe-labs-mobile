@@ -85,13 +85,20 @@ class _RoasteryBeanPickerModalState extends State<RoasteryBeanPickerModal> {
         return false;
       }
 
-      // Query filter
+      // Query filter (Nama Biji, Roastery, Origin/Provinsi, Varietas, Proses & Tasting Notes)
       if (query.isNotEmpty) {
         final matchesName = bean.name.toLowerCase().contains(query);
         final matchesRoaster = bean.roasteryName.toLowerCase().contains(query);
         final matchesOrigin = bean.origin.toLowerCase().contains(query);
+        final matchesVariety = bean.variety.toLowerCase().contains(query);
+        final matchesProcess = bean.processRaw.toLowerCase().contains(query);
         final matchesNotes = bean.tastingNotes.toLowerCase().contains(query);
-        if (!matchesName && !matchesRoaster && !matchesOrigin && !matchesNotes) {
+        if (!matchesName &&
+            !matchesRoaster &&
+            !matchesOrigin &&
+            !matchesVariety &&
+            !matchesProcess &&
+            !matchesNotes) {
           return false;
         }
       }

@@ -68,12 +68,10 @@ class _TableQrManagerModalState extends ConsumerState<TableQrManagerModal> {
         .where((t) => t.id == broadcastState.selectedTableId)
         .firstOrNull;
 
-    final String activeUrl = activeSession?.livebrewUrl ??
-        selectedTable?.livebrewUrl ??
-        'https://coffeelabs.app/livebrew/3201923849204';
-    final String activeCode = activeSession?.dynamicAddressCode ??
-        selectedTable?.staticAddressCode ??
-        '3201923849204';
+    final String? activeUrl = activeSession?.livebrewUrl ??
+        selectedTable?.livebrewUrl;
+    final String? activeCode = activeSession?.dynamicAddressCode ??
+        selectedTable?.staticAddressCode;
 
     return Container(
       constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.88),
@@ -128,7 +126,7 @@ class _TableQrManagerModalState extends ConsumerState<TableQrManagerModal> {
             ),
             const SizedBox(height: 12),
 
-            // QR Card Preview pointing to Landing Pages URL
+            // QR Card Preview pointing to Landing Pages URL (100% Real Session / Table — Zero Mock)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -137,74 +135,118 @@ class _TableQrManagerModalState extends ConsumerState<TableQrManagerModal> {
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: const Color(0xFFE7DDD3)),
               ),
-              child: Column(
-                children: [
-                  QrImageView(
-                    data: activeUrl,
-                    version: QrVersions.auto,
-                    size: 165,
-                    backgroundColor: Colors.white,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    activeUrl,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.primaryBrown,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            Clipboard.setData(ClipboardData(text: activeUrl));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Link Live Brew berhasil disalin!')),
-                            );
-                          },
-                          icon: const Icon(CupertinoIcons.doc_on_clipboard, size: 16),
-                          label: const Text('Salin Link'),
+              child: activeUrl == null || activeCode == null
+                  ? Column(
+                      children: [
+                        const Icon(
+                          Icons.qr_code_2_rounded,
+                          size: 56,
+                          color: AppTheme.primaryBrown,
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton.icon(
+                        const SizedBox(height: 10),
+                        const Text(
+                          'Belum Ada Sesi Live Brew Aktif',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.textDark,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Mulai siaran nyata di bawah atau pilih meja terdaftar untuk menghasilkan QR unik Coffee Labs.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 12, color: Colors.black54),
+                        ),
+                        const SizedBox(height: 10),
+                        TextButton.icon(
                           onPressed: () {
-                            SharePlus.instance.share(
-                              ShareParams(
-                                text: 'Pantau kopi Anda diseduh langsung oleh Barista Coffee Labs: $activeUrl',
+                            Navigator.pop(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const LiveBrewHubScreen(),
                               ),
                             );
                           },
-                          icon: const Icon(CupertinoIcons.share, size: 16),
-                          label: const Text('Bagikan'),
+                          icon: const Icon(Icons.open_in_new_rounded, size: 17),
+                          label: const Text('Buka Live Brewing 2.0 Hub & Studio Meja'),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: TextButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => CustomerLiveBrewTrackerScreen(addressCode: activeCode),
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        QrImageView(
+                          data: activeUrl,
+                          version: QrVersions.auto,
+                          size: 165,
+                          backgroundColor: Colors.white,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          activeUrl,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.primaryBrown,
                           ),
-                        );
-                      },
-                      icon: const Icon(Icons.visibility_rounded, size: 18),
-                      label: const Text('Buka Tampilan Pelanggan (Live Tracker)'),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  Clipboard.setData(ClipboardData(text: activeUrl));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Link Live Brew berhasil disalin!'),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(CupertinoIcons.doc_on_clipboard, size: 16),
+                                label: const Text('Salin Link'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  SharePlus.instance.share(
+                                    ShareParams(
+                                      text:
+                                          'Pantau kopi Anda diseduh langsung oleh Barista Coffee Labs: $activeUrl',
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(CupertinoIcons.share, size: 16),
+                                label: const Text('Bagikan'),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: TextButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      CustomerLiveBrewTrackerScreen(addressCode: activeCode),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.visibility_rounded, size: 18),
+                            label: const Text('Buka Tampilan Pelanggan (Live Mirror)'),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
             ),
 
             const SizedBox(height: 16),

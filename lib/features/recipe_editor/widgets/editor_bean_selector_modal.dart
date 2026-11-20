@@ -1,10 +1,25 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../../data/brew_visual_catalog.dart';
+import '../../../../data/world_indonesia_beans_service.dart';
 import '../../../../theme/app_theme.dart';
 import 'editor_bean_grid_card.dart';
 
 class EditorBeanSelectorModal {
+  static const List<String> _originFilters = [
+    'Semua',
+    'Sumatra 🇮🇩',
+    'Jawa 🇮🇩',
+    'Bali & Nusra 🇮🇩',
+    'Kalimantan 🇮🇩',
+    'Sulawesi 🇮🇩',
+    'Maluku & Papua 🇮🇩',
+    'Afrika 🌍',
+    'Amerika Latin 🌎',
+    'Asia-Pasifik 🌏',
+    'Internasional 🌍',
+  ];
+
   static void show({
     required BuildContext context,
     required String initialBeanName,
@@ -13,14 +28,18 @@ class EditorBeanSelectorModal {
     required String initialProcess,
     required void Function(String name, String variety, String roast, String process) onSelected,
   }) {
+    WorldIndonesiaBeansService.instance.ensureLoaded();
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
       builder: (ctx) {
         String searchQuery = '';
         String selectedOriginFilter = 'Semua';
-        int visibleCount = 10;
+        int visibleCount = 14;
+        bool triggeredLoad = false;
 
         String tempBeanName = initialBeanName;
         String tempVariety = initialVariety;
@@ -29,34 +48,60 @@ class EditorBeanSelectorModal {
 
         return StatefulBuilder(
           builder: (context, setModalState) {
-            final filteredBeans = BrewVisualCatalog.beans.where((b) {
-              final matchesQuery = b.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
-                  b.region.toLowerCase().contains(searchQuery.toLowerCase()) ||
-                  b.defaultVariety.toLowerCase().contains(searchQuery.toLowerCase());
+            if (!triggeredLoad && !WorldIndonesiaBeansService.instance.isLoaded) {
+              triggeredLoad = true;
+              WorldIndonesiaBeansService.instance.ensureLoaded().then((_) {
+                if (context.mounted) setModalState(() {});
+              });
+            }
+            final allBeans = WorldIndonesiaBeansService.instance.allMergedVisualBeans;
+            final q = searchQuery.toLowerCase().trim();
+            final filteredBeans = allBeans.where((b) {
+              final rLow = b.region.toLowerCase();
+              final matchesQuery = q.isEmpty ||
+                  b.name.toLowerCase().contains(q) ||
+                  rLow.contains(q) ||
+                  b.defaultVariety.toLowerCase().contains(q) ||
+                  b.process.toLowerCase().contains(q) ||
+                  b.defaultNotes.any((n) => n.toLowerCase().contains(q));
               if (!matchesQuery) return false;
 
               if (selectedOriginFilter == 'Sumatra 🇮🇩' || selectedOriginFilter == 'Sumatra') {
-                return b.region.toLowerCase().contains('sumatra') ||
-                    b.region.toLowerCase().contains('aceh') ||
-                    b.region.toLowerCase().contains('bengkulu') ||
-                    b.region.toLowerCase().contains('lampung');
+                return rLow.contains('sumat') || rLow.contains('aceh') || rLow.contains('gayo') ||
+                    rLow.contains('kerinci') || rLow.contains('solok') || rLow.contains('bengkulu') ||
+                    rLow.contains('lampung') || rLow.contains('jambi') || rLow.contains('riau') ||
+                    rLow.contains('pagaralam') || rLow.contains('belitung') || rLow.contains('sabang');
               } else if (selectedOriginFilter == 'Jawa 🇮🇩' || selectedOriginFilter == 'Jawa') {
-                return b.region.toLowerCase().contains('jawa') ||
-                    b.region.toLowerCase().contains('garut') ||
-                    b.region.toLowerCase().contains('bandung');
+                return rLow.contains('jawa') || rLow.contains('java') || rLow.contains('garut') ||
+                    rLow.contains('bandung') || rLow.contains('banten') || rLow.contains('diy') ||
+                    rLow.contains('temanggung') || rLow.contains('ijen') || rLow.contains('malang');
               } else if (selectedOriginFilter == 'Bali & Nusra 🇮🇩' || selectedOriginFilter == 'Bali & Nusra') {
-                return b.region.toLowerCase().contains('bali') ||
-                    b.region.toLowerCase().contains('ntt') ||
-                    b.region.toLowerCase().contains('ntb') ||
-                    b.region.toLowerCase().contains('lombok') ||
-                    b.region.toLowerCase().contains('flores');
+                return rLow.contains('bali') || rLow.contains('ntt') || rLow.contains('ntb') ||
+                    rLow.contains('lombok') || rLow.contains('flores') || rLow.contains('sumbawa') ||
+                    rLow.contains('timor');
+              } else if (selectedOriginFilter == 'Kalimantan 🇮🇩') {
+                return rLow.contains('kalimantan') || rLow.contains('kayong') || rLow.contains('meratus');
               } else if (selectedOriginFilter == 'Sulawesi 🇮🇩' || selectedOriginFilter == 'Sulawesi') {
-                return b.region.toLowerCase().contains('sulawesi') ||
-                    b.region.toLowerCase().contains('toraja') ||
-                    b.region.toLowerCase().contains('enrekang');
-              } else if (selectedOriginFilter == 'Papua 🇮🇩' || selectedOriginFilter == 'Papua') {
-                return b.region.toLowerCase().contains('papua') ||
-                    b.region.toLowerCase().contains('wamena');
+                return rLow.contains('sulawesi') || rLow.contains('toraja') || rLow.contains('enrekang') ||
+                    rLow.contains('mamasa') || rLow.contains('gorontalo');
+              } else if (selectedOriginFilter == 'Maluku & Papua 🇮🇩' || selectedOriginFilter == 'Papua 🇮🇩') {
+                return rLow.contains('papua') || rLow.contains('wamena') || rLow.contains('maluku') ||
+                    rLow.contains('halmahera') || rLow.contains('merauke');
+              } else if (selectedOriginFilter == 'Afrika 🌍') {
+                return rLow.contains('ethiopia') || rLow.contains('kenya') || rLow.contains('rwanda') ||
+                    rLow.contains('burundi') || rLow.contains('tanzania') || rLow.contains('uganda') ||
+                    rLow.contains('yemen') || rLow.contains('malawi') || rLow.contains('congo');
+              } else if (selectedOriginFilter == 'Amerika Latin 🌎') {
+                return rLow.contains('colombia') || rLow.contains('brazil') || rLow.contains('panama') ||
+                    rLow.contains('costa rica') || rLow.contains('guatemala') || rLow.contains('el salvador') ||
+                    rLow.contains('honduras') || rLow.contains('nicaragua') || rLow.contains('mexico') ||
+                    rLow.contains('peru') || rLow.contains('ecuador') || rLow.contains('bolivia') ||
+                    rLow.contains('jamaica');
+              } else if (selectedOriginFilter == 'Asia-Pasifik 🌏') {
+                return !b.region.contains('🇮🇩') && (rLow.contains('vietnam') || rLow.contains('thailand') ||
+                    rLow.contains('china') || rLow.contains('yunnan') || rLow.contains('india') ||
+                    rLow.contains('taiwan') || rLow.contains('myanmar') || rLow.contains('laos') ||
+                    rLow.contains('philippines') || rLow.contains('hawaii') || rLow.contains('papua new guinea'));
               } else if (selectedOriginFilter == 'Internasional 🌍' || selectedOriginFilter == 'Internasional') {
                 return !b.region.contains('🇮🇩');
               }
@@ -170,15 +215,7 @@ class EditorBeanSelectorModal {
                               visibleCount = 10;
                             });
                           },
-                          itemBuilder: (context) => [
-                            'Semua',
-                            'Jawa 🇮🇩',
-                            'Sumatra 🇮🇩',
-                            'Bali & Nusra 🇮🇩',
-                            'Sulawesi 🇮🇩',
-                            'Papua 🇮🇩',
-                            'Internasional 🌍',
-                          ].map((f) {
+                          itemBuilder: (context) => _originFilters.map((f) {
                             return PopupMenuItem(
                               value: f,
                               child: Row(
@@ -204,7 +241,7 @@ class EditorBeanSelectorModal {
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Row(
-                      children: ['Semua', 'Jawa 🇮🇩', 'Sumatra 🇮🇩', 'Bali & Nusra 🇮🇩', 'Sulawesi 🇮🇩', 'Papua 🇮🇩', 'Internasional 🌍'].map((reg) {
+                      children: _originFilters.map((reg) {
                         final isSel = selectedOriginFilter == reg;
                         return Padding(
                           padding: const EdgeInsets.only(right: 6),

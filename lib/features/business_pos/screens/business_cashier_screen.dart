@@ -18,6 +18,7 @@ import '../widgets/business_menu_asset_image.dart';
 import '../widgets/business_svg_icons.dart';
 import '../../../theme/business_theme.dart';
 import '../../live_brew/presentation/controllers/barista_live_transmitter_controller.dart';
+import '../../live_brew/presentation/controllers/live_brew_mirror_controller.dart';
 import '../../live_brew/presentation/widgets/table_qr_manager_modal.dart';
 import 'oled_diagnostic_screen.dart';
 import 'shift_summary_screen.dart';
@@ -172,26 +173,68 @@ class _BusinessCashierScreenState extends ConsumerState<BusinessCashierScreen> {
           }
         });
 
-        // Buat sesi Live Brew dinamis agar QR struk langsung terhubung ke Landing Pages
+        final generatedOrderNumber =
+            '#${(DateTime.now().millisecondsSinceEpoch % 9000) + 1000}';
+        final itemsSummary = cart.items
+            .map((e) => '${e.quantity}x ${e.menuItem.name}')
+            .join(', ');
+
+        // Sinkronisasi POS -> Live Brewing 2.0 (Seat Binding & Real Mirror Session)
         String? liveBrewUrl;
         try {
-          final firstItemName = cart.items.isNotEmpty
-              ? cart.items.first.menuItem.name
-              : 'Handcrafted Coffee';
-          final snap = await ref
-              .read(baristaLiveTransmitterProvider.notifier)
-              .startLiveSession(
-                recipe: {
-                  'title': firstItemName,
-                  'method': 'V60',
-                  'coffeeWeightGrams': 15,
-                  'totalWaterWeightGrams': 225,
-                  'waterTempCelsius': 92,
-                },
-                weightSampler: () => 0.0,
-                customerName: cart.customerName ?? 'Pelanggan Meja Bar',
-              );
-          liveBrewUrl = snap?.livebrewUrl;
+          final mirrorState = ref.read(liveBrewMirrorProvider);
+          final mirrorCtrl = ref.read(liveBrewMirrorProvider.notifier);
+          final selectedSeatId = mirrorState.selectedSeatId;
+          final customerName = cart.customerName ?? 'Pelanggan Meja Bar';
+
+          if (selectedSeatId != null && selectedSeatId.isNotEmpty) {
+            await mirrorCtrl.bindPosOrderToSeat(
+              seatId: selectedSeatId,
+              orderNumber: generatedOrderNumber,
+              customerName: customerName,
+              itemsSummary: itemsSummary.isNotEmpty
+                  ? itemsSummary
+                  : 'Handcrafted Coffee',
+            );
+            final seat = mirrorState.seats
+                .where((s) => s.id == selectedSeatId)
+                .firstOrNull;
+            if (seat != null && seat.brandedUrl.isNotEmpty) {
+              liveBrewUrl = seat.brandedUrl;
+            }
+          }
+
+          if (liveBrewUrl == null) {
+            final started = await mirrorCtrl.startRealSession(
+              seatId: selectedSeatId,
+              posOrderNumber: generatedOrderNumber,
+              customerName: customerName,
+            );
+            if (started) {
+              liveBrewUrl = ref.read(liveBrewMirrorProvider).activeSession?.shareUrl;
+            }
+          }
+
+          // Fallback kompatibilitas v1 jika sesi v2 belum terinisialisasi
+          if (liveBrewUrl == null) {
+            final firstItemName = cart.items.isNotEmpty
+                ? cart.items.first.menuItem.name
+                : 'Handcrafted Coffee';
+            final snap = await ref
+                .read(baristaLiveTransmitterProvider.notifier)
+                .startLiveSession(
+                  recipe: {
+                    'title': firstItemName,
+                    'method': 'V60',
+                    'coffeeWeightGrams': 15,
+                    'totalWaterWeightGrams': 225,
+                    'waterTempCelsius': 92,
+                  },
+                  weightSampler: () => 0.0,
+                  customerName: customerName,
+                );
+            liveBrewUrl = snap?.livebrewUrl;
+          }
         } catch (_) {}
 
         // Susun data struk termal
@@ -200,7 +243,7 @@ class _BusinessCashierScreenState extends ConsumerState<BusinessCashierScreen> {
           storeAddress: 'Coffee Labs Bar Counter • Specialty Espresso',
           cashierName: 'Barista Utama',
           customerName: cart.customerName ?? 'Pelanggan Meja Bar',
-          orderNumber: '#${(DateTime.now().millisecondsSinceEpoch % 9000) + 1000}',
+          orderNumber: generatedOrderNumber,
           orderTime: DateTime.now(),
           items: cart.items,
           subtotal: subtotal,

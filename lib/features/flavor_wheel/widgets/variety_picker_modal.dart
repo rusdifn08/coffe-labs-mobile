@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../../../data/world_indonesia_beans_service.dart';
 import '../../../../theme/app_theme.dart';
 import '../data/coffee_varieties_catalog.dart';
 
@@ -10,8 +11,10 @@ class VarietyPickerModal {
     required ValueChanged<String> onSelectVariety,
     required ValueChanged<String> onSelectCustom,
   }) {
+    WorldIndonesiaBeansService.instance.ensureLoaded();
     String searchQuery = '';
     String selectedCategory = 'Semua';
+    bool triggeredLoad = false;
 
     showModalBottomSheet(
       context: context,
@@ -20,7 +23,13 @@ class VarietyPickerModal {
       builder: (ctx) {
         return StatefulBuilder(
           builder: (modalCtx, setModalState) {
-            final filtered = CoffeeVarietiesCatalog.all.where((v) {
+            if (!triggeredLoad && !WorldIndonesiaBeansService.instance.isLoaded) {
+              triggeredLoad = true;
+              WorldIndonesiaBeansService.instance.ensureLoaded().then((_) {
+                if (modalCtx.mounted) setModalState(() {});
+              });
+            }
+            final filtered = CoffeeVarietiesCatalog.getMergedVarieties().where((v) {
               final matchCat = selectedCategory == 'Semua' || v.category.contains(selectedCategory);
               final q = searchQuery.toLowerCase();
               final matchQuery = q.isEmpty ||

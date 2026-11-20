@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../models/subscription_plan.dart';
-import '../../../theme/app_theme.dart';
 import 'subscription_checkout_sheet.dart';
 
 class ProfileSubscriptionCard extends StatelessWidget {
@@ -19,7 +18,7 @@ class ProfileSubscriptionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!isTrial && currentPlan.tier != SubscriptionTier.trial) {
-      return _buildActivePlanCard(context);
+      return const SizedBox.shrink();
     }
     return _buildUpgradeCard(context);
   }
@@ -83,7 +82,7 @@ class ProfileSubscriptionCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'Akses penuh 96+ resep, Lab AI & bebas iklan',
+                          '500+ Resep, Seduh Tanpa Batas & Toolkit Barista',
                           style: TextStyle(fontSize: 11, color: Colors.white70),
                         ),
                       ],
@@ -96,7 +95,7 @@ class ProfileSubscriptionCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: const Text(
-                      'LIFETIME',
+                      'PROMO 2026',
                       style: TextStyle(
                         color: Color(0xFF2C1810),
                         fontSize: 9.5,
@@ -114,9 +113,9 @@ class ProfileSubscriptionCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _buildCompactTierPill(
-                      title: 'Pro',
+                      title: 'Coffee Labs Pro',
                       price: 'Rp 99K',
-                      sub: 'Home Barista',
+                      sub: 'Sekali Bayar',
                       isPopular: true,
                       onTap: () => _openCheckout(context, SubscriptionPlan.pro),
                     ),
@@ -126,7 +125,7 @@ class ProfileSubscriptionCard extends StatelessWidget {
                     child: _buildCompactTierPill(
                       title: 'Business',
                       price: 'Rp 249K',
-                      sub: 'Kafe & Roastery',
+                      sub: 'Sekali Bayar',
                       isPopular: false,
                       onTap: () => _openCheckout(context, SubscriptionPlan.business),
                     ),
@@ -157,96 +156,6 @@ class ProfileSubscriptionCard extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildActivePlanCard(BuildContext context) {
-    final isBusiness = currentPlan.tier == SubscriptionTier.business;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isBusiness ? Colors.amber.shade50 : AppTheme.bgCream,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isBusiness ? Colors.amber.shade700 : AppTheme.primaryBrown,
-          width: 1.2,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(7),
-                decoration: BoxDecoration(
-                  color: (isBusiness ? Colors.amber : AppTheme.primaryBrown).withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  isBusiness ? CupertinoIcons.briefcase_fill : CupertinoIcons.checkmark_seal_fill,
-                  color: isBusiness ? Colors.amber.shade900 : AppTheme.primaryBrown,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      currentPlan.title,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.textDark),
-                    ),
-                    Text(
-                      'Lisensi Aktif • Bebas Iklan & Seduh Unlimited',
-                      style: TextStyle(fontSize: 11, color: isBusiness ? Colors.brown.shade800 : AppTheme.textMuted),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                decoration: BoxDecoration(
-                  color: isBusiness ? Colors.amber.shade800 : Colors.green.shade700,
-                  borderRadius: BorderRadius.circular(7),
-                ),
-                child: const Text(
-                  'AKTIF',
-                  style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            isBusiness
-                ? 'Akun bisnis kafe aktif: Akses 5 barista, katalog roastery, dan struk bluetooth tanpa batas.'
-                : 'Akun Pro aktif: Bebas iklan, 96+ resep juara dunia & modul laboratorium dial-in terbuka penuh.',
-            style: const TextStyle(fontSize: 11.5, color: AppTheme.textDark, height: 1.3),
-          ),
-          if (!isBusiness) ...[
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => _openCheckout(context, SubscriptionPlan.business),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppTheme.primaryBrown),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                ),
-                icon: const Icon(CupertinoIcons.arrow_up_right_circle, size: 14, color: AppTheme.primaryBrown),
-                label: const Text(
-                  'Upgrade ke Business (Rp 249K)',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryBrown),
-                ),
-              ),
-            ),
-          ],
-        ],
       ),
     );
   }

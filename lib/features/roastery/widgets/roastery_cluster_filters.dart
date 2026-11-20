@@ -1,99 +1,127 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
 import '../../../theme/app_theme.dart';
 
 class RoasteryClusterFilters extends StatelessWidget {
+  final TextEditingController searchController;
   final String searchQuery;
-  final ValueChanged<String> onSearchChanged;
-  final List<String> clusters;
   final String selectedCluster;
-  final ValueChanged<String> onSelectCluster;
+  final ValueChanged<String> onSearchChanged;
+  final VoidCallback onSearchCleared;
+  final ValueChanged<String> onClusterSelected;
+
+  static const List<String> clusterOptions = [
+    'Semua',
+    'Roastery Bisnis',
+    'Klaster I: Ritel Nasional & Skala Industri',
+    'Klaster II: Pelopor & Kurator Gelombang Ketiga',
+    'Klaster III: Spesialis Kompetisi & Eksperimental',
+    'Klaster IV: Roastery Regional & Komunitas Lokal',
+    'Klaster V: Roastery Boutique, Mikro & Artisanal',
+  ];
 
   const RoasteryClusterFilters({
     super.key,
+    required this.searchController,
     required this.searchQuery,
-    required this.onSearchChanged,
-    required this.clusters,
     required this.selectedCluster,
-    required this.onSelectCluster,
+    required this.onSearchChanged,
+    required this.onSearchCleared,
+    required this.onClusterSelected,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      color: AppTheme.bgCream,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceWhite,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.primaryBrown.withValues(alpha: 0.12)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: TextField(
-              onChanged: onSearchChanged,
-              decoration: InputDecoration(
-                hintText: 'Cari roastery, varian, atau varietas...',
-                hintStyle: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
-                icon: const Icon(CupertinoIcons.search, size: 18, color: AppTheme.primaryBrown),
-                border: InputBorder.none,
-                suffixIcon: searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(CupertinoIcons.clear_circled_solid, size: 16),
-                        onPressed: () => onSearchChanged(''),
-                      )
-                    : null,
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+          child: TextField(
+            controller: searchController,
+            onChanged: onSearchChanged,
+            style: const TextStyle(fontSize: 13.5, color: AppTheme.textDark),
+            decoration: InputDecoration(
+              hintText: 'Cari roastery, varian, atau varietas...',
+              hintStyle:
+                  const TextStyle(fontSize: 13, color: AppTheme.textMuted),
+              prefixIcon: const Icon(
+                CupertinoIcons.search,
+                size: 19,
+                color: AppTheme.textMuted,
+              ),
+              suffixIcon: searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(CupertinoIcons.clear_circled_solid,
+                          size: 18, color: AppTheme.textMuted),
+                      onPressed: onSearchCleared,
+                    )
+                  : null,
+              filled: true,
+              fillColor: AppTheme.surfaceWhite,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+                borderSide: const BorderSide(color: Color(0xFFE9E0D4)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+                borderSide: const BorderSide(color: Color(0xFFE9E0D4)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+                borderSide:
+                    const BorderSide(color: AppTheme.primaryBrown, width: 1.4),
               ),
             ),
           ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 34,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: clusters.length,
-              separatorBuilder: (_, index) => const SizedBox(width: 8),
-              itemBuilder: (context, idx) {
-                final c = clusters[idx];
-                final isSel = selectedCluster == c;
-                return GestureDetector(
-                  onTap: () => onSelectCluster(c),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: isSel ? AppTheme.primaryBrown : AppTheme.surfaceWhite,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isSel ? AppTheme.primaryBrown : AppTheme.primaryBrown.withValues(alpha: 0.15),
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        c,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
-                          color: isSel ? Colors.white : AppTheme.primaryBrown,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+        ),
+        SizedBox(
+          height: 36,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: clusterOptions.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final cluster = clusterOptions[index];
+              final isSelected = selectedCluster == cluster;
+              final isBusinessChip = cluster == 'Roastery Bisnis';
+
+              return ChoiceChip(
+                avatar: isBusinessChip
+                    ? Icon(
+                        Icons.verified_rounded,
+                        size: 14,
+                        color:
+                            isSelected ? Colors.white : AppTheme.accentGold,
+                      )
+                    : null,
+                label: Text(cluster),
+                selected: isSelected,
+                onSelected: (_) => onClusterSelected(cluster),
+                selectedColor: const Color(0xFF5C3A21),
+                backgroundColor: AppTheme.surfaceWhite,
+                labelStyle: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: isSelected ? Colors.white : AppTheme.textDark,
+                ),
+                side: BorderSide(
+                  color: isSelected
+                      ? const Color(0xFF5C3A21)
+                      : const Color(0xFFE3D8C8),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

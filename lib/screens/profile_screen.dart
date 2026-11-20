@@ -10,6 +10,7 @@ import '../features/profile/widgets/profile_menu_section.dart';
 import '../features/profile/widgets/profile_subscription_card.dart';
 import '../features/profile/widgets/profile_trial_card.dart';
 import '../features/profile/widgets/user_profile_header_card.dart';
+import '../features/affiliate/presentation/widgets/affiliate_profile_launcher_card.dart';
 import '../features/business_pos/widgets/business_suite_launcher_card.dart';
 import '../models/subscription_plan.dart';
 import '../models/trial_access_policy.dart';
@@ -285,7 +286,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   },
                                 ),
                                 const SizedBox(height: 12),
-                                if (!isAdmin) ...[
+                                if (!isAdmin && (_isTrial || _currentPlan.tier == SubscriptionTier.trial)) ...[
                                   ProfileSubscriptionCard(
                                     currentPlan: _currentPlan,
                                     isTrial: _isTrial,
@@ -333,6 +334,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                         TrialFeature.businessSuite,
                                         user: _currentUser,
                                       ),
+                                ),
+                                const SizedBox(height: 12),
+                                AffiliateProfileLauncherCard(
+                                  isProEligible: isAdmin ||
+                                      _currentPlan.tier == SubscriptionTier.pro ||
+                                      _currentPlan.tier == SubscriptionTier.business,
+                                  onReturned: _loadProfileData,
                                 ),
                                 const SizedBox(height: 12),
                                 ProfileMenuSection(
@@ -399,8 +407,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           const SizedBox(height: 12),
                         ],
 
-                        // Kartu Pembelian Lisensi Coffe Labs Pro (99K) & Business (249K)
-                        if (!isAdmin) ...[
+                        // Kartu Upgrade Lisensi (hanya tampil untuk akun Trial; akun Pro/Business langsung tampil badge di samping nama)
+                        if (!isAdmin && (_isTrial || _currentPlan.tier == SubscriptionTier.trial)) ...[
                           ProfileSubscriptionCard(
                             currentPlan: _currentPlan,
                             isTrial: _isTrial,
@@ -433,6 +441,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 TrialFeature.businessSuite,
                                 user: _currentUser,
                               ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Program Afiliasi 20% (Aktif Otomatis untuk Pro & Business)
+                        AffiliateProfileLauncherCard(
+                          isProEligible: isAdmin ||
+                              _currentPlan.tier == SubscriptionTier.pro ||
+                              _currentPlan.tier == SubscriptionTier.business,
+                          onReturned: _loadProfileData,
                         ),
                         const SizedBox(height: 12),
 

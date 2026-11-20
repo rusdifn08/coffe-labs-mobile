@@ -43,10 +43,10 @@ class _CommunityDeepLinkListenerState
     final full = uri.toString();
     if (_lastHandledUri == full) return;
 
-    final liveCode = _extractLiveBrewCode(uri);
-    if (liveCode != null && liveCode.isNotEmpty) {
+    final liveRoute = _extractLiveBrewRoute(uri);
+    if (liveRoute != null && liveRoute.isNotEmpty) {
       _lastHandledUri = full;
-      ref.read(appRouterProvider).go('/livebrew/$liveCode');
+      ref.read(appRouterProvider).go(liveRoute);
       return;
     }
 
@@ -66,16 +66,22 @@ class _CommunityDeepLinkListenerState
     }
   }
 
-  static String? _extractLiveBrewCode(Uri uri) {
+  static String? _extractLiveBrewRoute(Uri uri) {
     final segs = uri.pathSegments.where((s) => s.isNotEmpty).toList();
     if (uri.scheme == 'coffeelabs' && uri.host == 'livebrew' && segs.isNotEmpty) {
-      return segs.first;
+      if (segs.length >= 2) {
+        return '/livebrew/${segs[0]}/${segs[1]}';
+      }
+      return '/livebrew/${segs.first}';
     }
     if (uri.scheme.startsWith('http') &&
         uri.host.contains('coffeelabs.') &&
         segs.length >= 2 &&
         segs.first == 'livebrew') {
-      return segs[1];
+      if (segs.length >= 3) {
+        return '/livebrew/${segs[1]}/${segs[2]}';
+      }
+      return '/livebrew/${segs[1]}';
     }
     return null;
   }

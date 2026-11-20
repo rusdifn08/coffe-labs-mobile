@@ -8,6 +8,8 @@ import android.view.KeyEvent
 import androidx.core.content.FileProvider
 import com.supernovalabs.coffeelabs.kiosk.KioskDirectBootStore
 import com.supernovalabs.coffeelabs.kiosk.KioskManager
+import com.supernovalabs.coffeelabs.qris_bridge.LivinMerchantNotificationListener
+import com.supernovalabs.coffeelabs.qris_bridge.QrisBridgeStore
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -16,6 +18,7 @@ import java.io.File
 class MainActivity : FlutterActivity() {
     private val APK_CHANNEL = "com.coffeelabs.app/apk_installer"
     private val KIOSK_CHANNEL = "com.coffeelabs.app/kiosk_engine"
+    private val QRIS_BRIDGE_CHANNEL = "com.coffeelabs.app/qris_bridge"
 
     private lateinit var kioskManager: KioskManager
     private var kioskMethodChannel: MethodChannel? = null
@@ -162,6 +165,43 @@ class MainActivity : FlutterActivity() {
                 }
                 "isDeviceOwner" -> {
                     result.success(kioskManager.isDeviceOwner())
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        // 3. Channel Zero-Gateway Livin' Merchant QRIS Notification Bridge (Admin/Owner Only)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, QRIS_BRIDGE_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "getBridgeStatus" -> {
+                    result.success(
+                        mapOf(
+                            "enabled" to QrisBridgeStore.isEnabled(this),
+                            "hasNotificationAccess" to LivinMerchantNotificationListener.isNotificationAccessEnabled(this),
+                            "apiBaseUrl" to QrisBridgeStore.getBaseUrl(this),
+                            "hasSecret" to QrisBridgeStore.getSecret(this).isNotBlank(),
+                            "recentLogsJson" to QrisBridgeStore.getLogsJson(this),
+                        )
+                    )
+                }
+                "configureBridge" -> {
+                    val enabled = call.argument<Boolean>("enabled") ?: false
+                    val secret = call.argument<String>("bridgeSecret")
+                    val apiBaseUrl = call.argument<String>("apiBaseUrl")
+                    QrisBridgeStore.configure(this, enabled, secret, apiBaseUrl)
+                    result.success(true)
+                }
+                "openNotificationAccessSettings" -> {
+                    try {
+                        LivinMerchantNotificationListener.openNotificationAccessSettings(this)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("NOTIF_SETTINGS_ERROR", e.localizedMessage, null)
+                    }
+                }
+                "clearLogs" -> {
+                    QrisBridgeStore.clearLogs(this)
+                    result.success(true)
                 }
                 else -> result.notImplemented()
             }

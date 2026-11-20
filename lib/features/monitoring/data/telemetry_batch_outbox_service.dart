@@ -25,6 +25,8 @@ class TelemetryBatchOutboxService {
   Dio? _dio;
   Timer? _flushTimer;
   Timer? _heartbeatTimer;
+  Timer? _routeHeartbeatDebounce;
+  Timer? _persistDebounce;
 
   String _sessionId = const Uuid().v4();
   String _currentRoute = '/';
@@ -157,7 +159,13 @@ class TelemetryBatchOutboxService {
   void updateActiveRoute(String route) {
     _currentRoute = route;
     _currentFeature = mapRouteToFeature(route);
-    unawaited(sendHeartbeat());
+    if (_isTestEnv) return;
+    _routeHeartbeatDebounce?.cancel();
+    _routeHeartbeatDebounce = Timer(const Duration(milliseconds: 500), () {
+      if (!_disposed) {
+        unawaited(sendHeartbeat());
+      }
+    });
   }
 
   void enqueueScreenDwell({
@@ -240,8 +248,15 @@ class TelemetryBatchOutboxService {
     _queue.add(item);
     if (_queue.length >= _flushBatchThreshold) {
       unawaited(flushNow());
-    } else {
+    } else if (_isTestEnv) {
       unawaited(_persistQueueSnapshot());
+    } else {
+      _persistDebounce?.cancel();
+      _persistDebounce = Timer(const Duration(milliseconds: 500), () {
+        if (!_disposed) {
+          unawaited(_persistQueueSnapshot());
+        }
+      });
     }
   }
 
@@ -331,5 +346,9 @@ class TelemetryBatchOutboxService {
     _flushTimer = null;
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
+    _routeHeartbeatDebounce?.cancel();
+    _routeHeartbeatDebounce = null;
+    _persistDebounce?.cancel();
+    _persistDebounce = null;
   }
 }

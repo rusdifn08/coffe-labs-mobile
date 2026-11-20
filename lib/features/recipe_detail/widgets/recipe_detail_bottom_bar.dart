@@ -111,14 +111,8 @@ class RecipeDetailBottomBar extends StatelessWidget {
                   size: 20,
                 ),
                 label: Text(
-                  isColdBrew
-                      ? (scaledCoffeeGrams != baseCoffeeGrams
-                          ? 'Pasang Alarm (${coffeeWeight}g → ${totalWater}g)'
-                          : 'Pasang Alarm Cold Brew')
-                      : (scaledCoffeeGrams != baseCoffeeGrams
-                          ? 'Start Brew (${coffeeWeight}g → ${totalWater}g)'
-                          : 'Start Brew'),
-                  style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.bold),
+                  isColdBrew ? 'Pasang Alarm Cold Brew' : 'Start Brew',
+                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

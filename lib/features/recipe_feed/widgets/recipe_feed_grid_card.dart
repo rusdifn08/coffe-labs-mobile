@@ -62,11 +62,12 @@ class RecipeFeedGridCard extends StatelessWidget {
         .map((n) => BrewVisualCatalog.matchNote(n))
         .toList();
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onLongPress: isLocked ? onTrialLocked : onLongPress,
-      onTap: isLocked ? onTrialLocked : onTap,
-      child: Container(
+    return RepaintBoundary(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onLongPress: isLocked ? onTrialLocked : onLongPress,
+        onTap: isLocked ? onTrialLocked : onTap,
+        child: Container(
         decoration: BoxDecoration(
           color: isLocked ? const Color(0xFFE2E2E2) : AppTheme.surfaceWhite,
           borderRadius: BorderRadius.circular(20),
@@ -397,6 +398,7 @@ class RecipeFeedGridCard extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 }

@@ -1168,7 +1168,7 @@ class CognitiveBeanAnalyzer {
       return true;
     }).toList();
 
-    // ── Smart Catalog Fusion across CoffeeKnowledgeGraph (coffee.json + initial_classes + 127 Roasteries + Featured) ──
+    // ── Smart Catalog Fusion across CoffeeKnowledgeGraph (v3.0: 2,461+ beans, 750+ roasteries, 88+ Sabang-Merauke & World terroirs) ──
     final catalogHit = kg.matchBestCatalogEntry(
       rawFullText: repairedFullText,
       detectedRoastery: rawRoastery,
@@ -1177,6 +1177,38 @@ class CognitiveBeanAnalyzer {
       detectedOrigin: originProf?.canonicalName,
       detectedNotes: filteredNotes,
     );
+
+    // ── Strict Zero-Hallucination Evidence Gate ──
+    final int evidenceSignals = (originProf != null ? 1 : 0) +
+        (hasExplicitProc ? 1 : 0) +
+        (rawRoastery != 'Specialty Roastery' ? 1 : 0) +
+        (explicitVar != null ? 1 : 0) +
+        (explicitAlt != null ? 1 : 0) +
+        (filteredNotes.isNotEmpty ? 1 : 0) +
+        (catalogHit != null ? 2 : 0) +
+        (structured['origin']?.trim().isNotEmpty == true ? 1 : 0);
+
+    if (evidenceSignals == 0) {
+      return ResolvedCoffeeBean(
+        beanId: null,
+        isCatalogVerified: false,
+        confidenceScore: 25.0,
+        roasteryName: 'Belum Terdeteksi',
+        beanName: 'Kemasan Kopi Belum Terbaca',
+        origin: 'Belum Terdeteksi',
+        variety: 'Belum Terdeteksi',
+        process: 'Belum Terdeteksi',
+        roastLevel: 'Belum Terdeteksi',
+        altitudeMasl: null,
+        tastingNotes: const [],
+        recommendedWaterTempC: 91,
+        recommendedRecipes: const [],
+        notesSource: 'LOW_CONFIDENCE_NO_MATCH',
+        isAiInferredAltitude: false,
+        isAiInferredVariety: false,
+        classifiedBlocks: classified,
+      );
+    }
 
     String finalRoastery = rawRoastery;
     String finalOrigin = originProf?.regionProvince ??
@@ -1198,7 +1230,7 @@ class CognitiveBeanAnalyzer {
     String? baristaOpinion;
     String? beanId;
     bool isCatalogVerified = false;
-    double confidenceScore = 94.5;
+    double confidenceScore = (62.0 + (evidenceSignals * 6.5)).clamp(62.0, 96.5);
 
     List<String> finalNotes;
     String finalNotesSource;

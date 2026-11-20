@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 import '../widgets/toolkit_card.dart';
 import '../widgets/toolkit_section_svg_icons.dart';
 import 'bean_freshness_screen.dart';
+import '../features/beans_radar/models/beans_radar_models.dart';
 import 'bean_radar_screen.dart';
 import 'bean_recipe_recommender_screen.dart';
 import 'brew_journal_screen.dart';
@@ -90,6 +91,7 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
     // 1. Lab Ekstraksi & AI
     final List<ToolkitItem> extractionTools = [
       ToolkitItem(
+        featureKey: 'SMART_BREW_AI',
         title: isEn ? 'Smart Brew Dial-In' : 'Smart Brew AI',
         subtitle: isEn ? 'Roast, process & cup prediction' : 'Kalkulator Smart Brew & profil rasa',
         iconType: 'smart_brew_ai',
@@ -101,6 +103,7 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
         isLocked: lockSmartBrew,
       ),
       ToolkitItem(
+        featureKey: 'AI_BEAN_SCANNER',
         title: isEn ? 'AI Bean Studio' : 'Studio AI',
         subtitle: isEn ? 'Train custom coffee bag models' : 'Latih AI kenali kemasan kopi baru',
         iconType: 'studio_ai',
@@ -112,6 +115,7 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
         isLocked: false,
       ),
       ToolkitItem(
+        featureKey: 'DIAL_IN_ASSISTANT',
         title: isEn ? 'Dial-In Assistant' : 'Asisten Dial-In',
         subtitle: isEn ? 'Fix sour, bitter & channeling' : 'Solusi asam, pahit & channeling',
         iconType: 'dialin',
@@ -123,6 +127,7 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
         isLocked: lockSmartBrew,
       ),
       ToolkitItem(
+        featureKey: 'GRINDER_MATRIX',
         title: isEn ? 'Grinder Click Matrix' : 'Matriks Grinder',
         subtitle: isEn ? 'C40, 1Zpresso, Timemore, Ode' : 'Konversi klik C40, 1Zpresso, Ode',
         iconType: 'grinder',
@@ -134,6 +139,7 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
         isLocked: lockLab,
       ),
       ToolkitItem(
+        featureKey: 'FOUR_SIX_CALC',
         title: isEn ? '4:6 Method Calc' : 'Kalkulator 4:6',
         subtitle: isEn ? 'Kasuya 4:6 sweet/acid & body' : 'Metode Kasuya 40% rasa & 60% body',
         iconType: 'foursix',
@@ -145,6 +151,7 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
         isLocked: lockLab,
       ),
       ToolkitItem(
+        featureKey: 'TDS_EXTRACTION',
         title: isEn ? 'SCA TDS & Extraction' : 'Ekstraksi & TDS',
         subtitle: isEn ? 'Extraction yield % & Golden Cup' : 'Kalkulator EY (%) & Golden Cup SCA',
         iconType: 'tds',
@@ -160,6 +167,7 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
     // 2. Coffee Science & Beans
     final List<ToolkitItem> scienceTools = [
       ToolkitItem(
+        featureKey: 'WATER_CHEMISTRY',
         title: isEn ? 'Water Chemistry' : 'Kimia Air Seduh',
         subtitle: isEn ? 'SCA, Rao & Lotus drops recipe' : 'Resep mineral air SCA & Lotus',
         iconType: 'water',
@@ -171,6 +179,7 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
         isLocked: lockLab,
       ),
       ToolkitItem(
+        featureKey: 'BEAN_FRESHNESS',
         title: isEn ? 'Bean Freshness' : 'Kesegaran Biji',
         subtitle: isEn ? 'CO2 degassing & peak flavor' : 'Kurva degassing & puncak rasa',
         iconType: 'freshness',
@@ -182,6 +191,7 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
         isLocked: lockLab,
       ),
       ToolkitItem(
+        featureKey: 'SMART_SCALE',
         title: isEn ? 'Smart Scale' : 'Smart Scale Brew',
         subtitle: isEn ? 'Bluetooth scale & live flow rate' : 'Timbangan Bluetooth & flow-rate',
         iconType: 'scale',
@@ -193,6 +203,7 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
         isLocked: lockLab,
       ),
       ToolkitItem(
+        featureKey: 'CUPPING_FLAVOR',
         title: isEn ? 'Cupping Flavor' : 'Cupping Flavour',
         subtitle: isEn ? 'SCA flavor wheel & sensory notes' : 'Roda rasa SCA & profil sensorik',
         iconType: 'cupping',
@@ -208,8 +219,11 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
     // 3. Ecosystem & Community (Terbuka Bebas untuk Pengunjung)
     final List<ToolkitItem> ecosystemTools = [
       ToolkitItem(
+        featureKey: 'MARKETPLACE_KOPI',
         title: isEn ? 'Marketplace' : 'Marketplace Kopi',
-        subtitle: isEn ? 'Fresh beans from 50+ roasteries' : 'Katalog 50+ roastery & checkout',
+        subtitle: isEn
+            ? 'Shop specialty coffee beans & checkout'
+            : 'Belanja biji kopi specialty & checkout',
         iconType: 'marketplace',
         fallbackIcon: Icons.storefront_rounded,
         primaryColor: const Color(0xFF8D4925),
@@ -219,8 +233,11 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
         isLocked: false,
       ),
       ToolkitItem(
+        featureKey: 'COFFEE_ROASTERY',
         title: isEn ? 'Coffee Roastery' : 'Coffee Roastery',
-        subtitle: isEn ? 'Catalog of 50 roasteries & lineups' : 'Katalog 50 roastery & lineup kopi',
+        subtitle: isEn
+            ? 'Roastery directory, lineups & Business Studio'
+            : 'Direktori roastery, lineup & Studio Bisnis',
         iconType: 'roastery',
         fallbackIcon: Icons.local_fire_department_rounded,
         primaryColor: const Color(0xFF5D4037),
@@ -230,17 +247,35 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
         isLocked: false,
       ),
       ToolkitItem(
+        featureKey: 'BEANS_RADAR',
         title: isEn ? 'Beans Radar' : 'Beans Radar',
-        subtitle: isEn ? 'Closest specialty beans via GPS' : 'Cari biji kopi terdekat via lokasi',
+        subtitle: isEn
+            ? 'Roasteries & specialty bean sellers'
+            : 'Roastery & kafe penjual biji kopi',
         iconType: 'radar',
         fallbackIcon: Icons.radar_rounded,
         primaryColor: const Color(0xFF1565C0),
         secondaryColor: const Color(0xFF90CAF9),
         gradientColors: const [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
-        destination: const BeanRadarScreen(),
+        destination: const BeanRadarScreen(initialMode: RadarAppMode.beans),
         isLocked: false,
       ),
       ToolkitItem(
+        featureKey: 'CAFE_RADAR',
+        title: isEn ? 'Cafe Radar' : 'Cafe Radar',
+        subtitle: isEn
+            ? '10.000+ cafes, coffee shops & restos'
+            : '10.000+ cafe, resto & tempat ngopi',
+        iconType: 'cafe_radar',
+        fallbackIcon: Icons.local_cafe_rounded,
+        primaryColor: const Color(0xFF0F766E),
+        secondaryColor: const Color(0xFF5EEAD4),
+        gradientColors: const [Color(0xFFCCFBF1), Color(0xFF99F6E4)],
+        destination: const BeanRadarScreen(initialMode: RadarAppMode.cafe),
+        isLocked: false,
+      ),
+      ToolkitItem(
+        featureKey: 'JURNAL_BREW',
         title: isEn ? 'Brew Journal' : 'Jurnal Brew',
         subtitle: isEn ? 'Extraction logs & sensory ratings' : 'Catatan ekstraksi & log seduh',
         iconType: 'journal',
@@ -252,6 +287,7 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
         isLocked: false,
       ),
       ToolkitItem(
+        featureKey: 'SOCIAL_COFFEE',
         title: isEn ? 'Social Coffee' : 'Social Coffee',
         subtitle: isEn ? 'Barista community & recipe sharing' : 'Komunitas barista & diskusi resep',
         iconType: 'social',
@@ -263,6 +299,7 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
         isLocked: false,
       ),
       ToolkitItem(
+        featureKey: 'FAVORITE_RECIPES',
         title: isEn ? 'Favorites' : 'Favorite',
         subtitle: isEn ? 'Saved champion recipes collection' : 'Koleksi resep seduh favorit Anda',
         iconType: 'favorite',
@@ -274,6 +311,7 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
         isLocked: false,
       ),
       ToolkitItem(
+        featureKey: 'LIVE_BREW_QR',
         title: 'Live Brew QR',
         subtitle: isEn ? 'Track live barista pour & cheers' : 'Lacak seduhan barista live via QR',
         iconType: 'live_brew',
@@ -289,6 +327,7 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
     // 4. Learning Brew (4 Cards: Game Brew V60, E-Book DRM, Akademi LMS, Brew Doctor)
     final List<ToolkitItem> learningBrewTools = [
       ToolkitItem(
+        featureKey: 'GAME_BREW_3D',
         title: isEn ? 'Game Brew V60' : 'Game Brew V60',
         subtitle: isEn ? '60fps V60 pour & story quest' : 'Simulasi tuang ketel V60 & cerita',
         iconType: 'game_brew',
@@ -300,6 +339,7 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
         isLocked: false,
       ),
       ToolkitItem(
+        featureKey: 'EBOOK_DRM_LIBRARY',
         title: isEn ? 'DRM E-Book Library' : 'Pustaka E-Book DRM',
         subtitle: isEn ? '5 encrypted coffee books' : '5 buku kopi terenkripsi AES-256',
         iconType: 'ebook_drm',
@@ -311,6 +351,7 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
         isLocked: false,
       ),
       ToolkitItem(
+        featureKey: 'LMS_EBOOK_ACADEMY',
         title: isEn ? 'Barista LMS Academy' : 'Akademi Barista LMS',
         subtitle: isEn ? 'HLS courses & 100-bit quizzes' : 'Kursus video HLS & kuis 100-bit',
         iconType: 'lms_academy',
@@ -322,6 +363,7 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
         isLocked: false,
       ),
       ToolkitItem(
+        featureKey: 'BREW_DOCTOR',
         title: isEn ? 'Brew Doctor & Compass' : 'Brew Doctor & Kompas',
         subtitle: isEn ? 'Fix sour, bitter & SCA plot' : 'Diagnosa asam, pahit & kompas SCA',
         iconType: 'brew_doctor',
@@ -340,230 +382,248 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
         title: Text(isEn ? 'Barista Precision Toolkit' : 'Barista Toolkit'),
         centerTitle: true,
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        children: [
-          // Header Card (Compact Professional Suite Banner without description)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppTheme.primaryBrown,
-                  AppTheme.primaryBrown.withValues(alpha: 0.9),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primaryBrown.withValues(alpha: 0.16),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppTheme.accentGold.withValues(alpha: 0.22),
-                          borderRadius: BorderRadius.circular(6),
+      body: CustomScrollView(
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            sliver: SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Header Card (Compact Professional Suite Banner without description)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppTheme.primaryBrown,
+                          AppTheme.primaryBrown.withValues(alpha: 0.9),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryBrown.withValues(alpha: 0.16),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
                         ),
-                        child: const Text(
-                          'PROFESSIONAL PRO SUITE',
-                          style: TextStyle(
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.7,
-                            color: AppTheme.accentGold,
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.accentGold.withValues(alpha: 0.22),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  'PROFESSIONAL PRO SUITE',
+                                  style: TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.7,
+                                    color: AppTheme.accentGold,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              Text(
+                                isEn ? 'Complete Barista Suite' : 'Peralatan Presisi Barista',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                        const SizedBox(width: 10),
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(CupertinoIcons.sparkles, color: AppTheme.accentGold, size: 20),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Section 1: Learning Brew (4 Cards)
+                  ToolkitSectionHeader(
+                    icon: const Icon(Icons.auto_stories_rounded, size: 19, color: Color(0xFF5C3A21)),
+                    title: 'Learning Brew',
+                    subtitle: isEn ? 'Game V60, DRM e-books, HLS LMS & Brew Doctor' : 'Game V60, E-Book DRM, Video LMS & Brew Doctor',
+                    badgeBg: const Color(0xFFFFF8E1),
+                    borderColor: const Color(0xFFFFE082),
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF8E1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFFFD54F), width: 0.8),
                       ),
-                      const SizedBox(height: 5),
-                      Text(
-                        isEn ? 'Complete Barista Suite' : 'Peralatan Presisi Barista',
-                        style: const TextStyle(
-                          fontSize: 16,
+                      child: const Text(
+                        '4 MODUL',
+                        style: TextStyle(
+                          fontSize: 9.5,
                           fontWeight: FontWeight.w800,
-                          color: Colors.white,
+                          color: Color(0xFF8D4E00),
+                          letterSpacing: 0.4,
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Container(
-                  width: 38,
-                  height: 38,
+                  const SizedBox(height: 10),
+                ],
+              ),
+            ),
+          ),
+          _buildSliverGrid(learningBrewTools),
+
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
+            sliver: SliverToBoxAdapter(
+              child: ToolkitSectionHeader(
+                icon: const EcosystemSectionIcon(size: 20),
+                title: isEn ? 'Ecosystem & Community' : 'Ekosistem & Komunitas',
+                subtitle: isEn ? 'Marketplace, roasteries & radar' : 'Marketplace, roastery, radar & komunitas',
+                badgeBg: const Color(0xFFEFEBE9),
+                borderColor: const Color(0xFFD7CCC8),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
+                    color: const Color(0xFFE8F5E9),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFA5D6A7), width: 0.8),
                   ),
-                  child: const Icon(CupertinoIcons.sparkles, color: AppTheme.accentGold, size: 20),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-
-          // Section 1: Learning Brew (4 Cards)
-          ToolkitSectionHeader(
-            icon: const Icon(Icons.auto_stories_rounded, size: 19, color: Color(0xFF5C3A21)),
-            title: 'Learning Brew',
-            subtitle: isEn ? 'Game V60, DRM e-books, HLS LMS & Brew Doctor' : 'Game V60, E-Book DRM, Video LMS & Brew Doctor',
-            badgeBg: const Color(0xFFFFF8E1),
-            borderColor: const Color(0xFFFFE082),
-            trailing: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF8E1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFFFD54F), width: 0.8),
-              ),
-              child: const Text(
-                '4 MODUL',
-                style: TextStyle(
-                  fontSize: 9.5,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF8D4E00),
-                  letterSpacing: 0.4,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          _buildGrid(learningBrewTools),
-          const SizedBox(height: 16),
-
-          // Section 2: Ecosystem & Community
-          ToolkitSectionHeader(
-            icon: const EcosystemSectionIcon(size: 20),
-            title: isEn ? 'Ecosystem & Community' : 'Ekosistem & Komunitas',
-            subtitle: isEn ? 'Marketplace, roasteries & radar' : 'Marketplace, roastery, radar & komunitas',
-            badgeBg: const Color(0xFFEFEBE9),
-            borderColor: const Color(0xFFD7CCC8),
-            trailing: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFA5D6A7), width: 0.8),
-              ),
-              child: Text(
-                isEn ? 'FREE ACCESS' : 'AKSES BEBAS',
-                style: const TextStyle(
-                  fontSize: 9.5,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF2E7D32),
-                  letterSpacing: 0.4,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          _buildGrid(ecosystemTools),
-          const SizedBox(height: 16),
-
-          // Section 2: Extraction & AI Lab
-          ToolkitSectionHeader(
-            icon: const LabSectionIcon(size: 20),
-            title: isEn ? 'Extraction & AI Lab' : 'Lab Ekstraksi & AI',
-            subtitle: isEn ? 'Smart AI, clicks & yield' : 'Smart AI, kalibrasi rasa & yield',
-            badgeBg: const Color(0xFFFCE4EC),
-            borderColor: const Color(0xFFF8BBD0),
-            trailing: _isTrial
-                ? Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF3E0),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFFFB74D), width: 0.8),
+                  child: Text(
+                    isEn ? 'FREE ACCESS' : 'AKSES BEBAS',
+                    style: const TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF2E7D32),
+                      letterSpacing: 0.4,
                     ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(CupertinoIcons.lock_fill, size: 10, color: Color(0xFFE65100)),
-                        SizedBox(width: 3),
-                        Text(
-                          'BARISTA PRO',
-                          style: TextStyle(
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFFE65100),
-                            letterSpacing: 0.4,
-                          ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          _buildSliverGrid(ecosystemTools),
+
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
+            sliver: SliverToBoxAdapter(
+              child: ToolkitSectionHeader(
+                icon: const LabSectionIcon(size: 20),
+                title: isEn ? 'Extraction & AI Lab' : 'Lab Ekstraksi & AI',
+                subtitle: isEn ? 'Smart AI, clicks & yield' : 'Smart AI, kalibrasi rasa & yield',
+                badgeBg: const Color(0xFFFCE4EC),
+                borderColor: const Color(0xFFF8BBD0),
+                trailing: _isTrial
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF3E0),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFFFB74D), width: 0.8),
                         ),
-                      ],
-                    ),
-                  )
-                : null,
-          ),
-          const SizedBox(height: 10),
-          _buildGrid(extractionTools),
-          const SizedBox(height: 16),
-
-          // Section 3: Coffee Science & Freshness
-          ToolkitSectionHeader(
-            icon: const ScienceSectionIcon(size: 20),
-            title: isEn ? 'Coffee Science & Freshness' : 'Sains Kopi & Kesegaran',
-            subtitle: isEn ? 'Water minerals & degassing' : 'Mineral air, degassing & sensorik',
-            badgeBg: const Color(0xFFE0F7FA),
-            borderColor: const Color(0xFFB2EBF2),
-            trailing: _isTrial
-                ? Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF3E0),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFFFB74D), width: 0.8),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(CupertinoIcons.lock_fill, size: 10, color: Color(0xFFE65100)),
-                        SizedBox(width: 3),
-                        Text(
-                          'BARISTA PRO',
-                          style: TextStyle(
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFFE65100),
-                            letterSpacing: 0.4,
-                          ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(CupertinoIcons.lock_fill, size: 10, color: Color(0xFFE65100)),
+                            SizedBox(width: 3),
+                            Text(
+                              'BARISTA PRO',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFFE65100),
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  )
-                : null,
+                      )
+                    : null,
+              ),
+            ),
           ),
-          const SizedBox(height: 10),
-          _buildGrid(scienceTools),
+          _buildSliverGrid(extractionTools),
+
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
+            sliver: SliverToBoxAdapter(
+              child: ToolkitSectionHeader(
+                icon: const ScienceSectionIcon(size: 20),
+                title: isEn ? 'Coffee Science & Freshness' : 'Sains Kopi & Kesegaran',
+                subtitle: isEn ? 'Water minerals & degassing' : 'Mineral air, degassing & sensorik',
+                badgeBg: const Color(0xFFE0F7FA),
+                borderColor: const Color(0xFFB2EBF2),
+                trailing: _isTrial
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF3E0),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFFFB74D), width: 0.8),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(CupertinoIcons.lock_fill, size: 10, color: Color(0xFFE65100)),
+                            SizedBox(width: 3),
+                            Text(
+                              'BARISTA PRO',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFFE65100),
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : null,
+              ),
+            ),
+          ),
+          _buildSliverGrid(scienceTools, bottomPadding: 24),
         ],
       ),
     );
   }
 
-  Widget _buildGrid(List<ToolkitItem> items) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: items.length,
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 260,
-        mainAxisExtent: 106,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
+  Widget _buildSliverGrid(List<ToolkitItem> items, {double bottomPadding = 0}) {
+    return SliverPadding(
+      padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding),
+      sliver: SliverGrid(
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 260,
+          mainAxisExtent: 106,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) => RepaintBoundary(
+            child: ToolkitCard(tool: items[index]),
+          ),
+          childCount: items.length,
+        ),
       ),
-      itemBuilder: (context, index) {
-        return ToolkitCard(tool: items[index]);
-      },
     );
   }
 }

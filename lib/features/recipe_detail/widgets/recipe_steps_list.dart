@@ -4,6 +4,7 @@ import '../../../../theme/app_theme.dart';
 import '../../../../services/language_service.dart';
 import '../../../../services/coffee_translator.dart';
 import '../../brew/timer/utils/brew_method_helper.dart';
+import '../../brew/timer/widgets/segmented_timer_painter.dart';
 import 'recipe_ingredients_card.dart';
 
 class RecipeStepsList extends StatelessWidget {
@@ -163,6 +164,10 @@ class RecipeStepsList extends StatelessWidget {
                   isEnglish: isEn,
                 );
 
+          final Color stepColor = getColorForStep(idx);
+          final Color waterActionColor =
+              (waterAdded > 0 && !isEspresso) ? Colors.blueAccent : family.primaryColor;
+
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
@@ -178,16 +183,20 @@ class RecipeStepsList extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      width: 30,
-                      height: 30,
+                      width: 32,
+                      height: 32,
                       decoration: BoxDecoration(
-                        color: family.primaryColor,
+                        color: stepColor.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
                         child: Text(
                           '${idx + 1}',
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: stepColor,
+                            fontSize: 13.5,
+                          ),
                         ),
                       ),
                     ),
@@ -203,7 +212,7 @@ class RecipeStepsList extends StatelessWidget {
                           const SizedBox(height: 3),
                           Row(
                             children: [
-                              Icon(family.icon, size: 12, color: family.primaryColor),
+                              Icon(family.icon, size: 12, color: waterActionColor),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
@@ -211,7 +220,7 @@ class RecipeStepsList extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w600,
-                                    color: family.primaryColor,
+                                    color: waterActionColor,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),

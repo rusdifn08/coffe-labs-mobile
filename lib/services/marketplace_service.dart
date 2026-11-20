@@ -1,8 +1,12 @@
 import 'dart:convert';
 import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../data/roastery_catalog.dart';
+import '../features/marketplace/utils/coffee_bag_image_resolver.dart';
+import '../features/marketplace/utils/qris_payload_builder.dart';
 import '../models/marketplace_model.dart';
 
 class MarketplaceService extends ChangeNotifier {
@@ -24,23 +28,48 @@ class MarketplaceService extends ChangeNotifier {
   int _voucherDiscount = 0;
 
   List<MarketplaceProduct> get products => List.unmodifiable(_allProducts);
+  List<MarketplaceProduct> get flashSaleProducts =>
+      _allProducts.where((p) => p.isFlashSale && p.flashSaleStockLeft > 0).toList();
   List<CartItem> get cartItems => _cartMap.values.toList();
   List<MarketplaceOrder> get orders => List.unmodifiable(_orders);
-  int get cartCount => _cartMap.values.fold(0, (sum, item) => sum + item.quantity);
+  int get cartCount =>
+      _cartMap.values.fold(0, (sum, item) => sum + item.quantity);
   String? get appliedVoucher => _appliedVoucher;
   int get voucherDiscount => _voucherDiscount;
+  int get cartSubtotal =>
+      _cartMap.values.fold(0, (sum, item) => sum + item.totalPrice);
 
-  int get cartSubtotal => _cartMap.values.fold(0, (sum, item) => sum + item.totalPrice);
+  String _inferCategory(String name, String origin, String process) {
+    final combined = '$name $origin $process'.toLowerCase();
+    if (combined.contains('wine') ||
+        combined.contains('anaerob') ||
+        combined.contains('carbonic') ||
+        combined.contains('koji')) {
+      return 'Wine / Anaerob';
+    }
+    if (combined.contains('espresso')) {
+      return 'Espresso';
+    }
+    if (combined.contains('blend') || combined.contains('susu')) {
+      return 'House Blend';
+    }
+    if (combined.contains('filter') || combined.contains('gesha') || combined.contains('v60')) {
+      return 'Filter V60';
+    }
+    return 'Single Origin';
+  }
 
   void _initCatalog() {
     final List<MarketplaceProduct> compiled = [];
+    var idx = 0;
 
-    // Parse all roasteries from RoasteryCatalog
     for (final roastery in RoasteryCatalog.list) {
       for (final lineup in roastery.lineups) {
-        final id = '${roastery.id}_${lineup.name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '_')}';
+        final slug = lineup.name
+            .toLowerCase()
+            .replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+        final id = '${roastery.id}_$slug';
 
-        // Parse prices (remove 'Rp' and '.')
         final p100 = _parsePrice(lineup.price100g, defaultVal: 75000);
         final p200 = _parsePrice(lineup.price200g, defaultVal: 145000);
         final p250 = (p200 * 1.22).round();
@@ -50,6 +79,19 @@ class MarketplaceService extends ChangeNotifier {
             .map((e) => e.trim())
             .where((e) => e.isNotEmpty)
             .toList();
+
+        // Gunakan Resolver ketat agar potret barista (avatars/covers/*) TIDAK pernah dipakai!
+        final assetMeta = CoffeeBagImageResolver.resolve(
+          roasteryId: roastery.id,
+          coffeeName: lineup.name,
+          explicitBagUrl: lineup.bagImageUrl,
+        );
+
+        final isFlash = idx < 10 || (idx % 17 == 0);
+        final discount = isFlash ? 15 : (idx % 5 == 0 ? 10 : 0);
+        final origPrice =
+            discount > 0 ? (p200 / (1 - (discount / 100))).round() : null;
+        final sold = 180 + ((roastery.name.length * 73 + idx * 41) % 2400);
 
         compiled.add(
           MarketplaceProduct(
@@ -62,24 +104,116 @@ class MarketplaceService extends ChangeNotifier {
             roastProfile: lineup.roastProfile,
             variety: lineup.variety,
             process: lineup.process,
-            tastingNotes: notes.isNotEmpty ? notes : ['Chocolate', 'Citrus', 'Sweet Sugar'],
+            tastingNotes: notes.isNotEmpty
+                ? notes
+                : const ['Chocolate', 'Citrus', 'Caramel'],
             price100g: p100,
             price200g: p200,
             price250g: p250,
             rating: roastery.rating,
-            reviewCount: 35 + (roastery.name.length * 3),
+            reviewCount: 45 + (roastery.name.length * 4),
             stock: 25 + (roastery.name.length % 20),
-            roastDate: 'Roasted within 48h (Fresh)',
-            badge: lineup.badge ?? (roastery.rating >= 4.9 ? 'Top Rated' : null),
-            imageUrl: roastery.imageUrl,
+            roastDate: 'Fresh Roast < 48 Jam',
+            badge: lineup.badge ?? (roastery.rating >= 4.9 ? 'Terlaris' : null),
+            imageUrl: assetMeta.imageUrl,
+            roasteryLogoUrl: assetMeta.roasteryLogoAsset,
+            hasVerifiedBagPhoto: assetMeta.isVerifiedPhoto,
+            galleryImages: assetMeta.isVerifiedPhoto
+                ? [assetMeta.imageUrl]
+                : const [],
             altitudeMasl: '1,350 - 1,750 MASL',
             producer: '${roastery.name} Artisan Lineup',
-            recommendedMethod: 'V60 / Kalita / Aeropress (1:15 - 1:16)',
-            description: '${roastery.description} Profil sangrai ${lineup.roastProfile} dengan proses ${lineup.process} yang menonjolkan karakter rasa ${lineup.tastingNotes}. Sangat direkomendasikan untuk pour-over maupun espresso.',
+            recommendedMethod:
+                lineup.recommendedBrewMethod ?? 'V60 / Kalita / Aeropress (1:15)',
+            description:
+                '${roastery.description} Profil sangrai ${lineup.roastProfile} dengan proses ${lineup.process} menonjolkan ${lineup.tastingNotes}.',
+            category: _inferCategory(lineup.name, lineup.origin, lineup.process),
+            soldCount: sold,
+            discountPct: discount,
+            originalPrice200g: origPrice,
+            isMallRoastery: true,
+            isFlashSale: isFlash,
+            flashSaleStockLeft: isFlash ? (3 + (idx % 6)) : 0,
+            createdAt: DateTime(2026, 11, 19).subtract(Duration(hours: idx * 3)),
           ),
         );
+        idx++;
       }
     }
+
+    // Tambahkan kategori Alat Seduh untuk melengkapi menu ikon Shopee
+    compiled.addAll([
+      MarketplaceProduct(
+        id: 'equip_hario_v60_02_ceramic',
+        name: 'Hario V60 Ceramic Dripper 02 Putih',
+        roasteryId: 'otten_coffee',
+        roasteryName: 'Otten Coffee Gear',
+        roasteryCity: 'Medan & Jakarta',
+        origin: 'Jepang (Original)',
+        roastProfile: 'Alat Seduh',
+        variety: 'Keramik Arita-Yaki',
+        process: 'Pour-Over Filter',
+        tastingNotes: const ['Clean Cup', 'Clarity Tinggi', 'Retensi Panas Stabil'],
+        price100g: 315000,
+        price200g: 315000,
+        price250g: 385000,
+        rating: 4.9,
+        reviewCount: 420,
+        stock: 18,
+        roastDate: 'Garansi Resmi 1 Tahun',
+        badge: 'Original',
+        imageUrl: '',
+        roasteryLogoUrl: 'assets/images/roasteries/otten_coffee.png',
+        hasVerifiedBagPhoto: false,
+        altitudeMasl: 'Kapasitas 1-4 Cups',
+        producer: 'Hario Japan Official',
+        recommendedMethod: 'Paper Filter V60 02',
+        description:
+            'Dripper keramik V60 ukuran 02 standar kompetisi dunia untuk ekstraksi clean & manis optimal.',
+        category: 'Alat Seduh',
+        soldCount: 1450,
+        discountPct: 10,
+        originalPrice200g: 350000,
+        isMallRoastery: true,
+        isFlashSale: true,
+        flashSaleStockLeft: 5,
+      ),
+      MarketplaceProduct(
+        id: 'equip_timemore_c3_esp_pro',
+        name: 'Timemore Chestnut C3 ESP Pro Grinder',
+        roasteryId: 'fugol_coffee',
+        roasteryName: 'Coffee Labs Official Gear',
+        roasteryCity: 'Jakarta Selatan',
+        origin: 'S2C660 Stainless Burr',
+        roastProfile: 'Alat Seduh',
+        variety: '30 Klik/Putaran Presisi',
+        process: 'Manual Grinder',
+        tastingNotes: const ['Bisa Espresso', 'Bisa V60 Filter', 'Bodi Full CNC'],
+        price100g: 980000,
+        price200g: 980000,
+        price250g: 1050000,
+        rating: 4.9,
+        reviewCount: 312,
+        stock: 9,
+        roastDate: 'Ready Stock',
+        badge: 'Flash Deal',
+        imageUrl: '',
+        roasteryLogoUrl: 'assets/images/coffee_labs_emblem.png',
+        hasVerifiedBagPhoto: false,
+        altitudeMasl: 'Kapasitas 25g Hopper',
+        producer: 'Timemore Authorized',
+        recommendedMethod: 'Dial-In Espresso & Pour-Over',
+        description:
+            'Hand grinder baja presisi tinggi dengan penyesuaian mikro untuk espresso hingga V60.',
+        category: 'Alat Seduh',
+        soldCount: 890,
+        discountPct: 15,
+        originalPrice200g: 1150000,
+        isMallRoastery: true,
+        isFlashSale: true,
+        flashSaleStockLeft: 3,
+      ),
+    ]);
 
     _allProducts.clear();
     _allProducts.addAll(compiled);
@@ -88,9 +222,7 @@ class MarketplaceService extends ChangeNotifier {
   int _parsePrice(String text, {required int defaultVal}) {
     try {
       final digits = text.replaceAll(RegExp(r'[^0-9]'), '');
-      if (digits.isNotEmpty) {
-        return int.parse(digits);
-      }
+      if (digits.isNotEmpty) return int.parse(digits);
     } catch (_) {}
     return defaultVal;
   }
@@ -124,20 +256,19 @@ class MarketplaceService extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateQuantity(String cartKey, int delta) async {
-    if (_cartMap.containsKey(cartKey)) {
-      final item = _cartMap[cartKey]!;
-      item.quantity += delta;
-      if (item.quantity <= 0) {
-        _cartMap.remove(cartKey);
-      }
-      _recalculateVoucher();
-      await _saveCart();
-      notifyListeners();
+  Future<void> updateQuantity(String cartKey, int newQuantity) async {
+    if (!_cartMap.containsKey(cartKey)) return;
+    if (newQuantity <= 0) {
+      _cartMap.remove(cartKey);
+    } else {
+      _cartMap[cartKey]!.quantity = newQuantity;
     }
+    _recalculateVoucher();
+    await _saveCart();
+    notifyListeners();
   }
 
-  Future<void> removeFromCart(String cartKey) async {
+  Future<void> removeCartItem(String cartKey) async {
     _cartMap.remove(cartKey);
     _recalculateVoucher();
     await _saveCart();
@@ -152,12 +283,9 @@ class MarketplaceService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ==========================================
-  // PROMO & VOUCHERS
-  // ==========================================
   bool applyVoucher(String code) {
     final clean = code.trim().toUpperCase();
-    if (clean == 'COFFEEFIRST') {
+    if (clean == 'COFFEEFIRST' || clean == 'NEWBREWER') {
       _appliedVoucher = 'COFFEEFIRST (15% OFF)';
       _recalculateVoucher();
       notifyListeners();
@@ -168,7 +296,7 @@ class MarketplaceService extends ChangeNotifier {
       notifyListeners();
       return true;
     } else if (clean == 'FREESHIP') {
-      _appliedVoucher = 'FREESHIP (Free Courier Delivery)';
+      _appliedVoucher = 'FREESHIP (Free Delivery)';
       _recalculateVoucher();
       notifyListeners();
       return true;
@@ -192,35 +320,39 @@ class MarketplaceService extends ChangeNotifier {
     } else if (_appliedVoucher!.contains('20%')) {
       _voucherDiscount = (cartSubtotal * 0.20).round();
     } else if (_appliedVoucher!.contains('FREESHIP')) {
-      _voucherDiscount = 18000; // standard delivery fee
+      _voucherDiscount = 18000;
     }
   }
 
   // ==========================================
-  // CHECKOUT & ORDERS
+  // CHECKOUT QRIS-ONLY & ORDERS
   // ==========================================
-  Future<MarketplaceOrder> placeOrder({
+  Future<MarketplaceOrder> createQrisOrder({
     required String recipientName,
     required String phoneNumber,
     required String shippingAddress,
     required String courierName,
     required int shippingFee,
-    required String paymentMethod,
   }) async {
     final randId = 1000 + math.Random().nextInt(9000);
     final orderId = 'CL-${DateTime.now().year}-$randId';
+    final qrisRef = 'QRIS-${DateTime.now().year}-$randId';
 
-    int finalShipping = shippingFee;
+    var finalShipping = shippingFee;
     if (_appliedVoucher != null && _appliedVoucher!.contains('FREESHIP')) {
       finalShipping = 0;
     }
 
     final total = math.max(0, cartSubtotal + finalShipping - _voucherDiscount);
+    final qrPayload = MarketplaceQrisPayloadBuilder.buildDynamicPayload(
+      orderCode: orderId,
+      totalIdr: total,
+    );
 
     final order = MarketplaceOrder(
       orderId: orderId,
       createdAt: DateTime.now(),
-      items: cartItems,
+      items: List<CartItem>.from(cartItems),
       subtotal: cartSubtotal,
       shippingFee: finalShipping,
       discount: _voucherDiscount,
@@ -230,17 +362,77 @@ class MarketplaceService extends ChangeNotifier {
       phoneNumber: phoneNumber,
       shippingAddress: shippingAddress,
       courierName: courierName,
-      paymentMethod: paymentMethod,
-      status: 'Confirmed & Roasting',
-      estimatedDelivery: courierName.contains('Instant') ? 'Today (3-4 Hours)' : '2-3 Business Days',
+      paymentMethod: 'QRIS',
+      paymentStatus: 'PENDING_QRIS',
+      qrisReference: qrisRef,
+      qrisPayload: qrPayload,
+      status: 'Menunggu Pembayaran QRIS',
+      estimatedDelivery: courierName.contains('Instant')
+          ? 'Hari Ini (3-4 Jam)'
+          : '2-3 Hari Kerja',
     );
 
     _orders.insert(0, order);
+    await _saveOrders();
+    notifyListeners();
+    return order;
+  }
+
+  Future<MarketplaceOrder> confirmQrisOrderPayment(String orderId) async {
+    final idx = _orders.indexWhere((o) => o.orderId == orderId);
+    MarketplaceOrder finalized;
+    if (idx != -1) {
+      finalized = _orders[idx].copyWith(
+        paymentStatus: 'PAID',
+        status: 'Confirmed & Roasting',
+        paidAt: DateTime.now(),
+      );
+      _orders[idx] = finalized;
+    } else {
+      finalized = MarketplaceOrder(
+        orderId: orderId,
+        createdAt: DateTime.now(),
+        items: const [],
+        subtotal: 0,
+        shippingFee: 0,
+        discount: 0,
+        total: 0,
+        recipientName: '-',
+        phoneNumber: '-',
+        shippingAddress: '-',
+        courierName: '-',
+        paymentMethod: 'QRIS',
+        paymentStatus: 'PAID',
+        paidAt: DateTime.now(),
+        status: 'Confirmed & Roasting',
+      );
+    }
     await clearCart();
     await _saveOrders();
     notifyListeners();
+    return finalized;
+  }
 
-    return order;
+  /// Backwards-compatible wrapper yang selalu memaksa metode QRIS.
+  Future<MarketplaceOrder> placeOrder({
+    required String recipientName,
+    required String phoneNumber,
+    required String shippingAddress,
+    required String courierName,
+    required int shippingFee,
+    String paymentMethod = 'QRIS',
+  }) async {
+    if (paymentMethod.trim().toUpperCase() != 'QRIS') {
+      throw ArgumentError('Pembayaran marketplace saat ini hanya mendukung QRIS.');
+    }
+    final pending = await createQrisOrder(
+      recipientName: recipientName,
+      phoneNumber: phoneNumber,
+      shippingAddress: shippingAddress,
+      courierName: courierName,
+      shippingFee: shippingFee,
+    );
+    return confirmQrisOrderPayment(pending.orderId);
   }
 
   // ==========================================

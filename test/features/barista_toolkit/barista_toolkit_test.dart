@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:coffee_hub_mobile/features/barista_toolkit/data/barista_toolkit_api_service.dart';
 import 'package:coffee_hub_mobile/features/barista_toolkit/data/barista_toolkit_seed_data.dart';
 import 'package:coffee_hub_mobile/features/barista_toolkit/data/ebook_drm_vault_service.dart';
+import 'package:coffee_hub_mobile/features/barista_toolkit/data/lms_video_session_manager.dart';
 import 'package:coffee_hub_mobile/features/barista_toolkit/domain/barista_toolkit_models.dart';
 import 'package:coffee_hub_mobile/features/barista_toolkit/presentation/brew_doctor/brew_doctor_compass_screen.dart';
 import 'package:coffee_hub_mobile/features/barista_toolkit/presentation/ebook_reader/coffee_dictionary_az_screen.dart';
@@ -219,11 +220,63 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      expect(find.text('Akademi Barista LMS'), findsOneWidget);
+      expect(LmsProgramTrack.catalog.length, 5);
+      expect(
+        LmsProgramTrack.catalog.where((p) => p.isComingSoon).length,
+        4,
+      );
+      expect(find.text('Sains & Teknik Manual Brew'), findsOneWidget);
+      expect(find.text('TERSEDIA'), findsOneWidget);
+      expect(
+        find.text('Bab 1: Sains Fundamental Ekstraksi, Kimia Air & Termodinamika'),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+
+      // Verifikasi kartu Coming Soon muncul & menampilkan pratinjau modul saat diketuk
+      final espressoCard =
+          find.byKey(const Key('lms_program_card_espresso_milk_science'));
+      await tester.scrollUntilVisible(espressoCard, 250);
+      await tester.pumpAndSettle();
+      expect(find.text('Espresso Engineering & Milk Science'), findsOneWidget);
+      expect(find.text('COMING SOON'), findsWidgets);
+      await tester.tap(espressoCard);
+      await tester.pumpAndSettle();
+      expect(find.text('Pratinjau Modul yang Sedang Disusun'), findsOneWidget);
+      await tester.tap(find.text('Mengerti'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+
+      // Verifikasi kartu ke-5 (paling bawah) juga ter-render bersih
+      final businessCard =
+          find.byKey(const Key('lms_program_card_post_harvest_cafe_business'));
+      await tester.scrollUntilVisible(businessCard, 300);
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Green Coffee Processing & Cafe Business'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+
+      // Scroll kembali ke Card 1 lalu buka Silabus Sains & Teknik Manual Brew
+      final manualBrewCard =
+          find.byKey(const Key('lms_program_card_manual_brew_science'));
+      await tester.scrollUntilVisible(manualBrewCard, -300);
+      await tester.pumpAndSettle();
+      await tester.tap(manualBrewCard);
+      await tester.pumpAndSettle();
       expect(find.text('LMS Kurikulum Manual Brew'), findsOneWidget);
       expect(
         find.text('Bab 1: Sains Fundamental Ekstraksi, Kimia Air & Termodinamika'),
         findsOneWidget,
       );
+      expect(tester.takeException(), isNull);
+
+      // Kembali dari Silabus ke Katalog 5 Kartu LMS
+      await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
+      await tester.pumpAndSettle();
+      expect(find.text('Akademi Barista LMS'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       final courses = await BaristaToolkitFallbackSeed.loadOfflineCoursesAsync();
@@ -340,5 +393,81 @@ void main() {
       expect(find.text('Buka Ebook'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
+
+    test(
+      'LmsVideoSessionManager enforces safe Windows S/W config (prevents ANGLE Surface.cpp:528 crash) & guards session tokens',
+      () {
+        final winCfg = LmsVideoSessionManager.buildVideoControllerConfig(isWindows: true);
+        expect(winCfg.enableHardwareAcceleration, isFalse);
+        expect(winCfg.hwdec, 'no');
+        expect(winCfg.width, 960);
+        expect(winCfg.height, 540);
+
+        final mobileCfg = LmsVideoSessionManager.buildVideoControllerConfig(isWindows: false);
+        expect(mobileCfg.enableHardwareAcceleration, isTrue);
+
+        expect(LmsVideoSessionManager.computeWindowsSwSize(1920, 1080), (960, 540));
+        expect(LmsVideoSessionManager.computeWindowsSwSize(1280, 720), (960, 540));
+        expect(LmsVideoSessionManager.computeWindowsSwSize(640, 360), (640, 360));
+
+        // Token ownership safety during pushReplacement
+        final mgr = LmsVideoSessionManager.instance;
+        final t1 = mgr.acquireSession();
+        expect(mgr.isTokenActive(t1), isTrue);
+
+        final t2 = mgr.acquireSession();
+        expect(mgr.isTokenActive(t1), isFalse);
+        expect(mgr.isTokenActive(t2), isTrue);
+
+        // Stale dispose of Screen 1 must NOT invalidate Screen 2's active session
+        mgr.releaseSession(t1);
+        expect(mgr.isTokenActive(t2), isTrue);
+
+        // Releasing active Screen 2 invalidates t2 cleanly
+        mgr.releaseSession(t2);
+        expect(mgr.isTokenActive(t2), isFalse);
+      },
+    );
+
+    testWidgets(
+      'LmsCoursePlayerScreen opens and navigates Back cleanly without errors or leaked timers',
+      (tester) async {
+        final courses = await BaristaToolkitFallbackSeed.loadOfflineCoursesAsync();
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              home: Builder(
+                builder: (context) => Scaffold(
+                  body: Center(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => LmsCoursePlayerScreen(
+                            course: courses.first,
+                            lesson: courses.first.lessons.first,
+                          ),
+                        ),
+                      ),
+                      child: const Text('Buka LMS Bab 1.1'),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        await tester.tap(find.text('Buka LMS Bab 1.1'));
+        await tester.pumpAndSettle();
+        expect(find.text('Lab Simulasi Interaktif'), findsOneWidget);
+
+        // Tap Back button -> should pop immediately without crash/exception
+        await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Buka LMS Bab 1.1'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 }

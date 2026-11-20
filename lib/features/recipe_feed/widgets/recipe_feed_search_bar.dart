@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../services/language_service.dart';
+import '../../../../utils/barista_utils.dart';
+import '../utils/recipe_filter_matcher.dart';
 
 class RecipeFeedSearchBar extends StatelessWidget {
   final int activeFilterCount;
@@ -216,13 +218,19 @@ class RecipeFeedSearchBar extends StatelessWidget {
                         if (selectedPourFilter != 'Semua' && selectedPourFilter != 'All')
                           _activeFilterChip(selectedPourFilter, onRemovePourFilter),
                         if (selectedDripperFilter != 'Semua' && selectedDripperFilter != 'All')
-                          _activeFilterChip(selectedDripperFilter, onRemoveDripperFilter),
+                          _activeFilterChip(
+                            RecipeFilterMatcher.displayMethodLabel(
+                              selectedDripperFilter,
+                              isEnglish: isEn,
+                            ),
+                            onRemoveDripperFilter,
+                          ),
                         if (selectedBaristaFilter != 'Semua' && selectedBaristaFilter != 'All')
                           _activeFilterChip(selectedBaristaFilter, onRemoveBaristaFilter),
                         if (selectedNoteFilter != 'Semua' && selectedNoteFilter != 'All')
                           _activeFilterChip(selectedNoteFilter, onRemoveNoteFilter),
                         if (selectedOriginFilter != 'Semua' && selectedOriginFilter != 'All')
-                          _activeFilterChip(selectedOriginFilter, onRemoveOriginFilter),
+                          _activeOriginFilterChip(selectedOriginFilter, onRemoveOriginFilter),
                       ],
                     ),
                   ),
@@ -241,6 +249,49 @@ class RecipeFeedSearchBar extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+
+  static Widget _activeOriginFilterChip(String originValue, VoidCallback onRemove) {
+    final isIndonesia = originValue.contains('Indonesia');
+    final isIntl = originValue.contains('Internasional') || originValue.contains('International');
+
+    return Container(
+      margin: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppTheme.accentAmber.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.accentAmber.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isIndonesia)
+            const BaristaFlagBadge(
+              countryCode: 'id',
+              width: 16,
+              height: 12,
+              borderRadius: 2,
+            )
+          else if (isIntl)
+            const Icon(CupertinoIcons.globe, size: 13, color: AppTheme.primaryBrown)
+          else
+            Text(
+              originValue,
+              style: const TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryBrown,
+              ),
+            ),
+          const SizedBox(width: 4),
+          GestureDetector(
+            onTap: onRemove,
+            child: const Icon(CupertinoIcons.xmark_circle_fill, size: 12, color: AppTheme.primaryBrown),
+          ),
+        ],
+      ),
     );
   }
 

@@ -12,6 +12,7 @@ import '../../../../theme/app_theme.dart';
 import '../../data/barista_toolkit_api_service.dart';
 import '../../data/barista_toolkit_seed_data.dart';
 import '../../data/ebook_drm_vault_service.dart';
+import '../../data/lms_video_session_manager.dart';
 import '../../domain/barista_toolkit_models.dart';
 import '../ebook_reader/ebook_library_screen.dart';
 import '../ebook_reader/encrypted_ebook_reader_screen.dart';
@@ -60,97 +61,299 @@ class _LmsCoursePlayerScreenState
     extends ConsumerState<LmsCoursePlayerScreen> {
   final Lms100BitTracker _tracker = Lms100BitTracker();
   final Map<int, int> _selectedAnswers = {};
+  final List<StreamSubscription<dynamic>> _playerSubs = [];
+
+  // ValueNotifier terisolasi agar update posisi/play/buffer/100-bit TIDAK pernah
+  // memicu full-screen setState (mencegah lag saat video berjalan 30–60fps).
+  late final ValueNotifier<double> _positionSecNotifier;
+  late final ValueNotifier<int> _durationSecNotifier;
+  late final ValueNotifier<bool> _isPlayingNotifier;
+  late final ValueNotifier<bool> _isBufferingNotifier;
+  late final ValueNotifier<int> _completionPctNotifier;
+
+  late final Widget? _cachedMarkdownSection;
 
   Player? _player;
   VideoController? _videoController;
   Timer? _fallbackPlaybackTimer;
+  int _sessionToken = 0;
+  bool _isDisposed = false;
+  int _lastTickedSecond = -1;
 
   bool _usingNativeVideo = false;
-  bool _isPlaying = false;
   bool _showInteractiveLab = false;
-  double _positionSec = 0;
   double _playbackSpeed = 1.0;
   String? _streamStatusText;
+  String? _streamSourceBadge;
   bool _submitting = false;
 
   bool get _isHeadlessTest =>
       kIsWeb || Platform.environment.containsKey('FLUTTER_TEST');
 
-  int get _durationSec =>
-      widget.lesson.durationSec <= 0 ? 180 : widget.lesson.durationSec;
+  int get _durationSec => _durationSecNotifier.value;
+
+  String _formatClock(int sec) {
+    final s = sec < 0 ? 0 : sec;
+    final m = s ~/ 60;
+    final rem = s % 60;
+    return '${m.toString().padLeft(2, '0')}:${rem.toString().padLeft(2, '0')}';
+  }
 
   @override
   void initState() {
     super.initState();
-    _showInteractiveLab =
-        widget.lesson.simulationConfig['lab_kind'] != null;
+    final initialDur =
+        widget.lesson.durationSec <= 0 ? 180 : widget.lesson.durationSec;
+    _positionSecNotifier = ValueNotifier<double>(0);
+    _durationSecNotifier = ValueNotifier<int>(initialDur);
+    _isPlayingNotifier = ValueNotifier<bool>(false);
+    _isBufferingNotifier = ValueNotifier<bool>(false);
+    _completionPctNotifier = ValueNotifier<int>(widget.lesson.completionPct.clamp(0, 100));
+
+    _cachedMarkdownSection = widget.lesson.keyTakeawaysMarkdown.isNotEmpty
+        ? RepaintBoundary(
+            child: _LmsMarkdownRenderer(
+              markdown: widget.lesson.keyTakeawaysMarkdown,
+            ),
+          )
+        : null;
+
+    // Untuk Bab 1 yang sudah memiliki video animasi HD di Object Storage, tampilkan Video Animasi dulu
+    _showInteractiveLab = widget.lesson.simulationConfig['lab_kind'] != null &&
+        !widget.lesson.subchapterCode.startsWith('1.');
     if (widget.lesson.completionPct > 0) {
       for (int p = 0; p < widget.lesson.completionPct; p++) {
         _tracker.markSegment(p);
       }
+      _completionPctNotifier.value = _tracker.completionPct;
     }
+
+    _sessionToken = LmsVideoSessionManager.instance.acquireSession();
     _initStreamPlayer();
   }
 
-  Future<void> _initStreamPlayer() async {
-    String? streamUrl;
+  void _cancelPlayerSubscriptions() {
+    for (final sub in _playerSubs) {
+      unawaited(sub.cancel());
+    }
+    _playerSubs.clear();
+  }
+
+  static const Map<String, String> _bab1ObjectKeys = {
+    '1.1': 'coffeelabs/lms/bab1/sub_1_1_bcc',
+    '1.2': 'coffeelabs/lms/bab1/sub_1_2_water',
+    '1.3': 'coffeelabs/lms/bab1/sub_1_3_degassing',
+    '1.4': 'coffeelabs/lms/bab1/sub_1_4_paragon',
+  };
+
+  Future<bool> _probeHttpReachable(
+    String url, {
+    Duration timeout = const Duration(milliseconds: 1500),
+  }) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null || !(uri.isScheme('http') || uri.isScheme('https'))) {
+      return false;
+    }
+    final client = HttpClient()..connectionTimeout = timeout;
     try {
-      final info = await ref
-          .read(baristaToolkitApiProvider)
-          .fetchLessonStream(widget.lesson.id);
-      streamUrl = info['signed_hls_url']?.toString();
+      final req = await client.headUrl(uri).timeout(timeout);
+      final res = await req.close().timeout(timeout);
+      await res.drain<void>();
+      return res.statusCode >= 200 && res.statusCode < 300;
+    } catch (_) {
+      return false;
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  /// Menemukan berkas video MP4 lokal di bucket Object Storage backend saat menjalankan mode desktop dev.
+  File? _findLocalWorkspaceObjectFile(String objectKeyNoExt) {
+    if (kIsWeb || !(Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+      return null;
+    }
+    final relPaths = [
+      'coffe-labs-backend/storage/object_storage/$objectKeyNoExt.mp4',
+      '../coffe-labs-backend/storage/object_storage/$objectKeyNoExt.mp4',
+      '../../coffe-labs-backend/storage/object_storage/$objectKeyNoExt.mp4',
+      'storage/object_storage/$objectKeyNoExt.mp4',
+    ];
+    final roots = <Directory>[
+      Directory.current,
+      File(Platform.resolvedExecutable).parent,
+    ];
+    for (final base in roots) {
+      Directory cur = base;
+      for (int depth = 0; depth < 7; depth++) {
+        for (final rel in relPaths) {
+          final f = File('${cur.path}${Platform.pathSeparator}$rel');
+          if (f.existsSync() && f.lengthSync() > 10000) {
+            return f;
+          }
+        }
+        if (cur.parent.path == cur.path) break;
+        cur = cur.parent;
+      }
+    }
+    return null;
+  }
+
+  Future<(String source, String badge)?> _resolveBestPlayableSource({
+    required BaristaToolkitApiService api,
+    required String? serverUrl,
+  }) async {
+    final bab1Stem = _bab1ObjectKeys[widget.lesson.subchapterCode];
+    final cleanServer = (serverUrl ?? '').trim();
+    final isRealRemote = cleanServer.isNotEmpty && !cleanServer.contains('cdn.coffeelabs.app');
+
+    // 1. Remote / Cloud CDN / Backend aktif (.m3u8 lalu .mp4)
+    final remoteCandidates = <String>[];
+    if (isRealRemote) {
+      final resolved = api.resolveMediaUrl(cleanServer);
+      remoteCandidates.add(resolved);
+      if (resolved.endsWith('.m3u8')) {
+        remoteCandidates.add(resolved.replaceAll('.m3u8', '.mp4'));
+      }
+    } else if (bab1Stem != null) {
+      remoteCandidates.add(api.resolveMediaUrl('/api/v1/toolkit/object-storage/$bab1Stem.m3u8'));
+      remoteCandidates.add(api.resolveMediaUrl('/api/v1/toolkit/object-storage/$bab1Stem.mp4'));
+    }
+
+    // Pada desktop dev, bila berkas lokal tersedia langsung di disk dan server mengembalikan URL placeholder,
+    // prioritaskan berkas lokal agar langsung putar dalam < 50ms tanpa menunggu timeout cloud 404.
+    final isDesktop =
+        !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+    if (isDesktop && bab1Stem != null && !isRealRemote) {
+      final localFile = _findLocalWorkspaceObjectFile(bab1Stem);
+      if (localFile != null) {
+        final cleanPath = localFile.resolveSymbolicLinksSync();
+        return (cleanPath, 'HD Object Storage (Lokal)');
+      }
+    }
+
+    for (final url in remoteCandidates) {
+      if (_isDisposed) return null;
+      if (await _probeHttpReachable(url)) {
+        final badge = url.endsWith('.m3u8') ? 'HLS Object Storage' : 'HD MP4 Cloud';
+        return (url, badge);
+      }
+    }
+
+    // 2. Backend lokal dev (127.0.0.1:3000) & fallback disk lokal pada desktop
+    if (bab1Stem != null && isDesktop && !_isDisposed) {
+      for (final ext in const ['m3u8', 'mp4']) {
+        final localUrl = 'http://127.0.0.1:3000/api/v1/toolkit/object-storage/$bab1Stem.$ext';
+        if (await _probeHttpReachable(localUrl, timeout: const Duration(milliseconds: 500))) {
+          return (localUrl, ext == 'm3u8' ? 'HLS Local Storage' : 'HD MP4 Local');
+        }
+      }
+
+      final localFile = _findLocalWorkspaceObjectFile(bab1Stem);
+      if (localFile != null) {
+        final cleanPath = localFile.resolveSymbolicLinksSync();
+        return (cleanPath, 'HD Object Storage (Lokal)');
+      }
+    }
+    return null;
+  }
+
+  Future<void> _initStreamPlayer() async {
+    final token = _sessionToken;
+    final api = ref.read(baristaToolkitApiProvider);
+    String? rawUrl;
+    try {
+      final info = await api.fetchLessonStream(widget.lesson.id);
+      if (_isDisposed || !mounted) return;
+      rawUrl = info['signed_hls_url']?.toString();
+      final serverDur = (info['duration_sec'] as num?)?.toInt() ?? 0;
+      if (serverDur > 0) {
+        _durationSecNotifier.value = serverDur;
+      }
     } catch (_) {}
 
-    if (!_isHeadlessTest && streamUrl != null && streamUrl.isNotEmpty) {
-      try {
-        final player = Player();
-        final vc = VideoController(player);
-        await player.open(Media(streamUrl), play: false);
-        player.stream.position.listen((pos) {
-          if (!mounted) return;
-          _onPlaybackTick(pos.inSeconds.toDouble());
-        });
-        player.stream.playing.listen((playing) {
-          if (mounted) setState(() => _isPlaying = playing);
-        });
-        if (!mounted) {
-          await player.dispose();
-          return;
-        }
+    if (_isDisposed || !mounted) return;
+
+    if (!_isHeadlessTest) {
+      final resolved = await _resolveBestPlayableSource(api: api, serverUrl: rawUrl);
+      if (_isDisposed || !mounted) return;
+      if (resolved != null) {
+        final (playableSource, badge) = resolved;
+        final session = await LmsVideoSessionManager.instance.openMedia(
+          token: token,
+          playableSource: playableSource,
+        );
+        if (_isDisposed || !mounted || session == null) return;
+
+        final (player, vc) = session;
+        _cancelPlayerSubscriptions();
+        _playerSubs.addAll([
+          player.stream.duration.listen((dur) {
+            if (_isDisposed || dur.inSeconds <= 0) return;
+            if (_durationSecNotifier.value != dur.inSeconds) {
+              _durationSecNotifier.value = dur.inSeconds;
+            }
+          }),
+          player.stream.position.listen((pos) {
+            if (_isDisposed) return;
+            final wholeSec = pos.inSeconds;
+            // Throttle 1 Hz agar slider & jam hanya update saat detik berubah (bukan 60x/detik)
+            if (wholeSec == _lastTickedSecond) return;
+            _lastTickedSecond = wholeSec;
+            _onPlaybackTick(wholeSec.toDouble());
+          }),
+          player.stream.playing.listen((playing) {
+            if (_isDisposed) return;
+            if (_isPlayingNotifier.value != playing) {
+              _isPlayingNotifier.value = playing;
+            }
+          }),
+          player.stream.buffering.listen((buf) {
+            if (_isDisposed) return;
+            if (_isBufferingNotifier.value != buf) {
+              _isBufferingNotifier.value = buf;
+            }
+          }),
+        ]);
+
         setState(() {
           _player = player;
           _videoController = vc;
           _usingNativeVideo = true;
-          _streamStatusText = 'Signed HLS Stream Aktif';
+          _streamSourceBadge = badge;
+          _streamStatusText = 'Video Animasi HD Siap Diputar ($badge)';
         });
         return;
-      } catch (_) {}
+      }
     }
 
-    if (!mounted) return;
+    if (_isDisposed || !mounted) return;
     setState(() {
-      _streamStatusText =
-          'Interactive Stage & Storyboard (HLS Offline Sync Ready)';
+      _usingNativeVideo = false;
+      _streamSourceBadge = null;
+      _streamStatusText = widget.lesson.subchapterCode.startsWith('1.')
+          ? 'Video Bab 1 belum tersinkron di server cloud (404). Deploy backend atau aktifkan Cloudinary untuk streaming online.'
+          : 'Interactive Stage & Storyboard (HLS Offline Sync Ready)';
     });
   }
 
   void _togglePlayPause() {
     if (_usingNativeVideo && _player != null) {
-      _player!.playOrPause();
+      unawaited(_player!.playOrPause().catchError((_) {}));
       return;
     }
-    setState(() => _isPlaying = !_isPlaying);
+    final nextPlaying = !_isPlayingNotifier.value;
+    _isPlayingNotifier.value = nextPlaying;
     _fallbackPlaybackTimer?.cancel();
-    if (_isPlaying) {
+    if (nextPlaying) {
       _fallbackPlaybackTimer = Timer.periodic(
         const Duration(milliseconds: 500),
         (_) {
-          if (!mounted) return;
-          final next = (_positionSec + 1.0 * _playbackSpeed)
+          if (_isDisposed || !mounted) return;
+          final next = (_positionSecNotifier.value + 1.0 * _playbackSpeed)
               .clamp(0.0, _durationSec.toDouble());
           _onPlaybackTick(next);
           if (next >= _durationSec) {
-            setState(() => _isPlaying = false);
+            _isPlayingNotifier.value = false;
             _fallbackPlaybackTimer?.cancel();
           }
         },
@@ -159,9 +362,14 @@ class _LmsCoursePlayerScreenState
   }
 
   void _onPlaybackTick(double newPosSec) {
-    final seg = ((newPosSec / _durationSec) * 100).floor().clamp(0, 99);
+    final dur = _durationSec > 0 ? _durationSec : 1;
+    final seg = ((newPosSec / dur) * 100).floor().clamp(0, 99);
     _tracker.markSegment(seg);
-    setState(() => _positionSec = newPosSec);
+    _positionSecNotifier.value = newPosSec;
+    final pct = _tracker.completionPct;
+    if (_completionPctNotifier.value != pct) {
+      _completionPctNotifier.value = pct;
+    }
   }
 
   void _attemptSeek(double requestedSec) {
@@ -176,10 +384,11 @@ class _LmsCoursePlayerScreenState
       );
       return;
     }
+    final targetSec = requestedSec.round();
+    _lastTickedSecond = targetSec;
+    _positionSecNotifier.value = requestedSec;
     if (_usingNativeVideo && _player != null) {
-      _player!.seek(Duration(seconds: requestedSec.round()));
-    } else {
-      setState(() => _positionSec = requestedSec);
+      unawaited(_player!.seek(Duration(seconds: targetSec)).catchError((_) {}));
     }
   }
 
@@ -201,7 +410,7 @@ class _LmsCoursePlayerScreenState
       await ref.read(baristaToolkitApiProvider).syncLmsProgress(
             lessonId: widget.lesson.id,
             watchedBitmapB64: _tracker.toBase64(),
-            lastPositionSec: _positionSec.round(),
+            lastPositionSec: _positionSecNotifier.value.round(),
             quizAnswers: answers,
           );
       if (!mounted) return;
@@ -240,6 +449,7 @@ class _LmsCoursePlayerScreenState
   Future<void> _openLinkedEbook() async {
     final code = widget.lesson.linkedEbookCode;
     if (code == null || code.isEmpty) return;
+    LmsVideoSessionManager.instance.pauseIfActive(_sessionToken);
     final books = await BaristaToolkitFallbackSeed.offlineEbooks();
     final matched = books.where((b) => b.bookCode == code).firstOrNull;
     if (!mounted) return;
@@ -277,8 +487,17 @@ class _LmsCoursePlayerScreenState
 
   @override
   void dispose() {
+    _isDisposed = true;
     _fallbackPlaybackTimer?.cancel();
-    _player?.dispose();
+    _cancelPlayerSubscriptions();
+    // Lepas sesi secara non-blocking (pause + stop) tanpa dispose VideoOutput sinkron
+    // agar bebas crash ANGLE Surface.cpp:528 & bebas freeze UI thread saat Back.
+    LmsVideoSessionManager.instance.releaseSession(_sessionToken);
+    _positionSecNotifier.dispose();
+    _durationSecNotifier.dispose();
+    _isPlayingNotifier.dispose();
+    _isBufferingNotifier.dispose();
+    _completionPctNotifier.dispose();
     super.dispose();
   }
 
@@ -337,7 +556,10 @@ class _LmsCoursePlayerScreenState
                     label: 'Lab Simulasi Interaktif',
                     icon: Icons.science_rounded,
                     selected: _showInteractiveLab,
-                    onTap: () => setState(() => _showInteractiveLab = true),
+                    onTap: () {
+                      LmsVideoSessionManager.instance.pauseIfActive(_sessionToken);
+                      setState(() => _showInteractiveLab = true);
+                    },
                   ),
                   _stageTab(
                     label: 'Video HLS 100-Bit',
@@ -374,11 +596,11 @@ class _LmsCoursePlayerScreenState
             ),
           ],
           const SizedBox(height: 14),
-          if (lesson.keyTakeawaysMarkdown.isNotEmpty) ...[
+          if (_cachedMarkdownSection != null) ...[
             _sectionCard(
               title: 'Materi Mendalam & Parameter Sains',
               icon: Icons.menu_book_rounded,
-              child: _LmsMarkdownRenderer(markdown: lesson.keyTakeawaysMarkdown),
+              child: _cachedMarkdownSection,
             ),
             const SizedBox(height: 12),
           ],
@@ -457,7 +679,9 @@ class _LmsCoursePlayerScreenState
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                sc['ts'] ?? '',
+                                (sc['ts'] ?? '').isNotEmpty
+                                    ? sc['ts']!
+                                    : 'Scene',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w800,
                                   fontSize: 11,
@@ -471,16 +695,25 @@ class _LmsCoursePlayerScreenState
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    sc['visual'] ?? '',
+                                    (sc['visual'] ?? '').isNotEmpty
+                                        ? sc['visual']!
+                                        : (sc['scene'] ?? ''),
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w700,
                                       fontSize: 12.5,
                                       color: AppTheme.textDark,
                                     ),
                                   ),
-                                  if ((sc['narration'] ?? '').isNotEmpty)
+                                  if (((sc['narration'] ?? '').isNotEmpty
+                                          ? sc['narration']!
+                                          : (sc['detail'] ?? ''))
+                                      .isNotEmpty)
                                     Text(
-                                      sc['narration']!,
+                                      (sc['narration'] ?? '').isNotEmpty
+                                          ? sc['narration']!
+                                          : (sc['detail'] ?? ''),
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
                                         fontSize: 11.5,
                                         color: AppTheme.textMuted,
@@ -696,6 +929,7 @@ class _LmsCoursePlayerScreenState
   }
 
   Widget _buildVideoStage(LmsLessonModel lesson) {
+    final isWindowsDesktop = !kIsWeb && Platform.isWindows;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -708,19 +942,103 @@ class _LmsCoursePlayerScreenState
           AspectRatio(
             aspectRatio: 16 / 9,
             child: _usingNativeVideo && _videoController != null
-                ? Video(controller: _videoController!)
+                ? Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      RepaintBoundary(
+                        child: Video(
+                          controller: _videoController!,
+                          controls: NoVideoControls,
+                          wakelock: !isWindowsDesktop,
+                          pauseUponEnteringBackgroundMode: true,
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.translucent,
+                          onTap: _togglePlayPause,
+                          child: ValueListenableBuilder<bool>(
+                            valueListenable: _isPlayingNotifier,
+                            builder: (_, isPlaying, _) {
+                              return ValueListenableBuilder<bool>(
+                                valueListenable: _isBufferingNotifier,
+                                builder: (_, isBuffering, _) {
+                                  return AnimatedOpacity(
+                                    duration: const Duration(milliseconds: 200),
+                                    opacity: (!isPlaying || isBuffering) ? 1.0 : 0.0,
+                                    child: Center(
+                                      child: isBuffering
+                                          ? const CircularProgressIndicator(
+                                              color: AppTheme.accentGold,
+                                            )
+                                          : Container(
+                                              width: 58,
+                                              height: 58,
+                                              decoration: BoxDecoration(
+                                                color: Colors.black.withValues(alpha: 0.55),
+                                                shape: BoxShape.circle,
+                                                border: Border.all(
+                                                  color: AppTheme.accentGold,
+                                                  width: 2,
+                                                ),
+                                              ),
+                                              child: const Icon(
+                                                Icons.play_arrow_rounded,
+                                                color: AppTheme.accentGold,
+                                                size: 36,
+                                              ),
+                                            ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                      if (_streamSourceBadge != null)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.62),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: AppTheme.accentGold.withValues(alpha: 0.5),
+                              ),
+                            ),
+                            child: Text(
+                              _streamSourceBadge!,
+                              style: const TextStyle(
+                                color: AppTheme.accentGold,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  )
                 : Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      IconButton(
-                        iconSize: 54,
-                        color: AppTheme.accentGold,
-                        onPressed: _togglePlayPause,
-                        icon: Icon(
-                          _isPlaying
-                              ? Icons.pause_circle_filled_rounded
-                              : Icons.play_circle_filled_rounded,
-                        ),
+                      ValueListenableBuilder<bool>(
+                        valueListenable: _isPlayingNotifier,
+                        builder: (_, isPlaying, _) {
+                          return IconButton(
+                            iconSize: 54,
+                            color: AppTheme.accentGold,
+                            onPressed: _togglePlayPause,
+                            icon: Icon(
+                              isPlaying
+                                  ? Icons.pause_circle_filled_rounded
+                                  : Icons.play_circle_filled_rounded,
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 6),
                       Padding(
@@ -739,21 +1057,75 @@ class _LmsCoursePlayerScreenState
             padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
             child: Column(
               children: [
-                Slider(
-                  value: _positionSec.clamp(0.0, _durationSec.toDouble()),
-                  max: _durationSec.toDouble(),
-                  activeColor: AppTheme.accentGold,
-                  inactiveColor: Colors.white24,
-                  onChanged: _attemptSeek,
+                ValueListenableBuilder<int>(
+                  valueListenable: _durationSecNotifier,
+                  builder: (_, durSec, _) {
+                    final safeDur = durSec > 0 ? durSec.toDouble() : 1.0;
+                    return ValueListenableBuilder<double>(
+                      valueListenable: _positionSecNotifier,
+                      builder: (_, posSec, _) {
+                        return Slider(
+                          value: posSec.clamp(0.0, safeDur),
+                          max: safeDur,
+                          activeColor: AppTheme.accentGold,
+                          inactiveColor: Colors.white24,
+                          onChanged: _attemptSeek,
+                        );
+                      },
+                    );
+                  },
                 ),
                 Row(
                   children: [
-                    Text(
-                      'Segmen 100-Bit: ${_tracker.completionPct}%',
-                      style: const TextStyle(
-                          color: Colors.white70, fontSize: 11.5),
+                    ValueListenableBuilder<bool>(
+                      valueListenable: _isPlayingNotifier,
+                      builder: (_, isPlaying, _) {
+                        return IconButton(
+                          visualDensity: VisualDensity.compact,
+                          color: AppTheme.accentGold,
+                          onPressed: _togglePlayPause,
+                          icon: Icon(
+                            isPlaying
+                                ? Icons.pause_circle_filled_rounded
+                                : Icons.play_circle_filled_rounded,
+                            size: 28,
+                          ),
+                        );
+                      },
                     ),
-                    const Spacer(),
+                    ValueListenableBuilder<int>(
+                      valueListenable: _durationSecNotifier,
+                      builder: (_, durSec, _) {
+                        return ValueListenableBuilder<double>(
+                          valueListenable: _positionSecNotifier,
+                          builder: (_, posSec, _) {
+                            return Text(
+                              '${_formatClock(posSec.round())} / ${_formatClock(durSec)}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ValueListenableBuilder<int>(
+                        valueListenable: _completionPctNotifier,
+                        builder: (_, pct, _) {
+                          return Text(
+                            '• 100-Bit: $pct%',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                color: Colors.white70, fontSize: 11),
+                          );
+                        },
+                      ),
+                    ),
                     DropdownButton<double>(
                       value: _playbackSpeed,
                       dropdownColor: const Color(0xFF2B1B12),
@@ -769,11 +1141,52 @@ class _LmsCoursePlayerScreenState
                       onChanged: (r) {
                         if (r == null) return;
                         setState(() => _playbackSpeed = r);
-                        _player?.setRate(r);
+                        if (_player != null) {
+                          unawaited(_player!.setRate(r).catchError((_) {}));
+                        }
                       },
                     ),
                   ],
                 ),
+                if (lesson.chapterMarkers.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  SizedBox(
+                    height: 28,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: lesson.chapterMarkers.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 6),
+                      itemBuilder: (context, idx) {
+                        final mk = lesson.chapterMarkers[idx];
+                        final sec = (mk['sec'] as num?)?.toInt() ?? 0;
+                        final label = mk['label']?.toString() ?? 'Bab ${idx + 1}';
+                        return InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: () => _attemptSeek(sec.toDouble()),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 9, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: AppTheme.accentGold.withValues(alpha: 0.35),
+                              ),
+                            ),
+                            child: Text(
+                              '${_formatClock(sec)} $label',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

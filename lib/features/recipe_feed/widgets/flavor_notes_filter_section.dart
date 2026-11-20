@@ -2,9 +2,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../services/language_service.dart';
-import '../../../../data/brew_visual_catalog.dart';
-import '../models/note_category_item.dart';
+import '../utils/recipe_filter_matcher.dart';
 
+/// Bagian filter Tasting Notes yang ringkas: hanya menampilkan pilihan rasa inti
+/// (Floral, Fruity, Citrus, Berry, Chocolaty, Sweet, Nutty, Tea-Like).
 class FlavorNotesFilterSection extends StatelessWidget {
   final String activeNoteCategoryModal;
   final String selectedNoteFilter;
@@ -21,171 +22,97 @@ class FlavorNotesFilterSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final curCat = noteCategories.firstWhere(
-      (c) => c.id == activeNoteCategoryModal,
-      orElse: () => noteCategories.first,
-    );
-    final categoryNotes = BrewVisualCatalog.flavorNotes
-        .where((fn) => curCat.groups.contains(fn.group))
-        .toList();
-    final isCategorySelected = selectedNoteFilter == '${curCat.emoji} ${curCat.label}' ||
-        selectedNoteFilter == '${curCat.emoji} ${curCat.labelEn}' ||
-        selectedNoteFilter == 'Semua ${curCat.label}' ||
-        selectedNoteFilter == 'All ${curCat.labelEn}' ||
-        selectedNoteFilter == curCat.label ||
-        selectedNoteFilter == curCat.labelEn;
+    final isEn = LanguageService.isEnglish;
+    final hasSelection =
+        selectedNoteFilter != 'Semua' && selectedNoteFilter != 'All' && selectedNoteFilter.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Icon(CupertinoIcons.sparkles, size: 16, color: AppTheme.primaryBrown),
-            const SizedBox(width: 6),
-            Text(
-              LanguageService.isEnglish ? '5. Tasting Notes & Flavor Profile' : '5. Tasting Notes & Karakter Rasa',
-              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: AppTheme.textDark),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        Text(
-          selectedNoteFilter == 'Semua' || selectedNoteFilter == 'All'
-              ? (LanguageService.isEnglish
-                  ? 'Select a flavor category to explore relevant notes:'
-                  : 'Pilih kategori rasa untuk menampilkan pilihan notes yang relevan:')
-              : (LanguageService.isEnglish
-                  ? 'Active filter: $selectedNoteFilter'
-                  : 'Filter aktif: $selectedNoteFilter'),
-          style: TextStyle(
-            fontSize: 11.5,
-            color: (selectedNoteFilter == 'Semua' || selectedNoteFilter == 'All')
-                ? AppTheme.textMuted
-                : AppTheme.primaryBrown,
-            fontWeight: (selectedNoteFilter == 'Semua' || selectedNoteFilter == 'All')
-                ? FontWeight.normal
-                : FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 10),
-        SizedBox(
-          height: 38,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: noteCategories.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 8),
-            itemBuilder: (ctx, idx) {
-              final cat = noteCategories[idx];
-              final isCatActive = activeNoteCategoryModal == cat.id;
-              return ChoiceChip(
-                label: Text(
-                  '${cat.emoji} ${cat.localizedLabel}',
-                  style: TextStyle(
-                    fontSize: 12,
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(CupertinoIcons.sparkles, size: 16, color: AppTheme.primaryBrown),
+                const SizedBox(width: 6),
+                Text(
+                  isEn ? 'Tasting Notes' : 'Tasting Notes',
+                  style: const TextStyle(
+                    fontSize: 13.5,
                     fontWeight: FontWeight.bold,
-                    color: isCatActive ? Colors.white : AppTheme.textDark,
+                    color: AppTheme.textDark,
                   ),
                 ),
-                selected: isCatActive,
-                selectedColor: AppTheme.primaryBrown,
-                backgroundColor: AppTheme.surfaceWhite,
-                side: BorderSide(
-                  color: isCatActive ? AppTheme.primaryBrown : AppTheme.primaryBrown.withValues(alpha: 0.15),
-                ),
-                onSelected: (_) => onCategoryTabChanged(cat.id),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppTheme.surfaceWhite,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppTheme.primaryBrown.withValues(alpha: 0.15),
+              ],
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    LanguageService.isEnglish
-                        ? '${curCat.emoji} ${curCat.localizedLabel} Notes (${categoryNotes.length})'
-                        : '${curCat.emoji} Pilihan Notes ${curCat.label} (${categoryNotes.length})',
-                    style: const TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textDark,
-                    ),
-                  ),
-                  if (selectedNoteFilter != 'Semua' && selectedNoteFilter != 'All')
-                    GestureDetector(
-                      onTap: () => onNoteFilterChanged(LanguageService.isEnglish ? 'All' : 'Semua'),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(CupertinoIcons.clear_circled_solid, size: 13, color: Colors.redAccent),
-                          const SizedBox(width: 4),
-                          Text(
-                            LanguageService.isEnglish ? 'Clear Notes' : 'Hapus Notes',
-                            style: const TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.redAccent,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  ChoiceChip(
-                    label: Text(
-                      LanguageService.isEnglish
-                          ? 'All ${curCat.localizedLabel} ${curCat.emoji}'
-                          : 'Semua ${curCat.label} ${curCat.emoji}',
-                      style: TextStyle(
+            if (hasSelection)
+              GestureDetector(
+                onTap: () => onNoteFilterChanged(isEn ? 'All' : 'Semua'),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(CupertinoIcons.xmark_circle_fill, size: 13, color: Colors.redAccent),
+                    const SizedBox(width: 4),
+                    Text(
+                      isEn ? 'Clear' : 'Hapus',
+                      style: const TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.bold,
-                        color: isCategorySelected ? Colors.white : AppTheme.textDark,
+                        color: Colors.redAccent,
                       ),
                     ),
-                    selected: isCategorySelected,
-                    selectedColor: AppTheme.primaryBrown,
-                    backgroundColor: AppTheme.bgCream,
-                    side: BorderSide(
-                      color: isCategorySelected ? AppTheme.primaryBrown : AppTheme.primaryBrown.withValues(alpha: 0.15),
-                    ),
-                    onSelected: (_) {
-                      onNoteFilterChanged(isCategorySelected
-                          ? (LanguageService.isEnglish ? 'All' : 'Semua')
-                          : '${curCat.emoji} ${curCat.localizedLabel}');
-                    },
-                  ),
-                  ...categoryNotes.map((fn) {
-                    final sel = selectedNoteFilter == fn.label;
-                    return FlavorNoteVisualBadge(
-                      noteText: fn.label,
-                      selected: sel,
-                      onTap: () {
-                        onNoteFilterChanged(sel ? (LanguageService.isEnglish ? 'All' : 'Semua') : fn.label);
-                      },
-                    );
-                  }),
-                ],
+                  ],
+                ),
               ),
-            ],
-          ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: RecipeFilterMatcher.coreTastingNotes.map((opt) {
+            final label = isEn ? opt.labelEn : opt.labelId;
+            final isSelected = selectedNoteFilter.toLowerCase() == opt.key.toLowerCase() ||
+                selectedNoteFilter.toLowerCase() == label.toLowerCase() ||
+                selectedNoteFilter.toLowerCase() == '${opt.emoji} $label'.toLowerCase();
+
+            return GestureDetector(
+              onTap: () {
+                onNoteFilterChanged(isSelected ? (isEn ? 'All' : 'Semua') : opt.key);
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 160),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppTheme.primaryBrown : AppTheme.surfaceWhite,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppTheme.primaryBrown
+                        : AppTheme.primaryBrown.withValues(alpha: 0.16),
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(opt.emoji, style: const TextStyle(fontSize: 13)),
+                    const SizedBox(width: 6),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: isSelected ? Colors.white : AppTheme.textDark,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
         ),
       ],
     );

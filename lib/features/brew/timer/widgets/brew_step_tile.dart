@@ -150,7 +150,11 @@ class BrewStepTile extends StatelessWidget {
                               actionLabel,
                               style: TextStyle(
                                 fontSize: 11.5,
-                                color: isActive ? Colors.white.withValues(alpha: 0.9) : AppTheme.textMuted,
+                                color: isActive
+                                    ? Colors.white.withValues(alpha: 0.9)
+                                    : (stepWater > 0 && methodFamily != BrewMethodFamily.espresso
+                                        ? Colors.blueAccent
+                                        : AppTheme.textMuted),
                                 fontWeight: FontWeight.w600,
                               ),
                               overflow: TextOverflow.ellipsis,

@@ -121,34 +121,11 @@ class BaristaLiveTransmitterController extends Notifier<BaristaLiveBroadcastStat
         customerName: customerName,
       );
     } catch (_) {
-      // Graceful offline/local preview session menggunakan kode deterministik
-      const demoCode = '3201923849204';
-      snap = LiveBrewSnapshotModel(
-        sessionId: 'local-${DateTime.now().millisecondsSinceEpoch}',
-        dynamicAddressCode: demoCode,
-        livebrewUrl: 'https://coffeelabs.app/livebrew/$demoCode',
-        deepLinkUrl: 'coffeelabs://livebrew/$demoCode',
-        storeName: 'Coffee Labs Bar',
-        baristaDisplayName: 'Barista Anda',
-        customerDisplayName: customerName ?? 'Pelanggan Coffee Labs',
-        recipeTitle: recipe['title']?.toString() ?? 'V60 Live Brew',
-        brewMethod: recipe['method']?.toString() ?? 'V60',
-        beanName: recipe['beanName']?.toString() ?? 'Malabar Wine',
-        roasteryName: recipe['roastery']?.toString() ?? 'Coffee Labs Slow Bar',
-        beanOrigin: recipe['origin']?.toString() ?? 'Jawa Barat',
-        beanProcess: recipe['process']?.toString() ?? 'Natural',
-        tastingNotes: const ['Floral', 'Caramel', 'Clean'],
-        targetDoseG: (recipe['coffeeWeightGrams'] as num?)?.toDouble() ?? 15.0,
-        targetWaterMl: (recipe['totalWaterWeightGrams'] as num?)?.toDouble() ?? 225.0,
-        targetTempC: tempC,
-        targetDurationSec: 145,
-        currentStage: LiveBrewStage.queuedAssigned,
-        currentStepIndex: 0,
-        elapsedSec: 0,
-        currentWeightG: 0.0,
-        currentFlowRateMlS: 0.0,
-        currentTempC: tempC,
+      state = state.copyWith(
+        isBroadcasting: false,
+        statusMessage: 'Gagal terhubung ke server Live Brew. Pastikan login & koneksi aktif.',
       );
+      return null;
     }
 
     state = state.copyWith(

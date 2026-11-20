@@ -4,6 +4,7 @@ import '../../../models/marketplace_model.dart';
 import '../../../services/marketplace_service.dart';
 import '../../../theme/app_theme.dart';
 import '../../marketplace/utils/currency_formatter.dart';
+import '../../marketplace/widgets/coffee_bag_product_visual.dart';
 
 class CartItemTile extends StatelessWidget {
   final CartItem item;
@@ -31,17 +32,13 @@ class CartItemTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              width: 64,
-              height: 64,
-              color: AppTheme.bgCream,
-              child: Image.asset(
-                item.product.imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (ctx, err, st) => const Icon(Icons.coffee, color: AppTheme.primaryBrown),
-              ),
+          SizedBox(
+            width: 64,
+            height: 64,
+            child: CoffeeBagProductVisual(
+              product: item.product,
+              size: 64,
+              borderRadius: BorderRadius.circular(10),
             ),
           ),
           const SizedBox(width: 12),

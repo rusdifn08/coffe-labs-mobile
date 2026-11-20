@@ -146,12 +146,14 @@ class LiveBrewSnapshotModel {
   });
 
   factory LiveBrewSnapshotModel.fromJson(Map<String, dynamic> j) {
-    final code = j['dynamic_address_code']?.toString() ?? '3201923849204';
+    final code = j['dynamic_address_code']?.toString() ?? '';
     return LiveBrewSnapshotModel(
       sessionId: j['session_id']?.toString() ?? '',
       dynamicAddressCode: code,
-      livebrewUrl: j['livebrew_url']?.toString() ?? 'https://coffeelabs.app/livebrew/$code',
-      deepLinkUrl: j['deep_link_url']?.toString() ?? 'coffeelabs://livebrew/$code',
+      livebrewUrl: j['livebrew_url']?.toString() ??
+          (code.isNotEmpty ? 'https://coffeelabs.com/livebrew/$code' : ''),
+      deepLinkUrl: j['deep_link_url']?.toString() ??
+          (code.isNotEmpty ? 'coffeelabs://livebrew/$code' : ''),
       tableNumber: j['table_number']?.toString(),
       staticAddressCode: j['static_address_code']?.toString(),
       storeName: j['store_name']?.toString() ?? 'Coffee Labs Slow Bar',

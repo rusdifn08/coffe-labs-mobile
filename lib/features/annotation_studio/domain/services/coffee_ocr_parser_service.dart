@@ -6,6 +6,8 @@ import 'package:image/image.dart' as img;
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../../../bean_scanner/services/coffee_knowledge_graph_service.dart';
+
 class OcrTextRegion {
   final String text;
   final double confidence;
@@ -162,7 +164,14 @@ class CoffeePackagingOcrEngine {
     required List<String> existingClasses,
     String fallbackFilename = '',
   }) {
+    final kg = CoffeeKnowledgeGraphService.instance;
+    kg.ensureSyncInitialized();
+
     final Set<String> dynamicBrands = {...knownBrands};
+    for (final r in kg.knownRoasteries) {
+      final clean = r.toLowerCase().trim();
+      if (clean.length >= 3) dynamicBrands.add(clean);
+    }
     for (final clsName in existingClasses) {
       final parts = clsName.toLowerCase().split('_');
       if (parts.length >= 2 && parts[0].length >= 3) {
@@ -172,32 +181,72 @@ class CoffeePackagingOcrEngine {
 
     final sortedByY = [...ocrRegions]..sort((a, b) => a.yRel.compareTo(b.yRel));
     final List<String> rawLines = sortedByY.map((r) => r.text).toList();
-    final String fullTextLower = rawLines.join(' ').toLowerCase();
+    final String repairedJoined =
+        CoffeeKnowledgeGraphService.repairOcrText(rawLines.join(' '));
+    final String fullTextLower = repairedJoined.toLowerCase();
     final String alphaNumSpace = fullTextLower.replaceAll(RegExp(r'[^a-z0-9\s]'), ' ');
 
-    // 1. DETEKSI SLOT BRAND
+    // 1. DETEKSI SLOT BRAND (Prioritas slug ringkas knownBrands/existingClasses -> fallback 750+ Roastery KG)
     String detectedBrand = '';
-    final sortedBrands = dynamicBrands.toList()..sort((a, b) => b.length.compareTo(a.length));
-    for (final bCand in sortedBrands) {
+    final compactPriorityBrands = <String>{...knownBrands};
+    for (final clsName in existingClasses) {
+      final parts = clsName.toLowerCase().split('_');
+      if (parts.length >= 2 && parts[0].length >= 3) {
+        compactPriorityBrands.add(parts[0]);
+      }
+    }
+    final sortedCompactBrands = compactPriorityBrands.toList()
+      ..sort((a, b) => b.length.compareTo(a.length));
+    for (final bCand in sortedCompactBrands) {
       if (RegExp(r'\b' + RegExp.escape(bCand) + r'\b').hasMatch(alphaNumSpace)) {
         detectedBrand = _cleanSlugToken(bCand);
         break;
       }
     }
+    if (detectedBrand.isEmpty) {
+      final roasteryHit = kg.matchKnownRoastery(repairedJoined);
+      if (roasteryHit != null) {
+        final compactCanon = roasteryHit.canonicalName
+            .toLowerCase()
+            .replaceAll(
+              RegExp(
+                r'\b(coffee\s*roasters?|coffee\s*roastery|coffee\s*lab|coffee\s*house|coffee\s*supply|roasters?|roastery|coffee|kopi)\b',
+              ),
+              ' ',
+            )
+            .trim();
+        detectedBrand = _cleanSlugToken(
+          compactCanon.length >= 3 ? compactCanon : roasteryHit.canonicalName,
+        );
+      } else {
+        final sortedBrands = dynamicBrands.toList()..sort((a, b) => b.length.compareTo(a.length));
+        for (final bCand in sortedBrands) {
+          if (RegExp(r'\b' + RegExp.escape(bCand) + r'\b').hasMatch(alphaNumSpace)) {
+            detectedBrand = _cleanSlugToken(bCand);
+            break;
+          }
+        }
+      }
+    }
+
+    final Set<String> allOrigins = {
+      ...knownOrigins,
+      for (final t in kg.terroirs) ...[t.canonicalName.toLowerCase(), ...t.keywords],
+    };
 
     if (detectedBrand.isEmpty && ocrRegions.isNotEmpty) {
       final topRegions = sortedByY.where((r) => r.yRel <= 0.35);
       for (final tr in topRegions) {
         final candidate = tr.text.replaceAll(stopwordsRegex, '');
         final candidateClean = _cleanSlugToken(candidate);
-        if (candidateClean.length >= 3 && !knownOrigins.any((o) => _cleanSlugToken(o) == candidateClean)) {
+        if (candidateClean.length >= 3 && !allOrigins.any((o) => _cleanSlugToken(o) == candidateClean)) {
           detectedBrand = candidateClean.substring(0, math.min(16, candidateClean.length));
           break;
         }
       }
     }
 
-    // 2. DETEKSI SLOT PROSES PASCAPANEN
+    // 2. DETEKSI SLOT PROSES PASCAPANEN (34+ Proses Global & Nusantara)
     String detectedProcess = '';
     for (final entry in processPatterns) {
       if (entry.key.hasMatch(fullTextLower)) {
@@ -205,14 +254,29 @@ class CoffeePackagingOcrEngine {
         break;
       }
     }
+    if (detectedProcess.isEmpty) {
+      for (final kp in kg.knownProcesses) {
+        if (kp.length >= 4 && RegExp(r'\b' + RegExp.escape(kp) + r'\b').hasMatch(fullTextLower)) {
+          detectedProcess = _cleanSlugToken(kp);
+          break;
+        }
+      }
+    }
 
-    // 3. DETEKSI SLOT NAMA KOPI / ORIGIN
+    // 3. DETEKSI SLOT NAMA KOPI / ORIGIN (88+ Terroir Sabang–Merauke & 65 Negara Dunia)
     String detectedCoffeeName = '';
-    final sortedOrigins = [...knownOrigins]..sort((a, b) => b.length.compareTo(a.length));
+    final sortedOrigins = allOrigins.where((o) => o.length >= 3).toList()
+      ..sort((a, b) => b.length.compareTo(a.length));
     for (final origin in sortedOrigins) {
       if (RegExp(r'\b' + RegExp.escape(origin) + r'\b').hasMatch(fullTextLower)) {
         detectedCoffeeName = _cleanSlugToken(origin);
         break;
+      }
+    }
+    if (detectedCoffeeName.isEmpty) {
+      final terroirHit = kg.findOrigin(repairedJoined);
+      if (terroirHit != null) {
+        detectedCoffeeName = _cleanSlugToken(terroirHit.canonicalName);
       }
     }
 

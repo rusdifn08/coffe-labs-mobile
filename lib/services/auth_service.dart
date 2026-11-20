@@ -166,6 +166,25 @@ class AuthService {
   static final http.Client _httpClient = http.Client();
   static Timer? _keepAliveTimer;
 
+  static bool? _cachedIsLoggedIn;
+  static bool? _cachedIsAdmin;
+
+  static bool? get cachedIsLoggedIn => _cachedIsLoggedIn;
+  static bool? get cachedIsAdmin => _cachedIsAdmin;
+
+  static void updateCachedSessionState({
+    required bool isLoggedIn,
+    required bool isAdmin,
+  }) {
+    _cachedIsLoggedIn = isLoggedIn;
+    _cachedIsAdmin = isAdmin;
+  }
+
+  static void resetSessionCache() {
+    _cachedIsLoggedIn = null;
+    _cachedIsAdmin = null;
+  }
+
   /// Melakukan ping senyap ke backend di background saat app mulai
   /// dan menjadwalkan heartbeat otomatis setiap 10 menit agar server Render tidak sleep
   static void warmUpBackend() {
@@ -224,10 +243,17 @@ class AuthService {
   /// (berlaku untuk semua tier akun termasuk Trial terdaftar, Pro, Business, & Admin).
   static Future<bool> isLoggedIn() async {
     final token = await getToken();
-    if (token == null || token.isEmpty) return false;
+    if (token == null || token.isEmpty) {
+      _cachedIsLoggedIn = false;
+      _cachedIsAdmin = false;
+      return false;
+    }
 
     final user = await getCurrentUser();
-    return user != null && (user.isApproved || user.isAdmin);
+    final loggedIn = user != null && (user.isApproved || user.isAdmin);
+    _cachedIsLoggedIn = loggedIn;
+    _cachedIsAdmin = loggedIn && user.isAdmin;
+    return loggedIn;
   }
 
   /// Cek apakah pengguna berada di Mode Pengunjung anonim (tanpa akun login).
@@ -240,7 +266,9 @@ class AuthService {
   /// Cek apakah pengguna yang sedang login memiliki hak akses ADMIN
   static Future<bool> isAdmin() async {
     final user = await getCurrentUser();
-    return user != null && user.isAdmin;
+    final admin = user != null && user.isAdmin;
+    _cachedIsAdmin = admin;
+    return admin;
   }
 
   /// Mendekode payload JSON dari JWT (Base64Url) untuk fallback ekstraksi klaim `sub`.
@@ -273,6 +301,54 @@ class AuthService {
         prefs.setString(_v1TokenKey, token.trim()),
       ],
     ]);
+  }
+
+  /// Menerapkan hasil upgrade tier instan (Pro / Business) dari QRIS Dinamis tanpa perlu logout-login ulang.
+  static Future<AuthUser?> applyUpgradedTierSession({
+    required String newTier,
+    String? planCode,
+    String? freshAccessToken,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final normalizedTier = newTier.toLowerCase().trim() == 'business' ? 'business' : 'pro';
+    final plan = normalizedTier == 'business'
+        ? SubscriptionPlan.business
+        : SubscriptionPlan.pro;
+
+    final existing = await getCurrentUser();
+    AuthUser? updatedUser;
+    if (existing != null) {
+      updatedUser = AuthUser(
+        id: existing.id,
+        username: existing.username,
+        fullName: existing.fullName,
+        role: existing.role,
+        status: existing.status,
+        tier: normalizedTier,
+        subscriptionPlanId: planCode ?? plan.id,
+        avatarUrl: existing.avatarUrl,
+        createdAt: existing.createdAt,
+        trialFullUntil: null,
+        trialPolicyOverride: null,
+      );
+      await persistSessionMirrors(
+        prefs,
+        user: updatedUser,
+        token: freshAccessToken,
+      );
+    } else if (freshAccessToken != null && freshAccessToken.trim().isNotEmpty) {
+      await Future.wait([
+        prefs.setString(_tokenKey, freshAccessToken.trim()),
+        prefs.setString(_v1TokenKey, freshAccessToken.trim()),
+      ]);
+    }
+
+    await SubscriptionService.activatePlan(
+      plan,
+      paymentMethod: 'QRIS Dinamis Livin\' Merchant',
+    );
+    changeNotifier.value++;
+    return updatedUser;
   }
 
   /// Mengambil JWT token yang tersimpan di memori perangkat
@@ -458,6 +534,10 @@ class AuthService {
           if (user.avatarUrl.isNotEmpty) ProfileService.setUserImagePath(user.avatarUrl),
         ]);
 
+        updateCachedSessionState(
+          isLoggedIn: user.isApproved || user.isAdmin,
+          isAdmin: user.isAdmin,
+        );
         changeNotifier.value++;
         return AuthResult.success(token, user, data['message'] ?? 'Login berhasil!');
       } else if (response.statusCode == 403) {
@@ -625,6 +705,7 @@ class AuthService {
     // Hapus total lisensi lokal agar pengguna berikutnya tidak tertular Business / Pro
     await SubscriptionService.resetToTrial();
     await TrialService.setTrialMode(false);
+    updateCachedSessionState(isLoggedIn: false, isAdmin: false);
     changeNotifier.value++;
   }
 
@@ -666,6 +747,10 @@ class AuthService {
           final hasChanged = oldUserJson != newUserJson;
 
           await persistSessionMirrors(prefs, user: user, token: token);
+          updateCachedSessionState(
+            isLoggedIn: user.isApproved || user.isAdmin,
+            isAdmin: user.isAdmin,
+          );
 
           if (user.isBusiness || user.isAdmin) {
             await SubscriptionService.activatePlan(

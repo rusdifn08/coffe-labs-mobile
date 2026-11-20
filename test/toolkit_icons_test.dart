@@ -124,7 +124,11 @@ void main() {
         findsNothing,
       );
       expect(find.text('Marketplace Kopi'), findsOneWidget);
-      expect(find.text('Katalog 50+ roastery & checkout'), findsOneWidget);
+      expect(find.text('Belanja biji kopi specialty & checkout'), findsOneWidget);
+      expect(find.text('Coffee Roastery'), findsOneWidget);
+      expect(find.text('Direktori roastery, lineup & Studio Bisnis'), findsOneWidget);
+      expect(find.textContaining('50+'), findsNothing);
+      expect(find.textContaining('127+'), findsNothing);
       expect(tester.takeException(), isNull);
     });
   });

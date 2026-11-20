@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../core/performance/transition_aware_deferred_builder.dart';
 import '../../../../../theme/app_theme.dart';
 import '../../../data/barista_toolkit_api_service.dart';
 import '../../../domain/barista_toolkit_models.dart';
@@ -327,41 +328,45 @@ class _GameBrew3DSimulatorScreenState extends State<GameBrew3DSimulatorScreen> {
               child: Stack(
                 children: [
                   Positioned.fill(
-                    child: ValueListenableBuilder<V603DSimulationSnapshot>(
-                      valueListenable: _game.snapshotNotifier,
-                      builder: (_, snap, _) {
-                        return Stack(
-                          children: [
-                            Positioned.fill(
-                              child: GestureDetector(
-                                key: _viewportKey,
-                                behavior: HitTestBehavior.opaque,
-                                onPanStart: _handleViewportDragStart,
-                                onPanUpdate: _handleViewportDragUpdate,
-                                child: V60ThreeJsViewport(
-                                  game: _game,
-                                  cameraMode: _cameraMode,
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              top: 8,
-                              left: 10,
-                              right: 10,
-                              child: _buildLiveHudOverlay(snap),
-                            ),
-                            if (_isInspecting3D)
-                              Positioned(
-                                bottom: 12,
-                                left: 16,
-                                right: 16,
-                                child: _buildInspectionBanner(snap),
-                              ),
-                          ],
-                        );
-                      },
+                    child: RepaintBoundary(
+                      child: TransitionAwareDeferredBuilder(
+                        lightweightPlaceholder: const Center(
+                          child: CircularProgressIndicator(
+                            color: AppTheme.accentGold,
+                          ),
+                        ),
+                        heavyBuilder: (_) => GestureDetector(
+                          key: _viewportKey,
+                          behavior: HitTestBehavior.opaque,
+                          onPanStart: _handleViewportDragStart,
+                          onPanUpdate: _handleViewportDragUpdate,
+                          child: V60ThreeJsViewport(
+                            game: _game,
+                            cameraMode: _cameraMode,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
+                  Positioned(
+                    top: 8,
+                    left: 10,
+                    right: 10,
+                    child: ValueListenableBuilder<V603DSimulationSnapshot>(
+                      valueListenable: _game.snapshotNotifier,
+                      builder: (_, snap, _) => _buildLiveHudOverlay(snap),
+                    ),
+                  ),
+                  if (_isInspecting3D)
+                    Positioned(
+                      bottom: 12,
+                      left: 16,
+                      right: 16,
+                      child: ValueListenableBuilder<V603DSimulationSnapshot>(
+                        valueListenable: _game.snapshotNotifier,
+                        builder: (_, snap, _) => _buildInspectionBanner(snap),
+                      ),
+                    ),
                   if (_isSubmitting)
                     Positioned.fill(
                       child: Container(

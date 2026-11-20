@@ -28,40 +28,42 @@ class CheckoutPaymentSelector extends StatelessWidget {
         const SizedBox(height: 8),
         ...paymentOptions.map((p) {
           final isSel = selectedPayment == p['id'];
-          return Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            decoration: BoxDecoration(
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Material(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: isSel ? AppTheme.primaryBrown : Colors.transparent,
-                width: isSel ? 1.5 : 1.0,
-              ),
-            ),
-            child: ListTile(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.bgCream,
-                  borderRadius: BorderRadius.circular(10),
+              clipBehavior: Clip.antiAlias,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: BorderSide(
+                  color: isSel ? AppTheme.primaryBrown : Colors.transparent,
+                  width: isSel ? 1.5 : 1.0,
                 ),
-                child: Icon(p['icon'] as IconData, size: 18, color: AppTheme.primaryBrown),
               ),
-              title: Text(
-                p['label'] as String,
-                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+              child: ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.bgCream,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(p['icon'] as IconData, size: 18, color: AppTheme.primaryBrown),
+                ),
+                title: Text(
+                  p['label'] as String,
+                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  p['subtitle'] as String,
+                  style: const TextStyle(fontSize: 10.5, color: AppTheme.textMuted),
+                ),
+                trailing: Icon(
+                  isSel ? CupertinoIcons.checkmark_circle_fill : CupertinoIcons.circle,
+                  color: isSel ? AppTheme.primaryBrown : Colors.grey.withValues(alpha: 0.4),
+                  size: 20,
+                ),
+                onTap: () => onPaymentSelected(p['id'] as String),
               ),
-              subtitle: Text(
-                p['subtitle'] as String,
-                style: const TextStyle(fontSize: 10.5, color: AppTheme.textMuted),
-              ),
-              trailing: Icon(
-                isSel ? CupertinoIcons.checkmark_circle_fill : CupertinoIcons.circle,
-                color: isSel ? AppTheme.primaryBrown : Colors.grey.withValues(alpha: 0.4),
-                size: 20,
-              ),
-              onTap: () => onPaymentSelected(p['id'] as String),
             ),
           );
         }),

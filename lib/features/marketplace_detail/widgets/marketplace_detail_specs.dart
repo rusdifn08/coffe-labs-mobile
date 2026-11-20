@@ -33,27 +33,32 @@ class MarketplaceDetailSpecs extends StatelessWidget {
             ],
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildSpecChip(
-                icon: Icons.star,
-                iconColor: Colors.amber,
-                title: '${product.rating} ★',
-                subtitle: '${product.reviewCount} ${isEn ? "reviews" : "ulasan"}',
+              Expanded(
+                child: _buildSpecChip(
+                  icon: Icons.star,
+                  iconColor: Colors.amber,
+                  title: '${product.rating} ★',
+                  subtitle: '${product.reviewCount} ${isEn ? "reviews" : "ulasan"}',
+                ),
               ),
               Container(width: 1, height: 32, color: Colors.grey.withValues(alpha: 0.2)),
-              _buildSpecChip(
-                icon: CupertinoIcons.flame_fill,
-                iconColor: Colors.orange,
-                title: product.roastProfile,
-                subtitle: isEn ? 'Roast Profile' : 'Profil Sangrai',
+              Expanded(
+                child: _buildSpecChip(
+                  icon: CupertinoIcons.flame_fill,
+                  iconColor: Colors.orange,
+                  title: product.roastProfile,
+                  subtitle: isEn ? 'Roast Profile' : 'Sangrai',
+                ),
               ),
               Container(width: 1, height: 32, color: Colors.grey.withValues(alpha: 0.2)),
-              _buildSpecChip(
-                icon: CupertinoIcons.checkmark_shield_fill,
-                iconColor: Colors.green,
-                title: '${product.stock} Left',
-                subtitle: isEn ? 'Fresh Stock' : 'Stok Segar',
+              Expanded(
+                child: _buildSpecChip(
+                  icon: CupertinoIcons.checkmark_shield_fill,
+                  iconColor: Colors.green,
+                  title: '${product.stock} Left',
+                  subtitle: isEn ? 'Fresh Stock' : 'Stok Segar',
+                ),
               ),
             ],
           ),
@@ -182,27 +187,52 @@ class MarketplaceDetailSpecs extends StatelessWidget {
     required String title,
     required String subtitle,
   }) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 14, color: iconColor),
-            const SizedBox(width: 4),
-            Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        const SizedBox(height: 2),
-        Text(subtitle, style: const TextStyle(fontSize: 10, color: AppTheme.textMuted)),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 13, color: iconColor),
+              const SizedBox(width: 3),
+              Flexible(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 10, color: AppTheme.textMuted),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildDetailRow(String label, String value) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-        Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.textDark)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.textDark),
+          ),
+        ),
       ],
     );
   }

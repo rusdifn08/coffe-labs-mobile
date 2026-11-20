@@ -93,22 +93,31 @@ class CheckoutReceiptSheet {
 
   static Widget _buildReceiptRow(String label, String value, {bool isBold = false, Color? color}) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-            color: AppTheme.textMuted,
+        Flexible(
+          flex: 2,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              color: AppTheme.textMuted,
+            ),
           ),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isBold ? FontWeight.w900 : FontWeight.w700,
-            color: color ?? AppTheme.textDark,
+        const SizedBox(width: 12),
+        Expanded(
+          flex: 3,
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: isBold ? FontWeight.w900 : FontWeight.w700,
+              color: color ?? AppTheme.textDark,
+            ),
           ),
         ),
       ],

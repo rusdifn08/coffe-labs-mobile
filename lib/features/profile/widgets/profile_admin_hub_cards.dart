@@ -5,7 +5,10 @@ import '../../../screens/admin_feedback_screen.dart';
 import '../../../screens/admin_trial_control_screen.dart';
 import '../../../screens/admin_version_screen.dart';
 import '../../../services/trial_service.dart';
+import '../../admin_control/presentation/screens/admin_control_panel_screen.dart';
+import '../../affiliate/presentation/screens/admin_affiliate_payout_queue_screen.dart';
 import '../../monitoring/presentation/screens/platform_monitoring_dashboard_screen.dart';
+import '../../qris_billing/presentation/screens/merchant_qris_bridge_admin_screen.dart';
 import '../../../theme/app_theme.dart';
 
 class ProfileAdminHubCards extends StatelessWidget {
@@ -64,7 +67,13 @@ class ProfileAdminHubCards extends StatelessWidget {
         ),
 
         // Kartu Aksi Kompak & Profesional
+        _buildAdminFeatureLockAndPricingCard(context),
+        const SizedBox(height: 8),
         _buildAdminMonitoringHubCard(context),
+        const SizedBox(height: 8),
+        _buildAdminAffiliatePayoutCard(context),
+        const SizedBox(height: 8),
+        _buildAdminQrisBridgeCard(context),
         const SizedBox(height: 8),
         _buildAdminTrialControlCard(context),
         const SizedBox(height: 8),
@@ -74,6 +83,299 @@ class ProfileAdminHubCards extends StatelessWidget {
         const SizedBox(height: 8),
         _buildAdminVersionHubCard(context),
       ],
+    );
+  }
+
+  Widget _buildAdminFeatureLockAndPricingCard(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF7F1D1D), Color(0xFF312E81)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFFCA5A5).withValues(alpha: 0.55),
+          width: 1.3,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF7F1D1D).withValues(alpha: 0.22),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const AdminControlPanelScreen(),
+              ),
+            ).then((_) => onRefresh());
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    CupertinoIcons.lock_shield_fill,
+                    color: Color(0xFFFDE68A),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Kontrol Lock Fitur & Harga Pro/Bisnis',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Lock Maintenance / Coming Soon / Updated & Harga Live',
+                        style: TextStyle(fontSize: 11, color: Colors.white70),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: const Text(
+                    '⚡ REAL-TIME',
+                    style: TextStyle(
+                      fontSize: 9.2,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF92400E),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  CupertinoIcons.chevron_forward,
+                  color: Colors.white.withValues(alpha: 0.78),
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdminAffiliatePayoutCard(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF064E3B), Color(0xFF047857)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF34D399).withValues(alpha: 0.45),
+          width: 1.1,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const AdminAffiliatePayoutQueueScreen(),
+              ),
+            ).then((_) => onRefresh());
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    CupertinoIcons.money_dollar_circle_fill,
+                    color: Color(0xFF6EE7B7),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'ACC Penarikan Saldo Afiliasi',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Transfer Bank/E-Wallet, Upload Bukti & Refund',
+                        style: TextStyle(fontSize: 11, color: Colors.white70),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDCFCE7),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'PAYOUT',
+                    style: TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF065F46),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdminQrisBridgeCard(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1F1611), Color(0xFF3A2518)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFD4A373).withValues(alpha: 0.45),
+          width: 1.1,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const MerchantQrisBridgeAdminScreen(),
+              ),
+            ).then((_) => onRefresh());
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD4A373).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    CupertinoIcons.qrcode,
+                    color: Color(0xFFD4A373),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Merchant QRIS Bridge & Rekonsiliasi',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Livin\' Merchant Listener, Uji CRC-16 & Approve Manual',
+                        style: TextStyle(fontSize: 11, color: Colors.white70),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD4A373),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'QRIS',
+                    style: TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF12100E),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 

@@ -1,3 +1,5 @@
+import '../../../data/world_indonesia_beans_service.dart';
+
 class CoffeeVarietyInfo {
   final String name;
   final String category;
@@ -220,4 +222,16 @@ class CoffeeVarietiesCatalog {
       tasteProfile: 'Aroma nangka manis unik, smoky manis, body sangat tebal.',
     ),
   ];
+
+  static List<CoffeeVarietyInfo> getMergedVarieties() {
+    final extra = WorldIndonesiaBeansService.instance.extraVarieties;
+    if (extra.isEmpty) return all;
+    final seen = <String>{};
+    final out = <CoffeeVarietyInfo>[];
+    for (final v in [...extra, ...all]) {
+      final k = v.name.toLowerCase().trim();
+      if (seen.add(k)) out.add(v);
+    }
+    return out;
+  }
 }

@@ -305,6 +305,8 @@ class BaristaUtils {
         height: height,
         fit: fit,
         cacheWidth: cacheWidth,
+        filterQuality: FilterQuality.low,
+        gaplessPlayback: true,
         errorBuilder: (_, _, _) =>
             _buildSafeFallbackWidget(width: width, height: height, fit: fit),
       );
@@ -317,6 +319,9 @@ class BaristaUtils {
           width: width,
           height: height,
           fit: fit,
+          cacheWidth: cacheWidth,
+          filterQuality: FilterQuality.low,
+          gaplessPlayback: true,
           errorBuilder: (_, _, _) =>
               _buildSafeFallbackWidget(width: width, height: height, fit: fit),
         );
@@ -336,6 +341,8 @@ class BaristaUtils {
       width: width,
       height: height,
       fit: fit,
+      filterQuality: FilterQuality.low,
+      gaplessPlayback: true,
       errorBuilder: (_, _, _) => Container(
         width: width,
         height: height,
@@ -435,7 +442,8 @@ class BaristaAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = radius * 2;
-    final cacheW = (size * MediaQuery.devicePixelRatioOf(context)).round().clamp(64, 512);
+    final dpr = MediaQuery.devicePixelRatioOf(context).clamp(1.0, 2.5);
+    final cacheW = (size * dpr).round().clamp(64, 512);
     final image = BaristaUtils.buildOfflineImage(
       imageUrl,
       width: size,

@@ -6,8 +6,145 @@ import '../../data/barista_toolkit_api_service.dart';
 import '../../data/barista_toolkit_seed_data.dart';
 import '../../domain/barista_toolkit_models.dart';
 import '../ebook_reader/ebook_library_screen.dart';
-import 'lms_course_player_screen.dart';
+import 'lms_program_syllabus_screen.dart';
 
+/// Metadata kartu program/track kurikulum di halaman utama Akademi Barista LMS.
+class LmsProgramTrack {
+  final String id;
+  final String title;
+  final String categoryTag;
+  final String description;
+  final IconData icon;
+  final Color accentColor;
+  final List<Color> gradientColors;
+  final bool isComingSoon;
+  final String levelRange;
+  final String modulesMeta;
+  final List<String> featurePills;
+  final List<String> previewTopics;
+
+  const LmsProgramTrack({
+    required this.id,
+    required this.title,
+    required this.categoryTag,
+    required this.description,
+    required this.icon,
+    required this.accentColor,
+    required this.gradientColors,
+    required this.isComingSoon,
+    required this.levelRange,
+    required this.modulesMeta,
+    required this.featurePills,
+    required this.previewTopics,
+  });
+
+  static const List<LmsProgramTrack> catalog = [
+    LmsProgramTrack(
+      id: 'manual_brew_science',
+      title: 'Sains & Teknik Manual Brew',
+      categoryTag: 'BREWING & EXTRACTION',
+      description:
+          'Fisika ekstraksi TDS & EY%, kimia air seduh (GH/KH), termodinamika degassing CO₂, hingga penguasaan V60, Switch, dan strategi kompetisi WBrC.',
+      icon: Icons.science_rounded,
+      accentColor: AppTheme.primaryBrown,
+      gradientColors: [Color(0xFF3E2723), Color(0xFF6D4C41)],
+      isComingSoon: false,
+      levelRange: 'Novice → Master',
+      modulesMeta: '9 Bab • 30 Sub-Bab',
+      featurePills: ['Video Animasi HD', 'Lab Interaktif', 'Kuis 100-Bit'],
+      previewTopics: [
+        'Sains Fundamental Ekstraksi, Kimia Air & Termodinamika',
+        'Fisika Perkolasi V60, Hukum Darcy & Dinamika Flow Rate',
+        'Arsitektur Multi-Pour, Immersion Hybrid & Flash Chill',
+        'Strategi Dial-In & Kalibrasi Kompetisi WBrC',
+      ],
+    ),
+    LmsProgramTrack(
+      id: 'espresso_milk_science',
+      title: 'Espresso Engineering & Milk Science',
+      categoryTag: 'ESPRESSO & LATTE ART',
+      description:
+          'Dinamika tekanan 9-bar vs turbo shot, flow & pressure profiling, presisi puck prep bebas channeling, serta fisika microfoam susu standar kompetisi.',
+      icon: Icons.coffee_maker_rounded,
+      accentColor: Color(0xFF9A3412),
+      gradientColors: [Color(0xFF431407), Color(0xFF9A3412)],
+      isComingSoon: true,
+      levelRange: 'Artisan → Master',
+      modulesMeta: '8 Bab • 26 Sub-Bab',
+      featurePills: ['Pressure Lab', 'Puck Physics', 'Microfoam Science'],
+      previewTopics: [
+        'Hidraulika Mesin Espresso, Pre-Infusion & Flow Profiling',
+        'Distribusi Partikel Burr (Flat vs Conical) & Puck Prep WDT',
+        'Dial-In Ristretto, Normale, Lungo hingga Modern Turbo Shot',
+        'Kimia Protein-Lemak Susu & Termodinamika Steaming Latte Art',
+      ],
+    ),
+    LmsProgramTrack(
+      id: 'sensory_cupping_qgrader',
+      title: 'Sensory Cupping & Q-Grader Calibration',
+      categoryTag: 'SENSORY & QUALITY',
+      description:
+          'Kalibrasi protokol SCA & CVA, pemetaan asam organik (sitrat, malat, fosfat), identifikasi defect sangrai & green bean, serta penilaian cupping profesional.',
+      icon: Icons.donut_large_rounded,
+      accentColor: Color(0xFF831843),
+      gradientColors: [Color(0xFF4C0519), Color(0xFF9D174D)],
+      isComingSoon: true,
+      levelRange: 'Novice → Q-Calibrated',
+      modulesMeta: '7 Bab • 24 Sub-Bab',
+      featurePills: ['SCA & CVA Form', 'Flavor Matrix', 'Triangulation Drill'],
+      previewTopics: [
+        'Fisiologi Olfaktori, Retronasal & Kalibrasi Roda Rasa SCA',
+        'Identifikasi Asam Organik Buah, Sweetness & Tactile Mouthfeel',
+        'Protokol Cupping Blind, Triangulation & Defect Diagnosis',
+        'Coffee Value Assessment (CVA) Deskriptif & Afektif Modern',
+      ],
+    ),
+    LmsProgramTrack(
+      id: 'roasting_physics_profile',
+      title: 'Coffee Roasting Physics & Profile Design',
+      categoryTag: 'ROASTING & THERMODYNAMICS',
+      description:
+          'Perpindahan panas konduksi-konveksi-radiasi, reaksi Maillard & karamelisasi, kontrol kurva RoR (Rate of Rise), DTR, serta mitigasi roast defect.',
+      icon: Icons.local_fire_department_rounded,
+      accentColor: Color(0xFFB45309),
+      gradientColors: [Color(0xFF451A03), Color(0xFFB45309)],
+      isComingSoon: true,
+      levelRange: 'Artisan → Master Roaster',
+      modulesMeta: '8 Bab • 28 Sub-Bab',
+      featurePills: ['Kurva RoR Lab', 'Maillard & DTR', 'Defect Audit'],
+      previewTopics: [
+        'Termodinamika Drum, Fluid Bed & Energi Panas Penyangraian',
+        'Fase Drying, Reaksi Maillard, First Crack & Development Ratio',
+        'Membaca Kurva Bean Temp vs RoR (Flick, Crash & Baking)',
+        'Desain Profil Filter Light Roast vs Espresso Omni & Blending',
+      ],
+    ),
+    LmsProgramTrack(
+      id: 'post_harvest_cafe_business',
+      title: 'Green Coffee Processing & Cafe Business',
+      categoryTag: 'ORIGIN & CAFE MANAGEMENT',
+      description:
+          'Biokimia fermentasi pascapanen (Washed, Natural, Anaerobic, Koji), analisis kadar air & densitas green bean, HPP menu, hingga workflow bar kafe modern.',
+      icon: Icons.eco_rounded,
+      accentColor: Color(0xFF0F766E),
+      gradientColors: [Color(0xFF042F2E), Color(0xFF0F766E)],
+      isComingSoon: true,
+      levelRange: 'Entrepreneur → Architect',
+      modulesMeta: '7 Bab • 22 Sub-Bab',
+      featurePills: ['Post-Harvest Bio', 'Kalkulasi HPP', 'Bar Workflow'],
+      previewTopics: [
+        'Anatomi Ceri Kopi, Varietas Unggul & Mikrobiologi Fermentasi',
+        'Grading Green Bean, Moisture Meter, Water Activity & Storage',
+        'Rekayasa Menu, Struktur HPP Minuman & Profitabilitas Kedai',
+        'Desain Ergonomi Coffee Bar, SOP QC Harian & Skala Roastery',
+      ],
+    ),
+  ];
+}
+
+/// Halaman katalog utama Akademi Barista LMS: menampilkan 5 kartu program kopi
+/// (1 program aktif "Sains & Teknik Manual Brew" + 4 program profesional "Coming Soon")
+/// sebelum masuk ke halaman silabus bab/sub-bab.
 class BaristaLmsCoursesScreen extends ConsumerStatefulWidget {
   const BaristaLmsCoursesScreen({super.key});
 
@@ -18,29 +155,16 @@ class BaristaLmsCoursesScreen extends ConsumerStatefulWidget {
 
 class _BaristaLmsCoursesScreenState
     extends ConsumerState<BaristaLmsCoursesScreen> {
-  final TextEditingController _searchCtrl = TextEditingController();
-  late List<LmsCourseModel> _courses;
-  final Set<String> _expandedCourseIds = {
-    'c1010001-0000-4000-8000-000000000001',
-    'c1010001-0000-4000-8000-000000000002',
-  };
-  String _selectedDifficulty = 'ALL';
+  late List<LmsCourseModel> _manualBrewCourses;
 
   @override
   void initState() {
     super.initState();
-    _courses = BaristaToolkitFallbackSeed.offlineCourses();
-    _load();
+    _manualBrewCourses = BaristaToolkitFallbackSeed.offlineCourses();
+    _loadProgress();
   }
 
-  @override
-  void dispose() {
-    _searchCtrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _load() async {
-    // Pastikan minimal 30 Sub-bab lengkap langsung tersedia dari seed offline bila API belum merespons
+  Future<void> _loadProgress() async {
     var courses = await BaristaToolkitFallbackSeed.loadOfflineCoursesAsync();
     try {
       final remote = await ref.read(baristaToolkitApiProvider).fetchLmsCourses();
@@ -50,42 +174,217 @@ class _BaristaLmsCoursesScreenState
     } catch (_) {}
     if (!mounted) return;
     setState(() {
-      _courses = courses;
-      if (_expandedCourseIds.length <= 2 && courses.isNotEmpty) {
-        _expandedCourseIds.add(courses.first.id);
-      }
+      _manualBrewCourses = courses;
     });
   }
 
-  List<LmsCourseModel> get _filteredCourses {
-    final q = _searchCtrl.text.trim().toLowerCase();
-    return _courses.where((c) {
-      final okDiff = _selectedDifficulty == 'ALL' ||
-          c.difficulty.toUpperCase() == _selectedDifficulty;
-      if (!okDiff) return false;
-      if (q.isEmpty) return true;
-      final hitCourse = c.title.toLowerCase().contains(q) ||
-          c.subtitle.toLowerCase().contains(q) ||
-          c.focusSummary.toLowerCase().contains(q);
-      final hitLesson = c.lessons.any(
-        (l) =>
-            l.title.toLowerCase().contains(q) ||
-            l.description.toLowerCase().contains(q) ||
-            l.subchapterCode.toLowerCase().contains(q),
-      );
-      return hitCourse || hitLesson;
-    }).toList();
+  void _openManualBrewSyllabus() {
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute<void>(
+            builder: (_) => LmsProgramSyllabusScreen(
+              programTitle: 'Sains & Teknik Manual Brew',
+              initialCourses: _manualBrewCourses,
+            ),
+          ),
+        )
+        .then((_) => _loadProgress());
+  }
+
+  void _showComingSoonPreview(LmsProgramTrack track) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.bgCream,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 22),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBrown.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: track.gradientColors,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Icon(track.icon, color: AppTheme.accentGold, size: 26),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF3CD),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: const Color(0xFFD97706).withValues(alpha: 0.4),
+                              ),
+                            ),
+                            child: const Text(
+                              'COMING SOON',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.6,
+                                color: Color(0xFF92400E),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            track.title,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.textDark,
+                              height: 1.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  track.description,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    color: Color(0xFF5D4D44),
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppTheme.borderWarm),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Pratinjau Modul yang Sedang Disusun',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.primaryBrown,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...track.previewTopics.asMap().entries.map(
+                            (e) => Padding(
+                              padding: const EdgeInsets.only(bottom: 7),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    width: 20,
+                                    height: 20,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: track.accentColor.withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      '${e.key + 1}',
+                                      style: TextStyle(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: track.accentColor,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      e.value,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppTheme.textDark,
+                                        height: 1.35,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppTheme.primaryBrown,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text(
+                      'Mengerti',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final allLessons = _courses.expand((c) => c.lessons).toList();
+    final allLessons = _manualBrewCourses.expand((c) => c.lessons).toList();
     final completedLessons = allLessons.where((l) => l.isCompleted).length;
     final totalXp = allLessons
         .where((l) => l.isCompleted)
         .fold<int>(0, (sum, l) => sum + l.xpReward);
-    final filtered = _filteredCourses;
-    final hasSearch = _searchCtrl.text.trim().isNotEmpty;
+    final totalPrograms = LmsProgramTrack.catalog.length;
+    final activePrograms =
+        LmsProgramTrack.catalog.where((p) => !p.isComingSoon).length;
+    final upcomingPrograms = totalPrograms - activePrograms;
 
     return Scaffold(
       backgroundColor: AppTheme.bgCream,
@@ -99,11 +398,15 @@ class _BaristaLmsCoursesScreenState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'LMS Kurikulum Manual Brew',
+              'Akademi Barista LMS',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800),
             ),
             Text(
-              '${_courses.length} Bab • ${allLessons.length} Sub-Bab Interaktif',
+              '$totalPrograms Program Kurikulum Kopi Specialty',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
             ),
           ],
@@ -111,8 +414,10 @@ class _BaristaLmsCoursesScreenState
         actions: [
           IconButton(
             tooltip: 'Pustaka E-Book Terkait',
-            icon: const Icon(Icons.auto_stories_rounded,
-                color: AppTheme.primaryBrown),
+            icon: const Icon(
+              Icons.auto_stories_rounded,
+              color: AppTheme.primaryBrown,
+            ),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => const EbookLibraryScreen(),
@@ -122,59 +427,47 @@ class _BaristaLmsCoursesScreenState
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: _load,
+        onRefresh: _loadProgress,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
           children: [
-            _buildCurriculumHeroCard(
-              totalCourses: _courses.length,
-              totalLessons: allLessons.length,
+            _buildAcademyHeroBanner(
+              activePrograms: activePrograms,
+              upcomingPrograms: upcomingPrograms,
               completedLessons: completedLessons,
+              totalLessons: allLessons.length,
               totalXp: totalXp,
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _searchCtrl,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                hintText:
-                    'Cari Bab/Sub-bab (mis: Darcy, Kasuya 4:6, Switch, WBrC)...',
-                prefixIcon: const Icon(Icons.search_rounded),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: AppTheme.borderWarm),
+            const SizedBox(height: 16),
+            const Row(
+              children: [
+                Icon(
+                  Icons.auto_awesome_mosaic_rounded,
+                  size: 17,
+                  color: AppTheme.primaryBrown,
                 ),
-              ),
+                SizedBox(width: 7),
+                Expanded(
+                  child: Text(
+                    'Pilih Program Materi Kopi',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.textDark,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 10),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _diffChip('ALL', 'Semua (${_courses.length} Bab)'),
-                  const SizedBox(width: 6),
-                  _diffChip('NOVICE', 'Novice'),
-                  const SizedBox(width: 6),
-                  _diffChip('ARTISAN', 'Artisan'),
-                  const SizedBox(width: 6),
-                  _diffChip('ALCHEMIST', 'Alchemist'),
-                  const SizedBox(width: 6),
-                  _diffChip('ARCHITECT', 'Architect'),
-                  const SizedBox(width: 6),
-                  _diffChip('MASTER', 'Master'),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            ...filtered.map(
-              (course) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _buildBabAccordionCard(
-                  course: course,
-                  forceExpanded: hasSearch,
+            ...LmsProgramTrack.catalog.map(
+              (track) => Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: _buildProgramCard(
+                  track: track,
+                  totalChapters: _manualBrewCourses.length,
+                  totalLessons: allLessons.length,
+                  completedLessons: completedLessons,
                 ),
               ),
             ),
@@ -184,24 +477,29 @@ class _BaristaLmsCoursesScreenState
     );
   }
 
-  Widget _buildCurriculumHeroCard({
-    required int totalCourses,
-    required int totalLessons,
+  Widget _buildAcademyHeroBanner({
+    required int activePrograms,
+    required int upcomingPrograms,
     required int completedLessons,
+    required int totalLessons,
     required int totalXp,
   }) {
-    final pct = totalLessons == 0
-        ? 0.0
-        : (completedLessons / totalLessons).clamp(0.0, 1.0);
     return Container(
-      padding: const EdgeInsets.all(15),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF2B1810), Color(0xFF4E342E)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2B1810).withValues(alpha: 0.16),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -209,35 +507,36 @@ class _BaristaLmsCoursesScreenState
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(9),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: AppTheme.accentGold.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Icon(
                   Icons.school_rounded,
                   color: AppTheme.accentGold,
-                  size: 22,
+                  size: 24,
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Silabus Sains & Teknik Manual Brew',
+                      'Coffee Labs Specialty Academy',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 14.5,
+                        fontSize: 15,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
-                      '$totalCourses Bab • $totalLessons Sub-Bab + Lab Simulasi & Kuis',
+                      '$activePrograms Program Aktif • $upcomingPrograms Program Segera Hadir',
                       style: const TextStyle(
                         color: AppTheme.accentGold,
-                        fontSize: 11,
+                        fontSize: 11.5,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -247,31 +546,17 @@ class _BaristaLmsCoursesScreenState
             ],
           ),
           const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: pct,
-              minHeight: 7,
-              backgroundColor: Colors.white12,
-              color: AppTheme.accentGold,
-            ),
-          ),
-          const SizedBox(height: 8),
           Wrap(
-            spacing: 12,
-            runSpacing: 4,
+            spacing: 10,
+            runSpacing: 6,
             children: [
-              Text(
-                'Selesai: $completedLessons/$totalLessons Sub-Bab (${(pct * 100).round()}%)',
-                style: const TextStyle(color: Colors.white70, fontSize: 11.5),
+              _heroStatPill(
+                Icons.check_circle_outline_rounded,
+                'Progres: $completedLessons/$totalLessons Sub-Bab',
               ),
-              Text(
-                '$totalXp XP Terkumpul • 100-Bit Anti-Skip',
-                style: const TextStyle(
-                  color: AppTheme.accentGold,
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w700,
-                ),
+              _heroStatPill(
+                Icons.bolt_rounded,
+                '$totalXp XP Terkumpul',
               ),
             ],
           ),
@@ -280,309 +565,347 @@ class _BaristaLmsCoursesScreenState
     );
   }
 
-  Widget _buildBabAccordionCard({
-    required LmsCourseModel course,
-    required bool forceExpanded,
-  }) {
-    final isExpanded = forceExpanded || _expandedCourseIds.contains(course.id);
-    final completedInBab = course.lessons.where((l) => l.isCompleted).length;
-    final q = _searchCtrl.text.trim().toLowerCase();
-    final visibleLessons = q.isEmpty
-        ? course.lessons
-        : course.lessons
-            .where(
-              (l) =>
-                  l.title.toLowerCase().contains(q) ||
-                  l.description.toLowerCase().contains(q) ||
-                  l.subchapterCode.toLowerCase().contains(q) ||
-                  course.title.toLowerCase().contains(q),
-            )
-            .toList();
-
+  Widget _heroStatPill(IconData icon, String label) {
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isExpanded
-              ? AppTheme.primaryBrown.withValues(alpha: 0.45)
-              : AppTheme.borderWarm,
-        ),
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
       ),
-      child: Column(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          InkWell(
-            borderRadius: BorderRadius.circular(18),
-            onTap: () {
-              setState(() {
-                if (_expandedCourseIds.contains(course.id)) {
-                  _expandedCourseIds.remove(course.id);
-                } else {
-                  _expandedCourseIds.add(course.id);
-                }
-              });
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Wrap(
-                              spacing: 6,
-                              runSpacing: 4,
-                              children: [
-                                _pill(
-                                  course.difficulty,
-                                  const Color(0xFFEFE6DC),
-                                  AppTheme.primaryBrown,
-                                ),
-                                _pill(
-                                  course.requiredTier,
-                                  course.isUnlocked
-                                      ? const Color(0xFFE8F5E9)
-                                      : const Color(0xFFFFEBEE),
-                                  course.isUnlocked
-                                      ? const Color(0xFF2E7D32)
-                                      : const Color(0xFFC62828),
-                                ),
-                                if (course.competencyLevel.isNotEmpty)
-                                  _pill(
-                                    course.competencyLevel,
-                                    const Color(0xFFFFF8E1),
-                                    const Color(0xFF8C5D00),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              course.title,
-                              style: const TextStyle(
-                                fontSize: 14.5,
-                                fontWeight: FontWeight.w800,
-                                color: AppTheme.textDark,
-                                height: 1.25,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              course.subtitle,
-                              maxLines: isExpanded ? 5 : 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF6D5D54),
-                                height: 1.35,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        isExpanded
-                            ? Icons.keyboard_arrow_up_rounded
-                            : Icons.keyboard_arrow_down_rounded,
-                        color: AppTheme.primaryBrown,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 4,
-                    children: [
-                      Text(
-                        '${course.lessons.length} Sub-Bab • $completedInBab selesai',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.primaryBrown,
-                        ),
-                      ),
-                      Text(
-                        '${(course.totalDurationSec / 60).ceil()} mnt • +${course.xpRewardOnComplete} XP',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppTheme.textMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+          Icon(icon, size: 13, color: AppTheme.accentGold),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
             ),
           ),
-          if (isExpanded && visibleLessons.isNotEmpty) ...[
-            const Divider(height: 1, color: AppTheme.dividerColor),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-              child: Column(
-                children: visibleLessons.map((lesson) {
-                  return Container(
-                    margin: const EdgeInsets.only(top: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFAF6F0),
-                      borderRadius: BorderRadius.circular(13),
-                      border: Border.all(
-                        color: lesson.isCompleted
-                            ? const Color(0xFF66BB6A).withValues(alpha: 0.5)
-                            : AppTheme.borderWarm,
-                      ),
-                    ),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(13),
-                      onTap: () {
-                        if (!course.isUnlocked) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Bab ini memerlukan Tier ${course.requiredTier}.',
-                              ),
-                            ),
-                          );
-                          return;
-                        }
-                        Navigator.of(context)
-                            .push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => LmsCoursePlayerScreen(
-                                  course: course,
-                                  lesson: lesson,
-                                ),
-                              ),
-                            )
-                            .then((_) => _load());
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: lesson.isCompleted
-                                    ? const Color(0xFF2E7D32)
-                                    : AppTheme.primaryBrown,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                lesson.subchapterCode.isNotEmpty
-                                    ? lesson.subchapterCode
-                                    : '${lesson.lessonNumber}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 11.5,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    lesson.title,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppTheme.textDark,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Wrap(
-                                    spacing: 8,
-                                    children: [
-                                      Text(
-                                        '${(lesson.durationSec / 60).ceil()} mnt • +${lesson.xpReward} XP',
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          color: AppTheme.textMuted,
-                                        ),
-                                      ),
-                                      if (lesson.simulationConfig['lab_kind'] !=
-                                          null)
-                                        const Text(
-                                          'Lab + Kuis',
-                                          style: TextStyle(
-                                            fontSize: 10.5,
-                                            fontWeight: FontWeight.w700,
-                                            color: AppTheme.primaryBrown,
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Icon(
-                              !course.isUnlocked
-                                  ? Icons.lock_outline_rounded
-                                  : (lesson.isCompleted
-                                      ? Icons.verified_rounded
-                                      : Icons.play_circle_fill_rounded),
-                              color: !course.isUnlocked
-                                  ? AppTheme.textMuted
-                                  : (lesson.isCompleted
-                                      ? const Color(0xFF2E7D32)
-                                      : AppTheme.primaryBrown),
-                              size: 22,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
         ],
       ),
     );
   }
 
-  Widget _diffChip(String value, String label) {
-    final sel = _selectedDifficulty == value;
-    return ChoiceChip(
-      label: Text(label),
-      selected: sel,
-      onSelected: (_) => setState(() => _selectedDifficulty = value),
-      selectedColor: AppTheme.primaryBrown,
-      backgroundColor: Colors.white,
-      labelStyle: TextStyle(
-        color: sel ? Colors.white : AppTheme.textDark,
-        fontWeight: FontWeight.w700,
-        fontSize: 11.5,
+  Widget _buildProgramCard({
+    required LmsProgramTrack track,
+    required int totalChapters,
+    required int totalLessons,
+    required int completedLessons,
+  }) {
+    final isComingSoon = track.isComingSoon;
+    final progressValue = (!isComingSoon && totalLessons > 0)
+        ? (completedLessons / totalLessons).clamp(0.0, 1.0)
+        : 0.0;
+    final modulesLabel = isComingSoon
+        ? track.modulesMeta
+        : '$totalChapters Bab • $totalLessons Sub-Bab';
+
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        key: Key('lms_program_card_${track.id}'),
+        borderRadius: BorderRadius.circular(20),
+        onTap: isComingSoon
+            ? () => _showComingSoonPreview(track)
+            : _openManualBrewSyllabus,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isComingSoon
+                  ? AppTheme.borderWarm
+                  : AppTheme.primaryBrown.withValues(alpha: 0.38),
+              width: isComingSoon ? 1 : 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isComingSoon ? 0.025 : 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header Strip berwarna khas tiap track kopi
+              Container(
+                padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: isComingSoon
+                        ? [
+                            track.gradientColors.first.withValues(alpha: 0.9),
+                            track.gradientColors.last.withValues(alpha: 0.85),
+                          ]
+                        : track.gradientColors,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(19),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(13),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Icon(
+                        track.icon,
+                        color: AppTheme.accentGold,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  track.categoryTag,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.78),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.7,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isComingSoon
+                                      ? const Color(0xFFFFF3CD)
+                                      : const Color(0xFFDCFCE7),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  isComingSoon ? 'COMING SOON' : 'TERSEDIA',
+                                  style: TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.4,
+                                    color: isComingSoon
+                                        ? const Color(0xFF92400E)
+                                        : const Color(0xFF166534),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            track.title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              height: 1.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Body Deskripsi, Pills, Progress / CTA
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      track.description,
+                      style: const TextStyle(
+                        fontSize: 12.2,
+                        color: Color(0xFF5D4D44),
+                        height: 1.42,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        _metaBadge(
+                          Icons.menu_book_rounded,
+                          modulesLabel,
+                          track.accentColor,
+                        ),
+                        _metaBadge(
+                          Icons.trending_up_rounded,
+                          track.levelRange,
+                          AppTheme.textMuted,
+                        ),
+                        ...track.featurePills.map(
+                          (pill) => Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFAF6F0),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: AppTheme.borderWarm),
+                            ),
+                            child: Text(
+                              pill,
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.textDark,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (!isComingSoon) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: LinearProgressIndicator(
+                                value: progressValue,
+                                minHeight: 6,
+                                backgroundColor: const Color(0xFFEFE6DC),
+                                color: AppTheme.primaryBrown,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            '${(progressValue * 100).round()}%',
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.primaryBrown,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            isComingSoon
+                                ? 'Ketuk untuk lihat pratinjau modul'
+                                : 'Masuk ke silabus lengkap & lab interaktif',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: isComingSoon
+                                  ? AppTheme.textMuted
+                                  : AppTheme.primaryBrown,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isComingSoon
+                                ? const Color(0xFFF5EFE6)
+                                : AppTheme.primaryBrown,
+                            borderRadius: BorderRadius.circular(11),
+                            border: isComingSoon
+                                ? Border.all(color: AppTheme.borderWarm)
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                isComingSoon ? 'Pratinjau' : 'Buka Silabus',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: isComingSoon
+                                      ? AppTheme.primaryBrown
+                                      : Colors.white,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                isComingSoon
+                                    ? Icons.schedule_rounded
+                                    : Icons.arrow_forward_rounded,
+                                size: 14,
+                                color: isComingSoon
+                                    ? AppTheme.primaryBrown
+                                    : Colors.white,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _pill(String text, Color bg, Color fg) {
+  Widget _metaBadge(IconData icon, String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
       decoration: BoxDecoration(
-        color: bg,
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Text(
-        text,
-        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: fg),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }

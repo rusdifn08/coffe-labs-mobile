@@ -37,7 +37,11 @@ import '../../features/social_graph/presentation/screens/social_connections_tab_
 import '../../features/monitoring/data/telemetry_batch_outbox_service.dart';
 import '../../features/monitoring/presentation/route_lifecycle_observer.dart';
 import '../../features/monitoring/presentation/screens/platform_monitoring_dashboard_screen.dart';
+import '../../features/admin_control/controllers/system_control_sync_controller.dart';
+import '../../features/admin_control/presentation/screens/admin_control_panel_screen.dart';
 import '../../features/live_brew/presentation/screens/customer_live_brew_tracker_screen.dart';
+import '../../features/qris_billing/presentation/screens/merchant_qris_bridge_admin_screen.dart';
+import '../../features/qris_billing/presentation/screens/subscription_plan_selector_screen.dart';
 import '../../features/multi_method_brewing/presentation/screens/cold_brew_and_drip_studio_screen.dart';
 import '../../models/business_pos_models.dart';
 import '../services/kiosk_engine_service.dart';
@@ -78,10 +82,14 @@ class AppRoutes {
   static const String adminFeedback = '/admin/feedback';
   static const String adminVersion = '/admin/version';
   static const String adminMonitoring = '/admin/monitoring';
+  static const String adminQrisBridge = '/admin/qris-bridge';
+  static const String adminControl = '/admin/control';
+  static const String billingPlans = '/billing/plans';
   static const String aodShowcase = '/business/aod-showcase';
   static const String inAppTrainer = '/in-app-trainer';
   static const String liveBrew = '/livebrew';
   static const String liveBrewTracker = '/livebrew/:addressCode';
+  static const String liveBrewBrandedSeat = '/livebrew/:cafeSlug/:seatSlug';
 }
 
 /// Listenable bridge yang memicu evaluasi ulang Route Guard pada GoRouter
@@ -102,13 +110,68 @@ class RouterAuthRefreshNotifier extends ChangeNotifier {
   }
 }
 
+/// Evaluasi async redirect hanya saat cache cold-start belum terisi.
+Future<String?> _evaluateRedirectAsync(
+  Ref ref,
+  GoRouterState state,
+  AuthUser? authUser,
+) async {
+  final path = state.matchedLocation;
+
+  final kioskBoot = await KioskEngineService.getKioskBootState();
+  if ((kioskBoot.bootIntoAodKiosk || kioskBoot.isLocked) &&
+      path != AppRoutes.aodShowcase) {
+    return AppRoutes.aodShowcase;
+  }
+
+  if (path == AppRoutes.splash || path.startsWith('/livebrew')) {
+    return null;
+  }
+
+  final isAuthed = authUser != null || await AuthService.isLoggedIn();
+  final isTrial = await TrialService.isTrialMode();
+  final isEnteringOnboarding = path == AppRoutes.onboarding;
+  final allowUpgradeLogin = state.uri.queryParameters['upgrade'] == 'true';
+
+  if (!isAuthed && !isTrial) {
+    return isEnteringOnboarding ? null : AppRoutes.onboarding;
+  }
+
+  if (isAuthed && isEnteringOnboarding && !allowUpgradeLogin) {
+    return AppRoutes.home;
+  }
+
+  if (path.startsWith('/admin')) {
+    final isAdmin =
+        (authUser?.isAdmin ?? false) || await AuthService.isAdmin();
+    if (!isAdmin) {
+      return AppRoutes.home;
+    }
+  }
+
+  final lockedFeature =
+      ref.read(systemControlProvider).snapshot.findLockedFeatureForRoute(path);
+  if (lockedFeature != null) {
+    final isAdmin =
+        (authUser?.isAdmin ?? false) || await AuthService.isAdmin();
+    if (!(isAdmin && lockedFeature.allowAdminBypass)) {
+      return AppRoutes.home;
+    }
+  }
+
+  return null;
+}
+
 /// Provider GoRouter terpusat yang diinjeksi dengan Riverpod Authentication & Role Guard.
 @Riverpod(keepAlive: true)
 GoRouter appRouter(Ref ref) {
   final refreshNotifier = RouterAuthRefreshNotifier();
 
-  // Dengarkan perubahan state AuthController Riverpod secara reaktif
+  // Dengarkan perubahan state AuthController & Control Plane Riverpod secara reaktif
   ref.listen(authControllerProvider, (_, _) {
+    refreshNotifier.triggerRefresh();
+  });
+  ref.listen(systemControlProvider, (_, _) {
     refreshNotifier.triggerRefresh();
   });
 
@@ -126,7 +189,7 @@ GoRouter appRouter(Ref ref) {
     initialLocation: AppRoutes.splash,
     refreshListenable: refreshNotifier,
     observers: [lifecycleObserver],
-    redirect: (BuildContext context, GoRouterState state) async {
+    redirect: (BuildContext context, GoRouterState state) {
       final path = state.matchedLocation;
 
       // Kiosk Route Guard: Jangan cegat bila sedang dalam AOD Showcase
@@ -134,42 +197,52 @@ GoRouter appRouter(Ref ref) {
         return null;
       }
 
-      // Kiosk Direct Cold-Boot Check: Jika tablet baru reboot saat Kiosk Mode aktif
-      final kioskBoot = await KioskEngineService.getKioskBootState();
-      if ((kioskBoot.bootIntoAodKiosk || kioskBoot.isLocked) && path != AppRoutes.aodShowcase) {
-        return AppRoutes.aodShowcase;
-      }
+      // Synchronous fast-path: hindari Future/SharedPreferences/MethodChannel di setiap push navigasi
+      final cachedKiosk = KioskEngineService.cachedBootState;
+      final cachedLoggedIn = AuthService.cachedIsLoggedIn;
+      final cachedTrial = TrialService.cachedIsTrialMode;
+      final cachedAdmin = AuthService.cachedIsAdmin;
+      final authUser = ref.read(authControllerProvider).value;
 
-      // Biarkan halaman Splash & Live Brew QR publik terbuka tanpa blokir login
-      if (path == AppRoutes.splash || path.startsWith('/livebrew')) {
+      if (cachedKiosk != null &&
+          cachedLoggedIn != null &&
+          cachedTrial != null) {
+        if (cachedKiosk.bootIntoAodKiosk || cachedKiosk.isLocked) {
+          return AppRoutes.aodShowcase;
+        }
+        if (path == AppRoutes.splash || path.startsWith('/livebrew')) {
+          return null;
+        }
+        final isAuthed = authUser != null || cachedLoggedIn;
+        final isEnteringOnboarding = path == AppRoutes.onboarding;
+        final allowUpgradeLogin = state.uri.queryParameters['upgrade'] == 'true';
+
+        if (!isAuthed && !cachedTrial) {
+          return isEnteringOnboarding ? null : AppRoutes.onboarding;
+        }
+        if (isAuthed && isEnteringOnboarding && !allowUpgradeLogin) {
+          return AppRoutes.home;
+        }
+        if (path.startsWith('/admin')) {
+          final isAdmin = (authUser?.isAdmin ?? false) || (cachedAdmin ?? false);
+          if (!isAdmin) {
+            return AppRoutes.home;
+          }
+        }
+        final lockedFeature = ref
+            .read(systemControlProvider)
+            .snapshot
+            .findLockedFeatureForRoute(path);
+        if (lockedFeature != null) {
+          final isAdmin = (authUser?.isAdmin ?? false) || (cachedAdmin ?? false);
+          if (!(isAdmin && lockedFeature.allowAdminBypass)) {
+            return AppRoutes.home;
+          }
+        }
         return null;
       }
 
-      final authUser = ref.read(authControllerProvider).value;
-      final isAuthed = authUser != null || await AuthService.isLoggedIn();
-      final isTrial = await TrialService.isTrialMode();
-      final isEnteringOnboarding = path == AppRoutes.onboarding;
-      final allowUpgradeLogin = state.uri.queryParameters['upgrade'] == 'true';
-
-      // Guard 1: Pengguna belum login dan belum mengaktifkan mode trial -> arahkan ke Onboarding
-      if (!isAuthed && !isTrial) {
-        return isEnteringOnboarding ? null : AppRoutes.onboarding;
-      }
-
-      // Guard 2: Pengguna sudah terotentikasi penuh dan berada di halaman Onboarding -> arahkan ke Home
-      if (isAuthed && isEnteringOnboarding && !allowUpgradeLogin) {
-        return AppRoutes.home;
-      }
-
-      // Guard 3: Proteksi Rute Khusus Admin (/admin/*)
-      if (path.startsWith('/admin')) {
-        final isAdmin = (authUser?.isAdmin ?? false) || await AuthService.isAdmin();
-        if (!isAdmin) {
-          return AppRoutes.home;
-        }
-      }
-
-      return null;
+      return _evaluateRedirectAsync(ref, state, authUser);
     },
     routes: [
       GoRoute(
@@ -416,6 +489,21 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state) => const PlatformMonitoringDashboardScreen(),
       ),
       GoRoute(
+        path: AppRoutes.adminQrisBridge,
+        builder: (context, state) => const MerchantQrisBridgeAdminScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.adminControl,
+        builder: (context, state) => const AdminControlPanelScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.billingPlans,
+        builder: (context, state) {
+          final tier = state.uri.queryParameters['tier'] ?? 'pro';
+          return SubscriptionPlanSelectorScreen(initialTier: tier);
+        },
+      ),
+      GoRoute(
         path: AppRoutes.inAppTrainer,
         builder: (context, state) => const StudioAiHubScreen(),
       ),
@@ -428,6 +516,17 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state) {
           final code = state.pathParameters['addressCode'] ?? '';
           return CustomerLiveBrewTrackerScreen(addressCode: code);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.liveBrewBrandedSeat,
+        builder: (context, state) {
+          final cafeSlug = state.pathParameters['cafeSlug'] ?? '';
+          final seatSlug = state.pathParameters['seatSlug'] ?? '';
+          return CustomerLiveBrewTrackerScreen(
+            cafeSlug: cafeSlug,
+            seatSlug: seatSlug,
+          );
         },
       ),
       GoRoute(

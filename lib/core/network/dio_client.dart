@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'isolate_json_transformer.dart';
 
 part 'dio_client.g.dart';
 
@@ -241,6 +242,8 @@ Dio dioClient(Ref ref) {
       responseType: ResponseType.json,
     ),
   );
+
+  dio.transformer = IsolateJsonTransformer();
 
   dio.interceptors.addAll([
     AuthAndRefreshInterceptor(dio),

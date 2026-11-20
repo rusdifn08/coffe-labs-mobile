@@ -70,6 +70,10 @@
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>Coffee Labs memerlukan akses kamera untuk memindai kemasan biji kopi secara otomatis.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Coffee Labs memerlukan akses lokasi GPS agar Beans Radar dapat menemukan kedai kopi, roastery, dan penjual biji kopi terdekat di sekitar Anda.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Coffee Labs menggunakan lokasi Anda untuk menampilkan jarak dan arah kedai kopi terdekat di Beans Radar secara akurat.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Coffee Labs memerlukan akses galeri untuk menganalisis foto kemasan biji kopi.</string>
 	<key>UILaunchStoryboardName</key>

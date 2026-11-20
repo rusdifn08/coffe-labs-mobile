@@ -55,6 +55,7 @@ class PresetAdminService {
         SubscriptionService.activatePlan(SubscriptionPlan.business, paymentMethod: 'Business Demo License'),
       ]);
 
+      AuthService.updateCachedSessionState(isLoggedIn: true, isAdmin: false);
       AuthService.changeNotifier.value++;
 
       return AuthResult.success(
@@ -115,6 +116,7 @@ class PresetAdminService {
       TrialService.setTrialMode(false),
     ]);
 
+    AuthService.updateCachedSessionState(isLoggedIn: true, isAdmin: true);
     AuthService.changeNotifier.value++;
 
     return AuthResult.success(
