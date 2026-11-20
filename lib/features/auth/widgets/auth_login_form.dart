@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../theme/app_theme.dart';
@@ -25,50 +24,8 @@ class AuthLoginForm extends StatefulWidget {
   State<AuthLoginForm> createState() => _AuthLoginFormState();
 }
 
-class _AuthLoginFormState extends State<AuthLoginForm> with SingleTickerProviderStateMixin {
+class _AuthLoginFormState extends State<AuthLoginForm> {
   bool _obscurePassword = true;
-  int _loadingPhase = 0;
-  Timer? _phaseTimer;
-  late AnimationController _pulseCtrl;
-
-  static const List<String> _loadingPhases = [
-    'Menghubungkan ke Cloud Server...',
-    'Memverifikasi Kredensial Barista...',
-    'Menyiapkan Sesi & Resep Seduh...',
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _pulseCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void didUpdateWidget(covariant AuthLoginForm oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.isLoading && !oldWidget.isLoading) {
-      _loadingPhase = 0;
-      _phaseTimer?.cancel();
-      _phaseTimer = Timer.periodic(const Duration(milliseconds: 1800), (timer) {
-        if (!mounted) return;
-        setState(() {
-          _loadingPhase = (_loadingPhase + 1) % _loadingPhases.length;
-        });
-      });
-    } else if (!widget.isLoading && oldWidget.isLoading) {
-      _phaseTimer?.cancel();
-    }
-  }
-
-  @override
-  void dispose() {
-    _phaseTimer?.cancel();
-    _pulseCtrl.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -143,22 +100,22 @@ class _AuthLoginFormState extends State<AuthLoginForm> with SingleTickerProvider
         ),
         const SizedBox(height: 24),
 
-        // Tombol Login dengan Transisi & Efek Animasi
+        // Tombol Login dengan Transisi & Efek Animasi (tanpa teks saat loading/sukses)
         AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 240),
           curve: Curves.easeOutCubic,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               if (widget.isSuccess)
                 BoxShadow(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.4),
-                  blurRadius: 16,
-                  spreadRadius: 2,
+                  color: const Color(0xFF10B981).withValues(alpha: 0.35),
+                  blurRadius: 14,
+                  spreadRadius: 1,
                 )
               else if (widget.isLoading)
                 BoxShadow(
-                  color: AppTheme.primaryBrown.withValues(alpha: 0.25),
+                  color: AppTheme.primaryBrown.withValues(alpha: 0.22),
                   blurRadius: 10,
                   spreadRadius: 1,
                 )
@@ -178,53 +135,40 @@ class _AuthLoginFormState extends State<AuthLoginForm> with SingleTickerProvider
                   : AppTheme.primaryBrown,
               disabledBackgroundColor: widget.isSuccess
                   ? const Color(0xFF10B981)
-                  : AppTheme.primaryBrown.withValues(alpha: 0.8),
+                  : AppTheme.primaryBrown.withValues(alpha: 0.88),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               elevation: 0,
             ),
             child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
+              duration: const Duration(milliseconds: 220),
+              switchInCurve: Curves.easeOutBack,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(scale: animation, child: child),
+              ),
               child: widget.isSuccess
-                  ? const Row(
+                  ? const SizedBox(
                       key: ValueKey('success'),
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(CupertinoIcons.checkmark_seal_fill, color: Colors.white, size: 22),
-                        SizedBox(width: 10),
-                        Text(
-                          'Login Berhasil! Selamat Datang...',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                      height: 22,
+                      child: Center(
+                        child: Icon(
+                          CupertinoIcons.checkmark_alt,
+                          color: Colors.white,
+                          size: 24,
                         ),
-                      ],
+                      ),
                     )
                   : widget.isLoading
-                      ? const Row(
+                      ? const SizedBox(
                           key: ValueKey('loading'),
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              height: 18,
-                              width: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.2,
-                                color: Colors.white,
-                              ),
-                            ),
-                            SizedBox(width: 10),
-                            Text(
-                              'Sedang Masuk...',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.3,
+                            color: Colors.white,
+                          ),
                         )
                       : const Row(
                           key: ValueKey('idle'),
@@ -245,54 +189,7 @@ class _AuthLoginFormState extends State<AuthLoginForm> with SingleTickerProvider
             ),
           ),
         ),
-
-        // Indicator Status Fase saat Loading
-        AnimatedCrossFade(
-          duration: const Duration(milliseconds: 250),
-          crossFadeState: widget.isLoading ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-          firstChild: const SizedBox(height: 14),
-          secondChild: Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AnimatedBuilder(
-                  animation: _pulseCtrl,
-                  builder: (context, child) => Container(
-                    width: 7,
-                    height: 7,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color.lerp(
-                        const Color(0xFFD4AF37),
-                        AppTheme.primaryBrown,
-                        _pulseCtrl.value,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    child: Text(
-                      _loadingPhases[_loadingPhase],
-                      key: ValueKey<int>(_loadingPhase),
-                      style: const TextStyle(
-                        fontSize: 11.5,
-                        color: AppTheme.textMuted,
-                        fontStyle: FontStyle.italic,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 18),
 
         // Teks "Belum punya akun? Sign Up" dengan Sign Up berwarna biru
         Center(

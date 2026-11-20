@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io' show Platform;
+import 'dart:ui' show PointerDeviceKind;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart' show PlatformDispatcher, kIsWeb;
 import 'package:flutter/material.dart';
@@ -21,6 +22,30 @@ import 'features/notifications/presentation/controllers/notification_deep_link_c
 import 'features/scanner/data/local/prototype_database.dart';
 import 'features/social_chat/presentation/controllers/chat_controllers.dart';
 import 'theme/app_theme.dart';
+
+/// ScrollBehavior global Coffee Labs yang dioptimalkan untuk 60–120 FPS:
+/// - Mengaktifkan drag menggunakan touch, mouse, trackpad, dan stylus di semua platform.
+/// - Menggunakan BouncingScrollPhysics berpadu RangeMaintainingScrollPhysics agar momentum
+///   scrolling vertikal maupun horizontal antar kartu terasa sangat halus tanpa patah.
+class CoffeeLabsSmoothScrollBehavior extends MaterialScrollBehavior {
+  const CoffeeLabsSmoothScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => const {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.trackpad,
+        PointerDeviceKind.stylus,
+        PointerDeviceKind.unknown,
+      };
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) {
+    return const BouncingScrollPhysics(
+      parent: RangeMaintainingScrollPhysics(),
+    );
+  }
+}
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -126,6 +151,7 @@ class CoffeeHubApp extends ConsumerWidget {
       title: 'Coffee Labs',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      scrollBehavior: const CoffeeLabsSmoothScrollBehavior(),
       routerConfig: router,
       builder: (context, child) {
         final content = (!kIsWeb && Platform.isWindows)

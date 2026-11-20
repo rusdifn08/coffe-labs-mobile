@@ -383,6 +383,10 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
         centerTitle: true,
       ),
       body: CustomScrollView(
+        cacheExtent: 640,
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
         slivers: [
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),

@@ -76,7 +76,18 @@ class _MainLayoutState extends State<MainLayout> {
       if (!_visitedTabs.contains(i) && i != _currentIndex) {
         return const SizedBox.shrink();
       }
-      return RepaintBoundary(child: _pages[i]);
+      final isActive = i == _currentIndex;
+      return RepaintBoundary(
+        child: TickerMode(
+          enabled: isActive,
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            opacity: isActive ? 1.0 : 0.0,
+            child: _pages[i],
+          ),
+        ),
+      );
     });
   }
 

@@ -819,6 +819,10 @@ class _RecipeFeedScreenState extends ConsumerState<RecipeFeedScreen> {
       color: AppTheme.primaryBrown,
       onRefresh: () => ref.read(recipeListControllerProvider.notifier).refreshRecipes(),
       child: GridView.builder(
+        cacheExtent: 720,
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
         padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: 260,

@@ -431,13 +431,14 @@ class AuthService {
     };
   }
 
-  /// Login dengan Username dan Password
+  ///Login dengan Username dan Password
   static Future<AuthResult> login({
     required String username,
     required String password,
+    bool notify = true,
   }) async {
     // 1. Dukungan akun preset testing admin1 s/d admin10 untuk review border gamifikasi
-    final presetResult = await PresetAdminService.tryLogin(username, password);
+    final presetResult = await PresetAdminService.tryLogin(username, password, notify: notify);
     if (presetResult != null) return presetResult;
 
     try {
@@ -538,7 +539,9 @@ class AuthService {
           isLoggedIn: user.isApproved || user.isAdmin,
           isAdmin: user.isAdmin,
         );
-        changeNotifier.value++;
+        if (notify) {
+          changeNotifier.value++;
+        }
         return AuthResult.success(token, user, data['message'] ?? 'Login berhasil!');
       } else if (response.statusCode == 403) {
         final status = data['status']?.toString();

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,9 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../core/router/app_router.dart';
 import '../features/auth/controllers/auth_controller.dart';
+import '../features/brew/controllers/brew_history_controller.dart';
+import '../features/recipes/controllers/recipe_list_controller.dart';
+import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/trial_service.dart';
 import '../widgets/splash_brew_animation.dart';
@@ -95,20 +99,43 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
   }
 
   Future<void> _goNext() async {
-    // Warm up backend & sinkronkan Trial Policy secara senyap tanpa menunda UI
+    final stopwatch = Stopwatch()..start();
+
+    // 1. Warm up backend & sinkronkan Trial Policy di background tanpa menahan UI
     AuthService.warmUpBackend();
-    TrialService.getPolicy(refreshFromBackend: true).catchError(
-      (_) => TrialService.currentPolicySync,
+    unawaited(
+      TrialService.getPolicy(refreshFromBackend: true).catchError(
+        (_) => TrialService.currentPolicySync,
+      ),
     );
-    AuthUser? authUser;
-    try {
-      authUser = await ref
+
+    // 2. Pre-warm katalog resep, daftar barista, & riwayat seduh selama animasi splash berjalan
+    // sehingga transisi ke Home / Login 100% bebas freeze (0ms frame drop).
+    unawaited(ref.read(recipeListControllerProvider.future).catchError((_) => const []));
+    unawaited(ref.read(brewHistoryControllerProvider.future).catchError((_) => const []));
+    unawaited(ApiService.getUniqueBaristas().catchError((_) => const []));
+
+    // 3. Cek sesi secara cepat dari lokal terlebih dahulu
+    final results = await Future.wait<dynamic>([
+      ref
           .read(authControllerProvider.future)
-          .timeout(const Duration(seconds: 3));
-    } catch (_) {}
-    final isAuthed = authUser != null || await AuthService.isLoggedIn();
-    final isTrial = await TrialService.isTrialMode();
-    await Future.delayed(const Duration(milliseconds: 1450));
+          .timeout(const Duration(milliseconds: 900))
+          .catchError((_) => null),
+      AuthService.isLoggedIn(),
+      TrialService.isTrialMode(),
+    ]);
+
+    final authUser = results[0] as AuthUser?;
+    final isAuthed = authUser != null || (results[1] as bool);
+    final isTrial = results[2] as bool;
+
+    // 4. Pastikan durasi total splash konsisten ~1250ms (tidak menunggu 1450ms ekstra setelah network timeout)
+    const minSplashMs = 1250;
+    final remainingMs = minSplashMs - stopwatch.elapsedMilliseconds;
+    if (remainingMs > 0) {
+      await Future.delayed(Duration(milliseconds: remainingMs));
+    }
+
     if (!mounted) return;
     context.go((isAuthed || isTrial) ? AppRoutes.home : AppRoutes.onboarding);
   }
@@ -144,22 +171,29 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
             builder: (context, child) {
               return Stack(
                 children: [
-                  // Sorotan ambien hangat di belakang logo transparan
+                  // Sorotan ambien hangat di belakang logo transparan (RadialGradient ringan bebas BoxShadow blur besar)
                   Center(
                     child: Transform.translate(
                       offset: const Offset(0, -34),
-                      child: Container(
-                        width: 210 * _auraPulse.value,
-                        height: 210 * _auraPulse.value,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFFD4AF37).withValues(alpha: 0.16 * _logoFade.value),
-                              blurRadius: 68,
-                              spreadRadius: 16,
+                      child: Transform.scale(
+                        scale: _auraPulse.value,
+                        child: Opacity(
+                          opacity: _logoFade.value.clamp(0.0, 1.0),
+                          child: Container(
+                            width: 240,
+                            height: 240,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  const Color(0xFFD4AF37).withValues(alpha: 0.20),
+                                  const Color(0xFFD4AF37).withValues(alpha: 0.06),
+                                  const Color(0xFFD4AF37).withValues(alpha: 0.0),
+                                ],
+                                stops: const [0.0, 0.55, 1.0],
+                              ),
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
@@ -171,54 +205,59 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         // 1. Panggung Emblem Orbital & Uap Kopi Transparan
-                        SizedBox(
-                          width: 216,
-                          height: 216,
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              CustomPaint(
-                                size: const Size(216, 216),
-                                painter: SplashOrbitalTelemetryPainter(
-                                  introProgress: _introCtrl.value,
-                                  loopProgress: _aromaCtrl.value,
-                                  espressoColor: const Color(0xFF3D2313),
-                                  goldAccent: const Color(0xFFC8922E),
-                                  sageAccent: const Color(0xFF6D7B61),
+                        RepaintBoundary(
+                          child: SizedBox(
+                            width: 216,
+                            height: 216,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                CustomPaint(
+                                  size: const Size(216, 216),
+                                  painter: SplashOrbitalTelemetryPainter(
+                                    introProgress: _introCtrl.value,
+                                    loopProgress: _aromaCtrl.value,
+                                    espressoColor: const Color(0xFF3D2313),
+                                    goldAccent: const Color(0xFFC8922E),
+                                    sageAccent: const Color(0xFF6D7B61),
+                                  ),
                                 ),
-                              ),
-                              CustomPaint(
-                                size: const Size(216, 216),
-                                painter: SplashAromaPainter(
-                                  progress: _aromaCtrl.value,
-                                  steamColor: const Color(0xFF9A7B4F),
-                                  goldAccent: const Color(0xFFC8922E),
+                                CustomPaint(
+                                  size: const Size(216, 216),
+                                  painter: SplashAromaPainter(
+                                    progress: _aromaCtrl.value,
+                                    steamColor: const Color(0xFF9A7B4F),
+                                    goldAccent: const Color(0xFFC8922E),
+                                  ),
                                 ),
-                              ),
-                              FadeTransition(
-                                opacity: _logoFade,
-                                child: Transform.rotate(
-                                  angle: _logoRotate.value,
-                                  child: Transform.scale(
-                                    scale: _logoScale.value,
-                                    child: ShimmerGlance(
-                                      animationValue: _aromaCtrl.value,
-                                      child: Image.asset(
-                                        'assets/images/coffee_labs_emblem.png',
-                                        width: 152,
-                                        height: 152,
-                                        fit: BoxFit.contain,
-                                        errorBuilder: (context, error, stackTrace) => const Icon(
-                                          CupertinoIcons.lab_flask_solid,
-                                          size: 72,
-                                          color: Color(0xFF6B4423),
+                                FadeTransition(
+                                  opacity: _logoFade,
+                                  child: Transform.rotate(
+                                    angle: _logoRotate.value,
+                                    child: Transform.scale(
+                                      scale: _logoScale.value,
+                                      child: ShimmerGlance(
+                                        animationValue: _aromaCtrl.value,
+                                        child: Image.asset(
+                                          'assets/images/coffee_labs_emblem.png',
+                                          width: 152,
+                                          height: 152,
+                                          cacheWidth: 360,
+                                          filterQuality: FilterQuality.medium,
+                                          gaplessPlayback: true,
+                                          fit: BoxFit.contain,
+                                          errorBuilder: (context, error, stackTrace) => const Icon(
+                                            CupertinoIcons.lab_flask_solid,
+                                            size: 72,
+                                            color: Color(0xFF6B4423),
+                                          ),
                                         ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
 

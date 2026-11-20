@@ -19,11 +19,13 @@ class ApiService {
   static List<Map<String, dynamic>>? _recipesCache;
   static List<dynamic>? _historyCache;
   static Set<int>? _favoritesCache;
+  static List<Map<String, dynamic>>? _uniqueBaristasCache;
 
   static void clearMemoryCache() {
     _recipesCache = null;
     _historyCache = null;
     _favoritesCache = null;
+    _uniqueBaristasCache = null;
   }
 
   static void clearFavoritesCache() {
@@ -31,6 +33,7 @@ class ApiService {
   }
 
   static void _notifyChanged() {
+    _uniqueBaristasCache = null;
     changeNotifier.value++;
   }
 
@@ -353,32 +356,42 @@ class ApiService {
     _notifyChanged();
   }
 
-  /// Daftar barista unik dari resep (untuk toolkit / spotlight).
+  /// Daftar barista unik dari resep (untuk toolkit / spotlight) — dihitung dengan algoritma O(N) & di-cache.
   static Future<List<Map<String, dynamic>>> getUniqueBaristas() async {
+    if (_uniqueBaristasCache != null) {
+      return List<Map<String, dynamic>>.from(_uniqueBaristasCache!);
+    }
+
     final recipes = await getRecipes();
+    final countsByCleanName = <String, int>{};
+    for (final r in recipes) {
+      final author = r['author']?.toString() ?? '';
+      final name = BaristaUtils.cleanName(author).toLowerCase();
+      if (name.isEmpty) continue;
+      countsByCleanName[name] = (countsByCleanName[name] ?? 0) + 1;
+    }
+
     final seen = <String>{};
     final result = <Map<String, dynamic>>[];
 
     for (final r in recipes) {
       final author = r['author']?.toString() ?? '';
-      final name = BaristaUtils.cleanName(author).toLowerCase();
+      final clean = BaristaUtils.cleanName(author);
+      final name = clean.toLowerCase();
       if (name.isEmpty || seen.contains(name)) continue;
       seen.add(name);
       result.add({
         'author': author,
-        'name': BaristaUtils.cleanName(author),
+        'name': clean,
         'imageUrl': r['authorAvatarUrl'] ?? r['authorImageUrl'],
         'coverImageUrl': r['coverImageUrl'] ?? r['authorImageUrl'],
         'country': BaristaUtils.countryLabel(author),
         'countryCode': BaristaUtils.countryCode(author),
-        'recipeCount': recipes
-            .where((x) =>
-                BaristaUtils.cleanName(x['author']?.toString() ?? '').toLowerCase() ==
-                name)
-            .length,
+        'recipeCount': countsByCleanName[name] ?? 1,
       });
     }
     result.sort((a, b) => (a['name'] as String).compareTo(b['name'] as String));
-    return result;
+    _uniqueBaristasCache = result;
+    return List<Map<String, dynamic>>.from(result);
   }
 }

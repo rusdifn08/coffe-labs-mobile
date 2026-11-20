@@ -136,7 +136,7 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             TAG="${GITHUB_REF#refs/tags/}"
           else
-            TAG="v2.4.0"
+            TAG="v2.5.0"
           fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "title=Coffee Labs App Release $TAG" >> $GITHUB_OUTPUT

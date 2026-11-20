@@ -17,7 +17,11 @@ class PresetAdminService {
   static const String _userKey = 'coffeehub_auth_user_json';
 
   /// Cek dan proses login instan jika username & password adalah admin1..admin10 atau bisnis123
-  static Future<AuthResult?> tryLogin(String username, String password) async {
+  static Future<AuthResult?> tryLogin(
+    String username,
+    String password, {
+    bool notify = true,
+  }) async {
     final cleanUsername = username.trim().toLowerCase();
     final cleanPassword = password.trim();
 
@@ -56,7 +60,9 @@ class PresetAdminService {
       ]);
 
       AuthService.updateCachedSessionState(isLoggedIn: true, isAdmin: false);
-      AuthService.changeNotifier.value++;
+      if (notify) {
+        AuthService.changeNotifier.value++;
+      }
 
       return AuthResult.success(
         token,
@@ -117,7 +123,9 @@ class PresetAdminService {
     ]);
 
     AuthService.updateCachedSessionState(isLoggedIn: true, isAdmin: true);
-    AuthService.changeNotifier.value++;
+    if (notify) {
+      AuthService.changeNotifier.value++;
+    }
 
     return AuthResult.success(
       token,

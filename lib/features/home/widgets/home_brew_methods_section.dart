@@ -76,6 +76,8 @@ class HomeBrewMethodsSection extends StatelessWidget {
           height: 112,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
+            cacheExtent: 460,
+            physics: const BouncingScrollPhysics(),
             itemCount: previewMethods.length,
             clipBehavior: Clip.none,
             itemBuilder: (context, index) {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +10,9 @@ import '../features/auth/widgets/auth_header.dart';
 import '../features/auth/widgets/auth_login_form.dart';
 import '../features/auth/widgets/auth_signup_form.dart';
 import '../features/auth/widgets/auth_status_dialogs.dart';
+import '../features/brew/controllers/brew_history_controller.dart';
+import '../features/recipes/controllers/recipe_list_controller.dart';
+import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/profile_service.dart';
 import '../services/trial_service.dart';
@@ -26,7 +30,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   bool _isSignUpMode = false;
   bool _isLoading = false;
   bool _isSuccess = false;
-  AuthUser? _authenticatedUser;
   String? _errorMessage;
 
   // Login Controllers
@@ -44,6 +47,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     super.initState();
     AuthService.warmUpBackend();
     _loadDefaultAvatar();
+    // Pre-warm katalog resep & riwayat di background agar saat tombol Login berhasil,
+    // transisi masuk ke Home 100% instan tanpa freeze sesaat.
+    unawaited(ref.read(recipeListControllerProvider.future).catchError((_) => const []));
+    unawaited(ref.read(brewHistoryControllerProvider.future).catchError((_) => const []));
+    unawaited(ApiService.getUniqueBaristas().catchError((_) => const []));
   }
 
   Future<void> _loadDefaultAvatar() async {
@@ -94,7 +102,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       _errorMessage = null;
     });
 
-    final result = await AuthService.login(username: username, password: password);
+    final result = await AuthService.login(
+      username: username,
+      password: password,
+      notify: false,
+    );
 
     if (!mounted) return;
 
@@ -102,18 +114,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       setState(() {
         _isLoading = false;
         _isSuccess = true;
-        _authenticatedUser = result.user;
       });
-      HapticFeedback.heavyImpact();
+      HapticFeedback.lightImpact();
 
-      // Sinkronkan policy terbaru secara senyap sambil menunggu animasi selebrasi
-      await Future.wait([
-        TrialService.getPolicy(refreshFromBackend: true),
-        Future.delayed(const Duration(milliseconds: 650)),
-      ]);
+      // Sinkronkan policy terbaru secara non-blocking di background tanpa menahan transisi ke Home
+      unawaited(
+        TrialService.getPolicy(refreshFromBackend: true).catchError(
+          (_) => TrialService.currentPolicySync,
+        ),
+      );
+
+      // Jeda mikro (220ms) hanya untuk menampilkan morfing tombol hijau + ikon centang sebelum meluncur ke Home
+      await Future.delayed(const Duration(milliseconds: 220));
       if (!mounted) return;
 
-      ref.invalidate(authControllerProvider);
+      AuthService.changeNotifier.value++;
       AuthNavigationHelper.returnHomeAfterAuth(context);
     } else {
       setState(() {
@@ -198,18 +213,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   void _enterTrialMode() async {
     await TrialService.setTrialMode(true);
-    await TrialService.getPolicy(refreshFromBackend: true);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          TrialService.isFullNonBusinessTrialActiveSync()
-              ? 'Memulai Trial Full Access Non-Bisnis!'
-              : 'Memulai Mode Trial (10 Resep Pilihan)',
-        ),
-        backgroundColor: Colors.orange,
+    unawaited(
+      TrialService.getPolicy(refreshFromBackend: true).catchError(
+        (_) => TrialService.currentPolicySync,
       ),
     );
+    if (!mounted) return;
     AuthNavigationHelper.returnHomeAfterAuth(context);
   }
 
@@ -243,238 +252,89 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     },
                   ),
 
-                // Card Container dengan AnimatedSwitcher (Form vs Selebrasi Sukses)
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 450),
-                  switchInCurve: Curves.easeOutCubic,
-                  switchOutCurve: Curves.easeInCubic,
-                  transitionBuilder: (child, animation) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: ScaleTransition(
-                        scale: Tween<double>(begin: 0.94, end: 1.0).animate(animation),
-                        child: child,
+                // Card Container Form Login / Sign Up (Tetap stabil tanpa berganti kartu selebrasi)
+                Container(
+                  key: const ValueKey('auth_form_box'),
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceWhite,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
                       ),
-                    );
-                  },
-                  child: _isSuccess
-                      ? _buildSuccessCelebrationView()
-                      : Container(
-                          key: const ValueKey('auth_form_box'),
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: AppTheme.surfaceWhite,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.04),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
+                    ],
+                  ),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 240),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    child: _isSignUpMode
+                        ? AuthSignUpForm(
+                            key: const ValueKey('signup_form'),
+                            fullNameController: _regFullNameCtrl,
+                            usernameController: _regUsernameCtrl,
+                            passwordController: _regPasswordCtrl,
+                            selectedAvatar: _selectedAvatar,
+                            isLoading: _isLoading,
+                            onPickAvatar: _pickAvatar,
+                            onRegister: _handleRegister,
+                            onBackToLogin: () => setState(() => _isSignUpMode = false),
+                          )
+                        : AuthLoginForm(
+                            key: const ValueKey('login_form'),
+                            usernameController: _loginUsernameCtrl,
+                            passwordController: _loginPasswordCtrl,
+                            isLoading: _isLoading,
+                            isSuccess: _isSuccess,
+                            onLogin: _handleLogin,
+                            onSwitchToSignUp: () {
+                              setState(() {
+                                _isSignUpMode = true;
+                                _errorMessage = null;
+                              });
+                            },
                           ),
-                          child: _isSignUpMode
-                              ? AuthSignUpForm(
-                                  fullNameController: _regFullNameCtrl,
-                                  usernameController: _regUsernameCtrl,
-                                  passwordController: _regPasswordCtrl,
-                                  selectedAvatar: _selectedAvatar,
-                                  isLoading: _isLoading,
-                                  onPickAvatar: _pickAvatar,
-                                  onRegister: _handleRegister,
-                                  onBackToLogin: () => setState(() => _isSignUpMode = false),
-                                )
-                              : AuthLoginForm(
-                                  usernameController: _loginUsernameCtrl,
-                                  passwordController: _loginPasswordCtrl,
-                                  isLoading: _isLoading,
-                                  isSuccess: _isSuccess,
-                                  onLogin: _handleLogin,
-                                  onSwitchToSignUp: () {
-                                    setState(() {
-                                      _isSignUpMode = true;
-                                      _errorMessage = null;
-                                    });
-                                  },
-                                ),
-                        ),
+                  ),
                 ),
 
                 const SizedBox(height: 20),
 
-                // Button Lanjutkan Trial (Otomatis memudar halus saat sukses login)
-                AnimatedOpacity(
-                  opacity: _isSuccess ? 0.0 : 1.0,
-                  duration: const Duration(milliseconds: 300),
-                  child: IgnorePointer(
-                    ignoring: _isSuccess || _isLoading,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        OutlinedButton.icon(
-                          onPressed: _enterTrialMode,
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppTheme.primaryBrown,
-                            side: const BorderSide(color: AppTheme.primaryBrown, width: 1.5),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          ),
-                          icon: const Icon(CupertinoIcons.play_circle, size: 20),
-                          label: const Text(
-                            'Lanjutkan Trial',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
+                // Button Lanjutkan Trial
+                IgnorePointer(
+                  ignoring: _isSuccess || _isLoading,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: _enterTrialMode,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.primaryBrown,
+                          side: const BorderSide(color: AppTheme.primaryBrown, width: 1.5),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Mode Trial: Akses 10 Resep & 10x Brew Gratis',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                        icon: const Icon(CupertinoIcons.play_circle, size: 20),
+                        label: const Text(
+                          'Lanjutkan Trial',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Mode Trial: Akses 10 Resep & 10x Brew Gratis',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildSuccessCelebrationView() {
-    final user = _authenticatedUser;
-    final fullName = user?.fullName ?? 'Barista';
-    final role = user?.isAdmin == true
-        ? '👑 Administrator'
-        : (user?.isBusiness == true ? '💼 Business Partner' : '☕ Artisan Brewer');
-    final avatarUrl = user?.avatarUrl ?? _selectedAvatar ?? 'assets/images/characters/avatar_1.png';
-
-    return Container(
-      key: const ValueKey('success_celebration_box'),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 34),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceWhite,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: const Color(0xFFD4AF37).withValues(alpha: 0.5),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
-            blurRadius: 28,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Avatar dengan efek aura kilau emas
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: 92,
-                height: 92,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const RadialGradient(
-                    colors: [Color(0xFFD4AF37), Colors.transparent],
-                    stops: [0.65, 1.0],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFD4AF37).withValues(alpha: 0.35),
-                      blurRadius: 22,
-                      spreadRadius: 3,
-                    ),
-                  ],
-                ),
-              ),
-              CircleAvatar(
-                radius: 40,
-                backgroundColor: const Color(0xFF1E1714),
-                backgroundImage: AssetImage(avatarUrl),
-              ),
-              Positioned(
-                bottom: 2,
-                right: 2,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF10B981),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    CupertinoIcons.checkmark,
-                    color: Colors.white,
-                    size: 13,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          const Text(
-            'Selamat Datang Kembali!',
-            style: TextStyle(
-              fontSize: 13,
-              color: AppTheme.textMuted,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            fullName,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textDark,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              role,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.primaryBrown,
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          // Progress bar elegan penanda transisi masuk ke Home
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: const SizedBox(
-              height: 4,
-              width: 140,
-              child: LinearProgressIndicator(
-                color: Color(0xFFD4AF37),
-                backgroundColor: Color(0xFFEADBCE),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'Menyiapkan stasiun seduh & resep...',
-            style: TextStyle(
-              fontSize: 11.5,
-              color: AppTheme.textMuted,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
       ),
     );
   }

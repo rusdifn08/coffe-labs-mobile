@@ -34,7 +34,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
   @override
   Future<List<Map<String, dynamic>>> getRecipes({bool forceRefresh = false}) async {
     if (!forceRefresh && _cachedRecipes != null) {
-      return List<Map<String, dynamic>>.from(_cachedRecipes!);
+      return _cachedRecipes!;
     }
 
     final prefs = await SharedPreferences.getInstance();
@@ -66,7 +66,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
     } catch (_) {}
 
     _cachedRecipes = recipes;
-    return List<Map<String, dynamic>>.from(recipes);
+    return _cachedRecipes!;
   }
 
   @override

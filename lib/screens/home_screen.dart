@@ -35,22 +35,22 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProviderStateMixin {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _showBrewMethods = false;
   bool _isAdmin = false;
   String _userName = 'Barista';
   String? _userImagePath;
   List<Map<String, dynamic>> _baristas = [];
   GamificationStats? _gamificationStats;
-  late AnimationController _fadeCtrl;
-  late Animation<double> _fadeAnim;
+
+  List<dynamic>? _lastHistoryRef;
+  List<Map<String, dynamic>>? _lastBaristasRef;
+  List<BrewMethodItem> _cachedSortedMethods = BrewMethodItem.allMethods;
+  List<Map<String, dynamic>> _cachedDisplayedBaristas = const [];
 
   @override
   void initState() {
     super.initState();
-    _fadeCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
-    _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
-    _fadeCtrl.forward();
     _loadProfileAndBaristas();
     GamificationService.changeNotifier.addListener(_loadGamificationStats);
   }
@@ -58,7 +58,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
   @override
   void dispose() {
     GamificationService.changeNotifier.removeListener(_loadGamificationStats);
-    _fadeCtrl.dispose();
     super.dispose();
   }
 
@@ -69,18 +68,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
   }
 
   Future<void> _loadProfileAndBaristas() async {
-    final name = await ProfileService.getUserName();
-    final img = await ProfileService.getUserImagePath();
-    final baristas = await ApiService.getUniqueBaristas();
-    final stats = await GamificationService.instance.getStats();
-    final isAdmin = await AuthService.isAdmin();
+    final results = await Future.wait<dynamic>([
+      ProfileService.getUserName(),
+      ProfileService.getUserImagePath(),
+      ApiService.getUniqueBaristas(),
+      GamificationService.instance.getStats(),
+      AuthService.isAdmin(),
+    ]);
     if (!mounted) return;
     setState(() {
-      _userName = name;
-      _userImagePath = img;
-      _baristas = baristas;
-      _gamificationStats = stats;
-      _isAdmin = isAdmin;
+      _userName = results[0] as String;
+      _userImagePath = results[1] as String?;
+      _baristas = results[2] as List<Map<String, dynamic>>;
+      _gamificationStats = results[3] as GamificationStats;
+      _isAdmin = results[4] as bool;
+      _lastBaristasRef = null;
     });
   }
 
@@ -138,11 +140,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
     final historyAsync = ref.watch(brewHistoryControllerProvider);
     final recipesAsync = ref.watch(recipeListControllerProvider);
 
-    // Dapatkan riwayat seduh untuk menyusun urutan metode & barista berdasarkan data riil pengguna
+    // Dapatkan riwayat seduh untuk menyusun urutan metode & barista berdasarkan data riil pengguna (memoized)
     final history = historyAsync.value ?? const [];
-    final sortedMethods = UserBrewUsageService.sortMethodsByUserUsage(BrewMethodItem.allMethods, history);
-    final sortedBaristas = UserBrewUsageService.sortBaristasByUserUsage(_baristas, history);
-    final displayedBaristas = sortedBaristas.take(15).toList();
+    if (!identical(_lastHistoryRef, history) || !identical(_lastBaristasRef, _baristas)) {
+      _lastHistoryRef = history;
+      _lastBaristasRef = _baristas;
+      _cachedSortedMethods =
+          UserBrewUsageService.sortMethodsByUserUsage(BrewMethodItem.allMethods, history);
+      final sortedBaristas =
+          UserBrewUsageService.sortBaristasByUserUsage(_baristas, history);
+      _cachedDisplayedBaristas = sortedBaristas.take(15).toList();
+    }
+    final sortedMethods = _cachedSortedMethods;
+    final displayedBaristas = _cachedDisplayedBaristas;
 
     final currentLvl = _gamificationStats?.level ?? CoffeeLevel.allLevels.first;
 
@@ -154,17 +164,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
           onRefresh: _refreshAll,
           color: AppTheme.primaryBrown,
           child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
             padding: const EdgeInsets.all(24.0),
-            child: FadeTransition(
-              opacity: _fadeAnim,
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 960),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      HomeHeaderProfileRow(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 960),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    HomeHeaderProfileRow(
                     userImagePath: _userImagePath,
                     userName: _userName,
                     gamificationStats: _gamificationStats,
@@ -220,82 +230,86 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
                   const SizedBox(height: 20),
 
                   // Barista spotlight (Disusun berdasarkan frekuensi seduh resep barista oleh user)
-                  if (sortedBaristas.isNotEmpty) ...[
+                  if (displayedBaristas.isNotEmpty) ...[
                     Text('Barista Spotlight', style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 12),
                     SizedBox(
                       height: 114,
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
+                        cacheExtent: 420,
+                        physics: const BouncingScrollPhysics(),
                         itemCount: displayedBaristas.length,
                         itemBuilder: (context, index) {
                           final b = displayedBaristas[index];
                           final brewCount = (b['userBrewCount'] as num?)?.toInt() ?? 0;
                           final heroTag = 'home_barista_${BaristaUtils.slugFromAuthor(b['author'] as String)}_$index';
-                          return GestureDetector(
-                            onTap: () {
-                              context.push(
-                                AppRoutes.baristaProfile,
-                                extra: {
-                                  'rawAuthor': b['author'] as String,
-                                  'imageUrl': b['imageUrl'] as String?,
-                                  'coverImageUrl': b['coverImageUrl'] as String?,
-                                  'heroTag': heroTag,
-                                },
-                              );
-                            },
-                            child: Container(
-                              width: 76,
-                              margin: const EdgeInsets.only(right: 12),
-                              child: Column(
-                                children: [
-                                  Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      BaristaAvatar(
-                                        imageUrl: b['imageUrl'] as String?,
-                                        radius: 30,
-                                        heroTag: heroTag,
-                                      ),
-                                      if (brewCount > 0)
-                                        Positioned(
-                                          right: -2,
-                                          bottom: -2,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                            decoration: BoxDecoration(
-                                              color: AppTheme.accentGold,
-                                              borderRadius: BorderRadius.circular(6),
-                                              border: Border.all(color: Colors.white, width: 1.2),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.black.withValues(alpha: 0.25),
-                                                  blurRadius: 3,
-                                                  offset: const Offset(0, 1),
+                          return RepaintBoundary(
+                            child: GestureDetector(
+                              onTap: () {
+                                context.push(
+                                  AppRoutes.baristaProfile,
+                                  extra: {
+                                    'rawAuthor': b['author'] as String,
+                                    'imageUrl': b['imageUrl'] as String?,
+                                    'coverImageUrl': b['coverImageUrl'] as String?,
+                                    'heroTag': heroTag,
+                                  },
+                                );
+                              },
+                              child: Container(
+                                width: 76,
+                                margin: const EdgeInsets.only(right: 12),
+                                child: Column(
+                                  children: [
+                                    Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        BaristaAvatar(
+                                          imageUrl: b['imageUrl'] as String?,
+                                          radius: 30,
+                                          heroTag: heroTag,
+                                        ),
+                                        if (brewCount > 0)
+                                          Positioned(
+                                            right: -2,
+                                            bottom: -2,
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                              decoration: BoxDecoration(
+                                                color: AppTheme.accentGold,
+                                                borderRadius: BorderRadius.circular(6),
+                                                border: Border.all(color: Colors.white, width: 1.2),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black.withValues(alpha: 0.25),
+                                                    blurRadius: 3,
+                                                    offset: const Offset(0, 1),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Text(
+                                                '${brewCount}x',
+                                                style: const TextStyle(
+                                                  fontSize: 8.5,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
                                                 ),
-                                              ],
-                                            ),
-                                            child: Text(
-                                              '${brewCount}x',
-                                              style: const TextStyle(
-                                                fontSize: 8.5,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.white,
                                               ),
                                             ),
                                           ),
-                                        ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    b['name'] as String,
-                                    maxLines: 2,
-                                    textAlign: TextAlign.center,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
-                                  ),
-                                ],
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      b['name'] as String,
+                                      maxLines: 2,
+                                      textAlign: TextAlign.center,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           );
@@ -322,12 +336,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
                             height: 220,
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
+                              cacheExtent: 540,
+                              physics: const BouncingScrollPhysics(),
                               clipBehavior: Clip.none,
                               itemCount: frequent.length,
                               itemBuilder: (context, index) {
-                                return HomeFrequentRecipeCard(
-                                  recipe: frequent[index],
-                                  onTap: () => _brewRecipe(frequent[index]),
+                                return RepaintBoundary(
+                                  child: HomeFrequentRecipeCard(
+                                    recipe: frequent[index],
+                                    onTap: () => _brewRecipe(frequent[index]),
+                                  ),
                                 );
                               },
                             ),
@@ -386,7 +404,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
         ),
       ),
     ),
-  ),
-);
+  );
 }
 }

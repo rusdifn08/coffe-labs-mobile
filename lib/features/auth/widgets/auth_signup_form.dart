@@ -162,45 +162,32 @@ class _AuthSignUpFormState extends State<AuthSignUpForm> {
         ),
         const SizedBox(height: 20),
 
-        // Tombol Sign Up
+        // Tombol Sign Up (tanpa teks saat loading)
         ElevatedButton(
           onPressed: widget.isLoading ? null : widget.onRegister,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.primaryBrown,
+            disabledBackgroundColor: AppTheme.primaryBrown.withValues(alpha: 0.88),
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            elevation: 0,
           ),
-          child: widget.isLoading
-              ? const SizedBox(
-                  height: 22,
-                  width: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
-                )
-              : const Text(
-                  'Daftar Sekarang',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            child: widget.isLoading
+                ? const SizedBox(
+                    key: ValueKey('signup_loading'),
+                    height: 22,
+                    width: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2.3, color: Colors.white),
+                  )
+                : const Text(
+                    'Daftar Sekarang',
+                    key: ValueKey('signup_idle'),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+          ),
         ),
-        if (widget.isLoading) ...[
-          const SizedBox(height: 10),
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryBrown),
-              ),
-              SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  'Mendaftarkan ke Cloud Server (Render)...',
-                  style: TextStyle(fontSize: 11.5, color: AppTheme.textMuted, fontStyle: FontStyle.italic),
-                ),
-              ),
-            ],
-          ),
-        ],
         const SizedBox(height: 16),
 
         // Tombol kembali ke Login

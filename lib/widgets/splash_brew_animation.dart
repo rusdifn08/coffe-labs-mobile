@@ -74,14 +74,15 @@ class SplashOrbitalTelemetryPainter extends CustomPainter {
       canvas.drawArc(rect, -math.pi / 2 + i * 0.8, sweep, false, orbitPaint);
 
       // Titik satelit bercahaya kecil yang mengorbit sepanjang lintasan
+      // (Menggunakan halo alpha-gradient bebas MaskFilter.blur agar 120 FPS di GPU tanpa shader compilation jank)
       final theta = loopProgress * math.pi * 2 + (i * math.pi * 2 / 3);
       final nodePos = Offset(rx * math.cos(theta), ry * math.sin(theta));
-      final glowPaint = Paint()
-        ..color = orbitColors[i].withValues(alpha: 0.24 * reveal)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-      final dotPaint = Paint()..color = orbitColors[i].withValues(alpha: 0.72 * reveal);
+      final outerHaloPaint = Paint()..color = orbitColors[i].withValues(alpha: 0.11 * reveal);
+      final innerHaloPaint = Paint()..color = orbitColors[i].withValues(alpha: 0.24 * reveal);
+      final dotPaint = Paint()..color = orbitColors[i].withValues(alpha: 0.80 * reveal);
 
-      canvas.drawCircle(nodePos, 4.2, glowPaint);
+      canvas.drawCircle(nodePos, 5.4, outerHaloPaint);
+      canvas.drawCircle(nodePos, 3.6, innerHaloPaint);
       canvas.drawCircle(nodePos, 2.2, dotPaint);
       canvas.restore();
     }

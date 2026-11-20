@@ -654,7 +654,11 @@ class RecipeSanitizer {
   }
 
   /// Menjamin tidak ada satupun field resep atau step yang bernilai null atau mengalami anomali.
+  /// Dilengkapi fast-path idempotent (`_sanitized == true`) agar tidak mengulang sanitasi di setiap frame scroll.
   static Map<String, dynamic> sanitizeRecipe(Map<dynamic, dynamic> raw, {int fallbackId = 1}) {
+    if (raw is Map<String, dynamic> && raw['_sanitized'] == true) {
+      return raw;
+    }
     final id = toInt(raw['id'], fallbackId);
     final title = nonEmptyString(raw['title'], 'Custom Brew Recipe');
     final author = nonEmptyString(raw['author'], 'Barista');
@@ -887,6 +891,7 @@ class RecipeSanitizer {
       'createdAt': nonEmptyString(raw['createdAt'], DateTime.now().toIso8601String()),
       'steps': sanitizedSteps,
       'ingredients': sanitizedIngredients,
+      '_sanitized': true,
     };
   }
 }
