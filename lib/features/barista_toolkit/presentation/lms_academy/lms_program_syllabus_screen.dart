@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../services/auth_service.dart';
+import '../../../../services/subscription_service.dart';
+import '../../../../services/trial_service.dart';
 import '../../../../theme/app_theme.dart';
 import '../../data/barista_toolkit_api_service.dart';
 import '../../data/barista_toolkit_seed_data.dart';
@@ -40,19 +43,31 @@ class _LmsProgramSyllabusScreenState
     _courses = widget.initialCourses != null && widget.initialCourses!.isNotEmpty
         ? List<LmsCourseModel>.from(widget.initialCourses!)
         : BaristaToolkitFallbackSeed.offlineCourses();
+    AuthService.changeNotifier.addListener(_onAccessChanged);
+    SubscriptionService.changeNotifier.addListener(_onAccessChanged);
+    TrialService.changeNotifier.addListener(_onAccessChanged);
     _load();
   }
 
   @override
   void dispose() {
+    AuthService.changeNotifier.removeListener(_onAccessChanged);
+    SubscriptionService.changeNotifier.removeListener(_onAccessChanged);
+    TrialService.changeNotifier.removeListener(_onAccessChanged);
     _searchCtrl.dispose();
     super.dispose();
   }
 
+  void _onAccessChanged() {
+    if (mounted) _load();
+  }
+
   Future<void> _load() async {
-    var courses = await BaristaToolkitFallbackSeed.loadOfflineCoursesAsync();
+    final api = ref.read(baristaToolkitApiProvider);
+    final offlineRaw = await BaristaToolkitFallbackSeed.loadOfflineCoursesAsync();
+    var courses = await api.reconcileCoursesAccess(offlineRaw);
     try {
-      final remote = await ref.read(baristaToolkitApiProvider).fetchLmsCourses();
+      final remote = await api.fetchLmsCourses();
       if (remote.isNotEmpty) {
         courses = remote;
       }

@@ -1,10 +1,16 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/dio_client.dart';
+import '../../../models/subscription_plan.dart';
+import '../../../services/auth_service.dart';
+import '../../../services/subscription_service.dart';
+import '../../../services/trial_service.dart';
 import '../domain/barista_toolkit_models.dart';
 import 'barista_toolkit_seed_data.dart';
 import 'ebook_drm_vault_service.dart';
@@ -29,17 +35,109 @@ class BaristaToolkitApiService {
     return trimmed.startsWith('/') ? '$cleanBase$trimmed' : '$cleanBase/$trimmed';
   }
 
+  bool get _isTestEnv =>
+      !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
+
+  Future<(AuthUser?, SubscriptionPlan)> _resolveCurrentSessionTier() async {
+    await TrialService.getPolicy();
+    AuthUser? user = await AuthService.getCurrentUser();
+    if (user != null && !_isTestEnv) {
+      final synced = await AuthService.syncProfile();
+      if (synced != null) {
+        user = synced;
+      }
+    }
+    final plan = await SubscriptionService.getCurrentPlan();
+    return (user, plan);
+  }
+
+  /// Menyelaraskan status kunci setiap E-Book terhadap tier akun live (Pro/Business/Admin/Trial7H)
+  /// agar akun Pro tidak pernah terkunci akibat cache seed atau JWT lama sebelum rotasi.
+  Future<List<EbookCatalogItem>> reconcileEbooksAccess(
+    List<EbookCatalogItem> books, {
+    bool syncRemoteProfile = false,
+  }) async {
+    await TrialService.getPolicy();
+    AuthUser? user = await AuthService.getCurrentUser();
+    if (syncRemoteProfile && user != null && !_isTestEnv) {
+      final synced = await AuthService.syncProfile();
+      if (synced != null) user = synced;
+    }
+    final plan = await SubscriptionService.getCurrentPlan();
+    final fullTrial = TrialService.isFullNonBusinessTrialActiveSync(user: user);
+    return books
+        .map(
+          (b) => b.copyWith(
+            isUnlocked: ToolkitTierAccess.isUnlockedFor(
+              requiredTier: b.requiredTier,
+              user: user,
+              localPlan: plan,
+              hasFullNonBusinessTrial: fullTrial,
+            ),
+          ),
+        )
+        .toList();
+  }
+
+  /// Menyelaraskan status kunci setiap Bab LMS terhadap tier akun live.
+  Future<List<LmsCourseModel>> reconcileCoursesAccess(
+    List<LmsCourseModel> courses, {
+    bool syncRemoteProfile = false,
+  }) async {
+    await TrialService.getPolicy();
+    AuthUser? user = await AuthService.getCurrentUser();
+    if (syncRemoteProfile && user != null && !_isTestEnv) {
+      final synced = await AuthService.syncProfile();
+      if (synced != null) user = synced;
+    }
+    final plan = await SubscriptionService.getCurrentPlan();
+    final fullTrial = TrialService.isFullNonBusinessTrialActiveSync(user: user);
+    return courses
+        .map(
+          (c) => c.copyWith(
+            isUnlocked: ToolkitTierAccess.isUnlockedFor(
+              requiredTier: c.requiredTier,
+              user: user,
+              localPlan: plan,
+              hasFullNonBusinessTrial: fullTrial,
+            ),
+          ),
+        )
+        .toList();
+  }
+
   Future<List<LmsCourseModel>> fetchLmsCourses() async {
+    final (user, plan) = await _resolveCurrentSessionTier();
+    final fullTrial = TrialService.isFullNonBusinessTrialActiveSync(user: user);
     try {
       final res = await _dio.get<Map<String, dynamic>>('/api/v1/toolkit/lms/courses');
       final list = res.data?['data'] as List? ?? [];
       if (list.isNotEmpty) {
-        return list
-            .map((e) => LmsCourseModel.fromJson(Map<String, dynamic>.from(e as Map)))
-            .toList();
+        return list.map((e) {
+          final model = LmsCourseModel.fromJson(Map<String, dynamic>.from(e as Map));
+          final localAllowed = ToolkitTierAccess.isUnlockedFor(
+            requiredTier: model.requiredTier,
+            user: user,
+            localPlan: plan,
+            hasFullNonBusinessTrial: fullTrial,
+          );
+          return model.copyWith(isUnlocked: model.isUnlocked || localAllowed);
+        }).toList();
       }
     } catch (_) {}
-    return BaristaToolkitFallbackSeed.loadOfflineCoursesAsync();
+    final offline = await BaristaToolkitFallbackSeed.loadOfflineCoursesAsync();
+    return offline
+        .map(
+          (c) => c.copyWith(
+            isUnlocked: ToolkitTierAccess.isUnlockedFor(
+              requiredTier: c.requiredTier,
+              user: user,
+              localPlan: plan,
+              hasFullNonBusinessTrial: fullTrial,
+            ),
+          ),
+        )
+        .toList();
   }
 
   Future<Map<String, dynamic>> fetchLessonStream(String lessonId) async {
@@ -67,16 +165,37 @@ class BaristaToolkitApiService {
   }
 
   Future<List<EbookCatalogItem>> fetchEbooks() async {
+    final (user, plan) = await _resolveCurrentSessionTier();
+    final fullTrial = TrialService.isFullNonBusinessTrialActiveSync(user: user);
     try {
       final res = await _dio.get<Map<String, dynamic>>('/api/v1/toolkit/ebooks');
       final list = res.data?['data'] as List? ?? [];
       if (list.isNotEmpty) {
-        return list
-            .map((e) => EbookCatalogItem.fromJson(Map<String, dynamic>.from(e as Map)))
-            .toList();
+        return list.map((e) {
+          final model = EbookCatalogItem.fromJson(Map<String, dynamic>.from(e as Map));
+          final localAllowed = ToolkitTierAccess.isUnlockedFor(
+            requiredTier: model.requiredTier,
+            user: user,
+            localPlan: plan,
+            hasFullNonBusinessTrial: fullTrial,
+          );
+          return model.copyWith(isUnlocked: model.isUnlocked || localAllowed);
+        }).toList();
       }
     } catch (_) {}
-    return BaristaToolkitFallbackSeed.offlineEbooks();
+    final offline = await BaristaToolkitFallbackSeed.offlineEbooks();
+    return offline
+        .map(
+          (b) => b.copyWith(
+            isUnlocked: ToolkitTierAccess.isUnlockedFor(
+              requiredTier: b.requiredTier,
+              user: user,
+              localPlan: plan,
+              hasFullNonBusinessTrial: fullTrial,
+            ),
+          ),
+        )
+        .toList();
   }
 
   Future<List<EbookChapterAstModel>> fetchEbookChaptersAst(String ebookId) async {
@@ -166,10 +285,24 @@ class BaristaToolkitApiService {
     }
 
     onProgress(0.20, 'Mengunduh PDF Terenkripsi (.clbook)...');
-    final clbookBytes = await _downloadBinaryUrl(
-      clbkUrl,
-      onChunk: (p) => onProgress(0.20 + p * 0.38, 'Mengunduh PDF Terenkripsi...'),
-    );
+    Uint8List clbookBytes;
+    try {
+      clbookBytes = await _downloadBinaryUrl(
+        clbkUrl,
+        onChunk: (p) => onProgress(0.20 + p * 0.38, 'Mengunduh PDF Terenkripsi...'),
+      );
+    } on DioException catch (e) {
+      // Jika JWT masih memuat tier lama (403), paksa sinkronisasi profil/rotasi JWT lalu coba ulang sekali
+      if (e.response?.statusCode == 403 && !_isTestEnv) {
+        await AuthService.syncProfile(force: true);
+        clbookBytes = await _downloadBinaryUrl(
+          clbkUrl,
+          onChunk: (p) => onProgress(0.20 + p * 0.38, 'Menyelaraskan lisensi Pro & mengunduh...'),
+        );
+      } else {
+        rethrow;
+      }
+    }
 
     onProgress(0.60, 'Mengunduh EPUB3 Reflowable...');
     Uint8List? epubBytes;

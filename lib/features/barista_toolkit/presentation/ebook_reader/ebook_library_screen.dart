@@ -2,6 +2,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../services/auth_service.dart';
+import '../../../../services/subscription_service.dart';
+import '../../../../services/trial_service.dart';
 import '../../../../theme/app_theme.dart';
 import '../../data/barista_toolkit_api_service.dart';
 import '../../data/barista_toolkit_seed_data.dart';
@@ -37,13 +40,25 @@ class _EbookLibraryScreenState extends ConsumerState<EbookLibraryScreen> {
   @override
   void initState() {
     super.initState();
+    AuthService.changeNotifier.addListener(_onAccessChanged);
+    SubscriptionService.changeNotifier.addListener(_onAccessChanged);
+    TrialService.changeNotifier.addListener(_onAccessChanged);
     _loadCatalog();
   }
 
   @override
   void dispose() {
+    AuthService.changeNotifier.removeListener(_onAccessChanged);
+    SubscriptionService.changeNotifier.removeListener(_onAccessChanged);
+    TrialService.changeNotifier.removeListener(_onAccessChanged);
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  void _onAccessChanged() {
+    if (mounted) {
+      _loadCatalog();
+    }
   }
 
   Future<void> _loadCatalog() async {
@@ -73,7 +88,8 @@ class _EbookLibraryScreenState extends ConsumerState<EbookLibraryScreen> {
       });
     }
 
-    final offline = await BaristaToolkitFallbackSeed.offlineEbooks();
+    final offlineRaw = await BaristaToolkitFallbackSeed.offlineEbooks();
+    final offline = await api.reconcileEbooksAccess(offlineRaw);
     await applyBooks(offline);
 
     try {

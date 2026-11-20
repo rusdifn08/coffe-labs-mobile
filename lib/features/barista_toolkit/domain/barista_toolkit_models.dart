@@ -1,3 +1,61 @@
+import '../../../models/subscription_plan.dart';
+import '../../../services/auth_service.dart';
+import '../../../services/trial_service.dart';
+
+/// Evaluator akses tier terpusat (1:1 dengan backend `tier_access_resolver.rs`)
+/// untuk Pustaka E-Book DRM dan Akademi Barista LMS.
+class ToolkitTierAccess {
+  const ToolkitTierAccess._();
+
+  static int requiredTierLevel(String rawTier) {
+    switch (rawTier.trim().toLowerCase()) {
+      case 'business':
+        return 3;
+      case 'pro':
+        return 2;
+      default:
+        return 1;
+    }
+  }
+
+  static int resolveUserTierLevel({
+    required AuthUser? user,
+    SubscriptionPlan? localPlan,
+    bool? hasFullNonBusinessTrial,
+  }) {
+    final fullTrial = hasFullNonBusinessTrial ??
+        TrialService.isFullNonBusinessTrialActiveSync(user: user);
+    if (user != null) {
+      if (user.isAdmin || user.isBusiness) return 3;
+      if (user.isPro) return 2;
+      if (user.hasActiveFullTrialOverride || fullTrial) return 2;
+      return 1;
+    }
+    if (localPlan != null) {
+      if (localPlan.tier == SubscriptionTier.business) return 3;
+      if (localPlan.tier == SubscriptionTier.pro) return 2;
+    }
+    if (fullTrial) return 2;
+    return 1;
+  }
+
+  static bool isUnlockedFor({
+    required String requiredTier,
+    required AuthUser? user,
+    SubscriptionPlan? localPlan,
+    bool? hasFullNonBusinessTrial,
+  }) {
+    final reqLevel = requiredTierLevel(requiredTier);
+    if (reqLevel <= 1) return true;
+    final userLevel = resolveUserTierLevel(
+      user: user,
+      localPlan: localPlan,
+      hasFullNonBusinessTrial: hasFullNonBusinessTrial,
+    );
+    return userLevel >= reqLevel;
+  }
+}
+
 class LmsQuizQuestion {
   final String question;
   final List<String> options;
@@ -157,6 +215,24 @@ class LmsCourseModel {
         lessons: (j['lessons'] as List? ?? [])
             .map((e) => LmsLessonModel.fromJson(Map<String, dynamic>.from(e as Map)))
             .toList(),
+      );
+
+  LmsCourseModel copyWith({bool? isUnlocked}) => LmsCourseModel(
+        id: id,
+        slug: slug,
+        title: title,
+        subtitle: subtitle,
+        instructorName: instructorName,
+        difficulty: difficulty,
+        requiredTier: requiredTier,
+        isUnlocked: isUnlocked ?? this.isUnlocked,
+        competencyLevel: competencyLevel,
+        focusSummary: focusSummary,
+        interactiveEngineType: interactiveEngineType,
+        linkedEbookId: linkedEbookId,
+        totalDurationSec: totalDurationSec,
+        xpRewardOnComplete: xpRewardOnComplete,
+        lessons: lessons,
       );
 }
 
@@ -385,6 +461,33 @@ class EbookCatalogItem {
     final sum = (fileSizeBytes > 0 ? fileSizeBytes : pdfFileSizeBytes) + epubFileSizeBytes;
     return sum > 0 ? sum : 950000;
   }
+
+  EbookCatalogItem copyWith({bool? isUnlocked}) => EbookCatalogItem(
+        id: id,
+        bookCode: bookCode,
+        title: title,
+        originalTitle: originalTitle,
+        author: author,
+        synopsis: synopsis,
+        category: category,
+        requiredTier: requiredTier,
+        isUnlocked: isUnlocked ?? this.isUnlocked,
+        coverImageUrl: coverImageUrl,
+        totalPages: totalPages,
+        totalChaptersCount: totalChaptersCount,
+        totalFiguresCount: totalFiguresCount,
+        supportsBilingualToggle: supportsBilingualToggle,
+        objectStorageProvider: objectStorageProvider,
+        fileSizeBytes: fileSizeBytes,
+        pdfFileSizeBytes: pdfFileSizeBytes,
+        epubFileSizeBytes: epubFileSizeBytes,
+        sha256CiphertextHash: sha256CiphertextHash,
+        bundledAssetPath: bundledAssetPath,
+        tocChapters: tocChapters,
+        currentPage: currentPage,
+        currentChapterNumber: currentChapterNumber,
+        completionPct: completionPct,
+      );
 }
 
 class GameBrewChapterModel {

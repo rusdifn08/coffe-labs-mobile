@@ -165,9 +165,11 @@ class _BaristaLmsCoursesScreenState
   }
 
   Future<void> _loadProgress() async {
-    var courses = await BaristaToolkitFallbackSeed.loadOfflineCoursesAsync();
+    final api = ref.read(baristaToolkitApiProvider);
+    final offlineRaw = await BaristaToolkitFallbackSeed.loadOfflineCoursesAsync();
+    var courses = await api.reconcileCoursesAccess(offlineRaw);
     try {
-      final remote = await ref.read(baristaToolkitApiProvider).fetchLmsCourses();
+      final remote = await api.fetchLmsCourses();
       if (remote.isNotEmpty) {
         courses = remote;
       }

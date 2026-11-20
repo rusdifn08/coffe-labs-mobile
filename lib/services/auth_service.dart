@@ -741,12 +741,16 @@ class AuthService {
             : (data['user'] is Map<String, dynamic> ? data['user'] : null);
         if (rawUser != null) {
           final user = AuthUser.fromJson(rawUser as Map<String, dynamic>);
+          final rawFreshToken = (data['fresh_access_token'] ?? data['token'])?.toString().trim();
+          final effectiveToken =
+              (rawFreshToken != null && rawFreshToken.isNotEmpty) ? rawFreshToken : token;
+          final tokenRotated = effectiveToken != token;
           final prefs = await SharedPreferences.getInstance();
           final oldUserJson = prefs.getString(_userKey);
           final newUserJson = json.encode(user.toJson());
-          final hasChanged = oldUserJson != newUserJson;
+          final hasChanged = oldUserJson != newUserJson || tokenRotated;
 
-          await persistSessionMirrors(prefs, user: user, token: token);
+          await persistSessionMirrors(prefs, user: user, token: effectiveToken);
           updateCachedSessionState(
             isLoggedIn: user.isApproved || user.isAdmin,
             isAdmin: user.isAdmin,

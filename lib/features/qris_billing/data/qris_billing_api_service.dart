@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/network/dio_client.dart';
+import '../../../services/auth_service.dart';
 import '../domain/qris_billing_models.dart';
 
 final qrisBillingApiProvider = Provider<QrisBillingApiService>((ref) {
@@ -78,7 +79,18 @@ class QrisBillingApiService {
           'payment_method': paymentReference,
         },
       );
-      return res.statusCode == 200;
+      if (res.statusCode == 200) {
+        final freshToken = res.data?['fresh_access_token']?.toString().trim();
+        if (freshToken != null && freshToken.isNotEmpty) {
+          await AuthService.applyUpgradedTierSession(
+            newTier: isBiz ? 'business' : 'pro',
+            planCode: isBiz ? 'BUSINESS_LIFETIME' : 'PRO_LIFETIME',
+            freshAccessToken: freshToken,
+          );
+        }
+        return true;
+      }
+      return false;
     } catch (_) {
       return false;
     }
