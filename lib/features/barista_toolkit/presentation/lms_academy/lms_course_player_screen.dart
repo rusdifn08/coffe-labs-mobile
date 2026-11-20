@@ -101,7 +101,6 @@ class _LmsCoursePlayerScreenState
   bool _showInteractiveLab = false;
   double _playbackSpeed = 1.0;
   String? _streamStatusText;
-  String? _streamSourceBadge;
   bool _submitting = false;
 
   bool get _isHeadlessTest =>
@@ -452,7 +451,6 @@ class _LmsCoursePlayerScreenState
           _player = player;
           _videoController = vc;
           _usingNativeVideo = true;
-          _streamSourceBadge = badge;
           _streamStatusText = 'Video Animasi HD Siap Diputar ($badge)';
         });
 
@@ -477,7 +475,6 @@ class _LmsCoursePlayerScreenState
     _isInitializingPlayer = false;
     setState(() {
       _usingNativeVideo = false;
-      _streamSourceBadge = null;
       _streamStatusText = widget.lesson.subchapterCode.startsWith('1.')
           ? 'Video Bab 1 belum tersinkron di server cloud (404). Deploy backend atau aktifkan Cloudinary untuk streaming online.'
           : 'Interactive Stage & Storyboard (HLS Offline Sync Ready)';
