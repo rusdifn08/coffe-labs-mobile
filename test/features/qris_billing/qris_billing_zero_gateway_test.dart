@@ -159,7 +159,7 @@ void main() {
       expect(find.text('Pembayaran QRIS'), findsOneWidget);
       expect(find.text('QRIS'), findsOneWidget);
       expect(find.text('GPN'), findsOneWidget);
-      expect(find.text('Coffeelabs'), findsOneWidget);
+      expect(find.text('Coffee Labs Indonesia'), findsOneWidget);
       expect(find.text('Rp 99.240'), findsOneWidget);
       expect(find.text('Salin Nominal'), findsOneWidget);
       // Both primary CTAs fit on screen without even needing to scroll!
@@ -190,6 +190,8 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 150));
 
+      expect(find.text('PEMBAYARAN QRIS BERHASIL'), findsOneWidget);
+      expect(find.text('Coffee Labs Indonesia'), findsOneWidget);
       expect(find.textContaining('Coffee Labs Business'), findsWidgets);
       expect(find.text('Aktif Penuh (Sekali Bayar)'), findsOneWidget);
       expect(find.text('Rp 249.842'), findsOneWidget);
