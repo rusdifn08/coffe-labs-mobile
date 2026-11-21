@@ -34,34 +34,20 @@
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
-    <!-- Strict Kiosk Lock & Direct Auto-Boot -->
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Foreground Media & Alarms (Brew Timer) -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.REORDER_TASKS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
-    <!--
-         DISABLE_KEYGUARD = protectionLevel NORMAL (auto-granted, bukan runtime,
-         bukan permission sensitif). Dibutuhkan HANYA sebagai fallback kiosk di
-         Android 7–8.0 (API 24–26) yang belum punya setShowWhenLocked/setTurnScreenOn.
-         Di API 27+ kode memakai API modern, permission ini diabaikan OS.
-    -->
-    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
 
     <!--
          ALARM: SCHEDULE_EXACT_ALARM (user-grantable, targetSdk 36 default DENIED)
-         dinaikkan menjadi USE_EXACT_ALARM karena fitur inti aplikasi adalah
-         timer seduh presisi (Cold Brew 12-18 jam, Kyoto drip, overnight).
-         Ini kategori yang diizinkan Google untuk alarm/timer aplikasi.
-         Manifest merger menambahkan satu-satunya permission asing yang tersisa
-         (READ_PHONE_STATE) akibat library TFLite GPU bertarget SDK kuno —
-         eksplisit dibuang karena aplikasi tidak pernah membaca state telepon.
+         dipakai untuk timer seduh & Cold Brew. Manifest merger menambahkan
+         READ_PHONE_STATE dari lib lawas — eksplisit dibuang.
     -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" tools:node="remove" />
 
     <application
@@ -125,60 +111,7 @@
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="social_coffee_graph" />
 
-        <!-- DYNAMIC HOME LAUNCHER ALIAS (Aktif HANYA saat Mode AOD Kiosk Dikunci) -->
-        <activity-alias
-            android:name=".kiosk.KioskHomeLauncherAlias"
-            android:targetActivity=".MainActivity"
-            android:enabled="false"
-            android:exported="true"
-            android:directBootAware="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.HOME" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity-alias>
-
-        <!-- DIRECT-BOOT & COLD-BOOT AUTO-START RECEIVER
-             exported="false": BOOT_COMPLETED adalah protected broadcast yang
-             hanya dikirim oleh sistem. exported="true" di sini tidak menambah
-             fungsi apa pun, tapi membuat app lain bisa memicu auto-launch
-             kiosk secara paksa. Ditutup. -->
-        <receiver
-            android:name=".kiosk.BootCompletedReceiver"
-            android:enabled="true"
-            android:exported="false"
-            android:directBootAware="true">
-            <intent-filter android:priority="999">
-                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
-                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </receiver>
-
-        <!-- ENTERPRISE DEVICE ADMIN RECEIVER (Untuk Mode COSU Kernel Lock) -->
-        <receiver
-            android:name=".kiosk.CoffeeLabsDeviceAdminReceiver"
-            android:description="@string/app_name"
-            android:label="@string/app_name"
-            android:permission="android.permission.BIND_DEVICE_ADMIN"
-            android:directBootAware="true"
-            android:exported="true">
-            <meta-data
-                android:name="android.app.device_admin"
-                android:resource="@xml/device_admin_receiver" />
-            <intent-filter>
-                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
-            </intent-filter>
-        </receiver>
-
-        <!-- ZERO-GATEWAY LIVIN' MERCHANT NOTIFICATION BRIDGE
-             DIPINDAHKAN ke src/merchant/AndroidManifest.xml (flavor merchant).
-             Build publik/store TIDAK boleh memuat NotificationListenerService
-             yang membaca notifikasi aplikasi bank — pola itu adalah signature
-             banking-trojan di classifier Play Protect. -->
+        <!-- Kiosk Device Admin, Home Launcher Alias & BootCompletedReceiver dipindah ke flavor merchant -->
 
         <!-- EXACT OS BACKGROUND ALARMS FOR LONG-HORIZON BREWING (Cold Brew, Kyoto, Overnight) -->
         <receiver
