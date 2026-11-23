@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/moderation/content_moderation_guard.dart';
 import '../core/storage/user_scoped_storage.dart';
 import '../features/gamification/services/gamification_service.dart';
 import 'api_service.dart';
@@ -608,6 +609,15 @@ class AuthService {
     required String fullName,
     String? avatarUrl,
   }) async {
+    final verdict = ContentModerationGuard.inspectMultiple({
+      'Username': username,
+      'Nama lengkap': fullName,
+    });
+    if (!verdict.isAllowed) {
+      return AuthResult.error(
+        verdict.userMessage ?? 'Username atau nama mengandung kata tidak pantas.',
+      );
+    }
     try {
       final baseUrl = await getBaseUrl();
       final uri = Uri.parse('$baseUrl/api/auth/register');

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/moderation/content_moderation_guard.dart';
+import '../../../../core/moderation/moderation_alert_banner.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../explore_feed/presentation/controllers/explore_feed_controllers.dart';
 import '../../../social_chat/presentation/screens/social_coffee_chat_room_screen.dart';
@@ -95,6 +97,15 @@ class _CommunityWorkspaceScreenState
     final text = ctrl.text.trim();
     ctrl.dispose();
     if (posted != true || text.isEmpty) return;
+
+    final verdict = ContentModerationGuard.inspect(
+      text,
+      fieldLabel: 'Postingan Club',
+    );
+    if (!verdict.isAllowed) {
+      if (mounted) ModerationAlertFeedback.showBlockedSnackBar(context, verdict);
+      return;
+    }
 
     try {
       await ref

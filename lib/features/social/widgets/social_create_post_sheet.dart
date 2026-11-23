@@ -1,9 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/moderation/content_moderation_guard.dart';
+import '../../../../core/moderation/moderation_alert_banner.dart';
 import '../../../../services/api_service.dart';
 import '../../../../services/auth_service.dart';
 import '../../../../services/social_service.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../widgets/user_avatar_circle.dart';
 import 'social_recipe_attachment_card.dart';
 import 'social_recipe_picker_sheet.dart';
 
@@ -31,6 +34,7 @@ class _SocialCreatePostSheetState extends State<SocialCreatePostSheet> {
   Map<String, dynamic>? _selectedRecipe;
   AuthUser? _currentUser;
   bool _isSubmitting = false;
+  String? _moderationWarning;
 
   final List<String> _suggestedTags = [
     'V60',
@@ -90,7 +94,20 @@ class _SocialCreatePostSheetState extends State<SocialCreatePostSheet> {
       return;
     }
 
-    setState(() => _isSubmitting = true);
+    final verdict = ContentModerationGuard.inspect(
+      content,
+      fieldLabel: 'Postingan',
+    );
+    if (!verdict.isAllowed) {
+      setState(() => _moderationWarning = verdict.userMessage);
+      ModerationAlertFeedback.showBlockedSnackBar(context, verdict);
+      return;
+    }
+
+    setState(() {
+      _moderationWarning = null;
+      _isSubmitting = true;
+    });
 
     Map<String, dynamic>? snap;
     if (_selectedRecipe != null) {
@@ -114,24 +131,36 @@ class _SocialCreatePostSheetState extends State<SocialCreatePostSheet> {
       };
     }
 
-    final post = await SocialService.createPost(
-      content: content,
-      recipeSnapshot: snap,
-      tags: _selectedTags.toList(),
-    );
-
-    if (!mounted) return;
-    setState(() => _isSubmitting = false);
-
-    if (post != null) {
-      Navigator.pop(context);
-      widget.onPostCreated();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Postingan berhasil dibagikan ke Social Coffee!'),
-          behavior: SnackBarBehavior.floating,
-        ),
+    try {
+      final post = await SocialService.createPost(
+        content: content,
+        recipeSnapshot: snap,
+        tags: _selectedTags.toList(),
       );
+
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+
+      if (post != null) {
+        Navigator.pop(context);
+        widget.onPostCreated();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Postingan berhasil dibagikan ke Social Coffee!'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } on ContentModerationException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+        _moderationWarning = e.verdict.userMessage;
+      });
+      ModerationAlertFeedback.showBlockedSnackBar(context, e.verdict);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
     }
   }
 
@@ -189,6 +218,11 @@ class _SocialCreatePostSheetState extends State<SocialCreatePostSheet> {
                   ),
                   child: TextField(
                     controller: _contentCtrl,
+                    onChanged: (_) {
+                      if (_moderationWarning != null) {
+                        setState(() => _moderationWarning = null);
+                      }
+                    },
                     decoration: const InputDecoration(
                       hintText: 'Bagikan pengalaman seduh, tips ekstraksi, racikan beans, atau diskusikan resep kopi Anda...',
                       hintStyle: TextStyle(fontSize: 13, color: AppTheme.textMuted),
@@ -200,6 +234,8 @@ class _SocialCreatePostSheetState extends State<SocialCreatePostSheet> {
                     style: const TextStyle(fontSize: 13.5, height: 1.35),
                   ),
                 ),
+                if (_moderationWarning != null)
+                  ModerationInlineWarningBanner(message: _moderationWarning!),
                 const SizedBox(height: 16),
 
                 // Interactive Recipe Attachment Section
@@ -267,22 +303,14 @@ class _SocialCreatePostSheetState extends State<SocialCreatePostSheet> {
 
   Widget _buildUserHeader() {
     final username = _currentUser?.username ?? 'Barista';
-    final initial = username.isNotEmpty ? username[0].toUpperCase() : 'B';
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          CircleAvatar(
+          UserAvatarCircle(
+            avatarUrl: _currentUser?.avatarUrl,
+            displayName: username,
             radius: 18,
-            backgroundColor: AppTheme.primaryBrown,
-            child: Text(
-              initial,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ),
           ),
           const SizedBox(width: 10),
           Column(

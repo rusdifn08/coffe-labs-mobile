@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/moderation/content_moderation_guard.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/user_avatar_circle.dart';
 import '../../domain/chat_protocol.dart';
@@ -96,6 +97,14 @@ class _NewChatPeerSheetState extends ConsumerState<NewChatPeerSheet> {
     final title = _groupTitleCtrl.text.trim();
     if (title.length < 2 || _selectedGroupMemberIds.isEmpty) {
       setState(() => _error = 'Isi nama grup dan pilih minimal 1 barista.');
+      return;
+    }
+    final verdict = ContentModerationGuard.inspect(
+      title,
+      fieldLabel: 'Nama grup',
+    );
+    if (!verdict.isAllowed) {
+      setState(() => _error = verdict.userMessage);
       return;
     }
     setState(() => _submitting = true);

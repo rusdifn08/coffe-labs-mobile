@@ -42,12 +42,17 @@ class ProfileService {
 
   static Future<String> getUserName({String? userId}) async {
     final prefs = await SharedPreferences.getInstance();
-    final key = await UserScopedStorage.scopedKeyAsync(
-      _userNameKey,
-      userId: userId,
-      prefs: prefs,
-    );
-    return prefs.getString(key) ?? 'Barista';
+    final uid = userId != null && userId.trim().isNotEmpty
+        ? UserScopedStorage.normalizeUserId(userId)
+        : await UserScopedStorage.resolveActiveUserId(prefs: prefs);
+    final key = UserScopedStorage.scopedKey(_userNameKey, userId: uid);
+    final scopedVal = prefs.getString(key);
+    if (scopedVal != null && scopedVal.isNotEmpty) return scopedVal;
+    if (uid == UserScopedStorage.guestScope) {
+      final legacyGuest = prefs.getString(_userNameKey);
+      if (legacyGuest != null && legacyGuest.isNotEmpty) return legacyGuest;
+    }
+    return 'Barista';
   }
 
   static Future<void> setUserName(String name, {String? userId}) async {

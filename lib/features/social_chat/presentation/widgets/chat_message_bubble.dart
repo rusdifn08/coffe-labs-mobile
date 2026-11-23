@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
+import '../../../../core/moderation/content_moderation_guard.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/user_avatar_circle.dart';
 import '../../domain/chat_protocol.dart';
@@ -192,7 +193,7 @@ class ChatMessageBubble extends StatelessWidget {
             ],
             if (message.bodyText != null && message.bodyText!.isNotEmpty)
               Text(
-                message.bodyText!,
+                ContentModerationGuard.sanitizeForDisplay(message.bodyText!),
                 style: TextStyle(
                   fontSize: 14.2,
                   height: 1.38,

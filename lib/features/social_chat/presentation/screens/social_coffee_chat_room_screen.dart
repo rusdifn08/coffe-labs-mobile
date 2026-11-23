@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/moderation/content_moderation_guard.dart';
+import '../../../../core/moderation/moderation_alert_banner.dart';
 import '../../../../services/auth_service.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/user_avatar_circle.dart';
@@ -147,15 +149,29 @@ class _SocialCoffeeChatRoomScreenState
   Future<void> _sendText() async {
     final text = _inputCtrl.text.trim();
     if (text.isEmpty) return;
+    final verdict = ContentModerationGuard.inspect(
+      text,
+      fieldLabel: 'Pesan chat',
+    );
+    if (!verdict.isAllowed) {
+      ModerationAlertFeedback.showBlockedSnackBar(context, verdict);
+      return;
+    }
     final replyTargetId = _replyingTo?.serverMsgId ?? _replyingTo?.clientMsgId;
     _inputCtrl.clear();
     if (mounted && _replyingTo != null) {
       setState(() => _replyingTo = null);
     }
-    await ref
-        .read(activeChatRoomControllerProvider(widget.conversationId).notifier)
-        .sendTextMessage(text, replyToMsgId: replyTargetId);
-    _scrollToBottom();
+    try {
+      await ref
+          .read(activeChatRoomControllerProvider(widget.conversationId).notifier)
+          .sendTextMessage(text, replyToMsgId: replyTargetId);
+      _scrollToBottom();
+    } on ContentModerationException catch (e) {
+      if (mounted) {
+        ModerationAlertFeedback.showBlockedSnackBar(context, e.verdict);
+      }
+    }
   }
 
   Future<void> _openQuickShare() async {

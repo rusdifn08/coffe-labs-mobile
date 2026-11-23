@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/moderation/content_moderation_guard.dart';
+import '../../../../core/moderation/moderation_alert_banner.dart';
 import '../../../../services/api_service.dart';
 import '../../../../theme/app_theme.dart';
 import '../../domain/models/social_profile_models.dart';
@@ -45,6 +47,7 @@ class _CreateThreadSheetState extends ConsumerState<CreateThreadSheet> {
   String _kind = 'STANDARD_POST';
   bool _pinOnProfile = false;
   bool _submitting = false;
+  String? _moderationWarning;
   List<Map<String, dynamic>> _recipes = const [];
   Map<String, dynamic>? _selectedRecipe;
 
@@ -85,7 +88,21 @@ class _CreateThreadSheetState extends ConsumerState<CreateThreadSheet> {
       return;
     }
 
-    setState(() => _submitting = true);
+    final verdict = ContentModerationGuard.inspectMultiple({
+      'Thread': text,
+      'Nama Kopi': _beanNameController.text,
+      'Roastery': _roasteryController.text,
+    });
+    if (!verdict.isAllowed) {
+      setState(() => _moderationWarning = verdict.userMessage);
+      ModerationAlertFeedback.showBlockedSnackBar(context, verdict);
+      return;
+    }
+
+    setState(() {
+      _moderationWarning = null;
+      _submitting = true;
+    });
     try {
       ThreadAttachment? attachment;
       RecentBrewSnapshot? brewSnapshot;
@@ -242,6 +259,11 @@ class _CreateThreadSheetState extends ConsumerState<CreateThreadSheet> {
             controller: _bodyController,
             maxLines: 4,
             minLines: 3,
+            onChanged: (_) {
+              if (_moderationWarning != null) {
+                setState(() => _moderationWarning = null);
+              }
+            },
             decoration: InputDecoration(
               hintText: _kind == 'BREW_LOG'
                   ? 'Ceritakan rasa, grind size, dan flow seduhanmu hari ini...'
@@ -254,6 +276,8 @@ class _CreateThreadSheetState extends ConsumerState<CreateThreadSheet> {
               ),
             ),
           ),
+          if (_moderationWarning != null)
+            ModerationInlineWarningBanner(message: _moderationWarning!),
           if (_kind == 'BREW_LOG') ...[
             const SizedBox(height: 10),
             Row(

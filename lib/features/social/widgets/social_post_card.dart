@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/moderation/content_moderation_guard.dart';
 import '../../../../models/social_coffee.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../widgets/user_avatar_circle.dart';
 import '../utils/social_time_formatter.dart';
 import 'social_embedded_recipe_card.dart';
 
@@ -120,9 +122,6 @@ class SocialPostCard extends StatelessWidget {
     final hasReplies = post.commentsCount > 0;
     final hasCustomRole = post.authorRole.trim().isNotEmpty &&
         post.authorRole.toLowerCase() != 'barista';
-    final avatarImage = post.authorAvatar.startsWith('assets/')
-        ? AssetImage(post.authorAvatar) as ImageProvider
-        : NetworkImage(post.authorAvatar);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -143,11 +142,10 @@ class SocialPostCard extends StatelessWidget {
                         child: Stack(
                           clipBehavior: Clip.none,
                           children: [
-                            CircleAvatar(
+                            UserAvatarCircle(
+                              avatarUrl: post.authorAvatar,
+                              displayName: post.authorName,
                               radius: 19,
-                              backgroundColor:
-                                  AppTheme.primaryBrown.withValues(alpha: 0.1),
-                              backgroundImage: avatarImage,
                             ),
                             Positioned(
                               right: -2,
@@ -273,9 +271,9 @@ class SocialPostCard extends StatelessWidget {
                       ],
                       const SizedBox(height: 5),
 
-                      // Isi Diskusi
+                      // Isi Diskusi (dengan lapisan proteksi tampilan defensif)
                       Text(
-                        post.content,
+                        ContentModerationGuard.sanitizeForDisplay(post.content),
                         style: const TextStyle(
                           fontSize: 14,
                           height: 1.42,

@@ -1,8 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/moderation/content_moderation_guard.dart';
+import '../../../../core/moderation/moderation_alert_banner.dart';
 import '../../../../models/social_coffee.dart';
 import '../../../../services/social_service.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../widgets/user_avatar_circle.dart';
 
 class SocialCommentsSheet extends StatefulWidget {
   final SocialPost post;
@@ -27,6 +30,7 @@ class _SocialCommentsSheetState extends State<SocialCommentsSheet> {
   bool _isLoading = true;
   final TextEditingController _commentCtrl = TextEditingController();
   bool _isSending = false;
+  String? _moderationWarning;
 
   @override
   void initState() {
@@ -53,18 +57,40 @@ class _SocialCommentsSheetState extends State<SocialCommentsSheet> {
     final text = _commentCtrl.text.trim();
     if (text.isEmpty || _isSending) return;
 
-    setState(() => _isSending = true);
-    final comment = await SocialService.addComment(widget.post.id, text);
-    if (!mounted) return;
+    final verdict = ContentModerationGuard.inspect(text, fieldLabel: 'Komentar');
+    if (!verdict.isAllowed) {
+      setState(() => _moderationWarning = verdict.userMessage);
+      ModerationAlertFeedback.showBlockedSnackBar(context, verdict);
+      return;
+    }
 
-    if (comment != null) {
-      widget.post.commentsCount++;
+    setState(() {
+      _moderationWarning = null;
+      _isSending = true;
+    });
+    try {
+      final comment = await SocialService.addComment(widget.post.id, text);
+      if (!mounted) return;
+
+      if (comment != null) {
+        widget.post.commentsCount++;
+        setState(() {
+          _comments.add(comment);
+          _commentCtrl.clear();
+          _isSending = false;
+        });
+      } else {
+        setState(() => _isSending = false);
+      }
+    } on ContentModerationException catch (e) {
+      if (!mounted) return;
       setState(() {
-        _comments.add(comment);
-        _commentCtrl.clear();
         _isSending = false;
+        _moderationWarning = e.verdict.userMessage;
       });
-    } else {
+      ModerationAlertFeedback.showBlockedSnackBar(context, e.verdict);
+    } catch (_) {
+      if (!mounted) return;
       setState(() => _isSending = false);
     }
   }
@@ -137,12 +163,10 @@ class _SocialCommentsSheetState extends State<SocialCommentsSheet> {
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                CircleAvatar(
+                                UserAvatarCircle(
+                                  avatarUrl: c.authorAvatar,
+                                  displayName: c.authorName,
                                   radius: 16,
-                                  backgroundColor: AppTheme.bgCream,
-                                  backgroundImage: c.authorAvatar.startsWith('assets/')
-                                      ? AssetImage(c.authorAvatar) as ImageProvider
-                                      : NetworkImage(c.authorAvatar),
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
@@ -161,7 +185,7 @@ class _SocialCommentsSheetState extends State<SocialCommentsSheet> {
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          c.content,
+                                          ContentModerationGuard.sanitizeForDisplay(c.content),
                                           style: const TextStyle(fontSize: 12, color: AppTheme.textDark, height: 1.3),
                                         ),
                                       ],
@@ -188,38 +212,52 @@ class _SocialCommentsSheetState extends State<SocialCommentsSheet> {
                 ),
               ],
             ),
-            child: Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: AppTheme.bgCream,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: TextField(
-                      controller: _commentCtrl,
-                      decoration: const InputDecoration(
-                        hintText: 'Tulis tanggapan atau saran seduh...',
-                        hintStyle: TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 10),
+                if (_moderationWarning != null) ...[
+                  ModerationInlineWarningBanner(message: _moderationWarning!),
+                  const SizedBox(height: 8),
+                ],
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: AppTheme.bgCream,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: TextField(
+                          controller: _commentCtrl,
+                          onChanged: (_) {
+                            if (_moderationWarning != null) {
+                              setState(() => _moderationWarning = null);
+                            }
+                          },
+                          decoration: const InputDecoration(
+                            hintText: 'Tulis tanggapan atau saran seduh...',
+                            hintStyle: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(vertical: 10),
+                          ),
+                          maxLines: null,
+                        ),
                       ),
-                      maxLines: null,
                     ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: _isSending ? null : _submitComment,
-                  icon: _isSending
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryBrown),
-                        )
-                      : const Icon(CupertinoIcons.paperplane_fill, color: AppTheme.primaryBrown),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: _isSending ? null : _submitComment,
+                      icon: _isSending
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryBrown),
+                            )
+                          : const Icon(CupertinoIcons.paperplane_fill, color: AppTheme.primaryBrown),
+                    ),
+                  ],
                 ),
               ],
             ),

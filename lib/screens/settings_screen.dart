@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../core/moderation/content_moderation_guard.dart';
+import '../core/moderation/moderation_alert_banner.dart';
 import '../features/auth/utils/auth_navigation_helper.dart';
 import '../features/settings/widgets/change_password_dialog.dart';
 import '../features/settings/widgets/language_selector_dialog.dart';
@@ -109,6 +111,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _saveName() async {
     final name = _nameController.text.trim();
     if (name.isNotEmpty) {
+      final verdict = ContentModerationGuard.inspect(
+        name,
+        fieldLabel: 'Nama profil',
+      );
+      if (!verdict.isAllowed) {
+        if (mounted) ModerationAlertFeedback.showBlockedSnackBar(context, verdict);
+        return;
+      }
       setState(() => _isSyncingProfile = true);
       final result = await UserCloudSyncService.updateProfileAndSync(
         fullName: name,

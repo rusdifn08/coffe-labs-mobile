@@ -6,6 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/moderation/content_moderation_guard.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/storage/user_scoped_storage.dart';
 import '../../../../services/auth_service.dart';
@@ -252,6 +253,13 @@ class ActiveChatRoomController extends _$ActiveChatRoomController {
   Future<void> sendTextMessage(String text, {String? replyToMsgId}) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
+    final verdict = ContentModerationGuard.inspect(
+      trimmed,
+      fieldLabel: 'Pesan chat',
+    );
+    if (!verdict.isAllowed) {
+      throw ContentModerationException(verdict);
+    }
     await _dispatchOutgoing(
       messageType: ChatMessageType.text,
       bodyText: trimmed,

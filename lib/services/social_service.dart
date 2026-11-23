@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/moderation/content_moderation_guard.dart';
 import '../models/social_coffee.dart';
 import 'api_service.dart';
 import 'auth_service.dart';
@@ -66,12 +67,25 @@ class SocialService {
     return _getEmergencySeedPosts();
   }
 
-  /// Buat postingan diskusi atau bagikan resep baru
+  /// Buat postingan diskusi atau bagikan resep baru (dilindungi filter moderasi multibahasa)
   static Future<SocialPost?> createPost({
     required String content,
     Map<String, dynamic>? recipeSnapshot,
     List<String>? tags,
   }) async {
+    if (tags != null) {
+      for (final tag in tags) {
+        final tagVerdict = ContentModerationGuard.inspect(tag, fieldLabel: 'Tagar');
+        if (!tagVerdict.isAllowed) {
+          throw ContentModerationException(tagVerdict);
+        }
+      }
+    }
+    final verdict = ContentModerationGuard.inspect(content, fieldLabel: 'Postingan');
+    if (!verdict.isAllowed) {
+      throw ContentModerationException(verdict);
+    }
+
     final baseUrl = await AuthService.getBaseUrl();
     final token = await AuthService.getToken();
     final username = await _getCurrentUsername();
@@ -105,7 +119,24 @@ class SocialService {
           _notify();
           return newPost;
         }
+      } else if (res.statusCode == 400 || res.statusCode == 422) {
+        String msg = 'Postingan ditolak oleh sistem moderasi Coffee Labs.';
+        try {
+          final decoded = json.decode(res.body);
+          if (decoded is Map && decoded['message']?.toString().isNotEmpty == true) {
+            msg = decoded['message'].toString();
+          }
+        } catch (_) {}
+        throw ContentModerationException(
+          ModerationVerdict.blocked(
+            reasonCode: 'SERVER_MODERATION_REJECTED',
+            category: 'Moderasi Komunitas',
+            userMessage: msg,
+          ),
+        );
       }
+    } on ContentModerationException {
+      rethrow;
     } catch (e) {
       debugPrint('SocialService.createPost network error: $e');
     }
@@ -204,8 +235,13 @@ class SocialService {
     return [];
   }
 
-  /// Tambah komentar baru pada postingan
+  /// Tambah komentar baru pada postingan (dilindungi filter moderasi multibahasa)
   static Future<SocialComment?> addComment(String postId, String text) async {
+    final verdict = ContentModerationGuard.inspect(text, fieldLabel: 'Komentar');
+    if (!verdict.isAllowed) {
+      throw ContentModerationException(verdict);
+    }
+
     final baseUrl = await AuthService.getBaseUrl();
     final token = await AuthService.getToken();
     final username = await _getCurrentUsername();
@@ -233,7 +269,24 @@ class SocialService {
           _notify();
           return SocialComment.fromJson(decoded['data'] as Map<String, dynamic>);
         }
+      } else if (res.statusCode == 400 || res.statusCode == 422) {
+        String msg = 'Komentar ditolak oleh sistem moderasi Coffee Labs.';
+        try {
+          final decoded = json.decode(res.body);
+          if (decoded is Map && decoded['message']?.toString().isNotEmpty == true) {
+            msg = decoded['message'].toString();
+          }
+        } catch (_) {}
+        throw ContentModerationException(
+          ModerationVerdict.blocked(
+            reasonCode: 'SERVER_MODERATION_REJECTED',
+            category: 'Moderasi Komunitas',
+            userMessage: msg,
+          ),
+        );
       }
+    } on ContentModerationException {
+      rethrow;
     } catch (e) {
       debugPrint('SocialService.addComment error: $e');
     }
