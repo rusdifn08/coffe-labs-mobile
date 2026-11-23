@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/network/rust_api_client.dart';
+import '../core/storage/user_scoped_storage.dart';
+import '../services/api_service.dart';
 
 part 'brew_log_repository.g.dart';
 
@@ -15,23 +17,37 @@ abstract class BrewLogRepository {
   Future<void> syncWithRustBackend();
 }
 
-/// Implementasi BrewLogRepository dengan penyimpanan offline SharedPreferences dan sinkronisasi Rust API.
+/// Implementasi BrewLogRepository terisolasi per-user (`u_<userId>_*`) dengan sinkronisasi Rust API.
 class BrewLogRepositoryImpl implements BrewLogRepository {
   static const String _historyKey = 'coffeehub_history_v3';
   static const String _journalKey = 'coffeehub_brew_journal_v1';
 
   final RustApiClient _apiClient;
+  String? _cachedUserId;
+  int _cachedApiVersion = -1;
   List<Map<String, dynamic>>? _cachedHistory;
   List<Map<String, dynamic>>? _cachedJournal;
 
   BrewLogRepositoryImpl({required RustApiClient apiClient}) : _apiClient = apiClient;
 
+  void _ensureFreshCache(String uid) {
+    final ver = ApiService.changeNotifier.value;
+    if (_cachedUserId != uid || _cachedApiVersion != ver) {
+      _cachedHistory = null;
+      _cachedJournal = null;
+      _cachedUserId = uid;
+      _cachedApiVersion = ver;
+    }
+  }
+
   @override
   Future<List<Map<String, dynamic>>> getBrewHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final uid = await UserScopedStorage.resolveActiveUserId(prefs: prefs);
+    _ensureFreshCache(uid);
     if (_cachedHistory != null) return List<Map<String, dynamic>>.from(_cachedHistory!);
 
-    final prefs = await SharedPreferences.getInstance();
-    final jsonStr = prefs.getString(_historyKey);
+    final jsonStr = prefs.getString(UserScopedStorage.scopedKey(_historyKey, userId: uid));
     if (jsonStr == null) return [];
 
     try {
@@ -47,17 +63,24 @@ class BrewLogRepositoryImpl implements BrewLogRepository {
   @override
   Future<void> saveBrewRecord(Map<String, dynamic> record) async {
     final prefs = await SharedPreferences.getInstance();
+    final uid = await UserScopedStorage.resolveActiveUserId(prefs: prefs);
     final history = await getBrewHistory();
     history.insert(0, record);
 
-    if (history.length > 100) {
-      history.removeRange(100, history.length);
+    if (history.length > 50) {
+      history.removeRange(50, history.length);
     }
 
     _cachedHistory = history;
-    await prefs.setString(_historyKey, json.encode(history));
+    await prefs.setString(
+      UserScopedStorage.scopedKey(_historyKey, userId: uid),
+      json.encode(history),
+    );
+    ApiService.clearMemoryCache();
+    ApiService.changeNotifier.value++;
+    _cachedApiVersion = ApiService.changeNotifier.value;
+    UserScopedStorage.notifyDataMutated();
 
-    // Sinkronisasi background ke Rust backend
     try {
       await _apiClient.post('/api/brew-logs', body: record);
     } catch (_) {}
@@ -65,10 +88,12 @@ class BrewLogRepositoryImpl implements BrewLogRepository {
 
   @override
   Future<List<Map<String, dynamic>>> getJournalEntries() async {
+    final prefs = await SharedPreferences.getInstance();
+    final uid = await UserScopedStorage.resolveActiveUserId(prefs: prefs);
+    _ensureFreshCache(uid);
     if (_cachedJournal != null) return List<Map<String, dynamic>>.from(_cachedJournal!);
 
-    final prefs = await SharedPreferences.getInstance();
-    final jsonStr = prefs.getString(_journalKey);
+    final jsonStr = prefs.getString(UserScopedStorage.scopedKey(_journalKey, userId: uid));
     if (jsonStr == null) return [];
 
     try {
@@ -84,6 +109,7 @@ class BrewLogRepositoryImpl implements BrewLogRepository {
   @override
   Future<void> saveJournalEntry(Map<String, dynamic> entry) async {
     final prefs = await SharedPreferences.getInstance();
+    final uid = await UserScopedStorage.resolveActiveUserId(prefs: prefs);
     final entries = await getJournalEntries();
 
     final entryId = entry['id'] ?? DateTime.now().millisecondsSinceEpoch;
@@ -97,7 +123,13 @@ class BrewLogRepositoryImpl implements BrewLogRepository {
     }
 
     _cachedJournal = entries;
-    await prefs.setString(_journalKey, json.encode(entries));
+    await prefs.setString(
+      UserScopedStorage.scopedKey(_journalKey, userId: uid),
+      json.encode(entries),
+    );
+    ApiService.changeNotifier.value++;
+    _cachedApiVersion = ApiService.changeNotifier.value;
+    UserScopedStorage.notifyDataMutated();
 
     try {
       await _apiClient.post('/api/brew-logs/journal', body: entry);
@@ -107,11 +139,18 @@ class BrewLogRepositoryImpl implements BrewLogRepository {
   @override
   Future<void> deleteJournalEntry(int id) async {
     final prefs = await SharedPreferences.getInstance();
+    final uid = await UserScopedStorage.resolveActiveUserId(prefs: prefs);
     final entries = await getJournalEntries();
     entries.removeWhere((e) => e['id'] == id);
 
     _cachedJournal = entries;
-    await prefs.setString(_journalKey, json.encode(entries));
+    await prefs.setString(
+      UserScopedStorage.scopedKey(_journalKey, userId: uid),
+      json.encode(entries),
+    );
+    ApiService.changeNotifier.value++;
+    _cachedApiVersion = ApiService.changeNotifier.value;
+    UserScopedStorage.notifyDataMutated();
 
     try {
       await _apiClient.delete('/api/brew-logs/journal/$id');

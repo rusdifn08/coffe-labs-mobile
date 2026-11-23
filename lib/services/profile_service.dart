@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'dart:math';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/storage/user_scoped_storage.dart';
 import '../theme/app_theme.dart';
 
 class ProfileService {
@@ -28,19 +30,34 @@ class ProfileService {
 
   static final ValueNotifier<int> changeNotifier = ValueNotifier<int>(0);
 
-  static Future<bool> isUserRegistered() async {
+  static Future<bool> isUserRegistered({String? userId}) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.containsKey(_userNameKey);
+    final key = await UserScopedStorage.scopedKeyAsync(
+      _userNameKey,
+      userId: userId,
+      prefs: prefs,
+    );
+    return prefs.containsKey(key);
   }
 
-  static Future<String> getUserName() async {
+  static Future<String> getUserName({String? userId}) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_userNameKey) ?? 'Barista';
+    final key = await UserScopedStorage.scopedKeyAsync(
+      _userNameKey,
+      userId: userId,
+      prefs: prefs,
+    );
+    return prefs.getString(key) ?? 'Barista';
   }
 
-  static Future<void> setUserName(String name) async {
+  static Future<void> setUserName(String name, {String? userId}) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_userNameKey, name);
+    final key = await UserScopedStorage.scopedKeyAsync(
+      _userNameKey,
+      userId: userId,
+      prefs: prefs,
+    );
+    await prefs.setString(key, name);
     changeNotifier.value++;
   }
 
@@ -49,49 +66,103 @@ class ProfileService {
     return characterAvatars[random.nextInt(characterAvatars.length)];
   }
 
-  static Future<String> getDefaultAvatar() async {
+  static Future<String> getDefaultAvatar({String? userId}) async {
     final prefs = await SharedPreferences.getInstance();
-    String? assigned = prefs.getString(_defaultAvatarKey);
+    final key = await UserScopedStorage.scopedKeyAsync(
+      _defaultAvatarKey,
+      userId: userId,
+      prefs: prefs,
+    );
+    String? assigned = prefs.getString(key);
     if (assigned == null || !characterAvatars.contains(assigned)) {
       assigned = getRandomAvatar();
-      await prefs.setString(_defaultAvatarKey, assigned);
+      await prefs.setString(key, assigned);
     }
     return assigned;
   }
 
-  static Future<String> getUserImagePath() async {
+  static Future<String> getUserImagePath({String? userId}) async {
     final prefs = await SharedPreferences.getInstance();
-    final customPath = prefs.getString(_userImageKey);
+    final key = await UserScopedStorage.scopedKeyAsync(
+      _userImageKey,
+      userId: userId,
+      prefs: prefs,
+    );
+    final customPath = prefs.getString(key);
     if (customPath != null &&
-        customPath.isNotEmpty &&
+        customPath.trim().isNotEmpty &&
         !customPath.contains('rusdi.png')) {
-      return customPath;
+      return customPath.trim();
     }
-    final defaultAvatar = await getDefaultAvatar();
-    await prefs.setString(_userImageKey, defaultAvatar);
+    final defaultAvatar = await getDefaultAvatar(userId: userId);
+    await prefs.setString(key, defaultAvatar);
     return defaultAvatar;
   }
 
-  static Future<void> setUserImagePath(String path) async {
+  static Future<void> setUserImagePath(String path, {String? userId}) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_userImageKey, path);
+    final key = await UserScopedStorage.scopedKeyAsync(
+      _userImageKey,
+      userId: userId,
+      prefs: prefs,
+    );
+    await prefs.setString(key, path.trim());
     changeNotifier.value++;
   }
 
-  static ImageProvider getImageProvider(String? imagePath) {
-    if (imagePath == null ||
-        imagePath.isEmpty ||
-        imagePath.contains('rusdi.png')) {
-      return const AssetImage('assets/images/characters/avatar_1.png');
+  /// Menerapkan profil terverifikasi dari cloud/login ke partisi pengguna tertentu.
+  static Future<void> applyCloudProfile({
+    required String userId,
+    String? fullName,
+    String? avatarUrl,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    bool changed = false;
+    if (fullName != null && fullName.trim().isNotEmpty) {
+      final nameKey = UserScopedStorage.scopedKey(_userNameKey, userId: userId);
+      await prefs.setString(nameKey, fullName.trim());
+      changed = true;
     }
-    if (imagePath.startsWith('assets/')) {
-      return AssetImage(imagePath);
+    if (avatarUrl != null &&
+        avatarUrl.trim().isNotEmpty &&
+        !avatarUrl.contains('rusdi.png')) {
+      final imgKey = UserScopedStorage.scopedKey(_userImageKey, userId: userId);
+      await prefs.setString(imgKey, avatarUrl.trim());
+      changed = true;
     }
-    final file = File(imagePath);
+    if (changed) {
+      changeNotifier.value++;
+    }
+  }
+
+  /// Memicu pembaruan UI saat sesi berganti akun / logout.
+  static void notifySessionSwitched() {
+    changeNotifier.value++;
+  }
+
+  /// Mengembalikan `ImageProvider` jika `imagePath` valid (URL HTTPS, asset lokal, atau file ada),
+  /// atau `null` bila kosong/tidak valid.
+  static ImageProvider? tryGetImageProvider(String? imagePath) {
+    final raw = imagePath?.trim() ?? '';
+    if (raw.isEmpty || raw.contains('rusdi.png')) {
+      return null;
+    }
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      return CachedNetworkImageProvider(raw);
+    }
+    if (raw.startsWith('assets/')) {
+      return AssetImage(raw);
+    }
+    final file = File(raw);
     if (file.existsSync()) {
       return FileImage(file);
     }
-    return const AssetImage('assets/images/characters/avatar_1.png');
+    return null;
+  }
+
+  static ImageProvider getImageProvider(String? imagePath) {
+    return tryGetImageProvider(imagePath) ??
+        const AssetImage('assets/images/characters/avatar_1.png');
   }
 
   /// Menampilkan dialog / modal bottom sheet pemilihan avatar karakter atau galeri

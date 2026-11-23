@@ -22,6 +22,7 @@ import 'features/notifications/presentation/controllers/notification_center_cont
 import 'features/notifications/presentation/controllers/notification_deep_link_controller.dart';
 import 'features/scanner/data/local/prototype_database.dart';
 import 'features/social_chat/presentation/controllers/chat_controllers.dart';
+import 'services/user_cloud_sync_service.dart';
 import 'theme/app_theme.dart';
 
 /// ScrollBehavior global Coffee Labs yang dioptimalkan untuk 60–120 FPS:
@@ -50,6 +51,7 @@ class CoffeeLabsSmoothScrollBehavior extends MaterialScrollBehavior {
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  UserCloudSyncService.ensureHooksRegistered();
 
   // Batasi cache tekstur gambar GPU agar perangkat RAM rendah tidak OOM & bebas jank
   PaintingBinding.instance.imageCache.maximumSize = 150;

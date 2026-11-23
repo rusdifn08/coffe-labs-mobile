@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../theme/app_theme.dart';
+import '../../../../widgets/user_avatar_circle.dart';
 import '../../domain/chat_protocol.dart';
 import '../controllers/chat_controllers.dart';
 
@@ -246,37 +247,12 @@ class _NewChatPeerSheetState extends ConsumerState<NewChatPeerSheet> {
                                     : AppTheme.borderWarm,
                               ),
                             ),
-                            leading: Stack(
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor:
-                                      AppTheme.primaryBrown.withValues(alpha: 0.12),
-                                  child: Text(
-                                    peer.fullName.isNotEmpty
-                                        ? peer.fullName[0].toUpperCase()
-                                        : 'B',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: AppTheme.primaryBrown,
-                                    ),
-                                  ),
-                                ),
-                                if (peer.isOnline)
-                                  Positioned(
-                                    right: 0,
-                                    bottom: 0,
-                                    child: Container(
-                                      width: 11,
-                                      height: 11,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF10B981),
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                            color: Colors.white, width: 1.8),
-                                      ),
-                                    ),
-                                  ),
-                              ],
+                            leading: UserAvatarCircle(
+                              avatarUrl: peer.avatarUrl,
+                              displayName: peer.fullName,
+                              radius: 20,
+                              isOnline: peer.isOnline,
+                              onlineDotSize: 11,
                             ),
                             title: Text(
                               peer.fullName,

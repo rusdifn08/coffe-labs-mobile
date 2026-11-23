@@ -728,6 +728,17 @@ class ChatDriftDatabase extends _$ChatDriftDatabase {
         .toList();
   }
 
+  /// Menghapus seluruh cache percakapan, pesan, outbox, dan indeks FTS5 milik akun sebelumnya
+  /// agar tidak pernah bocor ke akun baru saat pergantian sesi di perangkat yang sama.
+  Future<void> clearAllUserData() async {
+    await transaction(() async {
+      await delete(pendingOutboxQueue).go();
+      await delete(localMessages).go();
+      await delete(localConversations).go();
+      await customStatement('DELETE FROM local_messages_fts;');
+    });
+  }
+
   static String _previewFromDto(ChatMessageDto msg) {
     final att = msg.attachment;
     if (att is V60RecipeCardAttachment) return '☕ Resep: ${att.title}';

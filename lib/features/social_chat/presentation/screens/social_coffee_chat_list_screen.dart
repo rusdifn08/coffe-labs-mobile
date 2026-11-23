@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/router/app_router.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../widgets/user_avatar_circle.dart';
 import '../../data/services/chat_ws_service.dart';
 import '../../domain/chat_view_models.dart';
 import '../controllers/chat_controllers.dart';
@@ -303,44 +304,13 @@ class _SocialCoffeeChatListScreenState
                     ),
                     child: Row(
                       children: [
-                        Stack(
-                          children: [
-                            CircleAvatar(
-                              radius: 24,
-                              backgroundColor:
-                                  AppTheme.primaryBrown.withValues(alpha: 0.12),
-                              child: room.kind == 'GROUP'
-                                  ? const Icon(
-                                      CupertinoIcons.person_3_fill,
-                                      color: AppTheme.primaryBrown,
-                                    )
-                                  : Text(
-                                      room.title.isNotEmpty
-                                          ? room.title[0].toUpperCase()
-                                          : 'B',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18,
-                                        color: AppTheme.primaryBrown,
-                                      ),
-                                    ),
-                            ),
-                            if (room.peerOnline && room.kind == 'DIRECT')
-                              Positioned(
-                                right: 0,
-                                bottom: 0,
-                                child: Container(
-                                  width: 13,
-                                  height: 13,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF10B981),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                        color: Colors.white, width: 2),
-                                  ),
-                                ),
-                              ),
-                          ],
+                        UserAvatarCircle(
+                          avatarUrl: room.avatarUrl,
+                          displayName: room.title,
+                          radius: 24,
+                          isGroup: room.kind == 'GROUP',
+                          isOnline: room.peerOnline && room.kind == 'DIRECT',
+                          onlineDotSize: 13,
                         ),
                         const SizedBox(width: 12),
                         Expanded(

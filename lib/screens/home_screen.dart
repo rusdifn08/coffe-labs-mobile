@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../core/router/app_router.dart';
+import '../core/storage/user_scoped_storage.dart';
 import '../features/bean_scanner/widgets/home_floating_scanner_fab.dart';
 import '../features/brew/controllers/brew_history_controller.dart';
 import '../features/gamification/models/coffee_level.dart';
@@ -53,11 +54,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
     _loadProfileAndBaristas();
     GamificationService.changeNotifier.addListener(_loadGamificationStats);
+    ProfileService.changeNotifier.addListener(_loadProfileAndBaristas);
+    AuthService.changeNotifier.addListener(_loadProfileAndBaristas);
+    UserScopedStorage.activeUserIdNotifier.addListener(_loadProfileAndBaristas);
   }
 
   @override
   void dispose() {
     GamificationService.changeNotifier.removeListener(_loadGamificationStats);
+    ProfileService.changeNotifier.removeListener(_loadProfileAndBaristas);
+    AuthService.changeNotifier.removeListener(_loadProfileAndBaristas);
+    UserScopedStorage.activeUserIdNotifier.removeListener(_loadProfileAndBaristas);
     super.dispose();
   }
 

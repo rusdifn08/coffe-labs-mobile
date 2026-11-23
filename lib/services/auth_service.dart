@@ -4,11 +4,15 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/storage/user_scoped_storage.dart';
+import '../features/gamification/services/gamification_service.dart';
+import 'api_service.dart';
 import 'profile_service.dart';
 import 'trial_service.dart';
 import 'subscription_service.dart';
 import 'admin_user_service.dart';
 import 'preset_admin_service.dart';
+import 'user_cloud_sync_service.dart';
 import '../models/admin_user_stats.dart';
 import '../models/subscription_plan.dart';
 
@@ -538,11 +542,24 @@ class AuthService {
           await TrialService.setTrialMode(true);
         }
 
-        await Future.wait([
-          persistSessionMirrors(prefs, user: user, token: token),
-          ProfileService.setUserName(user.fullName),
-          if (user.avatarUrl.isNotEmpty) ProfileService.setUserImagePath(user.avatarUrl),
-        ]);
+        await persistSessionMirrors(prefs, user: user, token: token);
+        UserScopedStorage.setActiveUserId(user.id);
+        ApiService.clearMemoryCache();
+        await ProfileService.applyCloudProfile(
+          userId: user.id,
+          fullName: user.fullName,
+          avatarUrl: user.avatarUrl,
+        );
+        UserCloudSyncService.ensureHooksRegistered();
+        try {
+          await UserCloudSyncService.hydrateFromCloud(
+            user: user,
+            force: true,
+          ).timeout(const Duration(seconds: 6));
+        } catch (_) {}
+        GamificationService.instance.notifySessionSwitched();
+        ProfileService.notifySessionSwitched();
+        ApiService.changeNotifier.value++;
 
         updateCachedSessionState(
           isLoggedIn: user.isApproved || user.isAdmin,
@@ -705,8 +722,11 @@ class AuthService {
     }
   }
 
-  /// Logout pengguna dan bersihkan sesi secara tuntas tanpa residu lisensi
+  /// Logout pengguna dan bersihkan sesi secara tuntas tanpa residu lisensi maupun data akun
   static Future<void> logout() async {
+    // Kirim mutasi lokal terakhir ke cloud sebelum token dihapus
+    await UserCloudSyncService.flushPendingSync();
+
     final prefs = await SharedPreferences.getInstance();
     await Future.wait([
       prefs.remove(_tokenKey),
@@ -714,10 +734,16 @@ class AuthService {
       prefs.remove(_userKey),
       prefs.remove(_sessionUserKey),
     ]);
+    // Isolasi total: reset namespace ke guest & bersihkan cache in-memory
+    UserScopedStorage.resetToGuest();
+    ApiService.clearMemoryCache();
     // Hapus total lisensi lokal agar pengguna berikutnya tidak tertular Business / Pro
     await SubscriptionService.resetToTrial();
     await TrialService.setTrialMode(false);
     updateCachedSessionState(isLoggedIn: false, isAdmin: false);
+    GamificationService.instance.notifySessionSwitched();
+    ProfileService.notifySessionSwitched();
+    ApiService.changeNotifier.value++;
     changeNotifier.value++;
   }
 
@@ -762,6 +788,13 @@ class AuthService {
           final hasChanged = oldUserJson != newUserJson;
 
           await persistSessionMirrors(prefs, user: user, token: effectiveToken);
+          UserScopedStorage.setActiveUserId(user.id);
+          await ProfileService.applyCloudProfile(
+            userId: user.id,
+            fullName: user.fullName,
+            avatarUrl: user.avatarUrl,
+          );
+          unawaited(UserCloudSyncService.hydrateFromCloud(user: user, force: force));
           updateCachedSessionState(
             isLoggedIn: user.isApproved || user.isAdmin,
             isAdmin: user.isAdmin,

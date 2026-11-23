@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../services/auth_service.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../widgets/user_avatar_circle.dart';
 import '../../../auth/controllers/auth_controller.dart';
 import '../../../notifications/data/services/device_token_lifecycle_service.dart';
 import '../../../notifications/data/services/local_push_orchestrator.dart';
@@ -245,43 +246,13 @@ class _SocialCoffeeChatRoomScreenState
                 padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
                 child: Row(
                   children: [
-                    Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 18,
-                          backgroundColor:
-                              AppTheme.primaryBrown.withValues(alpha: 0.14),
-                          child: room?.kind == 'GROUP'
-                              ? const Icon(
-                                  CupertinoIcons.person_3_fill,
-                                  size: 16,
-                                  color: AppTheme.primaryBrown,
-                                )
-                              : Text(
-                                  roomTitle.isNotEmpty
-                                      ? roomTitle[0].toUpperCase()
-                                      : 'B',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.primaryBrown,
-                                  ),
-                                ),
-                        ),
-                        if (isOnline && room?.kind == 'DIRECT')
-                          Positioned(
-                            right: 0,
-                            bottom: 0,
-                            child: Container(
-                              width: 10,
-                              height: 10,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF10B981),
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 1.5),
-                              ),
-                            ),
-                          ),
-                      ],
+                    UserAvatarCircle(
+                      avatarUrl: room?.avatarUrl,
+                      displayName: roomTitle,
+                      radius: 18,
+                      isGroup: room?.kind == 'GROUP',
+                      isOnline: isOnline && room?.kind == 'DIRECT',
+                      onlineDotSize: 10,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -420,6 +391,8 @@ class _SocialCoffeeChatRoomScreenState
                                     isLastInGroup: !sameSenderNext,
                                     showPeerAvatar: !isMine,
                                     peerAvatarInitial: roomTitle,
+                                    peerAvatarUrl:
+                                        room?.kind == 'DIRECT' ? room?.avatarUrl : null,
                                     quotedMessage: quoted,
                                     quotedAuthorLabel: quoted == null
                                         ? null
@@ -484,6 +457,7 @@ class _SocialCoffeeChatRoomScreenState
                       alignment: Alignment.centerLeft,
                       child: AnimatedTypingIndicatorBubble(
                         displayName: _peerTypingName!,
+                        avatarUrl: room?.kind == 'DIRECT' ? room?.avatarUrl : null,
                       ),
                     ),
                   if (_replyingTo != null)

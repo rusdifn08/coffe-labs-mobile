@@ -1,10 +1,14 @@
 import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../core/storage/user_scoped_storage.dart';
 import '../../../repositories/auth_repository.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/user_cloud_sync_service.dart';
+import '../../brew/controllers/brew_history_controller.dart';
 import '../../notifications/data/services/device_token_lifecycle_service.dart';
 import '../../notifications/presentation/controllers/notification_center_controller.dart';
+import '../../recipes/controllers/recipe_list_controller.dart';
 import '../../social_chat/presentation/controllers/chat_controllers.dart';
 
 part 'auth_controller.g.dart';
@@ -26,8 +30,16 @@ class AuthController extends _$AuthController {
       AuthService.changeNotifier.removeListener(onAuthChanged);
     });
 
+    UserCloudSyncService.ensureHooksRegistered();
     final repo = ref.watch(authRepositoryProvider);
-    return repo.getCurrentUser();
+    final user = await repo.getCurrentUser();
+    if (user != null) {
+      UserScopedStorage.setActiveUserId(user.id);
+      unawaited(UserCloudSyncService.hydrateFromCloud(user: user));
+    } else {
+      UserScopedStorage.resetToGuest();
+    }
+    return user;
   }
 
   /// Eksekusi proses login akun barista.
@@ -42,6 +54,10 @@ class AuthController extends _$AuthController {
     }
     if (result.success && result.user != null) {
       state = AsyncValue.data(result.user);
+      ref.invalidate(brewHistoryControllerProvider);
+      ref.invalidate(recipeListControllerProvider);
+      ref.invalidate(favoriteIdsProvider);
+      ref.invalidate(chatRoomListControllerProvider);
       unawaited(
         ref
             .read(deviceTokenLifecycleServiceProvider)
@@ -77,6 +93,10 @@ class AuthController extends _$AuthController {
     }
     if (result.success && result.user != null) {
       state = AsyncValue.data(result.user);
+      ref.invalidate(brewHistoryControllerProvider);
+      ref.invalidate(recipeListControllerProvider);
+      ref.invalidate(favoriteIdsProvider);
+      ref.invalidate(chatRoomListControllerProvider);
       unawaited(
         ref
             .read(deviceTokenLifecycleServiceProvider)
@@ -100,6 +120,9 @@ class AuthController extends _$AuthController {
       await ws.setActiveRoom(null);
       await ws.disconnect();
     } catch (_) {}
+    try {
+      await ref.read(chatDriftDatabaseProvider).clearAllUserData();
+    } catch (_) {}
 
     final repo = ref.read(authRepositoryProvider);
     _suppressNotifier = true;
@@ -108,6 +131,10 @@ class AuthController extends _$AuthController {
     } finally {
       _suppressNotifier = false;
     }
+    ref.invalidate(brewHistoryControllerProvider);
+    ref.invalidate(recipeListControllerProvider);
+    ref.invalidate(favoriteIdsProvider);
+    ref.invalidate(chatRoomListControllerProvider);
     ref.read(unreadNotificationsCountProvider.notifier).setCount(0);
     state = const AsyncValue.data(null);
   }

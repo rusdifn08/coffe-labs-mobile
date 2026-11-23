@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/storage/user_scoped_storage.dart';
 import '../../../../services/auth_service.dart';
 import '../../../auth/controllers/auth_controller.dart';
 import '../../data/local/chat_drift_database.dart';
@@ -17,6 +19,7 @@ import '../../domain/chat_view_models.dart';
 part 'chat_controllers.g.dart';
 
 const _uuid = Uuid();
+const _chatDbOwnerKey = 'coffeehub_chat_db_owner_uid_v1';
 
 @Riverpod(keepAlive: true)
 ChatDriftDatabase chatDriftDatabase(Ref ref) {
@@ -136,6 +139,13 @@ class ChatRoomListController extends _$ChatRoomListController {
       final user = await AuthService.getCurrentUser();
       final uid = user?.id.trim() ?? '';
       if (uid.isNotEmpty) {
+        final prefs = await SharedPreferences.getInstance();
+        final normalizedUid = UserScopedStorage.normalizeUserId(uid);
+        final previousOwner = prefs.getString(_chatDbOwnerKey);
+        if (previousOwner != null && previousOwner != normalizedUid) {
+          await db.clearAllUserData();
+        }
+        await prefs.setString(_chatDbOwnerKey, normalizedUid);
         await db.reconcileLocalSenderId(uid);
       }
       final rooms = await api.fetchConversations();

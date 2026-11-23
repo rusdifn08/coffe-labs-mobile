@@ -1,8 +1,9 @@
-import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/storage/user_scoped_storage.dart';
 import '../features/gamification/models/coffee_level.dart';
 import '../features/gamification/services/gamification_service.dart';
 import '../models/subscription_plan.dart';
+import 'api_service.dart';
 import 'auth_service.dart';
 import 'profile_service.dart';
 import 'subscription_service.dart';
@@ -12,9 +13,6 @@ import 'trial_service.dart';
 /// serta akun pengujian bisnis123 untuk mencoba Mode Kasir & Always-On Display.
 class PresetAdminService {
   PresetAdminService._();
-
-  static const String _tokenKey = 'coffeehub_auth_jwt_token';
-  static const String _userKey = 'coffeehub_auth_user_json';
 
   /// Cek dan proses login instan jika username & password adalah admin1..admin10 atau bisnis123
   static Future<AuthResult?> tryLogin(
@@ -50,14 +48,16 @@ class PresetAdminService {
       final token = 'demo_business_jwt_token_2026';
       final prefs = await SharedPreferences.getInstance();
 
+      await AuthService.persistSessionMirrors(prefs, user: user, token: token);
+      UserScopedStorage.setActiveUserId(user.id);
+      ApiService.clearMemoryCache();
       await Future.wait([
-        prefs.setString(_tokenKey, token),
-        prefs.setString(_userKey, json.encode(user.toJson())),
-        ProfileService.setUserName(user.fullName),
-        ProfileService.setUserImagePath('assets/images/characters/avatar_2.png'),
+        ProfileService.setUserName(user.fullName, userId: user.id),
+        ProfileService.setUserImagePath('assets/images/characters/avatar_2.png', userId: user.id),
         TrialService.setTrialMode(false),
         SubscriptionService.activatePlan(SubscriptionPlan.business, paymentMethod: 'Business Demo License'),
       ]);
+      GamificationService.instance.notifySessionSwitched();
 
       AuthService.updateCachedSessionState(isLoggedIn: true, isAdmin: false);
       if (notify) {
@@ -89,15 +89,6 @@ class PresetAdminService {
     // Data statistik dan EXP presisi yang mewakili level 1 s.d. 10
     final stats = _getPresetStatsForLevel(levelNum);
 
-    // Update EXP dan metrik aktivitas di GamificationService
-    await GamificationService.instance.setLevelStats(
-      exp: stats.exp,
-      brews: stats.brews,
-      cupping: stats.cupping,
-      toolkit: stats.toolkit,
-      streak: stats.streak,
-    );
-
     final avatarIndex = ((levelNum - 1) % 4) + 1;
     final avatarUrl = 'assets/images/characters/avatar_$avatarIndex.png';
 
@@ -114,11 +105,23 @@ class PresetAdminService {
     final token = 'preset_admin_jwt_token_level_$levelNum';
     final prefs = await SharedPreferences.getInstance();
 
+    await AuthService.persistSessionMirrors(prefs, user: user, token: token);
+    UserScopedStorage.setActiveUserId(user.id);
+    ApiService.clearMemoryCache();
+
+    // Update EXP dan metrik aktivitas HANYA di partisi milik akun preset ini
+    await GamificationService.instance.setLevelStats(
+      exp: stats.exp,
+      brews: stats.brews,
+      cupping: stats.cupping,
+      toolkit: stats.toolkit,
+      streak: stats.streak,
+      userId: user.id,
+    );
+
     await Future.wait([
-      prefs.setString(_tokenKey, token),
-      prefs.setString(_userKey, json.encode(user.toJson())),
-      ProfileService.setUserName(user.fullName),
-      ProfileService.setUserImagePath(avatarUrl),
+      ProfileService.setUserName(user.fullName, userId: user.id),
+      ProfileService.setUserImagePath(avatarUrl, userId: user.id),
       TrialService.setTrialMode(false),
     ]);
 

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/storage/user_scoped_storage.dart';
 import 'recipe_sanitizer.dart';
 import 'seed_data.dart';
 import '../utils/barista_utils.dart';
@@ -8,7 +9,6 @@ import '../utils/barista_utils.dart';
 class ApiService {
   static const String _customRecipesKey = 'coffeehub_custom_recipes_v2';
   static const String _deletedDefaultIdsKey = 'coffeehub_deleted_default_ids_v1';
-  static const String _legacyRecipesKey = 'coffeehub_recipes_v11';
   static const String _basecampsKey = 'coffeehub_basecamps_v12';
   static const String _historyKey = 'coffeehub_history_v3';
   static const String _favoritesKey = 'coffeehub_favorites_v1';
@@ -16,12 +16,21 @@ class ApiService {
 
   static final ValueNotifier<int> changeNotifier = ValueNotifier<int>(0);
 
+  static String? _cachedForUserId;
   static List<Map<String, dynamic>>? _recipesCache;
   static List<dynamic>? _historyCache;
   static Set<int>? _favoritesCache;
   static List<Map<String, dynamic>>? _uniqueBaristasCache;
 
+  static void _ensureCacheMatchesUser(String uid) {
+    if (_cachedForUserId != uid) {
+      clearMemoryCache();
+      _cachedForUserId = uid;
+    }
+  }
+
   static void clearMemoryCache() {
+    _cachedForUserId = null;
     _recipesCache = null;
     _historyCache = null;
     _favoritesCache = null;
@@ -32,9 +41,12 @@ class ApiService {
     _favoritesCache = null;
   }
 
-  static void _notifyChanged() {
+  static void _notifyChanged({bool pushCloud = true}) {
     _uniqueBaristasCache = null;
     changeNotifier.value++;
+    if (pushCloud) {
+      UserScopedStorage.notifyDataMutated();
+    }
   }
 
   /// Menjamin tidak ada satupun field resep atau step yang bernilai null.
@@ -42,39 +54,101 @@ class ApiService {
     return RecipeSanitizer.sanitizeRecipe(raw, fallbackId: fallbackId);
   }
 
-  // --- RECIPES (100% OFFLINE: DEFAULT DARI SEED_DATA + CUSTOM LOKAL) ---
+  /// Mengekspor seluruh koleksi personal milik `userId` untuk sinkronisasi ke NeonDB Cloud.
+  static Future<Map<String, dynamic>> exportCloudCollections({String? userId}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final uid = userId != null && userId.trim().isNotEmpty
+        ? UserScopedStorage.normalizeUserId(userId)
+        : await UserScopedStorage.resolveActiveUserId(prefs: prefs);
+
+    List<dynamic> decodeList(String baseKey) {
+      final raw = prefs.getString(UserScopedStorage.scopedKey(baseKey, userId: uid));
+      if (raw == null || raw.isEmpty) return const [];
+      try {
+        final parsed = json.decode(raw);
+        return parsed is List ? parsed : const [];
+      } catch (_) {
+        return const [];
+      }
+    }
+
+    List<int> decodeIds(String baseKey) {
+      final raw = prefs.getStringList(UserScopedStorage.scopedKey(baseKey, userId: uid)) ?? const [];
+      return raw.map((e) => int.tryParse(e) ?? -1).where((e) => e > 0).toSet().toList();
+    }
+
+    return {
+      'brew_history': decodeList(_historyKey),
+      'brew_journal': decodeList(_journalKey),
+      'favorite_recipe_ids': decodeIds(_favoritesKey),
+      'custom_recipes': decodeList(_customRecipesKey),
+      'deleted_default_ids': decodeIds(_deletedDefaultIdsKey),
+    };
+  }
+
+  /// Menerapkan koleksi personal hasil hidrasi cloud ke partisi milik `userId`.
+  static Future<void> applyCloudCollections({
+    required String userId,
+    required List<dynamic> brewHistory,
+    required List<dynamic> brewJournal,
+    required List<int> favoriteRecipeIds,
+    required List<dynamic> customRecipes,
+    required List<int> deletedDefaultIds,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final uid = UserScopedStorage.normalizeUserId(userId);
+    final sanitizedHistory = brewHistory
+        .whereType<Map>()
+        .take(50)
+        .map((r) => sanitizeRecipe(r))
+        .toList();
+    final sanitizedJournal = brewJournal
+        .whereType<Map>()
+        .take(100)
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+    final sanitizedCustom = <Map<String, dynamic>>[];
+    for (int i = 0; i < customRecipes.length && sanitizedCustom.length < 100; i++) {
+      final item = customRecipes[i];
+      if (item is Map) {
+        final s = sanitizeRecipe(item, fallbackId: 500 + i);
+        s['isCustom'] = true;
+        sanitizedCustom.add(s);
+      }
+    }
+    final favStrings = favoriteRecipeIds.where((e) => e > 0).toSet().map((e) => e.toString()).toList();
+    final delStrings = deletedDefaultIds.where((e) => e > 0).toSet().map((e) => e.toString()).toList();
+
+    await Future.wait([
+      prefs.setString(UserScopedStorage.scopedKey(_historyKey, userId: uid), json.encode(sanitizedHistory)),
+      prefs.setString(UserScopedStorage.scopedKey(_journalKey, userId: uid), json.encode(sanitizedJournal)),
+      prefs.setStringList(UserScopedStorage.scopedKey(_favoritesKey, userId: uid), favStrings),
+      prefs.setString(UserScopedStorage.scopedKey(_customRecipesKey, userId: uid), json.encode(sanitizedCustom)),
+      prefs.setStringList(UserScopedStorage.scopedKey(_deletedDefaultIdsKey, userId: uid), delStrings),
+    ]);
+
+    clearMemoryCache();
+    _notifyChanged(pushCloud: false);
+  }
+
+  // --- RECIPES (100% OFFLINE: DEFAULT DARI SEED_DATA + CUSTOM PER-USER) ---
   static Future<List<dynamic>> getRecipes({bool forceRefresh = false}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final uid = await UserScopedStorage.resolveActiveUserId(prefs: prefs);
+    _ensureCacheMatchesUser(uid);
+
     if (!forceRefresh && _recipesCache != null) {
       return List<dynamic>.from(_recipesCache!);
     }
 
-    final prefs = await SharedPreferences.getInstance();
+    final customKey = UserScopedStorage.scopedKey(_customRecipesKey, userId: uid);
+    final deletedKey = UserScopedStorage.scopedKey(_deletedDefaultIdsKey, userId: uid);
 
-    // 1. Migrasi resep custom lama dari key legacy jika belum dimigrasikan
-    String? customJsonStr = prefs.getString(_customRecipesKey);
-    if (customJsonStr == null) {
-      final legacyStr = prefs.getString(_legacyRecipesKey) ??
-          prefs.getString('coffeehub_recipes_v10') ??
-          prefs.getString('coffeehub_recipes_v9');
-      final List<Map<String, dynamic>> migratedCustom = [];
-      if (legacyStr != null) {
-        try {
-          final decoded = json.decode(legacyStr) as List<dynamic>;
-          for (final item in decoded) {
-            if (item is Map && item['isCustom'] == true) {
-              migratedCustom.add(sanitizeRecipe(item, fallbackId: 500 + migratedCustom.length));
-            }
-          }
-        } catch (_) {}
-      }
-      customJsonStr = json.encode(migratedCustom);
-      await prefs.setString(_customRecipesKey, customJsonStr);
-    }
-
-    final deletedIdsRaw = prefs.getStringList(_deletedDefaultIdsKey) ?? [];
+    final customJsonStr = prefs.getString(customKey) ?? '[]';
+    final deletedIdsRaw = prefs.getStringList(deletedKey) ?? [];
     final deletedDefaultIds = deletedIdsRaw.map((e) => int.tryParse(e) ?? -1).toSet();
 
-    // 2. Muat seluruh resep default langsung dari SeedData (selalu terbarui & 100% offline)
+    // 1. Muat seluruh resep default langsung dari SeedData (selalu terbarui & 100% offline)
     final defaultSeeds = SeedData.getDefaultRecipes();
     final List<Map<String, dynamic>> allRecipes = [];
 
@@ -84,7 +158,7 @@ class ApiService {
       allRecipes.add(sanitizeRecipe(r, fallbackId: id));
     }
 
-    // 3. Gabungkan resep custom buatan pengguna di urutan teratas
+    // 2. Gabungkan resep custom buatan pengguna aktif di urutan teratas
     final List<Map<String, dynamic>> customRecipes = [];
     try {
       final rawCustomList = json.decode(customJsonStr) as List<dynamic>;
@@ -122,6 +196,8 @@ class ApiService {
 
   static Future<Map<String, dynamic>> createRecipe(Map<String, dynamic> data) async {
     final prefs = await SharedPreferences.getInstance();
+    final uid = await UserScopedStorage.resolveActiveUserId(prefs: prefs);
+    final customKey = UserScopedStorage.scopedKey(_customRecipesKey, userId: uid);
     final currentRecipes = await getRecipes();
 
     var newId = 501;
@@ -137,8 +213,7 @@ class ApiService {
     final sanitized = sanitizeRecipe(data, fallbackId: newId);
     sanitized['isCustom'] = true;
 
-    // Simpan ke daftar custom recipes lokal
-    final customJsonStr = prefs.getString(_customRecipesKey);
+    final customJsonStr = prefs.getString(customKey);
     List<dynamic> customList = [];
     if (customJsonStr != null) {
       try {
@@ -146,7 +221,7 @@ class ApiService {
       } catch (_) {}
     }
     customList.insert(0, sanitized);
-    await prefs.setString(_customRecipesKey, json.encode(customList));
+    await prefs.setString(customKey, json.encode(customList));
 
     _recipesCache = null;
     await getRecipes(forceRefresh: true);
@@ -156,21 +231,25 @@ class ApiService {
 
   static Future<void> deleteRecipe(int id) async {
     final prefs = await SharedPreferences.getInstance();
-    final customJsonStr = prefs.getString(_customRecipesKey);
+    final uid = await UserScopedStorage.resolveActiveUserId(prefs: prefs);
+    final customKey = UserScopedStorage.scopedKey(_customRecipesKey, userId: uid);
+    final deletedKey = UserScopedStorage.scopedKey(_deletedDefaultIdsKey, userId: uid);
+
+    final customJsonStr = prefs.getString(customKey);
     if (customJsonStr != null) {
       try {
         final customList = json.decode(customJsonStr) as List<dynamic>;
         final beforeLen = customList.length;
         customList.removeWhere((r) => r is Map && RecipeSanitizer.toInt(r['id'], -1) == id);
         if (customList.length != beforeLen) {
-          await prefs.setString(_customRecipesKey, json.encode(customList));
+          await prefs.setString(customKey, json.encode(customList));
         }
       } catch (_) {}
     }
 
-    final deletedIds = (prefs.getStringList(_deletedDefaultIdsKey) ?? []).toSet();
+    final deletedIds = (prefs.getStringList(deletedKey) ?? []).toSet();
     deletedIds.add(id.toString());
-    await prefs.setStringList(_deletedDefaultIdsKey, deletedIds.toList());
+    await prefs.setStringList(deletedKey, deletedIds.toList());
 
     _recipesCache = null;
     await removeFavorite(id);
@@ -190,7 +269,8 @@ class ApiService {
   // --- BASECAMPS ---
   static Future<List<dynamic>> getBasecamps() async {
     final prefs = await SharedPreferences.getInstance();
-    String? jsonStr = prefs.getString(_basecampsKey);
+    final key = await UserScopedStorage.scopedKeyAsync(_basecampsKey, prefs: prefs);
+    final jsonStr = prefs.getString(key);
 
     if (jsonStr == null) {
       return [];
@@ -198,7 +278,6 @@ class ApiService {
 
     try {
       final list = json.decode(jsonStr) as List<dynamic>;
-      // Hapus data dummy legacy jika masih tersimpan di cache
       final cleaned = list
           .where((b) =>
               b['name'] != 'WBrC Champions Club' &&
@@ -212,6 +291,7 @@ class ApiService {
 
   static Future<void> createBasecamp(Map<String, dynamic> data) async {
     final prefs = await SharedPreferences.getInstance();
+    final key = await UserScopedStorage.scopedKeyAsync(_basecampsKey, prefs: prefs);
     final currentBasecamps = await getBasecamps();
 
     var newId = 1;
@@ -221,22 +301,27 @@ class ApiService {
     data['id'] = newId;
 
     currentBasecamps.insert(0, data);
-    await prefs.setString(_basecampsKey, json.encode(currentBasecamps));
-    _notifyChanged();
+    await prefs.setString(key, json.encode(currentBasecamps));
+    _notifyChanged(pushCloud: false);
   }
 
   static Future<void> deleteBasecamp(int id) async {
     final prefs = await SharedPreferences.getInstance();
+    final key = await UserScopedStorage.scopedKeyAsync(_basecampsKey, prefs: prefs);
     final currentBasecamps = await getBasecamps();
     currentBasecamps.removeWhere((r) => r['id'] == id);
-    await prefs.setString(_basecampsKey, json.encode(currentBasecamps));
-    _notifyChanged();
+    await prefs.setString(key, json.encode(currentBasecamps));
+    _notifyChanged(pushCloud: false);
   }
 
   // --- HISTORY ---
   static Future<void> recordBrew(Map<String, dynamic> recipe) async {
     final prefs = await SharedPreferences.getInstance();
-    final jsonStr = prefs.getString(_historyKey);
+    final uid = await UserScopedStorage.resolveActiveUserId(prefs: prefs);
+    _ensureCacheMatchesUser(uid);
+    final historyKey = UserScopedStorage.scopedKey(_historyKey, userId: uid);
+
+    final jsonStr = prefs.getString(historyKey);
     var history = jsonStr != null ? json.decode(jsonStr) as List<dynamic> : <dynamic>[];
 
     final record = sanitizeRecipe(recipe);
@@ -246,14 +331,18 @@ class ApiService {
     if (history.length > 50) history = history.sublist(0, 50);
 
     _historyCache = history;
-    await prefs.setString(_historyKey, json.encode(history));
+    await prefs.setString(historyKey, json.encode(history));
     _notifyChanged();
   }
 
   static Future<List<dynamic>> getBrewHistory() async {
-    if (_historyCache != null) return List<dynamic>.from(_historyCache!);
     final prefs = await SharedPreferences.getInstance();
-    final jsonStr = prefs.getString(_historyKey);
+    final uid = await UserScopedStorage.resolveActiveUserId(prefs: prefs);
+    _ensureCacheMatchesUser(uid);
+
+    if (_historyCache != null) return List<dynamic>.from(_historyCache!);
+    final historyKey = UserScopedStorage.scopedKey(_historyKey, userId: uid);
+    final jsonStr = prefs.getString(historyKey);
     if (jsonStr == null) return [];
     final rawHistory = json.decode(jsonStr) as List<dynamic>;
     final history = rawHistory
@@ -286,9 +375,13 @@ class ApiService {
 
   // --- FAVORITES ---
   static Future<Set<int>> getFavoriteIds() async {
-    if (_favoritesCache != null) return Set<int>.from(_favoritesCache!);
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getStringList(_favoritesKey) ?? [];
+    final uid = await UserScopedStorage.resolveActiveUserId(prefs: prefs);
+    _ensureCacheMatchesUser(uid);
+
+    if (_favoritesCache != null) return Set<int>.from(_favoritesCache!);
+    final favKey = UserScopedStorage.scopedKey(_favoritesKey, userId: uid);
+    final raw = prefs.getStringList(favKey) ?? [];
     _favoritesCache = raw.map((e) => int.tryParse(e) ?? -1).where((e) => e > 0).toSet();
     return Set<int>.from(_favoritesCache!);
   }
@@ -300,6 +393,10 @@ class ApiService {
 
   static Future<void> toggleFavorite(int id) async {
     final prefs = await SharedPreferences.getInstance();
+    final uid = await UserScopedStorage.resolveActiveUserId(prefs: prefs);
+    _ensureCacheMatchesUser(uid);
+    final favKey = UserScopedStorage.scopedKey(_favoritesKey, userId: uid);
+
     final ids = await getFavoriteIds();
     if (ids.contains(id)) {
       ids.remove(id);
@@ -307,16 +404,20 @@ class ApiService {
       ids.add(id);
     }
     _favoritesCache = ids;
-    await prefs.setStringList(_favoritesKey, ids.map((e) => e.toString()).toList());
+    await prefs.setStringList(favKey, ids.map((e) => e.toString()).toList());
     _notifyChanged();
   }
 
   static Future<void> removeFavorite(int id) async {
     final prefs = await SharedPreferences.getInstance();
+    final uid = await UserScopedStorage.resolveActiveUserId(prefs: prefs);
+    _ensureCacheMatchesUser(uid);
+    final favKey = UserScopedStorage.scopedKey(_favoritesKey, userId: uid);
+
     final ids = await getFavoriteIds();
     ids.remove(id);
     _favoritesCache = ids;
-    await prefs.setStringList(_favoritesKey, ids.map((e) => e.toString()).toList());
+    await prefs.setStringList(favKey, ids.map((e) => e.toString()).toList());
     _notifyChanged();
   }
 
@@ -330,13 +431,15 @@ class ApiService {
   // --- BREW JOURNAL ---
   static Future<List<dynamic>> getJournalEntries() async {
     final prefs = await SharedPreferences.getInstance();
-    final jsonStr = prefs.getString(_journalKey);
+    final key = await UserScopedStorage.scopedKeyAsync(_journalKey, prefs: prefs);
+    final jsonStr = prefs.getString(key);
     if (jsonStr == null) return [];
     return json.decode(jsonStr) as List<dynamic>;
   }
 
   static Future<void> addJournalEntry(Map<String, dynamic> entry) async {
     final prefs = await SharedPreferences.getInstance();
+    final key = await UserScopedStorage.scopedKeyAsync(_journalKey, prefs: prefs);
     final entries = await getJournalEntries();
     entry['id'] = DateTime.now().millisecondsSinceEpoch;
     entry['createdAt'] = DateTime.now().toIso8601String();
@@ -344,20 +447,24 @@ class ApiService {
     if (entries.length > 100) {
       entries.removeRange(100, entries.length);
     }
-    await prefs.setString(_journalKey, json.encode(entries));
+    await prefs.setString(key, json.encode(entries));
     _notifyChanged();
   }
 
   static Future<void> deleteJournalEntry(int id) async {
     final prefs = await SharedPreferences.getInstance();
+    final key = await UserScopedStorage.scopedKeyAsync(_journalKey, prefs: prefs);
     final entries = await getJournalEntries();
     entries.removeWhere((e) => e['id'] == id);
-    await prefs.setString(_journalKey, json.encode(entries));
+    await prefs.setString(key, json.encode(entries));
     _notifyChanged();
   }
 
   /// Daftar barista unik dari resep (untuk toolkit / spotlight) — dihitung dengan algoritma O(N) & di-cache.
   static Future<List<Map<String, dynamic>>> getUniqueBaristas() async {
+    final uid = await UserScopedStorage.resolveActiveUserId();
+    _ensureCacheMatchesUser(uid);
+
     if (_uniqueBaristasCache != null) {
       return List<Map<String, dynamic>>.from(_uniqueBaristasCache!);
     }

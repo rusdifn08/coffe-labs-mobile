@@ -2,13 +2,16 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../../theme/app_theme.dart';
+import '../../../../widgets/user_avatar_circle.dart';
 
 class AnimatedTypingIndicatorBubble extends StatefulWidget {
   final String displayName;
+  final String? avatarUrl;
 
   const AnimatedTypingIndicatorBubble({
     super.key,
     required this.displayName,
+    this.avatarUrl,
   });
 
   @override
@@ -43,19 +46,10 @@ class _AnimatedTypingIndicatorBubbleState
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CircleAvatar(
+          UserAvatarCircle(
+            avatarUrl: widget.avatarUrl,
+            displayName: widget.displayName,
             radius: 13,
-            backgroundColor: AppTheme.primaryBrown.withValues(alpha: 0.14),
-            child: Text(
-              widget.displayName.isNotEmpty
-                  ? widget.displayName[0].toUpperCase()
-                  : 'B',
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.primaryBrown,
-              ),
-            ),
           ),
           const SizedBox(width: 8),
           Container(

@@ -19,6 +19,7 @@ import '../services/feedback_service.dart';
 import '../services/profile_service.dart';
 import '../services/subscription_service.dart';
 import '../services/trial_service.dart';
+import '../services/user_cloud_sync_service.dart';
 import '../theme/app_theme.dart';
 
 /// Halaman Profil Pengguna berbasis ConsumerStatefulWidget & navigasi GoRouter.
@@ -71,16 +72,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _isSyncing = true;
 
     try {
-      // 1. Sinkronisasi status profil terbaru dari backend server di background (jika online)
+      // 1. Sinkronisasi status profil & cloud state terbaru dari backend server di background (jika online)
       AuthUser? user = await AuthService.getCurrentUser();
       if (user != null) {
         AuthService.syncProfile().then((synced) {
-          if (synced != null && mounted && synced.tier != user.tier) {
+          if (synced != null && mounted &&
+              (synced.tier != user.tier ||
+                  synced.fullName != user.fullName ||
+                  synced.avatarUrl != user.avatarUrl)) {
             setState(() {
               _currentUser = synced;
+              _displayName = synced.fullName;
+              if (synced.avatarUrl.isNotEmpty) _avatarPath = synced.avatarUrl;
             });
           }
         }).catchError((_) {});
+        UserCloudSyncService.hydrateFromCloud(user: user).catchError((_) => false);
       }
 
       await TrialService.getPolicy();
@@ -250,7 +257,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryBrown))
           : RefreshIndicator(
               color: AppTheme.primaryBrown,
-              onRefresh: _loadProfileData,
+              onRefresh: () async {
+                final synced = await AuthService.syncProfile(force: true);
+                if (synced != null) {
+                  await UserCloudSyncService.hydrateFromCloud(
+                    user: synced,
+                    force: true,
+                  );
+                }
+                await _loadProfileData();
+              },
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final mediaQuery = MediaQuery.of(context);

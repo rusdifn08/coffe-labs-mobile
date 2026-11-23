@@ -1,7 +1,12 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/network/rust_api_client.dart';
+import '../core/storage/user_scoped_storage.dart';
+import '../features/gamification/services/gamification_service.dart';
+import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../services/profile_service.dart';
+import '../services/user_cloud_sync_service.dart';
 
 part 'auth_repository.g.dart';
 
@@ -50,7 +55,24 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> _persistUnifiedSession(AuthUser user, String token) async {
     final prefs = await SharedPreferences.getInstance();
     await AuthService.persistSessionMirrors(prefs, user: user, token: token);
+    UserScopedStorage.setActiveUserId(user.id);
+    ApiService.clearMemoryCache();
+    await ProfileService.applyCloudProfile(
+      userId: user.id,
+      fullName: user.fullName,
+      avatarUrl: user.avatarUrl,
+    );
+    UserCloudSyncService.ensureHooksRegistered();
+    try {
+      await UserCloudSyncService.hydrateFromCloud(
+        user: user,
+        force: true,
+      ).timeout(const Duration(seconds: 6));
+    } catch (_) {}
     _cachedUser = user;
+    GamificationService.instance.notifySessionSwitched();
+    ProfileService.notifySessionSwitched();
+    ApiService.changeNotifier.value++;
     AuthService.changeNotifier.value++;
     _lastAuthChangeVersion = AuthService.changeNotifier.value;
   }
@@ -109,6 +131,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> logout() async {
+    await UserCloudSyncService.flushPendingSync();
     final prefs = await SharedPreferences.getInstance();
     await Future.wait([
       prefs.remove(_userSessionKey),
@@ -116,7 +139,12 @@ class AuthRepositoryImpl implements AuthRepository {
       prefs.remove(_legacyUserKey),
       prefs.remove(_legacyTokenKey),
     ]);
+    UserScopedStorage.resetToGuest();
+    ApiService.clearMemoryCache();
     _cachedUser = null;
+    GamificationService.instance.notifySessionSwitched();
+    ProfileService.notifySessionSwitched();
+    ApiService.changeNotifier.value++;
     AuthService.changeNotifier.value++;
     _lastAuthChangeVersion = AuthService.changeNotifier.value;
   }

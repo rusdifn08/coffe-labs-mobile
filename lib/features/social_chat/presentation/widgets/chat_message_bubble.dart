@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 import '../../../../theme/app_theme.dart';
+import '../../../../widgets/user_avatar_circle.dart';
 import '../../domain/chat_protocol.dart';
 import '../../domain/chat_view_models.dart';
 import 'interactive_bean_chat_bubble.dart';
@@ -19,6 +20,7 @@ class ChatMessageBubble extends StatelessWidget {
   final bool isLastInGroup;
   final bool showPeerAvatar;
   final String? peerAvatarInitial;
+  final String? peerAvatarUrl;
   final String? senderLabel;
   final LocalChatMessageView? quotedMessage;
   final String? quotedAuthorLabel;
@@ -34,6 +36,7 @@ class ChatMessageBubble extends StatelessWidget {
     this.isLastInGroup = true,
     this.showPeerAvatar = false,
     this.peerAvatarInitial,
+    this.peerAvatarUrl,
     this.senderLabel,
     this.quotedMessage,
     this.quotedAuthorLabel,
@@ -252,19 +255,12 @@ class ChatMessageBubble extends StatelessWidget {
         children: [
           if (!isMine && showPeerAvatar) ...[
             if (isLastInGroup)
-              CircleAvatar(
+              UserAvatarCircle(
+                avatarUrl: peerAvatarUrl,
+                displayName: (peerAvatarInitial != null && peerAvatarInitial!.isNotEmpty)
+                    ? peerAvatarInitial!
+                    : 'B',
                 radius: 13,
-                backgroundColor: AppTheme.primaryBrown.withValues(alpha: 0.14),
-                child: Text(
-                  (peerAvatarInitial != null && peerAvatarInitial!.isNotEmpty)
-                      ? peerAvatarInitial![0].toUpperCase()
-                      : 'B',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryBrown,
-                  ),
-                ),
               )
             else
               const SizedBox(width: 26),

@@ -1,6 +1,8 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../core/storage/user_scoped_storage.dart';
 import '../../../repositories/recipe_repository.dart';
+import '../../../services/api_service.dart';
 
 part 'recipe_list_controller.freezed.dart';
 part 'recipe_list_controller.g.dart';
@@ -48,6 +50,17 @@ class RecipeFilterController extends _$RecipeFilterController {
 class RecipeListController extends _$RecipeListController {
   @override
   Future<List<Map<String, dynamic>>> build() async {
+    void onScopeOrDataChanged() {
+      if (ref.mounted) ref.invalidateSelf();
+    }
+
+    UserScopedStorage.activeUserIdNotifier.addListener(onScopeOrDataChanged);
+    ApiService.changeNotifier.addListener(onScopeOrDataChanged);
+    ref.onDispose(() {
+      UserScopedStorage.activeUserIdNotifier.removeListener(onScopeOrDataChanged);
+      ApiService.changeNotifier.removeListener(onScopeOrDataChanged);
+    });
+
     final repo = ref.watch(recipeRepositoryProvider);
     return repo.getRecipes();
   }
@@ -87,9 +100,20 @@ class RecipeListController extends _$RecipeListController {
   }
 }
 
-/// Provider yang menyediakan set ID resep yang difavoritkan.
+/// Provider yang menyediakan set ID resep yang difavoritkan per-akun.
 @riverpod
 Future<Set<int>> favoriteIds(Ref ref) async {
+  void onScopeOrDataChanged() {
+    if (ref.mounted) ref.invalidateSelf();
+  }
+
+  UserScopedStorage.activeUserIdNotifier.addListener(onScopeOrDataChanged);
+  ApiService.changeNotifier.addListener(onScopeOrDataChanged);
+  ref.onDispose(() {
+    UserScopedStorage.activeUserIdNotifier.removeListener(onScopeOrDataChanged);
+    ApiService.changeNotifier.removeListener(onScopeOrDataChanged);
+  });
+
   final repo = ref.watch(recipeRepositoryProvider);
   return repo.getFavorites();
 }

@@ -8,6 +8,7 @@ import '../services/auth_service.dart';
 import '../services/language_service.dart';
 import '../services/profile_service.dart';
 import '../services/trial_service.dart';
+import '../services/user_cloud_sync_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/receipt_customization_sheet.dart';
 import 'feedback_screen.dart';
@@ -24,6 +25,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String? _imagePath;
   String _selectedLanguage = 'en'; // Default English
   AuthUser? _currentUser;
+  bool _isSyncingProfile = false;
 
   @override
   void initState() {
@@ -70,24 +72,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       currentPath: _imagePath,
       onSelected: (newPath) async {
+        if (!mounted) return;
         setState(() {
           _imagePath = newPath;
+          _isSyncingProfile = true;
         });
-        await ProfileService.setUserImagePath(newPath);
+        final result = await UserCloudSyncService.updateProfileAndSync(
+          avatarPathOrUrl: newPath,
+        );
+        if (!mounted) return;
+        setState(() {
+          if (result.avatarUrl != null && result.avatarUrl!.isNotEmpty) {
+            _imagePath = result.avatarUrl;
+          }
+          _isSyncingProfile = false;
+        });
+        final isEn = LanguageService.isEnglish;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result.syncedToCloud
+                  ? (isEn
+                      ? 'Profile photo synced to cloud & Social Chat!'
+                      : 'Foto profil berhasil disinkronkan ke cloud & Social Chat!')
+                  : result.message,
+            ),
+            backgroundColor: result.syncedToCloud
+                ? const Color(0xFF15803D)
+                : AppTheme.primaryBrown,
+          ),
+        );
       },
     );
   }
 
-  void _saveName() async {
+  Future<void> _saveName() async {
     final name = _nameController.text.trim();
     if (name.isNotEmpty) {
-      await ProfileService.setUserName(name);
+      setState(() => _isSyncingProfile = true);
+      final result = await UserCloudSyncService.updateProfileAndSync(
+        fullName: name,
+      );
       if (mounted) {
+        setState(() => _isSyncingProfile = false);
         final isEn = LanguageService.isEnglish;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isEn ? 'Profile name successfully saved!' : 'Nama profil berhasil disimpan!'),
-            backgroundColor: AppTheme.primaryBrown,
+            content: Text(
+              result.syncedToCloud
+                  ? (isEn
+                      ? 'Profile name saved & synced to cloud!'
+                      : 'Nama profil berhasil disimpan & disinkronkan ke cloud!')
+                  : (isEn
+                      ? 'Profile name successfully saved!'
+                      : 'Nama profil berhasil disimpan!'),
+            ),
+            backgroundColor: result.syncedToCloud
+                ? const Color(0xFF15803D)
+                : AppTheme.primaryBrown,
           ),
         );
         if (Navigator.canPop(context)) {
@@ -125,11 +167,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Stack(
                 children: [
                   GestureDetector(
-                    onTap: _pickImage,
-                    child: CircleAvatar(
-                      radius: 54,
-                      backgroundColor: AppTheme.surfaceWhite,
-                      backgroundImage: ProfileService.getImageProvider(_imagePath),
+                    onTap: _isSyncingProfile ? null : _pickImage,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CircleAvatar(
+                          radius: 54,
+                          backgroundColor: AppTheme.surfaceWhite,
+                          backgroundImage: ProfileService.getImageProvider(_imagePath),
+                        ),
+                        if (_isSyncingProfile)
+                          Container(
+                            width: 108,
+                            height: 108,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.35),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.8,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                   Positioned(
