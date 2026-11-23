@@ -586,7 +586,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'v2.4.0 • Powered by Rust Axum & Shorebird Engine',
+              'v2.5.1 • Powered by Rust Axum & Shorebird Engine',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 11, color: AppTheme.textMuted, height: 1.4),
             ),

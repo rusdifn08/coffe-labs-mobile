@@ -88,8 +88,8 @@ class AppUpdateService {
       };
     } catch (_) {
       return {
-        'version': '2.4.0',
-        'buildNumber': 7,
+        'version': '2.5.1',
+        'buildNumber': 9,
         'patchNumber': 0,
         'appName': 'Coffee Labs',
       };
@@ -159,8 +159,8 @@ class AppUpdateService {
     return const VersionCheckResult(
       actionCode: 'UP_TO_DATE',
       targetPatch: null,
-      latestBaseVersion: '2.4.0',
-      latestBuildNumber: 7,
+      latestBaseVersion: '2.5.1',
+      latestBuildNumber: 9,
       isForceUpdate: false,
       releaseNotes: 'Aplikasi berjalan normal dengan versi stabil saat ini.',
       downloadUrl: 'https://github.com/rusdifn08/coffe-labs-mobile/releases/latest',

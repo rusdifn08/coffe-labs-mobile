@@ -186,7 +186,7 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             TAG="${GITHUB_REF#refs/tags/}"
           else
-            TAG="v2.5.0"
+            TAG="v2.5.1"
           fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "title=Coffee Labs App Release $TAG" >> $GITHUB_OUTPUT
@@ -199,24 +199,22 @@ jobs:
           draft: false
           prerelease: false
           body: |
-            ## ☕ Coffee Labs Mobile Release v2.4.0
+            ## ☕ Coffee Labs Mobile Release ${{ steps.release_info.outputs.tag }}
             
             Unduh file aplikasi secara langsung tanpa kompresi `.zip`:
             
             ### 📱 Android (.apk):
-            - **`CoffeeLabs-arm64-v8a.apk`** *(Direkomendasikan - Ukuran Terkompresi Lebih Hemat untuk Smartphone Modern)*
-            - **`CoffeeLabs-Universal.apk`** *(Universal - Kompatibel dengan Semua Arsitektur Android)*
-            - **`CoffeeLabs-armeabi-v7a.apk`** *(Perangkat Android 32-bit)*
-            - **`CoffeeLabs-x86_64.apk`** *(Emulator Android & Perangkat x86_64)*
+            - **`Coffe_Labs_25.apk`** *(Flavor `store` bersih Play Protect, ditandatangani dengan keystore rilis resmi Coffee Labs untuk ARM64 Android)*
             
             ### 🍏 iOS (.ipa):
-            - **`CoffeeLabs-iOS-Release.ipa`** *(Format `.ipa` terkompresi untuk sideloading via AltStore, Sideloadly, TrollStore, atau Scarlet)*
+            - **`CoffeLabs25.ipa`** *(Format `.ipa` untuk sideloading via AltStore, Sideloadly, TrollStore, atau Scarlet)*
 
-            ### ✨ Apa yang Baru di v2.4.0:
-            - 🎮 **3D Interactive V60 Brew Studio & Gyroscope Physics**: Simulasi penyeduhan V60 3D interaktif dengan sensor gyroscope, bilas kertas filter, teko leher angsa presisi, dan telemetri aliran air.
-            - 📚 **LMS Manual Brew Academy & DRM Offline E-Book**: Kurikulum lengkap Manual Brew dengan unduhan E-Book on-demand (hemat ukuran APK, dapat dibaca 100% offline).
-            - 🛡️ **Admin Trial 7-Day Full Access (Non-Business) & Recipe Lock Security**: Panel kontrol Admin untuk kebijakan Trial 7 Hari Full Access, perbaikan keamanan lock resep saat filter/search, dan sistem share kartu resep lintas sosial media.
-            - ❄️ **18 Brew Methods Audit & Background Cold Brew Alarm**: Audit kurasi 18 metode seduh dan sistem pengingat latar belakang untuk ekstraksi Cold Brew.
+            ### ✨ Pembaruan Terbaru di v2.5.1:
+            - 🗺️ **Cafe Radar Google Maps Route Focus**: Tombol *Lihat Rute* otomatis menurunkan panel daftar ke bawah, memfokuskan kamera ke jalur rute biru, dan menyembunyikan sementara pin kafe lain agar peta tetap bersih.
+            - 🔐 **Email & Lupa Password via OTP Email**: Registrasi kini menyimpan email aktif, login mendukung username atau email, serta reset lupa password dengan kode verifikasi 6 digit langsung ke email.
+            - ☁️ **Per-User Cloud Sync & Data Isolation**: Level, EXP, riwayat seduh, jurnal, favorit, dan foto profil terisolasi per akun serta otomatis sinkron lintas perangkat.
+            - 📓 **Flexible Brew Journal**: Detail seduh dengan grafik radar & bar sensori, riwayat catatan tambahan, serta edit/hapus jurnal yang fleksibel.
+            - 🛡️ **Multilingual Profanity Guard**: Moderasi anti-bypass multibahasa untuk Social Coffee, Chat, Threads, dan Profil.
           files: release-files/*.*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
