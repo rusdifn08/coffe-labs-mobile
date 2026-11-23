@@ -75,14 +75,10 @@ class LiveBrewV2ApiService {
   }
 
   Future<(String wsBaseUrl, String? jwtToken)> resolveWsBaseAndToken() async {
-    String base = AuthAndRefreshInterceptor.defaultBaseUrl;
+    final base = await AuthAndRefreshInterceptor.resolveActiveBaseUrl();
     String? token;
     try {
       final prefs = await SharedPreferences.getInstance();
-      final saved = prefs.getString('coffeehub_backend_server_url')?.trim();
-      if (saved != null && saved.isNotEmpty) {
-        base = saved.endsWith('/') ? saved.substring(0, saved.length - 1) : saved;
-      }
       token = prefs.getString('coffeehub_auth_token_v1') ??
           prefs.getString('coffeehub_auth_jwt_token');
     } catch (_) {}

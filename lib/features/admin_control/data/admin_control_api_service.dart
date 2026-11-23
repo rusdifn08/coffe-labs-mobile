@@ -29,10 +29,12 @@ class AdminControlApiService {
 
   /// Resolves the WebSocket URL for real-time control snapshot broadcast.
   Uri resolveControlWsUri() {
-    final base = _dio.options.baseUrl.trim();
+    final base = AuthAndRefreshInterceptor.normalizeBaseUrl(_dio.options.baseUrl);
     final parsed = Uri.tryParse(base);
     if (parsed == null || parsed.host.isEmpty) {
-      return Uri.parse('wss://coffe-labs-backend.onrender.com/api/v1/system/control-ws');
+      return Uri.parse(
+        'wss://coffe-labs-backend-production.up.railway.app/api/v1/system/control-ws',
+      );
     }
     final wsScheme = parsed.scheme == 'https' ? 'wss' : 'ws';
     return parsed.replace(

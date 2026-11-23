@@ -38,9 +38,8 @@ class BaristaToolkitApiService {
     if (trimmed.isEmpty || trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
       return trimmed;
     }
-    final base = _dio.options.baseUrl.trim();
-    final root = base.isEmpty ? AuthAndRefreshInterceptor.defaultBaseUrl : base;
-    final cleanBase = root.endsWith('/') ? root.substring(0, root.length - 1) : root;
+    final cleanBase =
+        AuthAndRefreshInterceptor.normalizeBaseUrl(_dio.options.baseUrl);
     return trimmed.startsWith('/') ? '$cleanBase$trimmed' : '$cleanBase/$trimmed';
   }
 

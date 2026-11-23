@@ -10,7 +10,6 @@ part 'rust_api_client.g.dart';
 /// berbasis Dio dengan Interceptor otentikasi, refresh JWT otomatis, dan pemetaan error global.
 class RustApiClient {
   static const String defaultBaseUrl = AuthAndRefreshInterceptor.defaultBaseUrl;
-  static const String _serverUrlKey = 'coffeehub_backend_server_url';
   static const String _authTokenKey = 'coffeehub_auth_token_v1';
 
   final Dio _dio;
@@ -18,16 +17,7 @@ class RustApiClient {
   RustApiClient({required Dio dio}) : _dio = dio;
 
   /// Mendapatkan Base URL backend aktif dari konfigurasi lokal pengguna atau default production.
-  Future<String> getBaseUrl() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final savedUrl = prefs.getString(_serverUrlKey)?.trim();
-      if (savedUrl != null && savedUrl.isNotEmpty) {
-        return savedUrl.endsWith('/') ? savedUrl.substring(0, savedUrl.length - 1) : savedUrl;
-      }
-    } catch (_) {}
-    return defaultBaseUrl;
-  }
+  Future<String> getBaseUrl() => AuthAndRefreshInterceptor.resolveActiveBaseUrl();
 
   /// Mengambil token otentikasi Bearer JWT.
   Future<String?> getAuthToken() async {

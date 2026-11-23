@@ -160,7 +160,8 @@ class AuthService {
   static const String _userKey = 'coffeehub_auth_user_json';
   static const String _sessionUserKey = 'coffeehub_auth_session_user';
   static const String _serverUrlKey = 'coffeehub_backend_server_url';
-  static const String defaultProductionUrl = 'https://coffe-labs-backend.onrender.com';
+  static const String defaultProductionUrl =
+      'https://coffe-labs-backend-production.up.railway.app';
 
   static final ValueNotifier<int> changeNotifier = ValueNotifier<int>(0);
   static final http.Client _httpClient = http.Client();
@@ -186,7 +187,7 @@ class AuthService {
   }
 
   /// Melakukan ping senyap ke backend di background saat app mulai
-  /// dan menjadwalkan heartbeat otomatis setiap 10 menit agar server Render tidak sleep
+  /// dan menjadwalkan heartbeat otomatis setiap 10 menit untuk menjaga koneksi aktif
   static void warmUpBackend() {
     _sendHeartbeat();
     // Jangan jadwalkan periodic timer saat test runner berjalan
@@ -206,22 +207,30 @@ class AuthService {
           .timeout(const Duration(seconds: 30))
           .then((res) {
         if (res.statusCode == 200) {
-          debugPrint('☕ Backend heartbeat sukses ($url) - Render awake');
+          debugPrint('☕ Backend heartbeat sukses ($url) - Railway online');
         }
       }).catchError((_) {});
     }).catchError((_) {});
   }
 
   /// Deteksi Base URL backend secara dinamis:
-  /// Mengutamakan URL Render Production, dengan dukungan override via SharedPreferences
+  /// Mengutamakan URL Railway Production, dengan auto-migrasi URL Render lama
   static Future<String> getBaseUrl() async {
     final prefs = await SharedPreferences.getInstance();
     final customUrl = prefs.getString(_serverUrlKey);
     if (customUrl != null && customUrl.trim().isNotEmpty) {
       final trimmed = customUrl.trim();
-      // Jika masih tersimpan url lokal lama (localhost / 10.0.2.2), otomatis alihkan ke Render
-      if (!trimmed.contains('localhost') && !trimmed.contains('10.0.2.2')) {
-        return trimmed;
+      final lower = trimmed.toLowerCase();
+      // Jika tersimpan URL Render lama, migrasi otomatis ke Railway
+      if (lower.contains('onrender.com')) {
+        await prefs.setString(_serverUrlKey, defaultProductionUrl);
+        return defaultProductionUrl;
+      }
+      // Jika masih tersimpan url lokal lama (localhost / 10.0.2.2), otomatis alihkan ke Railway
+      if (!lower.contains('localhost') && !lower.contains('10.0.2.2')) {
+        return trimmed.endsWith('/')
+            ? trimmed.substring(0, trimmed.length - 1)
+            : trimmed;
       }
     }
 

@@ -312,7 +312,7 @@ class MerchantBridgeStatusModel {
   const MerchantBridgeStatusModel({
     this.enabled = false,
     this.hasNotificationAccess = false,
-    this.apiBaseUrl = 'https://coffe-labs-backend.onrender.com',
+    this.apiBaseUrl = 'https://coffe-labs-backend-production.up.railway.app',
     this.hasSecret = false,
     this.recentLogs = const [],
   });

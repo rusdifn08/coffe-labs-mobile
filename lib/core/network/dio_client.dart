@@ -31,25 +31,49 @@ class AuthAndRefreshInterceptor extends QueuedInterceptor {
   static const String _authTokenKey = 'coffeehub_auth_token_v1';
   static const String _legacyJwtKey = 'coffeehub_auth_jwt_token';
   static const String _refreshTokenKey = 'coffeehub_refresh_token_v1';
-  static const String defaultBaseUrl = 'https://coffe-labs-backend.onrender.com';
+  static const String defaultBaseUrl =
+      'https://coffe-labs-backend-production.up.railway.app';
 
   final Dio _dio;
 
   AuthAndRefreshInterceptor(this._dio);
 
-  Future<String> _resolveBaseUrl() async {
+  /// Menormalisasi URL server tersimpan dan otomatis memigrasi URL lokal
+  /// maupun domain Render lama (`*.onrender.com`) ke domain Railway produksi.
+  static String normalizeBaseUrl(String? savedUrl) {
+    final trimmed = savedUrl?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return defaultBaseUrl;
+    }
+    final lower = trimmed.toLowerCase();
+    if (lower.contains('localhost') ||
+        lower.contains('10.0.2.2') ||
+        lower.contains('onrender.com')) {
+      return defaultBaseUrl;
+    }
+    return trimmed.endsWith('/')
+        ? trimmed.substring(0, trimmed.length - 1)
+        : trimmed;
+  }
+
+  /// Resolusi Base URL aktif sekaligus auto-migrasi cache `SharedPreferences`
+  /// perangkat user lama yang masih menyimpan URL Render.
+  static Future<String> resolveActiveBaseUrl() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final savedUrl = prefs.getString(_serverUrlKey)?.trim();
+      final normalized = normalizeBaseUrl(savedUrl);
       if (savedUrl != null &&
           savedUrl.isNotEmpty &&
-          !savedUrl.contains('localhost') &&
-          !savedUrl.contains('10.0.2.2')) {
-        return savedUrl.endsWith('/') ? savedUrl.substring(0, savedUrl.length - 1) : savedUrl;
+          savedUrl.toLowerCase().contains('onrender.com')) {
+        await prefs.setString(_serverUrlKey, defaultBaseUrl);
       }
+      return normalized;
     } catch (_) {}
     return defaultBaseUrl;
   }
+
+  Future<String> _resolveBaseUrl() => resolveActiveBaseUrl();
 
   Future<String?> _getAccessToken() async {
     try {
@@ -200,7 +224,7 @@ class GlobalErrorAndLoggingInterceptor extends Interceptor {
       case DioExceptionType.receiveTimeout:
         return ApiException(
           message: serverMessage ??
-              'Koneksi timeout (server Cloud Render sedang bangun dari mode siaga). Silakan coba sesaat lagi.',
+              'Koneksi timeout ke server backend Railway. Silakan coba sesaat lagi.',
           statusCode: statusCode ?? 408,
           endpoint: endpoint,
         );

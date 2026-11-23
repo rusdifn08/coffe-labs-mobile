@@ -148,15 +148,7 @@ class NotificationApiService {
           prefs.getString('coffeehub_auth_jwt_token')?.trim();
       if (token == null || token.isEmpty) return false;
 
-      final savedUrl = prefs.getString('coffeehub_backend_server_url')?.trim();
-      final baseUrl = (savedUrl != null &&
-              savedUrl.isNotEmpty &&
-              !savedUrl.contains('localhost') &&
-              !savedUrl.contains('10.0.2.2'))
-          ? (savedUrl.endsWith('/')
-              ? savedUrl.substring(0, savedUrl.length - 1)
-              : savedUrl)
-          : AuthAndRefreshInterceptor.defaultBaseUrl;
+      final baseUrl = await AuthAndRefreshInterceptor.resolveActiveBaseUrl();
 
       final dio = Dio(
         BaseOptions(

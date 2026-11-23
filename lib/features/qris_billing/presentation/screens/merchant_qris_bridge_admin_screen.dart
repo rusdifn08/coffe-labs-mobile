@@ -21,8 +21,9 @@ class MerchantQrisBridgeAdminScreen extends ConsumerStatefulWidget {
 class _MerchantQrisBridgeAdminScreenState
     extends ConsumerState<MerchantQrisBridgeAdminScreen> {
   final TextEditingController _secretCtrl = TextEditingController();
-  final TextEditingController _apiUrlCtrl =
-      TextEditingController(text: 'https://coffe-labs-backend.onrender.com');
+  final TextEditingController _apiUrlCtrl = TextEditingController(
+    text: 'https://coffe-labs-backend-production.up.railway.app',
+  );
   final TextEditingController _testAmountCtrl =
       TextEditingController(text: '49317');
 

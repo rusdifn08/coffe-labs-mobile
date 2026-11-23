@@ -10,7 +10,7 @@ object QrisBridgeStore {
     private const val KEY_SECRET = "bridge_hmac_secret"
     private const val KEY_BASE_URL = "bridge_api_base_url"
     private const val KEY_LOGS = "bridge_recent_logs"
-    private const val DEFAULT_BASE_URL = "https://coffe-labs-backend.onrender.com"
+    private const val DEFAULT_BASE_URL = "https://coffe-labs-backend-production.up.railway.app"
     private const val MAX_LOGS = 25
 
     private fun prefs(context: Context) =
@@ -21,8 +21,14 @@ object QrisBridgeStore {
     fun getSecret(context: Context): String = prefs(context).getString(KEY_SECRET, "") ?: ""
 
     fun getBaseUrl(context: Context): String {
-        val raw = prefs(context).getString(KEY_BASE_URL, DEFAULT_BASE_URL)?.trim()
-        return if (raw.isNullOrEmpty()) DEFAULT_BASE_URL else raw.trimEnd('/')
+        val p = prefs(context)
+        val raw = p.getString(KEY_BASE_URL, DEFAULT_BASE_URL)?.trim()
+        if (raw.isNullOrEmpty()) return DEFAULT_BASE_URL
+        if (raw.lowercase().contains("onrender.com")) {
+            p.edit().putString(KEY_BASE_URL, DEFAULT_BASE_URL).apply()
+            return DEFAULT_BASE_URL
+        }
+        return raw.trimEnd('/')
     }
 
     fun configure(context: Context, enabled: Boolean, secret: String?, apiBaseUrl: String?) {

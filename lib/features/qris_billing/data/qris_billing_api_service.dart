@@ -147,17 +147,10 @@ class QrisBillingApiService {
   }
 
   Future<(String wsBaseUrl, String? jwtToken)> resolveWsBaseAndToken() async {
-    String base = AuthAndRefreshInterceptor.defaultBaseUrl;
+    final base = await AuthAndRefreshInterceptor.resolveActiveBaseUrl();
     String? token;
     try {
       final prefs = await SharedPreferences.getInstance();
-      final saved = prefs.getString('coffeehub_backend_server_url')?.trim();
-      if (saved != null &&
-          saved.isNotEmpty &&
-          !saved.contains('localhost') &&
-          !saved.contains('10.0.2.2')) {
-        base = saved.endsWith('/') ? saved.substring(0, saved.length - 1) : saved;
-      }
       token = prefs.getString('coffeehub_auth_jwt_token') ??
           prefs.getString('coffeehub_auth_token_v1');
     } catch (_) {}
@@ -240,9 +233,9 @@ class QrisBridgePlatformChannel {
       return MerchantBridgeStatusModel(
         enabled: raw['enabled'] == true,
         hasNotificationAccess: raw['hasNotificationAccess'] == true,
-        apiBaseUrl: (raw['apiBaseUrl'] ??
-                'https://coffe-labs-backend.onrender.com')
-            .toString(),
+        apiBaseUrl: AuthAndRefreshInterceptor.normalizeBaseUrl(
+          raw['apiBaseUrl']?.toString(),
+        ),
         hasSecret: raw['hasSecret'] == true,
         recentLogs: logs,
       );

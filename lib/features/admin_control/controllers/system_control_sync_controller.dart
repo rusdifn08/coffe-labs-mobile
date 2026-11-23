@@ -339,8 +339,16 @@ class SystemControlSyncController extends Notifier<SystemControlState> {
     _teardownWs();
     try {
       final uri = _api.resolveControlWsUri();
-      _ws = WebSocketChannel.connect(uri);
-      _wsSub = _ws!.stream.listen(
+      final channel = WebSocketChannel.connect(uri);
+      _ws = channel;
+      unawaited(
+        channel.ready.catchError((_) {
+          if (_ws == channel && !_disposed) {
+            _scheduleReconnect();
+          }
+        }),
+      );
+      _wsSub = channel.stream.listen(
         _onWsMessage,
         onError: (_) => _scheduleReconnect(),
         onDone: _scheduleReconnect,
