@@ -148,7 +148,7 @@ class _RadarMapCanvasState extends State<RadarMapCanvas> {
       widget.mapController.fitCamera(
         CameraFit.bounds(
           bounds: bounds,
-          padding: const EdgeInsets.fromLTRB(44, 155, 44, 125),
+          padding: const EdgeInsets.fromLTRB(44, 210, 44, 130),
           maxZoom: 16.5,
         ),
       );
@@ -407,23 +407,27 @@ class _RadarMapCanvasState extends State<RadarMapCanvas> {
 
   @override
   Widget build(BuildContext context) {
-    final markers = widget.places.map((place) {
-      final isSelected = place.id == widget.selectedPlaceId ||
-          place.id == widget.activeRoute?.destination.id;
-      return Marker(
-        key: ValueKey('pin_${place.id}'),
-        point: LatLng(place.latitude, place.longitude),
-        width: isSelected ? 84 : 68,
-        height: isSelected ? 40 : 34,
-        alignment: Alignment.topCenter,
-        child: GestureDetector(
-          onTap: () => widget.onPlaceTapped(place),
-          child: _CoffeePinPill(place: place, isSelected: isSelected),
-        ),
-      );
-    }).toList();
-
     final route = widget.activeRoute;
+    final focusOnlyRouteDestination = widget.isRouteHudActive;
+
+    // Saat sedang merutekan, sembunyikan seluruh titik cafe lain agar peta bersih fokus ke rute tujuan.
+    final markers = focusOnlyRouteDestination
+        ? const <Marker>[]
+        : widget.places.map((place) {
+            final isSelected = place.id == widget.selectedPlaceId ||
+                place.id == route?.destination.id;
+            return Marker(
+              key: ValueKey('pin_${place.id}'),
+              point: LatLng(place.latitude, place.longitude),
+              width: isSelected ? 84 : 68,
+              height: isSelected ? 40 : 34,
+              alignment: Alignment.topCenter,
+              child: GestureDetector(
+                onTap: () => widget.onPlaceTapped(place),
+                child: _CoffeePinPill(place: place, isSelected: isSelected),
+              ),
+            );
+          }).toList();
 
     return ColoredBox(
       color: const Color(0xFFEDE6DA),
@@ -486,44 +490,31 @@ class _RadarMapCanvasState extends State<RadarMapCanvas> {
                   ],
                 ),
 
-              if (widget.hasUserLocation)
+              if (widget.hasUserLocation || route != null)
                 MarkerLayer(
                   markers: [
-                    Marker(
-                      point: LatLng(widget.userLat, widget.userLng),
-                      width: 68,
-                      height: 68,
-                      child: _UserGpsBeacon(
-                        headingDeg: widget.compassHeadingDeg,
+                    if (widget.hasUserLocation)
+                      Marker(
+                        point: LatLng(widget.userLat, widget.userLng),
+                        width: 68,
+                        height: 68,
+                        child: _UserGpsBeacon(
+                          headingDeg: widget.compassHeadingDeg,
+                        ),
                       ),
-                    ),
                     if (route != null)
                       Marker(
                         point: LatLng(
                           route.destination.latitude,
                           route.destination.longitude,
                         ),
-                        width: 46,
-                        height: 46,
+                        width: 150,
+                        height: 76,
                         alignment: Alignment.topCenter,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF2563EB),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 3),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF2563EB)
-                                    .withValues(alpha: 0.45),
-                                blurRadius: 10,
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.flag_rounded,
-                            color: Colors.white,
-                            size: 20,
-                          ),
+                        child: GestureDetector(
+                          key: ValueKey('route_dest_${route.destination.id}'),
+                          onTap: () => widget.onPlaceTapped(route.destination),
+                          child: _RouteDestinationPin(place: route.destination),
                         ),
                       ),
                   ],
@@ -654,6 +645,81 @@ class _RadarMapCanvasState extends State<RadarMapCanvas> {
             ),
         ],
       ),
+    );
+  }
+}
+
+class _RouteDestinationPin extends StatelessWidget {
+  final RadarPlaceCard place;
+
+  const _RouteDestinationPin({required this.place});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          constraints: const BoxConstraints(maxWidth: 146),
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryBrown,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppTheme.accentGold, width: 1.6),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.24),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                place.category.iconData,
+                size: 12,
+                color: AppTheme.accentGold,
+              ),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  place.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: const Color(0xFF2563EB),
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 3),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF2563EB).withValues(alpha: 0.45),
+                blurRadius: 10,
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.flag_rounded,
+            color: Colors.white,
+            size: 18,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -311,6 +311,12 @@ void main() {
       expect(find.text('Jalan'), findsOneWidget);
       expect(find.text('Arah'), findsOneWidget);
       expect(find.byTooltip('Fokus ke Rute'), findsOneWidget);
+      // Saat dirutekan: hanya pin tujuan rute yang tampil di peta, seluruh pin cafe lain disembunyikan!
+      expect(find.byKey(const ValueKey('route_dest_place-1')), findsOneWidget);
+      expect(find.byKey(const ValueKey('pin_place-2')), findsNothing);
+      expect(find.byKey(const ValueKey('pin_place-3')), findsNothing);
+      // Header bar ringkas tetap ter-pin rapi di bagian atas bottom sheet yang turun ke bawah!
+      expect(find.text('Daftar'), findsOneWidget);
 
       // Ketuk nama tujuan pada Route HUD untuk membuka Detail Sheet -> verifikasi CTA 'Lihat Rute di Peta'
       await tester.tap(find.text('Two Hands Full Specialty Coffee').first);
@@ -331,10 +337,11 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Lihat Rute di Peta'), findsNothing);
 
-      // Tutup Rute (X) -> kontrol jelajah kembali tampil & bottom sheet naik lagi ke posisi peek!
+      // Tutup Rute (X) -> kontrol jelajah kembali tampil, bottom sheet naik lagi, & pin cafe lain kembali muncul!
       await tester.tap(find.byTooltip('Tutup Rute'));
       await tester.pumpAndSettle();
       expect(find.text('Beans Radar'), findsOneWidget);
+      expect(find.byKey(const ValueKey('route_dest_place-1')), findsNothing);
       final restoredTopY = tester.getTopLeft(scrollFinder).dy;
       expect(restoredTopY, lessThan(520));
 

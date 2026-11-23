@@ -66,8 +66,15 @@ class BeansRadarBottomSheet extends StatelessWidget {
               controller: scrollCtrl,
               physics: const ClampingScrollPhysics(),
               slivers: [
-                SliverToBoxAdapter(
-                  child: _buildHeader(hasRoute: hasRoute),
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _PinnedRadarSheetHeader(
+                    height: 68,
+                    child: Container(
+                      color: AppTheme.bgCream,
+                      child: _buildHeader(hasRoute: hasRoute),
+                    ),
+                  ),
                 ),
                 if (state.statusBanner != null)
                   SliverToBoxAdapter(
@@ -351,6 +358,36 @@ class BeansRadarBottomSheet extends StatelessWidget {
     final idxSuffix =
         total >= 1000 ? ' • ${(total / 1000).toStringAsFixed(1)}K+ DB' : '';
     return '$count hasil $modeTitle • $srcLabel$idxSuffix';
+  }
+}
+
+class _PinnedRadarSheetHeader extends SliverPersistentHeaderDelegate {
+  final double height;
+  final Widget child;
+
+  const _PinnedRadarSheetHeader({
+    required this.height,
+    required this.child,
+  });
+
+  @override
+  double get minExtent => height;
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return SizedBox.expand(child: child);
+  }
+
+  @override
+  bool shouldRebuild(covariant _PinnedRadarSheetHeader oldDelegate) {
+    return oldDelegate.height != height || oldDelegate.child != child;
   }
 }
 
