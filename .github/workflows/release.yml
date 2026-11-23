@@ -75,7 +75,7 @@ jobs:
           flutter build apk --flavor store --release \
             --target-platform android-arm64 --split-per-abi
           mkdir -p dist-android
-          cp build/app/outputs/flutter-apk/app-store-arm64-v8a-release.apk dist-android/Coffe_Labs_25.apk
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-store-release.apk dist-android/Coffe_Labs_25.apk
 
       - name: Verify Signature & Manifest Posture (GATE)
         # Gerbang mutlak: kalau APK masih debug-signed atau masih membawa
@@ -93,7 +93,7 @@ jobs:
           echo "=== Permission berisiko harus ABSEN ==="
           "$BT/aapt2" dump permissions "$APK" > /tmp/perms.txt || true
           cat /tmp/perms.txt
-          for bad in REQUEST_INSTALL_PACKAGES SYSTEM_ALERT_WINDOW READ_PHONE_STATE; do
+          for bad in REQUEST_INSTALL_PACKAGES SYSTEM_ALERT_WINDOW READ_PHONE_STATE BIND_DEVICE_ADMIN; do
             if grep -q "android.permission.$bad" /tmp/perms.txt; then
               echo "::error::Permission $bad masih ada di APK publik. Play Protect akan memblokir."
               exit 1

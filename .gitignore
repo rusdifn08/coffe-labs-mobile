@@ -53,3 +53,8 @@ tools/__pycache__/
 brewer/
 
 test/goldens/
+
+# Release signing secrets (never commit to git)
+android/key.properties
+android/app/*.jks
+android/app/*.keystore
