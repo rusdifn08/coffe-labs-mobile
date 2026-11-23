@@ -278,13 +278,13 @@ void main() {
       expect(find.text('Two Hands Full Specialty Coffee'), findsOneWidget);
 
       // Expand DraggableScrollableSheet ke 0.90 untuk memverifikasi daftar kafe (termasuk Cafe biasa + Roastery & Cafe)
-      final listFinder = find.byType(ListView).last;
-      await tester.drag(listFinder, const Offset(0, -360));
+      final scrollFinder = find.byType(CustomScrollView).first;
+      await tester.drag(scrollFinder, const Offset(0, -360));
       await tester.pumpAndSettle();
       expect(find.text('Kopi Toko Djawa Braga'), findsOneWidget);
 
       // Kembalikan sheet ke posisi semula agar switcher di atas bisa ditekan
-      await tester.drag(listFinder, const Offset(0, 360));
+      await tester.drag(scrollFinder, const Offset(0, 360));
       await tester.pumpAndSettle();
 
       // Pindah ke Beans Radar -> Cafe biasa hilang, Roastery & Cafe Penjual Beans tetap ada!
@@ -293,34 +293,50 @@ void main() {
       expect(find.text('Two Hands Full Specialty Coffee'), findsOneWidget);
       expect(find.text('Kopi Toko Djawa Braga'), findsNothing);
 
-      // Tap "Lihat Rute" -> langsung menggambar rute jalan di dalam peta aplikasi!
+      // Simulasi persis skenario user: tarik bottom sheet penuh ke atas (~90%), lalu ketuk "Lihat Rute"
+      await tester.drag(scrollFinder, const Offset(0, -360));
+      await tester.pumpAndSettle();
+      final expandedTopY = tester.getTopLeft(scrollFinder).dy;
+      expect(expandedTopY, lessThan(220));
+
+      // Tap "Lihat Rute" -> bottom sheet harus OTOMATIS turun ke bawah & fokus ke peta rute ala Google Maps!
       await tester.tap(find.text('Lihat Rute').first);
       await tester.pumpAndSettle();
+
+      final collapsedTopY = tester.getTopLeft(scrollFinder).dy;
+      expect(collapsedTopY, greaterThan(620));
       expect(find.text('1.5 km • 5 mnt'), findsOneWidget);
       expect(find.text('Motor'), findsOneWidget);
       expect(find.text('Mobil'), findsOneWidget);
       expect(find.text('Jalan'), findsOneWidget);
       expect(find.text('Arah'), findsOneWidget);
+      expect(find.byTooltip('Fokus ke Rute'), findsOneWidget);
 
-      // Ketuk kartu di BottomSheet untuk membuka Detail Sheet -> verifikasi CTA 'Lihat Rute di Peta'
-      await tester.tap(find.text('Two Hands Full Specialty Coffee').last);
+      // Ketuk nama tujuan pada Route HUD untuk membuka Detail Sheet -> verifikasi CTA 'Lihat Rute di Peta'
+      await tester.tap(find.text('Two Hands Full Specialty Coffee').first);
       await tester.pumpAndSettle();
       expect(find.text('Lihat Rute di Peta'), findsOneWidget);
       expect(find.text('WhatsApp'), findsOneWidget);
 
-      // Ketuk area luar (bagian atas yang redup di luar modal sheet) -> harus langsung keluar kembali ke Radar!
+      // Ketuk area luar (bagian atas yang redup di luar modal sheet) -> langsung keluar kembali ke peta rute!
       await tester.tapAt(const Offset(180, 50));
       await tester.pumpAndSettle();
       expect(find.text('Lihat Rute di Peta'), findsNothing);
-      expect(find.text('Beans Radar'), findsOneWidget);
 
-      // Buka lagi lalu ketuk tombol Tutup (X) -> juga harus keluar dengan mulus!
-      await tester.tap(find.text('Two Hands Full Specialty Coffee').last);
+      // Buka lagi lalu ketuk tombol Tutup (X) -> keluar dengan mulus!
+      await tester.tap(find.text('Two Hands Full Specialty Coffee').first);
       await tester.pumpAndSettle();
       expect(find.text('Lihat Rute di Peta'), findsOneWidget);
       await tester.tap(find.byTooltip('Tutup Detail'));
       await tester.pumpAndSettle();
       expect(find.text('Lihat Rute di Peta'), findsNothing);
+
+      // Tutup Rute (X) -> kontrol jelajah kembali tampil & bottom sheet naik lagi ke posisi peek!
+      await tester.tap(find.byTooltip('Tutup Rute'));
+      await tester.pumpAndSettle();
+      expect(find.text('Beans Radar'), findsOneWidget);
+      final restoredTopY = tester.getTopLeft(scrollFinder).dy;
+      expect(restoredTopY, lessThan(520));
 
       expect(tester.takeException(), isNull);
     },

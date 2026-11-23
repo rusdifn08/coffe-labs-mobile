@@ -64,6 +64,7 @@ class RadarGpsState {
   final RadarTravelMode routeMode;
   final String? routeError;
   final int cameraRevision;
+  final int routeFocusRevision;
 
   const RadarGpsState({
     // Koordinat tengah Nusantara hanya saat menunggu deteksi GPS/IP nyata (bukan berpura-pura di Jakarta)
@@ -100,6 +101,7 @@ class RadarGpsState {
     this.routeMode = RadarTravelMode.motorcycle,
     this.routeError,
     this.cameraRevision = 0,
+    this.routeFocusRevision = 0,
   });
 
   bool get hasUsableLocation =>
@@ -145,6 +147,7 @@ class RadarGpsState {
     String? routeError,
     bool clearRouteError = false,
     int? cameraRevision,
+    int? routeFocusRevision,
   }) {
     return RadarGpsState(
       userLat: userLat ?? this.userLat,
@@ -184,6 +187,7 @@ class RadarGpsState {
       routeMode: routeMode ?? this.routeMode,
       routeError: clearRouteError ? null : (routeError ?? this.routeError),
       cameraRevision: cameraRevision ?? this.cameraRevision,
+      routeFocusRevision: routeFocusRevision ?? this.routeFocusRevision,
     );
   }
 }
@@ -501,6 +505,7 @@ class RadarGpsController extends Notifier<RadarGpsState> {
       selectedPlaceId: place.id,
       isLoadingRoute: true,
       routeMode: targetMode,
+      routeFocusRevision: state.routeFocusRevision + 1,
       clearRouteError: true,
     );
     try {

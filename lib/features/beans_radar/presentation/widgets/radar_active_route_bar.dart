@@ -13,6 +13,7 @@ class RadarActiveRouteBar extends StatefulWidget {
   final ValueChanged<RadarTravelMode> onModeChanged;
   final VoidCallback onCloseRoute;
   final VoidCallback? onLaunchExternalNavigation;
+  final VoidCallback? onTapDestination;
 
   const RadarActiveRouteBar({
     super.key,
@@ -22,6 +23,7 @@ class RadarActiveRouteBar extends StatefulWidget {
     required this.onModeChanged,
     required this.onCloseRoute,
     this.onLaunchExternalNavigation,
+    this.onTapDestination,
   });
 
   @override
@@ -104,57 +106,61 @@ class _RadarActiveRouteBarState extends State<RadarActiveRouteBar> {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    route.destination.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFFF9F5EE),
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          '${route.distanceLabel} • ${route.durationLabel}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Color(0xFF4ADE80),
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: widget.onTapDestination,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      route.destination.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFFF9F5EE),
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
                       ),
-                      const SizedBox(width: 6),
-                      if (widget.isLoading)
-                        const SizedBox(
-                          width: 10,
-                          height: 10,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 1.5,
-                            color: Color(0xFFD4A373),
-                          ),
-                        )
-                      else
-                        Text(
-                          route.cacheHit ? '• Instan' : '• Peta',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Color(0xFFCBBFB2),
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
+                    ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            '${route.distanceLabel} • ${route.durationLabel}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFF4ADE80),
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
-                    ],
-                  ),
-                ],
+                        const SizedBox(width: 6),
+                        if (widget.isLoading)
+                          const SizedBox(
+                            width: 10,
+                            height: 10,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 1.5,
+                              color: Color(0xFFD4A373),
+                            ),
+                          )
+                        else
+                          Text(
+                            route.cacheHit ? '• Instan' : '• Peta',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFFCBBFB2),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
             IconButton(

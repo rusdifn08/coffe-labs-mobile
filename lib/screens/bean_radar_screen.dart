@@ -36,6 +36,8 @@ class BeanRadarScreen extends ConsumerStatefulWidget {
 class _BeanRadarScreenState extends ConsumerState<BeanRadarScreen> {
   final MapController _mapController = MapController();
   final TextEditingController _searchController = TextEditingController();
+  final DraggableScrollableController _sheetController =
+      DraggableScrollableController();
 
   @override
   void initState() {
@@ -49,6 +51,7 @@ class _BeanRadarScreenState extends ConsumerState<BeanRadarScreen> {
 
   @override
   void dispose() {
+    _sheetController.dispose();
     _searchController.dispose();
     _mapController.dispose();
     super.dispose();
@@ -58,6 +61,73 @@ class _BeanRadarScreenState extends ConsumerState<BeanRadarScreen> {
     try {
       _mapController.move(LatLng(lat, lng), zoom);
     } catch (_) {}
+  }
+
+  void _animateSheetTo(double targetSize) {
+    if (!_sheetController.isAttached) return;
+    try {
+      _sheetController.animateTo(
+        targetSize,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+      );
+    } catch (_) {}
+  }
+
+  /// Otomatis menurunkan bottom sheet ke bawah agar peta fokus penuh ke rute (ala Google Maps).
+  void _collapseSheetForRoute() {
+    FocusScope.of(context).unfocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _animateSheetTo(BeansRadarBottomSheet.collapsedRouteSize);
+    });
+  }
+
+  /// Mengembalikan bottom sheet ke posisi peek standar saat rute ditutup.
+  void _restoreSheetAfterRoute() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _animateSheetTo(BeansRadarBottomSheet.defaultPeekSize);
+    });
+  }
+
+  void _toggleSheetSize() {
+    if (!_sheetController.isAttached) return;
+    final current = _sheetController.size;
+    if (current < 0.25) {
+      _animateSheetTo(BeansRadarBottomSheet.defaultPeekSize);
+    } else {
+      _animateSheetTo(BeansRadarBottomSheet.collapsedRouteSize);
+    }
+  }
+
+  void _requestRouteFocused(RadarPlaceCard place) {
+    _collapseSheetForRoute();
+    ref.read(beansRadarGpsProvider.notifier).requestInAppRoute(place);
+  }
+
+  void _closeActiveRoute() {
+    ref.read(beansRadarGpsProvider.notifier).clearActiveRoute();
+    _restoreSheetAfterRoute();
+  }
+
+  Future<void> _recenterGps(RadarGpsController radarCtrl, RadarGpsState radarState) async {
+    if (radarState.permissionDeniedForever) {
+      await Geolocator.openAppSettings();
+      return;
+    }
+    if (radarState.gpsServiceDisabled) {
+      await Geolocator.openLocationSettings();
+    }
+    final ok = await radarCtrl.acquireLiveGps();
+    final latest = ref.read(beansRadarGpsProvider);
+    if (ok || latest.hasUsableLocation) {
+      _safeMoveMap(
+        latest.userLat,
+        latest.userLng,
+        zoom: 14.2,
+      );
+    }
   }
 
   void _openCityPicker(RadarGpsController ctrl, RadarGpsState state) {
@@ -153,7 +223,7 @@ class _BeanRadarScreenState extends ConsumerState<BeanRadarScreen> {
       onOpenLinkedRoastery: place.linkedRoasteryId != null
           ? () => _openLinkedRoastery(place)
           : null,
-      onShowInAppRoute: () => ctrl.requestInAppRoute(place),
+      onShowInAppRoute: () => _requestRouteFocused(place),
     );
   }
 
@@ -167,6 +237,9 @@ class _BeanRadarScreenState extends ConsumerState<BeanRadarScreen> {
           next.cameraRevision != prev.cameraRevision &&
           next.hasUsableLocation) {
         _safeMoveMap(next.queryLat, next.queryLng, zoom: 13.6);
+      }
+      if (prev != null && next.routeFocusRevision != prev.routeFocusRevision) {
+        _collapseSheetForRoute();
       }
       if (next.routeError != null && next.routeError != prev?.routeError) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -201,6 +274,9 @@ class _BeanRadarScreenState extends ConsumerState<BeanRadarScreen> {
                 places: radarState.places,
                 selectedPlaceId: radarState.selectedPlaceId,
                 activeRoute: radarState.activeRoute,
+                routeFocusRevision: radarState.routeFocusRevision,
+                isRouteHudActive: hasRouteHud,
+                onRecenterGps: () => _recenterGps(radarCtrl, radarState),
                 enableNetworkTiles: widget.enableNetworkTiles,
                 onPlaceTapped: (place) => _openPlaceDetail(place, radarState),
                 onCameraMoved: radarCtrl.onMapBoundsMoved,
@@ -210,66 +286,65 @@ class _BeanRadarScreenState extends ConsumerState<BeanRadarScreen> {
               top: 0,
               left: 0,
               right: 0,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  RadarFloatingControls(
-                    searchController: _searchController,
-                    state: radarState,
-                    onBack: () => Navigator.maybePop(context),
-                    onRecenterGps: () async {
-                      if (radarState.permissionDeniedForever) {
-                        await Geolocator.openAppSettings();
-                        return;
-                      }
-                      if (radarState.gpsServiceDisabled) {
-                        await Geolocator.openLocationSettings();
-                      }
-                      final ok = await radarCtrl.acquireLiveGps();
-                      final latest = ref.read(beansRadarGpsProvider);
-                      if (ok || latest.hasUsableLocation) {
-                        _safeMoveMap(
-                          latest.userLat,
-                          latest.userLng,
-                          zoom: 14.2,
-                        );
-                      }
-                    },
-                    onOpenCityPicker: () =>
-                        _openCityPicker(radarCtrl, radarState),
-                    onSearchChanged: radarCtrl.onSearchChanged,
-                    onRadarModeChanged: (m) => radarCtrl.setRadarMode(m),
-                    onCategoryChanged: radarCtrl.setCategory,
-                    onToggleOpenNow: radarCtrl.toggleOpenNow,
-                    onToggleMinRating: radarCtrl.toggleMinRating45,
-                    onRadiusChanged: radarCtrl.setRadiusKm,
-                    onSearchThisArea: radarCtrl.searchPendingMapArea,
-                  ),
-                  if (hasRouteHud) ...[
-                    const SizedBox(height: 8),
-                    RadarActiveRouteBar(
-                      route: radarState.activeRoute,
-                      isLoading: radarState.isLoadingRoute,
-                      selectedMode: radarState.routeMode,
-                      onModeChanged: radarCtrl.changeRouteMode,
-                      onCloseRoute: radarCtrl.clearActiveRoute,
-                      onLaunchExternalNavigation: radarState.activeRoute != null
-                          ? () => CoffeePlaceDetailSheet.launchDirections(
-                                radarState.activeRoute!.destination,
-                              )
-                          : null,
-                    ),
-                  ],
-                ],
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                child: hasRouteHud
+                    ? SafeArea(
+                        key: const ValueKey('radar_route_focus_hud'),
+                        bottom: false,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: RadarActiveRouteBar(
+                            route: radarState.activeRoute,
+                            isLoading: radarState.isLoadingRoute,
+                            selectedMode: radarState.routeMode,
+                            onModeChanged: radarCtrl.changeRouteMode,
+                            onCloseRoute: _closeActiveRoute,
+                            onTapDestination: radarState.activeRoute != null
+                                ? () => _openPlaceDetail(
+                                      radarState.activeRoute!.destination,
+                                      radarState,
+                                    )
+                                : null,
+                            onLaunchExternalNavigation:
+                                radarState.activeRoute != null
+                                    ? () =>
+                                        CoffeePlaceDetailSheet.launchDirections(
+                                          radarState.activeRoute!.destination,
+                                        )
+                                    : null,
+                          ),
+                        ),
+                      )
+                    : RadarFloatingControls(
+                        key: const ValueKey('radar_explore_controls'),
+                        searchController: _searchController,
+                        state: radarState,
+                        onBack: () => Navigator.maybePop(context),
+                        onRecenterGps: () =>
+                            _recenterGps(radarCtrl, radarState),
+                        onOpenCityPicker: () =>
+                            _openCityPicker(radarCtrl, radarState),
+                        onSearchChanged: radarCtrl.onSearchChanged,
+                        onRadarModeChanged: (m) => radarCtrl.setRadarMode(m),
+                        onCategoryChanged: radarCtrl.setCategory,
+                        onToggleOpenNow: radarCtrl.toggleOpenNow,
+                        onToggleMinRating: radarCtrl.toggleMinRating45,
+                        onRadiusChanged: radarCtrl.setRadiusKm,
+                        onSearchThisArea: radarCtrl.searchPendingMapArea,
+                      ),
               ),
             ),
             Positioned.fill(
               child: BeansRadarBottomSheet(
+                controller: _sheetController,
                 state: radarState,
                 onSortChanged: radarCtrl.setSortMode,
                 onSelectPlaceCard: (p) => _openPlaceDetail(p, radarState),
-                // Sekarang "Lihat Rute" langsung menggambar rute jalan di dalam peta aplikasi!
-                onOpenRoute: (p) => radarCtrl.requestInAppRoute(p),
+                // "Lihat Rute" langsung menurunkan bottom sheet ke bawah & fokus ke peta rute ala Google Maps!
+                onOpenRoute: _requestRouteFocused,
                 onOpenLineup: _openLinkedRoastery,
                 onExpandNationwide: () => radarCtrl.setRadiusKm(150.0),
                 onRetryGps: () async {
@@ -279,6 +354,7 @@ class _BeanRadarScreenState extends ConsumerState<BeanRadarScreen> {
                   await radarCtrl.acquireLiveGps();
                 },
                 onPickCityManual: () => _openCityPicker(radarCtrl, radarState),
+                onToggleSheetSize: _toggleSheetSize,
               ),
             ),
           ],

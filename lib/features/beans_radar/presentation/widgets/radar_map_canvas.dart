@@ -81,6 +81,9 @@ class RadarMapCanvas extends StatefulWidget {
   final List<RadarPlaceCard> places;
   final String? selectedPlaceId;
   final RadarRouteResult? activeRoute;
+  final int routeFocusRevision;
+  final bool isRouteHudActive;
+  final VoidCallback? onRecenterGps;
   final ValueChanged<RadarPlaceCard> onPlaceTapped;
   final ValueChanged<RadarMapBounds> onCameraMoved;
   final bool enableNetworkTiles;
@@ -97,6 +100,9 @@ class RadarMapCanvas extends StatefulWidget {
     required this.places,
     required this.selectedPlaceId,
     this.activeRoute,
+    this.routeFocusRevision = 0,
+    this.isRouteHudActive = false,
+    this.onRecenterGps,
     required this.onPlaceTapped,
     required this.onCameraMoved,
     this.enableNetworkTiles = true,
@@ -126,9 +132,10 @@ class _RadarMapCanvasState extends State<RadarMapCanvas> {
   @override
   void didUpdateWidget(covariant RadarMapCanvas oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.activeRoute != null &&
-        widget.activeRoute != oldWidget.activeRoute &&
-        widget.activeRoute!.points.length >= 2) {
+    final routeChanged = widget.activeRoute != null &&
+        (widget.activeRoute != oldWidget.activeRoute ||
+            widget.routeFocusRevision != oldWidget.routeFocusRevision);
+    if (routeChanged && widget.activeRoute!.points.length >= 2) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _fitCameraToRoute(widget.activeRoute!);
       });
@@ -141,7 +148,7 @@ class _RadarMapCanvasState extends State<RadarMapCanvas> {
       widget.mapController.fitCamera(
         CameraFit.bounds(
           bounds: bounds,
-          padding: const EdgeInsets.fromLTRB(44, 155, 44, 240),
+          padding: const EdgeInsets.fromLTRB(44, 155, 44, 125),
           maxZoom: 16.5,
         ),
       );
@@ -558,56 +565,129 @@ class _RadarMapCanvasState extends State<RadarMapCanvas> {
             ],
           ),
 
-          // Floating Google Maps Layer & API Key Switcher
-          Positioned(
-            right: 12,
-            top: 150,
-            child: SafeArea(
-              bottom: false,
-              child: Material(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
-                elevation: 4,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(18),
-                  onTap: _openMapSettingsSheet,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 7,
+          // Floating Google Maps Layer & Route Focus Controls
+          if (widget.isRouteHudActive)
+            Positioned(
+              right: 12,
+              bottom: 112,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (route != null && route.points.length >= 2) ...[
+                    _MapMiniFab(
+                      icon: Icons.center_focus_strong_rounded,
+                      tooltip: 'Fokus ke Rute',
+                      color: const Color(0xFF2563EB),
+                      onTap: () => _fitCameraToRoute(route),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _basemapStyle.icon,
-                          size: 15,
-                          color: AppTheme.primaryBrown,
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          _basemapStyle == RadarBasemapStyle.googleRoadmap
-                              ? 'Google Maps'
-                              : (_basemapStyle == RadarBasemapStyle.googleTerrain
-                                  ? 'Terrain'
-                                  : (_basemapStyle ==
-                                          RadarBasemapStyle.googleHybrid
-                                      ? 'Satelit'
-                                      : 'OSM HD')),
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: AppTheme.textDark,
+                    const SizedBox(height: 8),
+                  ],
+                  if (widget.onRecenterGps != null) ...[
+                    _MapMiniFab(
+                      icon: CupertinoIcons.location_fill,
+                      tooltip: 'Lokasi GPS Real-Time',
+                      color: widget.hasUserLocation
+                          ? Colors.green.shade700
+                          : AppTheme.primaryBrown,
+                      onTap: widget.onRecenterGps!,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  _MapMiniFab(
+                    icon: _basemapStyle.icon,
+                    tooltip: 'Ganti Jenis Peta',
+                    color: AppTheme.primaryBrown,
+                    onTap: _openMapSettingsSheet,
+                  ),
+                ],
+              ),
+            )
+          else
+            Positioned(
+              right: 12,
+              top: 150,
+              child: SafeArea(
+                bottom: false,
+                child: Material(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  elevation: 4,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(18),
+                    onTap: _openMapSettingsSheet,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 7,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _basemapStyle.icon,
+                            size: 15,
+                            color: AppTheme.primaryBrown,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 5),
+                          Text(
+                            _basemapStyle == RadarBasemapStyle.googleRoadmap
+                                ? 'Google Maps'
+                                : (_basemapStyle == RadarBasemapStyle.googleTerrain
+                                    ? 'Terrain'
+                                    : (_basemapStyle ==
+                                            RadarBasemapStyle.googleHybrid
+                                        ? 'Satelit'
+                                        : 'OSM HD')),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.textDark,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
         ],
+      ),
+    );
+  }
+}
+
+class _MapMiniFab extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _MapMiniFab({
+    required this.icon,
+    required this.tooltip,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      shape: const CircleBorder(),
+      elevation: 4,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Tooltip(
+          message: tooltip,
+          child: SizedBox(
+            width: 40,
+            height: 40,
+            child: Icon(icon, size: 18, color: color),
+          ),
+        ),
       ),
     );
   }
