@@ -108,6 +108,37 @@ class AdminUserCard extends StatelessWidget {
                         '@${user.username}',
                         style: const TextStyle(color: AppTheme.primaryBrown, fontSize: 12, fontWeight: FontWeight.w600),
                       ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(
+                            CupertinoIcons.mail_solid,
+                            size: 11.5,
+                            color: (user.email != null && user.email!.isNotEmpty)
+                                ? AppTheme.textMuted
+                                : Colors.orange.shade400,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              (user.email != null && user.email!.isNotEmpty)
+                                  ? user.email!
+                                  : 'Belum ada email terdaftar',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: (user.email != null && user.email!.isNotEmpty)
+                                    ? AppTheme.textDark.withValues(alpha: 0.78)
+                                    : AppTheme.textMuted,
+                                fontSize: 11.5,
+                                fontStyle: (user.email != null && user.email!.isNotEmpty)
+                                    ? FontStyle.normal
+                                    : FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                       if (user.createdAt != null) ...[
                         const SizedBox(height: 2),
                         Text(

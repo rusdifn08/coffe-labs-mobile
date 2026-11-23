@@ -17,12 +17,14 @@ class ProfileSyncResult {
   final bool syncedToCloud;
   final String? avatarUrl;
   final String? fullName;
+  final String? email;
   final String message;
 
   const ProfileSyncResult({
     required this.syncedToCloud,
     this.avatarUrl,
     this.fullName,
+    this.email,
     required this.message,
   });
 }
@@ -261,6 +263,7 @@ class UserCloudSyncService {
         final refreshed = AuthUser(
           id: user.id,
           username: user.username,
+          email: user.email,
           fullName: (cloudFullName != null && cloudFullName.isNotEmpty)
               ? cloudFullName
               : user.fullName,
@@ -369,9 +372,11 @@ class UserCloudSyncService {
   /// tampil di Social Chat, daftar barista, dan semua perangkat user.
   static Future<ProfileSyncResult> updateProfileAndSync({
     String? fullName,
+    String? email,
     String? avatarPathOrUrl,
   }) async {
     final cleanName = fullName?.trim();
+    final cleanEmail = email?.trim().toLowerCase();
     final cleanAvatar = avatarPathOrUrl?.trim();
 
     if (cleanName != null && cleanName.isNotEmpty) {
@@ -388,6 +393,7 @@ class UserCloudSyncService {
         syncedToCloud: false,
         avatarUrl: cleanAvatar,
         fullName: cleanName,
+        email: cleanEmail,
         message: 'Profil disimpan secara lokal.',
       );
     }
@@ -415,6 +421,9 @@ class UserCloudSyncService {
     if (cleanName != null && cleanName.isNotEmpty) {
       body['full_name'] = cleanName;
     }
+    if (cleanEmail != null && cleanEmail.isNotEmpty) {
+      body['email'] = cleanEmail;
+    }
     if (resolvedAvatarForCloud != null && resolvedAvatarForCloud.isNotEmpty) {
       body['avatar_url'] = resolvedAvatarForCloud;
     }
@@ -424,6 +433,7 @@ class UserCloudSyncService {
         syncedToCloud: false,
         avatarUrl: cleanAvatar,
         fullName: cleanName,
+        email: cleanEmail,
         message: 'Foto profil disimpan lokal. Unggah foto galeri ke cloud membutuhkan koneksi internet.',
       );
     }
@@ -450,6 +460,9 @@ class UserCloudSyncService {
         final finalName = (data['full_name']?.toString().trim().isNotEmpty == true)
             ? data['full_name'].toString().trim()
             : (cleanName ?? user!.fullName);
+        final finalEmail = (data['email']?.toString().trim().isNotEmpty == true)
+            ? data['email'].toString().trim()
+            : ((cleanEmail != null && cleanEmail.isNotEmpty) ? cleanEmail : user!.email);
         final finalAvatar = (data['avatar_url']?.toString().trim().isNotEmpty == true)
             ? data['avatar_url'].toString().trim()
             : (resolvedAvatarForCloud ?? user!.avatarUrl);
@@ -457,6 +470,7 @@ class UserCloudSyncService {
         final updatedUser = AuthUser(
           id: user!.id,
           username: user.username,
+          email: finalEmail,
           fullName: finalName,
           role: user.role,
           status: user.status,
@@ -481,9 +495,24 @@ class UserCloudSyncService {
           syncedToCloud: true,
           avatarUrl: finalAvatar,
           fullName: finalName,
+          email: finalEmail,
           message: 'Profil berhasil disimpan & disinkronkan ke cloud!',
         );
       }
+
+      try {
+        final errJson = json.decode(res.body);
+        if (errJson is Map<String, dynamic> &&
+            errJson['message']?.toString().trim().isNotEmpty == true) {
+          return ProfileSyncResult(
+            syncedToCloud: false,
+            avatarUrl: cleanAvatar,
+            fullName: cleanName,
+            email: cleanEmail,
+            message: errJson['message'].toString().trim(),
+          );
+        }
+      } catch (_) {}
     } catch (e) {
       debugPrint('⚠️ UserCloudSyncService.updateProfileAndSync error: $e');
     }
@@ -492,6 +521,7 @@ class UserCloudSyncService {
       syncedToCloud: false,
       avatarUrl: cleanAvatar,
       fullName: cleanName,
+      email: cleanEmail,
       message: 'Profil tersimpan di perangkat (gagal menyinkronkan ke server saat ini).',
     );
   }

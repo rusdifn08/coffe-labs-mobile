@@ -6,6 +6,7 @@ import '../../../theme/app_theme.dart';
 class AuthSignUpForm extends StatefulWidget {
   final TextEditingController fullNameController;
   final TextEditingController usernameController;
+  final TextEditingController emailController;
   final TextEditingController passwordController;
   final String? selectedAvatar;
   final bool isLoading;
@@ -17,6 +18,7 @@ class AuthSignUpForm extends StatefulWidget {
     super.key,
     required this.fullNameController,
     required this.usernameController,
+    required this.emailController,
     required this.passwordController,
     required this.selectedAvatar,
     required this.isLoading,
@@ -123,6 +125,28 @@ class _AuthSignUpFormState extends State<AuthSignUpForm> {
             labelText: 'Username',
             hintText: 'huruf kecil tanpa spasi',
             prefixIcon: const Icon(CupertinoIcons.at, color: AppTheme.primaryBrown, size: 20),
+            filled: true,
+            fillColor: AppTheme.bgCream.withValues(alpha: 0.5),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: AppTheme.primaryBrown, width: 2),
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Email Field (wajib untuk pemulihan lupa password & info pembaruan)
+        TextField(
+          controller: widget.emailController,
+          keyboardType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.next,
+          decoration: InputDecoration(
+            labelText: 'Email Aktif',
+            hintText: 'nama@gmail.com',
+            helperText: 'Digunakan untuk reset lupa password & info Coffee Labs',
+            helperMaxLines: 2,
+            prefixIcon: const Icon(CupertinoIcons.mail_solid, color: AppTheme.primaryBrown, size: 20),
             filled: true,
             fillColor: AppTheme.bgCream.withValues(alpha: 0.5),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),

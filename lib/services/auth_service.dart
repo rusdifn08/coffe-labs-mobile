@@ -20,6 +20,7 @@ import '../models/subscription_plan.dart';
 class AuthUser {
   final String id;
   final String username;
+  final String? email;
   final String fullName;
   final String role;
   final String status;
@@ -33,6 +34,7 @@ class AuthUser {
   const AuthUser({
     required this.id,
     required this.username,
+    this.email,
     required this.fullName,
     required this.role,
     required this.status,
@@ -46,6 +48,8 @@ class AuthUser {
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
     final username = json['username']?.toString() ?? '';
+    final rawEmail = json['email']?.toString().trim();
+    final email = (rawEmail != null && rawEmail.isNotEmpty) ? rawEmail : null;
     final rawTier = (json['tier']?.toString() ?? '').toLowerCase().trim();
     final inferredTier = rawTier.isNotEmpty
         ? rawTier
@@ -69,6 +73,7 @@ class AuthUser {
     return AuthUser(
       id: json['id']?.toString() ?? '',
       username: username,
+      email: email,
       fullName: json['full_name']?.toString() ?? json['fullName']?.toString() ?? 'Barista',
       role: json['role']?.toString() ?? 'user',
       status: json['status']?.toString() ?? 'pending',
@@ -84,6 +89,7 @@ class AuthUser {
   Map<String, dynamic> toJson() => {
     'id': id,
     'username': username,
+    'email': email,
     'full_name': fullName,
     'role': role,
     'status': status,
@@ -335,6 +341,7 @@ class AuthService {
       updatedUser = AuthUser(
         id: existing.id,
         username: existing.username,
+        email: existing.email,
         fullName: existing.fullName,
         role: existing.role,
         status: existing.status,
@@ -395,6 +402,7 @@ class AuthService {
         return AuthUser(
           id: jwtSub,
           username: parsed.username,
+          email: parsed.email,
           fullName: parsed.fullName,
           role: parsed.role,
           status: parsed.status,
@@ -602,13 +610,31 @@ class AuthService {
     }
   }
 
-  /// Pendaftaran akun baru (default berstatus PENDING hingga di-accept admin)
+  static final RegExp _emailRegex = RegExp(
+    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+  );
+
+  /// Validasi format alamat email standar sebelum dikirim ke backend.
+  static bool isValidEmail(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty || trimmed.length > 160 || trimmed.contains('..')) {
+      return false;
+    }
+    return _emailRegex.hasMatch(trimmed);
+  }
+
+  /// Pendaftaran akun baru (menerima email aktif untuk reset password & info pembaruan)
   static Future<AuthResult> register({
     required String username,
     required String password,
     required String fullName,
+    String? email,
     String? avatarUrl,
   }) async {
+    final cleanEmail = email?.trim().toLowerCase();
+    if (cleanEmail != null && cleanEmail.isNotEmpty && !isValidEmail(cleanEmail)) {
+      return AuthResult.error('Format alamat email tidak valid. Contoh: nama@gmail.com');
+    }
     final verdict = ContentModerationGuard.inspectMultiple({
       'Username': username,
       'Nama lengkap': fullName,
@@ -625,6 +651,7 @@ class AuthService {
         'username': username.trim(),
         'password': password,
         'full_name': fullName.trim(),
+        if (cleanEmail != null && cleanEmail.isNotEmpty) 'email': cleanEmail,
         'avatar_url': avatarUrl,
       });
 
@@ -676,8 +703,11 @@ class AuthService {
           status: 'approved',
         );
       } else if (response.statusCode == 409) {
+        final serverMsg = data['message']?.toString().trim();
         return AuthResult.error(
-          'Username "$username" sudah terdaftar di sistem. Jika ini akun Anda, silakan beralih ke menu Login untuk masuk atau memeriksa status akun.',
+          (serverMsg != null && serverMsg.isNotEmpty)
+              ? serverMsg
+              : 'Username "$username" atau email sudah terdaftar di sistem. Silakan beralih ke menu Login.',
         );
       } else {
         return AuthResult.error(data['message'] ?? 'Gagal mendaftar (${response.statusCode}).');
@@ -729,6 +759,124 @@ class AuthService {
       }
     } catch (e) {
       return {'success': false, 'message': 'Gagal menghubungi server: $e'};
+    }
+  }
+
+  /// Meminta kode reset password 6 digit yang dikirim langsung ke email terdaftar pengguna.
+  static Future<Map<String, dynamic>> requestPasswordReset({
+    required String identifier,
+  }) async {
+    final cleanId = identifier.trim();
+    if (cleanId.isEmpty) {
+      return {
+        'success': false,
+        'message': 'Masukkan alamat email atau username akun Anda terlebih dahulu.',
+      };
+    }
+    try {
+      final baseUrl = await getBaseUrl();
+      final uri = Uri.parse('$baseUrl/api/auth/forgot-password');
+      final response = await _httpClient
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode({'identifier': cleanId}),
+          )
+          .timeout(const Duration(seconds: 30));
+
+      final data = _safeDecodeJson(response.body, response.statusCode);
+      if (response.statusCode == 200) {
+        final payload = data['data'] is Map<String, dynamic>
+            ? data['data'] as Map<String, dynamic>
+            : const <String, dynamic>{};
+        return {
+          'success': true,
+          'message': data['message']?.toString() ??
+              'Kode reset 6 digit telah dikirim ke email terdaftar Anda.',
+          'maskedEmail': payload['masked_email']?.toString(),
+          'expiresInSeconds': (payload['expires_in_seconds'] as num?)?.toInt() ?? 900,
+        };
+      }
+      return {
+        'success': false,
+        'message': data['message']?.toString() ??
+            'Gagal mengirim kode reset password (${response.statusCode}).',
+      };
+    } on TimeoutException {
+      return {
+        'success': false,
+        'message': 'Permintaan timeout. Silakan coba beberapa saat lagi.',
+      };
+    } on SocketException {
+      return {
+        'success': false,
+        'message': 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal meminta kode reset: $e'};
+    }
+  }
+
+  /// Konfirmasi reset password menggunakan kode 6 digit dari email dan password baru.
+  static Future<Map<String, dynamic>> confirmPasswordReset({
+    required String identifier,
+    required String code,
+    required String newPassword,
+  }) async {
+    final cleanId = identifier.trim();
+    final cleanCode = code.trim();
+    if (cleanId.isEmpty || cleanCode.length != 6) {
+      return {
+        'success': false,
+        'message': 'Masukkan kode verifikasi 6 digit yang dikirim ke email Anda.',
+      };
+    }
+    if (newPassword.length < 6) {
+      return {
+        'success': false,
+        'message': 'Password baru minimal harus 6 karakter.',
+      };
+    }
+    try {
+      final baseUrl = await getBaseUrl();
+      final uri = Uri.parse('$baseUrl/api/auth/reset-password');
+      final response = await _httpClient
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode({
+              'identifier': cleanId,
+              'code': cleanCode,
+              'new_password': newPassword,
+            }),
+          )
+          .timeout(const Duration(seconds: 30));
+
+      final data = _safeDecodeJson(response.body, response.statusCode);
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': data['message']?.toString() ??
+              'Password berhasil direset! Silakan login dengan password baru.',
+        };
+      }
+      return {
+        'success': false,
+        'message': data['message']?.toString() ??
+            'Gagal mereset password (${response.statusCode}).',
+      };
+    } on TimeoutException {
+      return {
+        'success': false,
+        'message': 'Koneksi timeout. Silakan coba kirim ulang.',
+      };
+    } on SocketException {
+      return {
+        'success': false,
+        'message': 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal mereset password: $e'};
     }
   }
 

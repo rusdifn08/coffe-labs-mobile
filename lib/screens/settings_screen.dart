@@ -24,6 +24,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   String? _imagePath;
   String _selectedLanguage = 'en'; // Default English
   AuthUser? _currentUser;
@@ -46,6 +47,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     TrialService.changeNotifier.removeListener(_loadProfile);
     LanguageService.changeNotifier.removeListener(_loadLanguage);
     _nameController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
@@ -63,6 +65,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!mounted) return;
     setState(() {
       _nameController.text = user?.fullName ?? name;
+      _emailController.text = user?.email ?? '';
       _imagePath = (user?.avatarUrl.isNotEmpty == true) ? user!.avatarUrl : img;
       _selectedLanguage = lang;
       _currentUser = user;
@@ -110,50 +113,66 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _saveName() async {
     final name = _nameController.text.trim();
-    if (name.isNotEmpty) {
-      final verdict = ContentModerationGuard.inspect(
-        name,
-        fieldLabel: 'Nama profil',
-      );
-      if (!verdict.isAllowed) {
-        if (mounted) ModerationAlertFeedback.showBlockedSnackBar(context, verdict);
-        return;
-      }
-      setState(() => _isSyncingProfile = true);
-      final result = await UserCloudSyncService.updateProfileAndSync(
-        fullName: name,
-      );
-      if (mounted) {
-        setState(() => _isSyncingProfile = false);
-        final isEn = LanguageService.isEnglish;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              result.syncedToCloud
-                  ? (isEn
-                      ? 'Profile name saved & synced to cloud!'
-                      : 'Nama profil berhasil disimpan & disinkronkan ke cloud!')
-                  : (isEn
-                      ? 'Profile name successfully saved!'
-                      : 'Nama profil berhasil disimpan!'),
-            ),
-            backgroundColor: result.syncedToCloud
-                ? const Color(0xFF15803D)
-                : AppTheme.primaryBrown,
-          ),
-        );
-        if (Navigator.canPop(context)) {
-          Navigator.pop(context, true);
-        }
-      }
-    } else {
-      final isEn = LanguageService.isEnglish;
+    final email = _emailController.text.trim().toLowerCase();
+    final isEn = LanguageService.isEnglish;
+    if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(isEn ? 'Name cannot be empty' : 'Nama tidak boleh kosong'),
           backgroundColor: Colors.redAccent,
         ),
       );
+      return;
+    }
+    if (email.isNotEmpty && !AuthService.isValidEmail(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isEn
+                ? 'Invalid email format. Example: name@gmail.com'
+                : 'Format alamat email tidak valid. Contoh: nama@gmail.com',
+          ),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    final verdict = ContentModerationGuard.inspect(
+      name,
+      fieldLabel: 'Nama profil',
+    );
+    if (!verdict.isAllowed) {
+      if (mounted) ModerationAlertFeedback.showBlockedSnackBar(context, verdict);
+      return;
+    }
+
+    setState(() => _isSyncingProfile = true);
+    final result = await UserCloudSyncService.updateProfileAndSync(
+      fullName: name,
+      email: email.isNotEmpty ? email : null,
+    );
+    if (!mounted) return;
+    setState(() => _isSyncingProfile = false);
+
+    final emailConflict = !result.syncedToCloud &&
+        result.message.toLowerCase().contains('email');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          result.syncedToCloud
+              ? (isEn
+                  ? 'Profile & email saved and synced to cloud!'
+                  : 'Profil & email berhasil disimpan dan disinkronkan ke cloud!')
+              : result.message,
+        ),
+        backgroundColor: result.syncedToCloud
+            ? const Color(0xFF15803D)
+            : (emailConflict ? Colors.redAccent : AppTheme.primaryBrown),
+      ),
+    );
+    if (result.syncedToCloud && Navigator.canPop(context)) {
+      Navigator.pop(context, true);
     }
   }
 
@@ -273,18 +292,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       prefixIcon: const Icon(CupertinoIcons.person_fill, color: AppTheme.primaryBrown, size: 20),
                     ),
                   ),
+                  if (_currentUser != null) ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        labelText: isEn ? "Active Email" : "Email Aktif",
+                        hintText: "nama@gmail.com",
+                        labelStyle: const TextStyle(color: AppTheme.textMuted),
+                        filled: true,
+                        fillColor: AppTheme.bgCream.withValues(alpha: 0.5),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                        prefixIcon: const Icon(CupertinoIcons.mail_solid, color: AppTheme.primaryBrown, size: 20),
+                      ),
+                    ),
+                    if (_currentUser!.email == null || _currentUser!.email!.trim().isEmpty) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.amber.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(CupertinoIcons.info_circle_fill, size: 15, color: Colors.amber.shade800),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                isEn
+                                    ? 'Add your email to enable password reset & Coffee Labs updates.'
+                                    : 'Tambahkan email aktif agar bisa reset lupa password & terima info Coffee Labs.',
+                                style: TextStyle(fontSize: 11.5, color: Colors.amber.shade900, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _saveName,
+                      onPressed: _isSyncingProfile ? null : _saveName,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryBrown,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       child: Text(
-                        isEn ? "Save Name" : "Simpan Nama",
+                        isEn ? "Save Profile" : "Simpan Profil",
                         style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -605,6 +665,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       color: Color(0xFF166534),
                     ),
                   ),
+                  if (user.email != null && user.email!.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      user.email!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppTheme.textMuted,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

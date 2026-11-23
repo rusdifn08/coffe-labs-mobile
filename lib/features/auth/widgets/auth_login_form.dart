@@ -9,6 +9,7 @@ class AuthLoginForm extends StatefulWidget {
   final bool isSuccess;
   final VoidCallback onLogin;
   final VoidCallback onSwitchToSignUp;
+  final VoidCallback? onForgotPassword;
 
   const AuthLoginForm({
     super.key,
@@ -18,6 +19,7 @@ class AuthLoginForm extends StatefulWidget {
     this.isSuccess = false,
     required this.onLogin,
     required this.onSwitchToSignUp,
+    this.onForgotPassword,
   });
 
   @override
@@ -45,14 +47,15 @@ class _AuthLoginFormState extends State<AuthLoginForm> {
         ),
         const SizedBox(height: 20),
 
-        // Username Field
+        // Username atau Email Field
         TextField(
           controller: widget.usernameController,
           enabled: !isLocked,
+          keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.next,
           decoration: InputDecoration(
-            labelText: 'Username',
-            hintText: 'Masukkan username',
+            labelText: 'Username atau Email',
+            hintText: 'Masukkan username atau email',
             prefixIcon: const Icon(CupertinoIcons.person_fill, color: AppTheme.primaryBrown, size: 20),
             filled: true,
             fillColor: isLocked
@@ -98,7 +101,29 @@ class _AuthLoginFormState extends State<AuthLoginForm> {
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        if (widget.onForgotPassword != null) ...[
+          const SizedBox(height: 6),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: isLocked ? null : widget.onForgotPassword,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text(
+                'Lupa Password?',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.primaryBrown,
+                ),
+              ),
+            ),
+          ),
+        ],
+        const SizedBox(height: 18),
 
         // Tombol Login dengan Transisi & Efek Animasi (tanpa teks saat loading/sukses)
         AnimatedContainer(

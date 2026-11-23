@@ -18,6 +18,7 @@ abstract class AuthRepository {
     required String username,
     required String password,
     required String fullName,
+    String? email,
     required String avatarUrl,
   });
   Future<void> logout();
@@ -105,13 +106,16 @@ class AuthRepositoryImpl implements AuthRepository {
     required String username,
     required String password,
     required String fullName,
+    String? email,
     required String avatarUrl,
   }) async {
     try {
+      final cleanEmail = email?.trim().toLowerCase();
       final response = await _apiClient.post('/api/auth/register', body: {
         'username': username.trim().toLowerCase(),
         'password': password,
         'full_name': fullName.trim(),
+        if (cleanEmail != null && cleanEmail.isNotEmpty) 'email': cleanEmail,
         'avatar_url': avatarUrl,
       });
 

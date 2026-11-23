@@ -76,6 +76,7 @@ class AuthController extends _$AuthController {
     required String username,
     required String password,
     required String fullName,
+    String? email,
     required String avatarUrl,
   }) async {
     final repo = ref.read(authRepositoryProvider);
@@ -86,6 +87,7 @@ class AuthController extends _$AuthController {
         username: username,
         password: password,
         fullName: fullName,
+        email: email,
         avatarUrl: avatarUrl,
       );
     } finally {

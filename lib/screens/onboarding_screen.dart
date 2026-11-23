@@ -3,13 +3,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../features/auth/controllers/auth_controller.dart';
 import '../features/auth/utils/auth_navigation_helper.dart';
 import '../features/auth/widgets/auth_error_banner.dart';
 import '../features/auth/widgets/auth_header.dart';
 import '../features/auth/widgets/auth_login_form.dart';
 import '../features/auth/widgets/auth_signup_form.dart';
 import '../features/auth/widgets/auth_status_dialogs.dart';
+import '../features/auth/widgets/forgot_password_sheet.dart';
 import '../features/brew/controllers/brew_history_controller.dart';
 import '../features/recipes/controllers/recipe_list_controller.dart';
 import '../services/api_service.dart';
@@ -39,6 +39,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // Register Controllers
   final TextEditingController _regUsernameCtrl = TextEditingController();
   final TextEditingController _regFullNameCtrl = TextEditingController();
+  final TextEditingController _regEmailCtrl = TextEditingController();
   final TextEditingController _regPasswordCtrl = TextEditingController();
   String? _selectedAvatar;
 
@@ -49,9 +50,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     _loadDefaultAvatar();
     // Pre-warm katalog resep & riwayat di background agar saat tombol Login berhasil,
     // transisi masuk ke Home 100% instan tanpa freeze sesaat.
-    unawaited(ref.read(recipeListControllerProvider.future).catchError((_) => const []));
-    unawaited(ref.read(brewHistoryControllerProvider.future).catchError((_) => const []));
-    unawaited(ApiService.getUniqueBaristas().catchError((_) => const []));
+    unawaited(
+      ref.read(recipeListControllerProvider.future).catchError((_) => <Map<String, dynamic>>[]),
+    );
+    unawaited(
+      ref.read(brewHistoryControllerProvider.future).catchError((_) => <Map<String, dynamic>>[]),
+    );
+    unawaited(
+      ApiService.getUniqueBaristas().catchError((_) => <Map<String, dynamic>>[]),
+    );
   }
 
   Future<void> _loadDefaultAvatar() async {
@@ -69,6 +76,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     _loginPasswordCtrl.dispose();
     _regUsernameCtrl.dispose();
     _regFullNameCtrl.dispose();
+    _regEmailCtrl.dispose();
     _regPasswordCtrl.dispose();
     super.dispose();
   }
@@ -91,7 +99,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
     if (username.isEmpty || password.isEmpty) {
       setState(() {
-        _errorMessage = 'Harap isi username dan password.';
+        _errorMessage = 'Harap isi username atau email beserta password.';
       });
       return;
     }
@@ -154,11 +162,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Future<void> _handleRegister() async {
     final fullName = _regFullNameCtrl.text.trim();
     final username = _regUsernameCtrl.text.trim().toLowerCase();
+    final email = _regEmailCtrl.text.trim().toLowerCase();
     final password = _regPasswordCtrl.text.trim();
 
-    if (fullName.isEmpty || username.isEmpty || password.isEmpty) {
+    if (fullName.isEmpty || username.isEmpty || email.isEmpty || password.isEmpty) {
       setState(() {
-        _errorMessage = 'Harap lengkapi semua kolom pendaftaran.';
+        _errorMessage = 'Harap lengkapi semua kolom pendaftaran termasuk alamat email.';
       });
       return;
     }
@@ -166,6 +175,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     if (username.length < 3) {
       setState(() {
         _errorMessage = 'Username minimal 3 karakter.';
+      });
+      return;
+    }
+
+    if (!AuthService.isValidEmail(email)) {
+      setState(() {
+        _errorMessage = 'Format alamat email tidak valid. Contoh: nama@gmail.com';
       });
       return;
     }
@@ -186,6 +202,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       username: username,
       password: password,
       fullName: fullName,
+      email: email,
       avatarUrl: _selectedAvatar,
     );
 
@@ -276,6 +293,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             key: const ValueKey('signup_form'),
                             fullNameController: _regFullNameCtrl,
                             usernameController: _regUsernameCtrl,
+                            emailController: _regEmailCtrl,
                             passwordController: _regPasswordCtrl,
                             selectedAvatar: _selectedAvatar,
                             isLoading: _isLoading,
@@ -290,6 +308,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             isLoading: _isLoading,
                             isSuccess: _isSuccess,
                             onLogin: _handleLogin,
+                            onForgotPassword: () {
+                              ForgotPasswordSheet.show(
+                                context,
+                                initialIdentifier: _loginUsernameCtrl.text.trim(),
+                                onResetSuccess: (identifier) {
+                                  setState(() {
+                                    _loginUsernameCtrl.text = identifier;
+                                    _loginPasswordCtrl.clear();
+                                    _errorMessage = null;
+                                  });
+                                },
+                              );
+                            },
                             onSwitchToSignUp: () {
                               setState(() {
                                 _isSignUpMode = true;
