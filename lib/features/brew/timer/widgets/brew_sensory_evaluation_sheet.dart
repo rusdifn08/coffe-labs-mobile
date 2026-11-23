@@ -346,12 +346,27 @@ class BrewSensoryEvaluationSheet {
                             Navigator.pop(ctx);
                             await ApiService.addJournalEntry({
                               'recipeId': recipe['id'],
-                              'recipeTitle': recipe['title'],
-                              'author': recipe['author'],
+                              'title': recipe['title'] ?? 'Seduhan Kopi',
+                              'recipeTitle': recipe['title'] ?? 'Seduhan Kopi',
+                              'author': recipe['author'] ?? '',
+                              'method': recipe['method'] ?? '',
+                              'beanName': recipe['beanName'] ?? '',
+                              'doseGrams': recipe['coffeeWeightGrams'],
+                              'waterGrams': recipe['totalWaterWeightGrams'],
+                              'tempCelsius': recipe['waterTempCelsius'],
                               'authorAvatarUrl': recipe['authorAvatarUrl'],
                               'authorImageUrl': recipe['coverImageUrl'],
-                              'grindNote': '${recipe['grindSize'] ?? ''} • $badge',
+                              'grindSize': '${recipe['grindSize'] ?? ''} • $badge'.trim(),
+                              'grindNote': '${recipe['grindSize'] ?? ''} • $badge'.trim(),
                               'rating': overallScore,
+                              'sensoryMaxScale': 5.0,
+                              'sensoryMetrics': {
+                                'Asam': double.parse(acidity.toStringAsFixed(1)),
+                                'Manis': double.parse(sweetness.toStringAsFixed(1)),
+                                'Pahit': double.parse(bitterness.toStringAsFixed(1)),
+                                'Body': double.parse(body.toStringAsFixed(1)),
+                                'Clarity': double.parse(clarity.toStringAsFixed(1)),
+                              },
                               'notes': '$status | ${isEn ? "Acidity" : "Asam"}: ${acidity.toStringAsFixed(1)}, ${isEn ? "Sweetness" : "Manis"}: ${sweetness.toStringAsFixed(1)}, ${isEn ? "Bitterness" : "Pahit"}: ${bitterness.toStringAsFixed(1)}, Body: ${body.toStringAsFixed(1)}, Clarity: ${clarity.toStringAsFixed(1)}. $advice',
                             });
                             await GamificationService.instance.recordCuppingCompleted();

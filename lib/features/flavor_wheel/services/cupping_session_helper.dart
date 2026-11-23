@@ -56,12 +56,25 @@ class CuppingSessionHelper {
 
     await ApiService.addJournalEntry({
       'recipeId': 0,
-      'recipeTitle': 'Cupping: $safeBean ($score Poin)',
+      'title': 'Cupping: $safeBean (${score.toStringAsFixed(1)} Poin)',
+      'recipeTitle': 'Cupping: $safeBean (${score.toStringAsFixed(1)} Poin)',
+      'beanName': safeBean,
+      'method': 'SCA Cupping',
       'author': safeCupper,
       'authorAvatarUrl': 'assets/images/avatars/generic_fallback.jpg',
       'authorImageUrl': 'assets/images/avatars/generic_fallback.jpg',
+      'grindSize': 'Cupping ($roast • $process)',
       'grindNote': 'Cupping ($roast • $process)',
       'rating': rating,
+      'sensoryMaxScale': 10.0,
+      'sensoryMetrics': {
+        'Aroma': double.parse(aromaScore.toStringAsFixed(2)),
+        'Asam': double.parse(acidityScore.toStringAsFixed(2)),
+        'Manis': double.parse(sweetnessScore.toStringAsFixed(2)),
+        'Body': double.parse(mouthfeelScore.toStringAsFixed(2)),
+        'Aftertaste': double.parse(aftertasteScore.toStringAsFixed(2)),
+        'Balance': double.parse(balanceScore.toStringAsFixed(2)),
+      },
       'notes': summary,
     });
 

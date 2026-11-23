@@ -1,14 +1,18 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../features/brew/controllers/brew_journal_controller.dart';
-import '../features/recipes/controllers/recipe_list_controller.dart';
-import '../services/language_service.dart';
-import '../services/coffee_translator.dart';
-import '../theme/app_theme.dart';
-import '../utils/barista_utils.dart';
 
-/// Halaman Jurnal Seduh Kopi yang mengadopsi Riverpod ConsumerStatefulWidget & AsyncValue.
+import '../features/brew/controllers/brew_journal_controller.dart';
+import '../features/brew/journal/models/brew_journal_entry.dart';
+import '../features/brew/journal/widgets/brew_journal_detail_sheet.dart';
+import '../features/brew/journal/widgets/brew_journal_editor_sheet.dart';
+import '../features/brew/journal/widgets/brew_journal_sensory_chart.dart';
+import '../services/coffee_translator.dart';
+import '../services/language_service.dart';
+import '../theme/app_theme.dart';
+
+/// Halaman Jurnal Seduh Kopi interaktif dengan Detail Grafik Sensorik (Radar & Batang),
+/// Edit fleksibel, Catatan Tambahan (follow-up notes), dan pencarian cepat.
 class BrewJournalScreen extends ConsumerStatefulWidget {
   const BrewJournalScreen({super.key});
 
@@ -17,166 +21,78 @@ class BrewJournalScreen extends ConsumerStatefulWidget {
 }
 
 class _BrewJournalScreenState extends ConsumerState<BrewJournalScreen> {
-  Future<void> _openAddSheet({Map<String, dynamic>? recipe}) async {
-    final noteCtrl = TextEditingController();
-    final grindCtrl = TextEditingController(text: recipe?['grindSize']?.toString() ?? '');
-    double rating = 4;
-    String? selectedRecipeTitle = recipe?['title']?.toString();
-    int? selectedRecipeId = recipe?['id'] as int?;
-    String? author = recipe?['author']?.toString();
-    String? imageUrl = recipe != null ? BaristaUtils.imageUrlFromRecipe(recipe) : null;
-    String? coverImageUrl = recipe != null ? BaristaUtils.coverUrlFromRecipe(recipe) : null;
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _searchQuery = '';
 
-    final allRecipes = ref.read(recipeListControllerProvider).value ?? [];
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
 
-    if (!mounted) return;
-    await showModalBottomSheet(
+  Future<void> _openCreateSheet({Map<String, dynamic>? recipe}) async {
+    await BrewJournalEditorSheet.show(context, initialRecipe: recipe);
+  }
+
+  Future<void> _openEditSheet(BrewJournalEntry entry) async {
+    await BrewJournalEditorSheet.show(context, existing: entry);
+  }
+
+  Future<void> _openDetailSheet(BrewJournalEntry entry) async {
+    await BrewJournalDetailSheet.show(context, entry: entry);
+  }
+
+  Future<void> _confirmDelete(BrewJournalEntry entry) async {
+    final isEn = LanguageService.isEnglish;
+    final confirm = await showDialog<bool>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: AppTheme.bgCream,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surfaceWhite,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(
+          isEn ? 'Delete Journal Entry?' : 'Hapus Catatan Jurnal?',
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        content: Text(
+          isEn
+              ? 'Delete "${entry.title}" and all its additional notes?'
+              : 'Hapus "${entry.title}" beserta seluruh catatan tambahannya?',
+          style: const TextStyle(fontSize: 13.5, color: AppTheme.textMuted),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(isEn ? 'Cancel' : 'Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(isEn ? 'Delete' : 'Hapus'),
+          ),
+        ],
       ),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setModal) {
-            final isEn = LanguageService.isEnglish;
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 24,
-                right: 24,
-                top: 24,
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isEn ? 'Log Brew Tasting' : 'Catat Hasil Seduh',
-                      style: Theme.of(ctx).textTheme.displayLarge?.copyWith(fontSize: 20),
-                    ),
-                    const SizedBox(height: 16),
-                    if (recipe == null) ...[
-                      DropdownButtonFormField<int>(
-                        initialValue: selectedRecipeId,
-                        decoration: InputDecoration(
-                          labelText: isEn ? 'Select Recipe' : 'Pilih Resep',
-                          filled: true,
-                          fillColor: AppTheme.surfaceWhite,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        items: allRecipes.map((r) {
-                          return DropdownMenuItem<int>(
-                            value: r['id'] as int,
-                            child: Text(
-                              r['title']?.toString() ?? 'Recipe',
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val == null) return;
-                          final match = allRecipes.firstWhere((e) => e['id'] == val, orElse: () => {});
-                          setModal(() {
-                            selectedRecipeId = val;
-                            selectedRecipeTitle = match['title']?.toString();
-                            author = match['author']?.toString();
-                            imageUrl = BaristaUtils.imageUrlFromRecipe(match);
-                            coverImageUrl = BaristaUtils.coverUrlFromRecipe(match);
-                            if (match['grindSize'] != null) {
-                              grindCtrl.text = match['grindSize'].toString();
-                            }
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                    ] else ...[
-                      Text(
-                        selectedRecipeTitle ?? '',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                    TextField(
-                      controller: grindCtrl,
-                      decoration: InputDecoration(
-                        labelText: isEn ? 'Grind Size Used' : 'Ukuran Gilingan yang Digunakan',
-                        filled: true,
-                        fillColor: AppTheme.surfaceWhite,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: noteCtrl,
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        labelText: isEn ? 'Tasting Notes & Observations' : 'Catatan Rasa & Evaluasi',
-                        hintText: isEn ? 'e.g. Bright acidity, floral aroma, sweet finish' : 'misal: Asam buah cerah, aroma melati, manis seimbang',
-                        filled: true,
-                        fillColor: AppTheme.surfaceWhite,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(isEn ? 'Rating' : 'Penilaian Rasa', style: const TextStyle(fontWeight: FontWeight.w600)),
-                        Row(
-                          children: List.generate(5, (starIdx) {
-                            return IconButton(
-                              icon: Icon(
-                                starIdx < rating ? CupertinoIcons.star_fill : CupertinoIcons.star,
-                                color: AppTheme.accentAmber,
-                                size: 24,
-                              ),
-                              onPressed: () => setModal(() => rating = starIdx + 1.0),
-                            );
-                          }),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryBrown,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onPressed: () async {
-                          if ((selectedRecipeTitle ?? '').isEmpty) return;
-                          final entry = {
-                            'id': DateTime.now().millisecondsSinceEpoch,
-                            'recipeId': selectedRecipeId,
-                            'title': selectedRecipeTitle,
-                            'author': author ?? '',
-                            'imageUrl': imageUrl,
-                            'coverImageUrl': coverImageUrl,
-                            'grindSize': grindCtrl.text.trim(),
-                            'notes': noteCtrl.text.trim(),
-                            'rating': rating,
-                            'createdAt': DateTime.now().toIso8601String(),
-                          };
-                          await ref.read(brewJournalControllerProvider.notifier).addEntry(entry);
-                          if (ctx.mounted) Navigator.pop(ctx);
-                        },
-                        child: Text(isEn ? 'Save Journal Entry' : 'Simpan Catatan Jurnal'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
     );
+    if (confirm != true) return;
+    await ref.read(brewJournalControllerProvider.notifier).deleteEntry(entry.id);
+  }
+
+  List<BrewJournalEntry> _filterEntries(List<BrewJournalEntry> all) {
+    final q = _searchQuery.trim().toLowerCase();
+    if (q.isEmpty) return all;
+    return all.where((e) {
+      if (e.title.toLowerCase().contains(q)) return true;
+      if (e.notes.toLowerCase().contains(q)) return true;
+      if (e.grindSize.toLowerCase().contains(q)) return true;
+      if (e.method.toLowerCase().contains(q)) return true;
+      if (e.beanName.toLowerCase().contains(q)) return true;
+      if (e.additionalNotes.any((n) => n.text.toLowerCase().contains(q))) {
+        return true;
+      }
+      return false;
+    }).toList();
   }
 
   @override
@@ -185,13 +101,18 @@ class _BrewJournalScreenState extends ConsumerState<BrewJournalScreen> {
     final journalAsync = ref.watch(brewJournalControllerProvider);
 
     return Scaffold(
+      backgroundColor: AppTheme.bgCream,
       appBar: AppBar(
         title: Text(isEn ? 'Brew Journal' : 'Jurnal Seduh'),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(CupertinoIcons.plus_circle, color: AppTheme.primaryBrown),
-            onPressed: () => _openAddSheet(),
+            tooltip: isEn ? 'Add Brew Note' : 'Tambah Catatan Seduh',
+            icon: const Icon(
+              CupertinoIcons.plus_circle,
+              color: AppTheme.primaryBrown,
+            ),
+            onPressed: () => _openCreateSheet(),
           ),
         ],
       ),
@@ -209,7 +130,8 @@ class _BrewJournalScreenState extends ConsumerState<BrewJournalScreen> {
             ),
           ),
         ),
-        data: (entries) {
+        data: (rawEntries) {
+          final entries = rawEntries.map(BrewJournalEntry.fromMap).toList();
           if (entries.isEmpty) {
             return Center(
               child: Padding(
@@ -217,25 +139,36 @@ class _BrewJournalScreenState extends ConsumerState<BrewJournalScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(CupertinoIcons.book, size: 54, color: AppTheme.textMuted),
+                    const Icon(
+                      CupertinoIcons.book,
+                      size: 54,
+                      color: AppTheme.textMuted,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       isEn
-                          ? 'No brew notes yet.\nLog your extraction grind, notes, and ratings.'
-                          : 'Belum ada catatan seduh.\nCatat rasa, grind size, dan rating hasil seduhanmu.',
+                          ? 'No brew notes yet.\nLog your extraction grind, sensory chart, notes, and ratings.'
+                          : 'Belum ada catatan seduh.\nCatat rasa, grafik sensorik, grind size, dan rating hasil seduhanmu.',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: AppTheme.textMuted, height: 1.5),
+                      style: const TextStyle(
+                        color: AppTheme.textMuted,
+                        height: 1.5,
+                      ),
                     ),
                     const SizedBox(height: 20),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryBrown,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      onPressed: () => _openAddSheet(),
+                      onPressed: () => _openCreateSheet(),
                       icon: const Icon(CupertinoIcons.plus),
-                      label: Text(isEn ? 'Write First Note' : 'Tulis Catatan Pertama'),
+                      label: Text(
+                        isEn ? 'Write First Note' : 'Tulis Catatan Pertama',
+                      ),
                     ),
                   ],
                 ),
@@ -243,99 +176,381 @@ class _BrewJournalScreenState extends ConsumerState<BrewJournalScreen> {
             );
           }
 
+          final filtered = _filterEntries(entries);
+          final avgRating = entries.fold<double>(0, (s, e) => s + e.rating) /
+              entries.length;
+          final totalFollowUps = entries.fold<int>(
+            0,
+            (s, e) => s + e.additionalNotes.length,
+          );
+
           return RefreshIndicator(
             color: AppTheme.primaryBrown,
             onRefresh: () async => ref.invalidate(brewJournalControllerProvider),
-            child: ListView.builder(
-              padding: const EdgeInsets.all(20),
-              itemCount: entries.length,
-              itemBuilder: (context, index) {
-                final item = entries[index];
-                final id = item['id'] as int? ?? 0;
-                final rawTitle = item['title']?.toString() ?? 'Recipe';
-                final title = isEn ? CoffeeTranslator.translateTitle(rawTitle) : rawTitle;
-                final notes = item['notes']?.toString() ?? '';
-                final grind = item['grindSize']?.toString() ?? '';
-                final rating = (item['rating'] ?? 4).toDouble();
-                final createdAt = DateTime.tryParse(item['createdAt']?.toString() ?? '') ?? DateTime.now();
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceWhite,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppTheme.primaryBrown.withValues(alpha: 0.08)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              title,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                              overflow: TextOverflow.ellipsis,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(18, 12, 18, 32),
+              children: [
+                // Pencarian cepat
+                TextField(
+                  controller: _searchCtrl,
+                  onChanged: (v) => setState(() => _searchQuery = v),
+                  decoration: InputDecoration(
+                    hintText: isEn
+                        ? 'Search recipes, beans, or notes...'
+                        : 'Cari resep, biji kopi, atau catatan...',
+                    prefixIcon: const Icon(CupertinoIcons.search, size: 18),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(
+                              CupertinoIcons.clear_circled_solid,
+                              size: 18,
                             ),
-                          ),
-                          Row(
-                            children: List.generate(5, (starIdx) {
-                              return Icon(
-                                starIdx < rating ? CupertinoIcons.star_fill : CupertinoIcons.star,
-                                color: AppTheme.accentAmber,
-                                size: 14,
-                              );
-                            }),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      if (grind.isNotEmpty) ...[
-                        Row(
-                          children: [
-                            const Icon(CupertinoIcons.slider_horizontal_3, size: 13, color: AppTheme.textMuted),
-                            const SizedBox(width: 4),
-                            Text(
-                              grind,
-                              style: const TextStyle(fontSize: 12, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                      ],
-                      if (notes.isNotEmpty) ...[
-                        Text(
-                          notes,
-                          style: const TextStyle(fontSize: 13, color: AppTheme.textDark, height: 1.4),
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '${createdAt.day}/${createdAt.month}/${createdAt.year}',
-                            style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
-                          ),
-                          IconButton(
-                            icon: const Icon(CupertinoIcons.trash, color: Colors.redAccent, size: 16),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
                             onPressed: () {
-                              ref.read(brewJournalControllerProvider.notifier).deleteEntry(id);
+                              _searchCtrl.clear();
+                              setState(() => _searchQuery = '');
                             },
-                          ),
-                        ],
-                      ),
-                    ],
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: AppTheme.surfaceWhite,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: AppTheme.borderWarm),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: AppTheme.borderWarm),
+                    ),
                   ),
-                );
-              },
+                ),
+                const SizedBox(height: 12),
+
+                // Grafik Tren Kualitas Seduhan
+                BrewJournalRatingTrendCard(
+                  recentRatings: entries.map((e) => e.rating).toList(),
+                  averageRating: avgRating,
+                  totalEntries: entries.length,
+                  totalFollowUps: totalFollowUps,
+                ),
+                const SizedBox(height: 14),
+
+                if (filtered.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 32),
+                    child: Center(
+                      child: Text(
+                        isEn
+                            ? 'No journal notes match "$_searchQuery".'
+                            : 'Tidak ada catatan cocok untuk "$_searchQuery".',
+                        style: const TextStyle(color: AppTheme.textMuted),
+                      ),
+                    ),
+                  )
+                else
+                  ...filtered.map((entry) => _buildJournalCard(entry, isEn)),
+              ],
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildJournalCard(BrewJournalEntry entry, bool isEn) {
+    final title =
+        isEn ? CoffeeTranslator.translateTitle(entry.title) : entry.title;
+    final dateText =
+        '${entry.createdAt.day.toString().padLeft(2, '0')}/${entry.createdAt.month.toString().padLeft(2, '0')}/${entry.createdAt.year}';
+    final previewMetrics = entry.sensoryMetrics.entries.take(3).toList();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceWhite,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppTheme.primaryBrown.withValues(alpha: 0.10),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryBrown.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () => _openDetailSheet(entry),
+          child: Padding(
+            padding: const EdgeInsets.all(15),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
+                          color: AppTheme.textDark,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: List.generate(5, (starIdx) {
+                        return Icon(
+                          starIdx < entry.rating.round()
+                              ? CupertinoIcons.star_fill
+                              : CupertinoIcons.star,
+                          color: AppTheme.accentAmber,
+                          size: 14,
+                        );
+                      }),
+                    ),
+                  ],
+                ),
+                if (entry.grindSize.isNotEmpty || entry.method.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      if (entry.method.isNotEmpty)
+                        _miniChip(CupertinoIcons.drop_fill, entry.method),
+                      if (entry.grindSize.isNotEmpty)
+                        _miniChip(
+                          CupertinoIcons.slider_horizontal_3,
+                          entry.grindSize,
+                        ),
+                    ],
+                  ),
+                ],
+                if (previewMetrics.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      for (final m in previewMetrics)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.accentGold.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '${m.key}: ${m.value.toStringAsFixed(1)}',
+                            style: const TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.primaryBrown,
+                            ),
+                          ),
+                        ),
+                      if (entry.hasSensoryChart)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryBrown.withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                CupertinoIcons.chart_pie_fill,
+                                size: 11,
+                                color: AppTheme.primaryBrown,
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                isEn ? 'Chart' : 'Grafik',
+                                style: const TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppTheme.primaryBrown,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+                if (entry.notes.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    entry.notes,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppTheme.textDark,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+                if (entry.additionalNotes.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.bgCream,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          CupertinoIcons.doc_append,
+                          size: 12.5,
+                          color: AppTheme.primaryBrown,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          '+${entry.additionalNotes.length} ${isEn ? "additional notes" : "catatan tambahan"}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.primaryBrown,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 10),
+                const Divider(height: 1, color: AppTheme.borderWarm),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '$dateText${entry.updatedAt != null ? (isEn ? " • edited" : " • diedit") : ""}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppTheme.textMuted,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    _cardActionBtn(
+                      icon: CupertinoIcons.chart_bar_alt_fill,
+                      label: isEn ? 'Detail' : 'Detail',
+                      color: AppTheme.primaryBrown,
+                      onTap: () => _openDetailSheet(entry),
+                    ),
+                    const SizedBox(width: 6),
+                    _cardActionBtn(
+                      icon: CupertinoIcons.pencil,
+                      label: isEn ? 'Edit' : 'Edit',
+                      color: const Color(0xFF0F766E),
+                      onTap: () => _openEditSheet(entry),
+                    ),
+                    const SizedBox(width: 4),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () => _confirmDelete(entry),
+                      child: const Padding(
+                        padding: EdgeInsets.all(5),
+                        child: Icon(
+                          CupertinoIcons.trash,
+                          color: Colors.redAccent,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _miniChip(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppTheme.bgCream,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11.5, color: AppTheme.textMuted),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppTheme.textMuted,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _cardActionBtn({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 12.5, color: color),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -441,11 +441,27 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     final key = await UserScopedStorage.scopedKeyAsync(_journalKey, prefs: prefs);
     final entries = await getJournalEntries();
-    entry['id'] = DateTime.now().millisecondsSinceEpoch;
-    entry['createdAt'] = DateTime.now().toIso8601String();
+    entry['id'] ??= DateTime.now().millisecondsSinceEpoch;
+    entry['createdAt'] ??= DateTime.now().toIso8601String();
     entries.insert(0, entry);
     if (entries.length > 100) {
       entries.removeRange(100, entries.length);
+    }
+    await prefs.setString(key, json.encode(entries));
+    _notifyChanged();
+  }
+
+  static Future<void> updateJournalEntry(Map<String, dynamic> updatedEntry) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = await UserScopedStorage.scopedKeyAsync(_journalKey, prefs: prefs);
+    final entries = await getJournalEntries();
+    final targetId = updatedEntry['id'];
+    updatedEntry['updatedAt'] = DateTime.now().toIso8601String();
+    final idx = entries.indexWhere((e) => e is Map && e['id'] == targetId);
+    if (idx >= 0) {
+      entries[idx] = updatedEntry;
+    } else {
+      entries.insert(0, updatedEntry);
     }
     await prefs.setString(key, json.encode(entries));
     _notifyChanged();
