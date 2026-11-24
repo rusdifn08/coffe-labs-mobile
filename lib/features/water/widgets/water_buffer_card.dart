@@ -45,28 +45,39 @@ class WaterBufferCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(CupertinoIcons.slider_horizontal_below_rectangle, size: 18, color: badgeColor),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Rasio Buffer Kimia (GH:KH)',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                decoration: BoxDecoration(
-                  color: badgeColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(CupertinoIcons.slider_horizontal_below_rectangle, size: 17, color: badgeColor),
+                    const SizedBox(width: 6),
+                    const Expanded(
+                      child: Text(
+                        'Rasio Buffer Kimia (GH:KH)',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  '${ratio.toStringAsFixed(1)}:1 • $badgeLabel',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 11,
-                    color: badgeColor,
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: badgeColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${ratio.toStringAsFixed(1)}:1 • $badgeLabel',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 10.5,
+                      color: badgeColor,
+                    ),
                   ),
                 ),
               ),
@@ -108,12 +119,35 @@ class WaterBufferCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text('Buffer Tinggi (Flat)', style: TextStyle(fontSize: 9.5, color: Colors.grey)),
-              Text('1.6 - 2.5 (Harmonis)', style: TextStyle(fontSize: 9.5, color: Colors.grey)),
-              Text('>3.0 (Acid Pop)', style: TextStyle(fontSize: 9.5, color: Colors.grey)),
+            children: [
+              Flexible(
+                child: Text(
+                  'Buffer Tinggi (Flat)',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 9.5, color: Colors.grey),
+                ),
+              ),
+              SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  '1.6 - 2.5 (Harmonis)',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 9.5, color: Colors.grey),
+                ),
+              ),
+              SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  '>3.0 (Acid Pop)',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 9.5, color: Colors.grey),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 10),

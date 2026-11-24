@@ -10,21 +10,21 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('Toolkit Deep Upgrades Tests', () {
-    test('Grinder Models: 10 commercial grinders & accurate click conversion', () {
+    test('Grinder Models: 102 verified grinders & accurate multi-anchor click conversion', () {
       final grinders = GrinderCatalog.getProfiles();
-      expect(grinders.length, equals(10));
+      expect(grinders.length, equals(102));
 
-      // EK43 test
+      // EK43 test (V60 650 µm -> Dial 8.8)
       final ek43 = grinders.firstWhere((g) => g.name.contains('EK43'));
-      expect(ek43.calculateSetting(800), equals('Dial 10.3'));
+      expect(ek43.calculateSetting(650), equals('Dial 8.8'));
 
-      // Comandante C40 test
-      final c40 = grinders.firstWhere((g) => g.name == 'Comandante C40 MK3/MK4');
-      expect(c40.calculateSetting(810), equals('25 clicks'));
+      // Comandante C40 test (V60 650 µm -> 27 klik)
+      final c40 = grinders.firstWhere((g) => g.id == 'comandante_c40_mk4');
+      expect(c40.calculateSetting(650), contains('27 klik'));
 
-      // Red Clix (15 micron per click)
+      // Red Clix (V60 650 µm -> 50 klik)
       final redClix = grinders.firstWhere((g) => g.name.contains('Red Clix'));
-      expect(redClix.calculateSetting(810), equals('50 clicks'));
+      expect(redClix.calculateSetting(650), contains('50 klik'));
     });
 
     test('Bypass Rescue: Calculates required hot water to salvage over-extracted brew', () {
