@@ -618,7 +618,10 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
                   flex: 5,
                   child: Column(
                     children: [
-                      BrewScaleLiveBadge(isEn: isEn),
+                      BrewScaleLiveBadge(
+                        isEn: isEn,
+                        targetWaterGrams: activeTargetWater,
+                      ),
                       Expanded(
                         child: ListView.builder(
                           controller: _stepScrollController,
@@ -690,7 +693,10 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
               const SizedBox(height: 10),
 
               // Live Smart Scale Badge
-              BrewScaleLiveBadge(isEn: isEn),
+              BrewScaleLiveBadge(
+                isEn: isEn,
+                targetWaterGrams: activeTargetWater,
+              ),
 
               const SizedBox(height: 6),
 
