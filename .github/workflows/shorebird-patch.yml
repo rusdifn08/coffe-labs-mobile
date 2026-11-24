@@ -51,9 +51,10 @@ jobs:
       - name: Publish Delta OTA Patch (Android)
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
+          CI: "true"
         run: |
           set -euo pipefail
-          shorebird patch android \
+          shorebird patch \
+            --platforms=android \
             --flavor "${{ github.event.inputs.flavor }}" \
-            --release-version "${{ github.event.inputs.release_version }}" \
-            --no-confirm
+            --release-version "${{ github.event.inputs.release_version }}"
