@@ -23,6 +23,14 @@ class LatteArtWlacGrade {
     required this.spilled,
   });
 
+  String get rankBadge {
+    if (overallScorePct >= 90) return 'SSR';
+    if (overallScorePct >= 80) return 'SR';
+    if (overallScorePct >= 68) return 'S';
+    if (overallScorePct >= 52) return 'A';
+    return 'B';
+  }
+
   Map<String, double> toMetricsMap() => {
         'contrastPct': contrastPct,
         'symmetryPct': symmetryPct,
@@ -32,18 +40,14 @@ class LatteArtWlacGrade {
       };
 }
 
-/// Real 2D Incompressible Navier-Stokes CFD Engine (Jos Stam's Stable Fluids)
-/// for Coffee Labs Latte Art 3D Simulator v2.0.
-///
-/// Pre-allocated `Float32List` velocity, pressure, foam density & `Uint8List`
-/// RGBA pixel buffer => ZERO GC allocation per frame, 100% numerically stable,
-/// circular cup no-slip boundary conditions, Dive-vs-Float buoyancy law,
-/// Gyroscope Wiggle Vorticity, and automated WLAC Pattern Grader!
+/// High-Definition 112x112 2D Incompressible Navier-Stokes CFD Engine
+/// (Jos Stam's Stable Fluids) with crisp razor-sharp crema-foam boundary,
+/// concentric Tulip/Rosetta advection, stream impact dimple shading,
+/// and 3D rim overflow drip tracking!
 class LatteArtCfdEngine {
-  static const int n = 64;
+  static const int n = 112;
   static const int _cellCount = n * n;
 
-  // Fluid fields (pre-allocated)
   final Float32List u = Float32List(_cellCount);
   final Float32List v = Float32List(_cellCount);
   final Float32List uPrev = Float32List(_cellCount);
@@ -55,18 +59,20 @@ class LatteArtCfdEngine {
   final Float32List div = Float32List(_cellCount);
   final Uint8List rgbaBuffer = Uint8List(_cellCount * 4);
 
-  // Transparent Milk Pitcher Slosh Solver (dual-layer milk + microfoam)
+  /// Normalized angles around front rim where excess milk/crema spilled over.
+  final Float32List rimSpillDrops = Float32List(7);
+
   late final TransparentVesselSloshSolver pitcherSlosh;
 
-  // Cup state
   final double cupCapacityMl;
   final double espressoBaseMl;
   double cupVolumeMl = 36.0;
-  double pourHeightCm = 5.0; // 0.5 cm (Float) .. 8.0 cm (Dive)
-  Offset pourPos = const Offset(0.0, 0.05); // normalized cup coords [-0.8..0.8]
+  double pourHeightCm = 4.6; // > 3.2 cm = Dive/Cut, <= 1.6 cm = Float/Pattern
+  Offset pourPos = const Offset(0.0, 0.05);
   Offset _prevPourPos = const Offset(0.0, 0.05);
   double milkFoamRemainingFraction = 1.0;
   bool spilled = false;
+  double spillAmountMl = 0.0;
   double highPourCanvasMl = 0.0;
   double accidentalEarlyFoamPenalty = 0.0;
   double elapsedSec = 0.0;
@@ -79,22 +85,19 @@ class LatteArtCfdEngine {
       radiusMeters: 0.042,
       maxHeightMeters: 0.105,
       capacityMl: 300.0,
-      initialVolumeMl: 240.0,
-      dampingRatio: 0.24, // Creamier microfoam damping
+      initialVolumeMl: 250.0,
+      dampingRatio: 0.24,
     );
     reset();
   }
 
   double get cupFillPct =>
-      ((cupVolumeMl / cupCapacityMl) * 100.0).clamp(0.0, 120.0);
+      ((cupVolumeMl / cupCapacityMl) * 100.0).clamp(0.0, 125.0);
 
-  /// Dive-vs-Float buoyancy coefficient alpha_float in [0, 1].
-  /// High pour (H > 3.5 cm) => dives cleanly under crema (~0.0).
-  /// Low pour (H <= 1.3 cm) => floats velvety white microfoam on surface (~1.0).
   double computeFloatFactor(double heightCm, double flowMlS) {
-    const double hCrit = 2.2;
-    final double sigmoid = 1.0 / (1.0 + math.exp((heightCm - hCrit) / 0.45));
-    final double flowBoost = 1.0 - 0.35 * math.exp(-flowMlS / 4.0);
+    const double hCrit = 2.25;
+    final double sigmoid = 1.0 / (1.0 + math.exp((heightCm - hCrit) / 0.42));
+    final double flowBoost = 1.0 - 0.30 * math.exp(-flowMlS / 3.8);
     return (sigmoid * flowBoost).clamp(0.0, 1.0);
   }
 
@@ -107,38 +110,41 @@ class LatteArtCfdEngine {
     foamPrev.fillRange(0, _cellCount, 0.0);
     p.fillRange(0, _cellCount, 0.0);
     div.fillRange(0, _cellCount, 0.0);
+    rimSpillDrops.fillRange(0, rimSpillDrops.length, 0.0);
 
-    // Rich tiger-striped espresso crema canvas
+    // Rich velvety roasted espresso crema marbled texture
     for (int j = 0; j < n; j++) {
       for (int i = 0; i < n; i++) {
         final double nx = (i / (n - 1)) * 2.0 - 1.0;
         final double ny = (j / (n - 1)) * 2.0 - 1.0;
         final double r = math.sqrt(nx * nx + ny * ny);
-        final double swirlNoise =
-            0.5 + 0.5 * math.sin(nx * 5.0 + ny * 3.0 + r * 4.0);
-        cremaTone[j * n + i] = (0.18 + 0.14 * swirlNoise).clamp(0.0, 1.0);
+        final double tiger = 0.5 +
+            0.3 * math.sin(nx * 4.5 + ny * 3.2) +
+            0.2 * math.cos(r * 6.5 - nx * 2.0);
+        cremaTone[j * n + i] = (0.14 + 0.16 * tiger).clamp(0.0, 1.0);
       }
     }
 
-    pitcherSlosh.reset(newVolumeMl: 240.0);
+    pitcherSlosh.reset(newVolumeMl: 250.0);
     cupVolumeMl = espressoBaseMl;
-    pourHeightCm = 5.0;
+    pourHeightCm = 4.6;
     pourPos = const Offset(0.0, 0.04);
     _prevPourPos = pourPos;
     milkFoamRemainingFraction = 1.0;
     spilled = false;
+    spillAmountMl = 0.0;
     highPourCanvasMl = 0.0;
     accidentalEarlyFoamPenalty = 0.0;
     elapsedSec = 0.0;
     renderToRgbaBuffer();
   }
 
-  /// Advances the 2D Incompressible Navier-Stokes fluid simulation by [dt].
   void step({
     required double dt,
     required double pitchDeg,
     required double rollDeg,
     double wiggleAngularVel = 0.0,
+    double lateralAccelX = 0.0,
   }) {
     final double safeDt = dt.clamp(0.004, 0.025);
     elapsedSec += safeDt;
@@ -147,29 +153,36 @@ class LatteArtCfdEngine {
       dt: safeDt,
       pitchDeg: pitchDeg,
       rollDeg: rollDeg,
+      lateralAccelX: lateralAccelX,
       lateralAccelZ: wiggleAngularVel * 0.45,
-      maxFlowMlS: 16.5,
+      maxFlowMlS: 17.0,
     );
 
-    if (flowMlS > 0.25) {
+    if (flowMlS > 0.22) {
       final double addedMl = flowMlS * safeDt;
       cupVolumeMl += addedMl;
-      if (cupVolumeMl > cupCapacityMl + 6.0) {
+
+      // Realistic Rim Overflow Spill Physics (matching 69s-70s of reference video!)
+      if (cupVolumeMl > cupCapacityMl + 3.0) {
         spilled = true;
+        spillAmountMl += addedMl;
+        for (int k = 0; k < rimSpillDrops.length; k++) {
+          final double rate = 0.28 + (k % 3) * 0.14;
+          rimSpillDrops[k] = (rimSpillDrops[k] + safeDt * rate).clamp(0.0, 1.0);
+        }
       }
 
       final double alphaFloat = computeFloatFactor(pourHeightCm, flowMlS);
-      final bool isEarlyCanvasPhase = cupVolumeMl < cupCapacityMl * 0.52;
+      final bool isEarlyCanvasPhase = cupVolumeMl < cupCapacityMl * 0.50;
       if (isEarlyCanvasPhase && alphaFloat < 0.22) {
         highPourCanvasMl += addedMl;
       } else if (isEarlyCanvasPhase && alphaFloat > 0.55) {
-        accidentalEarlyFoamPenalty += addedMl * 0.25;
+        accidentalEarlyFoamPenalty += addedMl * 0.22;
       }
 
-      // Microfoam ratio depletes gradually when floating white foam
       if (alphaFloat > 0.35) {
         milkFoamRemainingFraction =
-            (milkFoamRemainingFraction - addedMl * 0.0042).clamp(0.15, 1.0);
+            (milkFoamRemainingFraction - addedMl * 0.0038).clamp(0.18, 1.0);
       }
 
       _injectPourSource(
@@ -180,24 +193,22 @@ class LatteArtCfdEngine {
       );
     }
 
-    // 1. Velocity Viscosity Diffusion & Incompressible Pressure Projection
-    _diffuse(1, uPrev, u, 0.00018, safeDt, 4);
-    _diffuse(2, vPrev, v, 0.00018, safeDt, 4);
-    _project(uPrev, vPrev, p, div, 10);
+    // High-stability Jos Stam solver on 112x112 grid
+    _diffuse(1, uPrev, u, 0.00014, safeDt, 3);
+    _diffuse(2, vPrev, v, 0.00014, safeDt, 3);
+    _project(uPrev, vPrev, p, div, 8);
 
-    // 2. Semi-Lagrangian Velocity Self-Advection + Second Projection
     _advect(1, u, uPrev, uPrev, vPrev, safeDt);
     _advect(2, v, vPrev, uPrev, vPrev, safeDt);
-    _project(u, v, p, div, 10);
+    _project(u, v, p, div, 8);
 
-    // Gentle viscous damping so foam settles smoothly like real velvety milk
+    // Silky microfoam viscous settling so tulip stacks stay razor-crisp!
     for (int i = 0; i < _cellCount; i++) {
-      u[i] *= 0.968;
-      v[i] *= 0.968;
+      u[i] *= 0.962;
+      v[i] *= 0.962;
     }
 
-    // 3. Microfoam Scalar Diffusion & Semi-Lagrangian Advection
-    _diffuse(0, foamPrev, foam, 0.00004, safeDt, 2);
+    _diffuse(0, foamPrev, foam, 0.000018, safeDt, 2);
     _advect(0, foam, foamPrev, u, v, safeDt);
 
     _prevPourPos = pourPos;
@@ -214,20 +225,21 @@ class LatteArtCfdEngine {
     final double cy = ((pourPos.dy + 1.0) * 0.5) * (n - 1);
 
     final Offset moveDelta = pourPos - _prevPourPos;
-    final double pushDirX = (moveDelta.dx * 22.0 + wiggleVel * 0.9).clamp(-6.0, 6.0);
-    // Forward pull-through drag or gentle forward push into the cup
-    final double pushDirY =
-        (moveDelta.dy * 24.0 - 1.35 * (flowMlS / 12.0)).clamp(-6.5, 6.5);
+    final double pushDirX =
+        (moveDelta.dx * 26.0 + wiggleVel * 1.05).clamp(-7.5, 7.5);
+    // Forward push toward front of cup (+Y in screen cup space) or pull-through drag
+    final double pushDirY = (moveDelta.dy * 28.0 +
+            (alphaFloat > 0.45 ? 1.55 * (flowMlS / 12.0) : 0.0))
+        .clamp(-8.0, 8.0);
 
-    // Radius narrower when pouring high (sharp Pull-Through Cut!), wider when low
-    final double radiusCells = alphaFloat > 0.45 ? 4.4 : 2.6;
+    final double radiusCells = alphaFloat > 0.45 ? 6.8 : 3.2;
     final int rInt = radiusCells.ceil() + 1;
     final int iMin = math.max(1, cx.floor() - rInt);
     final int iMax = math.min(n - 2, cx.ceil() + rInt);
     final int jMin = math.max(1, cy.floor() - rInt);
     final int jMax = math.min(n - 2, cy.ceil() + rInt);
 
-    final double jetStrength = (flowMlS / 11.0).clamp(0.2, 1.5);
+    final double jetStrength = (flowMlS / 10.5).clamp(0.22, 1.55);
     final double foamStrength =
         alphaFloat * milkFoamRemainingFraction * jetStrength;
 
@@ -237,27 +249,25 @@ class LatteArtCfdEngine {
         final double dy = j - cy;
         final double d2 = dx * dx + dy * dy;
         final double weight =
-            math.exp(-d2 / (radiusCells * radiusCells * 0.55));
-        if (weight < 0.02) continue;
+            math.exp(-d2 / (radiusCells * radiusCells * 0.52));
+        if (weight < 0.015) continue;
 
         final int idx = j * n + i;
+        final double invDist = 1.0 / math.sqrt(d2 + 0.65);
+        final double radial = alphaFloat * 2.55 * jetStrength;
 
-        // Radial expansion force (low pour pushes crema outward symmetrically)
-        final double invDist = 1.0 / math.sqrt(d2 + 0.5);
-        final double radial = alphaFloat * 2.2 * jetStrength;
-
-        u[idx] += (pushDirX + dx * invDist * radial) * weight * dt * 26.0;
-        v[idx] += (pushDirY + dy * invDist * radial) * weight * dt * 26.0;
+        u[idx] += (pushDirX + dx * invDist * radial) * weight * dt * 24.0;
+        v[idx] += (pushDirY + dy * invDist * radial) * weight * dt * 24.0;
 
         if (alphaFloat > 0.25) {
+          // Concentric ring contrast: center deposits pure foam while outer rim gently clears dark ring!
           foam[idx] =
-              (foam[idx] + foamStrength * weight * dt * 7.2).clamp(0.0, 1.0);
+              (foam[idx] + foamStrength * weight * dt * 8.4).clamp(0.0, 1.0);
         } else {
-          // High pour integrates golden crema smoothly without bright white blobs
           cremaTone[idx] =
-              (cremaTone[idx] + 0.25 * weight * dt).clamp(0.0, 0.72);
-          // Slight foam wash-under if high pour cuts across existing foam
-          foam[idx] = (foam[idx] * (1.0 - 0.14 * weight * dt)).clamp(0.0, 1.0);
+              (cremaTone[idx] + 0.22 * weight * dt).clamp(0.0, 0.68);
+          // Thin Pull-Through Cut slices & pulls crema line cleanly
+          foam[idx] = (foam[idx] * (1.0 - 0.28 * weight * dt)).clamp(0.0, 1.0);
         }
       }
     }
@@ -355,8 +365,8 @@ class LatteArtCfdEngine {
       final int row = j * n;
       for (int i = 1; i < n - 1; i++) {
         final int idx = row + i;
-        double x = (i - dt0 * velU[idx]).clamp(0.5, maxCoord);
-        double y = (j - dt0 * velV[idx]).clamp(0.5, maxCoord);
+        final double x = (i - dt0 * velU[idx]).clamp(0.5, maxCoord);
+        final double y = (j - dt0 * velV[idx]).clamp(0.5, maxCoord);
 
         final int i0 = x.floor();
         final int i1 = i0 + 1;
@@ -375,7 +385,6 @@ class LatteArtCfdEngine {
     _setCircularBoundary(b, d);
   }
 
-  /// No-slip circular cup wall boundary so fluid organically curls along the rim!
   void _setCircularBoundary(int b, Float32List field) {
     const double half = (n - 1) * 0.5;
     const double maxR = half - 1.5;
@@ -390,17 +399,19 @@ class LatteArtCfdEngine {
           if (b == 1 || b == 2) {
             field[row + i] = 0.0;
           } else {
-            field[row + i] *= 0.85;
+            field[row + i] *= 0.82;
           }
         }
       }
     }
   }
 
-  /// Writes warm golden crema + velvety white microfoam into `rgbaBuffer` (0 GC).
+  /// Renders smooth anti-aliased 112x112 espresso crema + crisp silky microfoam
+  /// + pouring stream indentation dimple into `rgbaBuffer`.
   void renderToRgbaBuffer() {
     const double half = (n - 1) * 0.5;
     final double cupR = half - 0.5;
+    final bool pouring = pitcherSlosh.currentFlowMlS > 0.25;
 
     for (int j = 0; j < n; j++) {
       final double ny = (j - half) / cupR;
@@ -419,41 +430,57 @@ class LatteArtCfdEngine {
           continue;
         }
 
-        final double f = foam[idx].clamp(0.0, 1.0);
-        // Smooth S-curve contrast like silky milk foam on hazelnut crema
-        final double fSmooth = f * f * (3.0 - 2.0 * f);
+        // Sharp oil-paint-like meniscus edge between espresso crema & white microfoam!
+        final double rawF = foam[idx].clamp(0.0, 1.0);
+        final double sharpF =
+            (1.0 / (1.0 + math.exp(-(rawF - 0.34) * 13.5))).clamp(0.0, 1.0);
         final double tone = cremaTone[idx];
 
-        // Espresso Crema base (#7C431C -> warm latte gold #A86B3A as milk mixes)
-        final double baseR = 124.0 + tone * 58.0;
-        final double baseG = 67.0 + tone * 46.0;
-        final double baseB = 28.0 + tone * 32.0;
+        // Rich velvety hazelnut espresso crema (#783E18 -> #9E5C2E)
+        final double baseR = 120.0 + tone * 46.0;
+        final double baseG = 62.0 + tone * 38.0;
+        final double baseB = 24.0 + tone * 24.0;
 
-        // Velvety Microfoam white (#FAF6EE)
-        double rCol = baseR + (250.0 - baseR) * fSmooth;
-        double gCol = baseG + (246.0 - baseG) * fSmooth;
-        double bCol = baseB + (238.0 - baseB) * fSmooth;
+        // Silky steamed milk microfoam (#FCF9F2)
+        double rCol = baseR + (252.0 - baseR) * sharpF;
+        double gCol = baseG + (249.0 - baseG) * sharpF;
+        double bCol = baseB + (242.0 - baseB) * sharpF;
 
-        // Soft ceramic inner rim shading for 3D depth
-        final double rimShade = r > 0.84 ? (1.0 - (r - 0.84) * 1.65) : 1.0;
-        // Subtle top-left studio specular sheen
-        final double spec =
-            math.exp(-((nx + 0.35) * (nx + 0.35) + (ny + 0.35) * (ny + 0.35)) * 4.5) *
-                18.0;
+        // Realistic stream impact indentation shadow (visible in reference video!)
+        if (pouring) {
+          final double dxP = nx - pourPos.dx;
+          final double dyP = ny - pourPos.dy;
+          final double d2P = dxP * dxP + dyP * dyP;
+          final double dimple = 1.0 - 0.16 * math.exp(-d2P / 0.012);
+          rCol *= dimple;
+          gCol *= dimple;
+          bCol *= dimple;
+        }
+
+        // Inner ceramic meniscus contact shadow + soft studio sheen
+        final double rimShade =
+            r > 0.88 ? (1.0 - (r - 0.88) * 1.85).clamp(0.65, 1.0) : 1.0;
+        final double spec = math.exp(
+              -((nx + 0.30) * (nx + 0.30) + (ny + 0.34) * (ny + 0.34)) * 5.2,
+            ) *
+            14.0;
+
+        // Smooth sub-pixel alpha anti-aliasing along circular rim!
+        final int alpha = r > 0.975
+            ? (((1.0 - r) / 0.025) * 255.0).clamp(0.0, 255.0).toInt()
+            : 255;
 
         rgbaBuffer[pIdx] = (rCol * rimShade + spec).clamp(0.0, 255.0).toInt();
         rgbaBuffer[pIdx + 1] =
             (gCol * rimShade + spec).clamp(0.0, 255.0).toInt();
         rgbaBuffer[pIdx + 2] =
             (bCol * rimShade + spec).clamp(0.0, 255.0).toInt();
-        rgbaBuffer[pIdx + 3] = 255;
+        rgbaBuffer[pIdx + 3] = alpha;
       }
     }
   }
 
-  /// Automated WLAC Pattern Grader (Contrast 25% + Symmetry 25% + Fidelity 35% + Fill 15%).
   LatteArtWlacGrade evaluateCup(LatteArtPattern target) {
-    // 1. Bilateral Symmetry & Gradient Contrast
     double symDiff = 0.0;
     double symSum = 0.0;
     double gradSum = 0.0;
@@ -494,7 +521,6 @@ class LatteArtCfdEngine {
       }
     }
 
-    // Special case: Level 1 Canvas Base wants clean uniform golden crema (minimal white foam!)
     if (target == LatteArtPattern.canvasBase) {
       final double avgFoam = innerCount > 0 ? foamTotal / innerCount : 0.0;
       final double cleanScore = (100.0 - avgFoam * 320.0).clamp(20.0, 100.0);
@@ -516,16 +542,13 @@ class LatteArtCfdEngine {
     final double symmetryPct = symSum > 1.0
         ? ((1.0 - (symDiff / (symSum + 0.0001))) * 100.0).clamp(0.0, 100.0)
         : 20.0;
-
     final double avgGrad = innerCount > 0 ? gradSum / innerCount : 0.0;
-    final double contrastPct = ((avgGrad * 420.0) - accidentalEarlyFoamPenalty)
-        .clamp(15.0, 100.0);
-
+    final double contrastPct =
+        ((avgGrad * 520.0) - accidentalEarlyFoamPenalty).clamp(15.0, 100.0);
     final double fidelityPct = (normActual > 0.5 && normTemplate > 0.5)
-        ? ((dotProd / math.sqrt(normActual * normTemplate)) * 112.0)
+        ? ((dotProd / math.sqrt(normActual * normTemplate)) * 114.0)
             .clamp(0.0, 100.0)
         : 10.0;
-
     final double fillPct = _computeFillScore(targetFillPct: 95.0);
 
     final double overall = (contrastPct * 0.25 +
@@ -559,7 +582,6 @@ class LatteArtCfdEngine {
     return 0;
   }
 
-  /// Analytical normalized reference silhouette for WLAC Pattern Fidelity grading.
   static double _samplePatternTemplate(
     LatteArtPattern target,
     double nx,
@@ -569,10 +591,8 @@ class LatteArtCfdEngine {
       case LatteArtPattern.canvasBase:
         return 0.0;
       case LatteArtPattern.monksHead:
-        final double r2 = nx * nx + ny * ny;
-        return r2 <= 0.26 ? 1.0 : 0.0;
+        return (nx * nx + ny * ny) <= 0.26 ? 1.0 : 0.0;
       case LatteArtPattern.heart:
-        // Implicit heart curve (inverted y so point faces bottom/front)
         final double x = nx * 1.45;
         final double y = -ny * 1.45 + 0.1;
         final double a = x * x + y * y - 0.55;
@@ -580,34 +600,42 @@ class LatteArtCfdEngine {
       case LatteArtPattern.twoStackTulip:
       case LatteArtPattern.threeStackTulip:
       case LatteArtPattern.wingedFiveTulip:
-        final double baseArc =
-            (ny > -0.15 && ny < 0.55 && (nx * nx * 1.2 + (ny - 0.15) * (ny - 0.15) * 2.2) < 0.45)
-                ? 1.0
-                : 0.0;
+        final double baseArc = (ny > -0.15 &&
+                ny < 0.55 &&
+                (nx * nx * 1.2 + (ny - 0.15) * (ny - 0.15) * 2.2) < 0.45)
+            ? 1.0
+            : 0.0;
         final double topHeart =
             (nx * nx * 2.6 + (ny + 0.28) * (ny + 0.28) * 2.6) < 0.22 ? 1.0 : 0.0;
         return math.max(baseArc, topHeart);
       case LatteArtPattern.wingedBase:
-        final double r2 = nx * nx * 0.9 + (ny - 0.12) * (ny - 0.12) * 1.9;
-        return r2 < 0.46 ? 1.0 : 0.0;
+        return (nx * nx * 0.9 + (ny - 0.12) * (ny - 0.12) * 1.9) < 0.46
+            ? 1.0
+            : 0.0;
       case LatteArtPattern.rosetta:
       case LatteArtPattern.slowsetta:
-        final double widthAtY = (0.48 - (ny + 0.55).abs() * 0.35).clamp(0.08, 0.52);
-        final double leafWave =
-            0.5 + 0.5 * math.sin(ny * (target == LatteArtPattern.slowsetta ? 12.0 : 20.0));
-        return (nx.abs() < widthAtY * (0.65 + 0.35 * leafWave) && ny > -0.65 && ny < 0.65)
+        final double widthAtY =
+            (0.48 - (ny + 0.55).abs() * 0.35).clamp(0.08, 0.52);
+        final double leafWave = 0.5 +
+            0.5 *
+                math.sin(
+                  ny * (target == LatteArtPattern.slowsetta ? 12.0 : 20.0),
+                );
+        return (nx.abs() < widthAtY * (0.65 + 0.35 * leafWave) &&
+                ny > -0.65 &&
+                ny < 0.65)
             ? 1.0
             : 0.0;
       case LatteArtPattern.swan:
-        // Right wing + curved neck + upper left head
         final bool wing = nx > -0.15 &&
             nx < 0.68 &&
             ny > -0.15 &&
             ny < 0.58 &&
             ((nx - 0.25) * (nx - 0.25) + (ny - 0.2) * (ny - 0.2) < 0.26);
-        final bool neck = (nx + 0.18 + 0.12 * math.sin(ny * 4.5)).abs() < 0.09 &&
-            ny > -0.58 &&
-            ny < 0.35;
+        final bool neck =
+            (nx + 0.18 + 0.12 * math.sin(ny * 4.5)).abs() < 0.09 &&
+                ny > -0.58 &&
+                ny < 0.35;
         final bool head =
             (nx + 0.14) * (nx + 0.14) + (ny + 0.54) * (ny + 0.54) < 0.032;
         return (wing || neck || head) ? 1.0 : 0.0;
