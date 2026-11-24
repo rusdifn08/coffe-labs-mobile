@@ -25,7 +25,7 @@ import 'water_recipe_screen.dart';
 import '../features/annotation_studio/presentation/studio_ai_hub_screen.dart';
 import '../features/barista_toolkit/presentation/brew_doctor/brew_doctor_compass_screen.dart';
 import '../features/barista_toolkit/presentation/ebook_reader/ebook_library_screen.dart';
-import '../features/barista_toolkit/presentation/game_brew/game_brew_v60_screen.dart';
+import '../features/game_brew/presentation/screens/game_brew_dual_hub_screen.dart';
 import '../features/barista_toolkit/presentation/lms_academy/barista_lms_courses_screen.dart';
 import '../features/live_brew/presentation/screens/customer_live_brew_tracker_screen.dart';
 
@@ -328,14 +328,16 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
     final List<ToolkitItem> learningBrewTools = [
       ToolkitItem(
         featureKey: 'GAME_BREW_3D',
-        title: isEn ? 'Game Brew V60' : 'Game Brew V60',
-        subtitle: isEn ? '60fps V60 pour & story quest' : 'Simulasi tuang ketel V60 & cerita',
+        title: isEn ? 'Game Brew Studio' : 'Game Brew 3D',
+        subtitle: isEn
+            ? 'Manual Brew 3D & Latte Art CFD'
+            : 'Manual Brew 3D & Latte Art CFD',
         iconType: 'game_brew',
         fallbackIcon: Icons.videogame_asset_rounded,
         primaryColor: const Color(0xFF7B3F00),
         secondaryColor: const Color(0xFFFFB74D),
         gradientColors: const [Color(0xFFFFF3E0), Color(0xFFFFE0B2)],
-        destination: const GameBrewV60Screen(),
+        destination: const GameBrewDualHubScreen(),
         isLocked: false,
       ),
       ToolkitItem(
