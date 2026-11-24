@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../models/curated_roastery_bean.dart';
 import '../../../theme/app_theme.dart';
+import '../../../core/assets/cloud_asset_manager.dart';
 
 /// Card component for an individual roastery bean within the Smart Brew catalog grid.
 class RoasteryBeanCatalogCard extends StatelessWidget {
@@ -44,7 +45,7 @@ class RoasteryBeanCatalogCard extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(13)),
-                  child: Image.asset(
+                  child: CloudAssetImage(
                     bean.packageImageUrl,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Container(
@@ -93,7 +94,7 @@ class RoasteryBeanCatalogCard extends StatelessWidget {
                       ],
                     ),
                     clipBehavior: Clip.antiAlias,
-                    child: Image.asset(
+                    child: CloudAssetImage(
                       bean.roasteryLogoUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => const Icon(

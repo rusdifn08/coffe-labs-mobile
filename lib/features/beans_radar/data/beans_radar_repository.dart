@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/assets/cloud_dataset_service.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/network/rust_api_client.dart';
 import '../../../data/roastery_catalog.dart';
@@ -17,9 +17,13 @@ class BeansRadarRepository {
   Future<List<Map<String, dynamic>>> _loadBundledPlaces() async {
     if (_bundledPlacesCache != null) return _bundledPlacesCache!;
     try {
-      final raw = await rootBundle.loadString(
-        'assets/data/indonesia_radar_top_places.json',
+      final raw = await CloudDatasetService.loadDatasetString(
+        'indonesia_radar_top_places',
       );
+      if (raw == null || raw.isEmpty) {
+        _bundledPlacesCache = const [];
+        return _bundledPlacesCache!;
+      }
       final parsed = jsonDecode(raw);
       if (parsed is Map<String, dynamic>) {
         _bundledTotalIndexed =

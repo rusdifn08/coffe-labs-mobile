@@ -1,9 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
+import '../core/assets/cloud_dataset_service.dart';
 import '../core/network/isolate_json_transformer.dart';
 import '../features/flavor_wheel/data/coffee_varieties_catalog.dart';
 import '../models/bean_recommendation_models.dart';
@@ -55,15 +54,10 @@ class WorldIndonesiaBeansService {
   Future<void> ensureLoaded() async {
     if (_loaded) return;
     try {
-      String raw = '';
-      try {
-        raw = await rootBundle.loadString('assets/data/world_indonesia_beans_catalog.json');
-      } catch (_) {
-        if (!kIsWeb) {
-          final f = File('assets/data/world_indonesia_beans_catalog.json');
-          if (f.existsSync()) raw = f.readAsStringSync();
-        }
-      }
+      final raw = await CloudDatasetService.loadDatasetString(
+            'world_indonesia_beans_catalog',
+          ) ??
+          '';
       if (raw.isEmpty) return;
       final decoded = await IsolateJsonTransformer.parseJsonInBackground(raw);
       _ingestDecoded(decoded);
@@ -76,9 +70,11 @@ class WorldIndonesiaBeansService {
   void ensureLoadedSyncForTest() {
     if (_loaded || kIsWeb) return;
     try {
-      final f = File('assets/data/world_indonesia_beans_catalog.json');
-      if (f.existsSync()) {
-        _ingestDecoded(jsonDecode(f.readAsStringSync()));
+      final raw = CloudDatasetService.loadDatasetSyncForTest(
+        'world_indonesia_beans_catalog',
+      );
+      if (raw != null && raw.isNotEmpty) {
+        _ingestDecoded(jsonDecode(raw));
         _loaded = true;
       }
     } catch (_) {}

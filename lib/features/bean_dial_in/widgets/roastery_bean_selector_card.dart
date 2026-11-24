@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../models/curated_roastery_bean.dart';
 import '../../../theme/app_theme.dart';
 import 'roastery_bean_picker_modal.dart';
+import '../../../core/assets/cloud_asset_manager.dart';
 
 /// Card for selecting real commercial coffee beans from top Indonesian & Global roasteries,
 /// featuring authentic product packaging imagery and roastery logos.
@@ -141,7 +142,7 @@ class RoasteryBeanSelectorCard extends StatelessWidget {
                           borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
                           child: SizedBox(
                             height: 64,
-                            child: Image.asset(
+                            child: CloudAssetImage(
                               bean.packageImageUrl,
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) => Container(
@@ -256,7 +257,7 @@ class RoasteryBeanSelectorCard extends StatelessWidget {
             child: SizedBox(
               width: 58,
               height: 68,
-              child: Image.asset(
+              child: CloudAssetImage(
                 selectedBean.packageImageUrl,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
@@ -279,7 +280,7 @@ class RoasteryBeanSelectorCard extends StatelessWidget {
                       child: SizedBox(
                         width: 14,
                         height: 14,
-                        child: Image.asset(
+                        child: CloudAssetImage(
                           selectedBean.roasteryLogoUrl,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) => const Icon(CupertinoIcons.circle_fill, size: 10, color: AppTheme.primaryBrown),

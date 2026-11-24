@@ -13,6 +13,7 @@ import '../../../features/social_profile_feed/domain/models/social_profile_model
 import '../../../features/social_profile_feed/presentation/controllers/social_profile_controllers.dart';
 import '../../../models/social_coffee.dart';
 import '../../../theme/app_theme.dart';
+import '../../../core/assets/cloud_asset_manager.dart';
 
 /// Daftar hasil pencarian akun Coffee Labs bergaya Threads (tanpa card)
 /// dengan L1 Memory Prefix Cache + SWR + CancelToken + Zero Retry Hanging.
@@ -464,7 +465,7 @@ class _LiveDirectoryAccountRow extends StatelessWidget {
                   radius: 21,
                   backgroundColor: AppTheme.primaryBrown.withValues(alpha: 0.12),
                   backgroundImage: hasAsset
-                      ? AssetImage(avatar) as ImageProvider
+                      ? CloudAssetManager.imageProvider(avatar)
                       : (hasNet ? NetworkImage(avatar) : null),
                   child: (!hasAsset && !hasNet)
                       ? Text(
@@ -709,7 +710,7 @@ class _OfflinePeerAccountSliverList extends StatelessWidget {
             final img = account.avatarPath.startsWith('http://') ||
                     account.avatarPath.startsWith('https://')
                 ? NetworkImage(account.avatarPath) as ImageProvider
-                : AssetImage(
+                : CloudAssetManager.imageProvider(
                     account.avatarPath.startsWith('assets/')
                         ? account.avatarPath
                         : 'assets/images/characters/avatar_1.png',

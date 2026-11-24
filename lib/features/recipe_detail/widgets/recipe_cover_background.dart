@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../theme/app_theme.dart';
+import '../../../core/assets/cloud_asset_manager.dart';
 
 /// Latar belakang header resep dengan cascading fallback berlapis:
 /// 1) Cover foto barista/resep (`coverImageUrl`, abaikan `generic_fallback.jpg`)
@@ -127,7 +128,7 @@ class RecipeCoverBackground extends StatelessWidget {
               padding: const EdgeInsets.only(top: 24, bottom: 16),
               child: Opacity(
                 opacity: 0.9,
-                child: Image.asset(
+                child: CloudAssetImage(
                   path,
                   fit: BoxFit.contain,
                   errorBuilder: (_, _, _) => const SizedBox.shrink(),
@@ -139,7 +140,7 @@ class RecipeCoverBackground extends StatelessWidget {
       );
     }
 
-    return Image.asset(
+    return CloudAssetImage(
       path,
       fit: BoxFit.cover,
       errorBuilder: (_, _, _) => nextBuilder(),

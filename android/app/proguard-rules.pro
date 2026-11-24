@@ -45,3 +45,17 @@
 # AndroidX & Coroutines
 -dontwarn kotlinx.coroutines.**
 -keep class kotlinx.coroutines.** { *; }
+
+# MediaKit (libmpv), PDFRx (PDFium), MobileScanner & Firebase
+-dontwarn com.alexmercerind.**
+-keep class com.alexmercerind.** { *; }
+-dontwarn jp.espresso3389.pdfrx.**
+-keep class jp.espresso3389.pdfrx.** { *; }
+-dontwarn dev.steenbakker.mobile_scanner.**
+-keep class dev.steenbakker.mobile_scanner.** { *; }
+-dontwarn com.google.mlkit.vision.barcode.**
+-keep class com.google.mlkit.vision.barcode.** { *; }
+-dontwarn com.google.firebase.**
+-keep class com.google.firebase.** { *; }
+-dontwarn com.github.anastaciocintra.**
+-keep class com.github.anastaciocintra.** { *; }

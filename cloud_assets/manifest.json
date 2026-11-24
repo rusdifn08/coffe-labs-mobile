@@ -1,0 +1,2794 @@
+{
+  "schema_version": 1,
+  "provider": "MULTI_CDN_OBJECT_STORAGE",
+  "media": {
+    "assets/images/beans/5758_coffee_lab_5758_house_espresso_blend.jpg": {
+      "cloud_path": "images/beans/5758_coffee_lab_5758_house_espresso_blend.jpg",
+      "original_bytes": 28156,
+      "compressed_bytes": 14623,
+      "sha256": "379426e04b34970807e44376ff34771e8c1fddad7e2c2e64332842b4573b640f"
+    },
+    "assets/images/beans/5758_coffee_lab_fine_robusta_nusantara.jpg": {
+      "cloud_path": "images/beans/5758_coffee_lab_fine_robusta_nusantara.jpg",
+      "original_bytes": 25023,
+      "compressed_bytes": 12580,
+      "sha256": "7310f584aee357fb1ef593a447f70512c0cd8628d65fe4c8c0baff84526b1c99"
+    },
+    "assets/images/beans/5758_coffee_lab_flores_manggarai_washed.jpg": {
+      "cloud_path": "images/beans/5758_coffee_lab_flores_manggarai_washed.jpg",
+      "original_bytes": 25791,
+      "compressed_bytes": 13310,
+      "sha256": "f14aefd595fa817ca58de9045ef83689c5ee1c9c64cfeddde2ea29ea9349c816"
+    },
+    "assets/images/beans/5758_coffee_lab_java_preanger_malabar.jpg": {
+      "cloud_path": "images/beans/5758_coffee_lab_java_preanger_malabar.jpg",
+      "original_bytes": 25614,
+      "compressed_bytes": 13208,
+      "sha256": "8bf5cd1553ff6f1f134e8ed07454a82a407a18889a42423c6a16733ff36d9302"
+    },
+    "assets/images/beans/anomali_coffee_aceh_gayo_single_origin.jpg": {
+      "cloud_path": "images/beans/anomali_coffee_aceh_gayo_single_origin.jpg",
+      "original_bytes": 27277,
+      "compressed_bytes": 14110,
+      "sha256": "0ef78ac838318166dd9d878ddcd1a115a52590e2fc26b5147510a41a4525f2cb"
+    },
+    "assets/images/beans/anomali_coffee_bali_kintamani.jpg": {
+      "cloud_path": "images/beans/anomali_coffee_bali_kintamani.jpg",
+      "original_bytes": 26810,
+      "compressed_bytes": 13855,
+      "sha256": "4e4b6a0859ed541029ede3e45e1c0390850c85906721f70fd3a8cf5053435465"
+    },
+    "assets/images/beans/anomali_coffee_black_pearl_espresso_blend.jpg": {
+      "cloud_path": "images/beans/anomali_coffee_black_pearl_espresso_blend.jpg",
+      "original_bytes": 26061,
+      "compressed_bytes": 13155,
+      "sha256": "0248a5e8450a0e6baecaea08da59b123e3f3f9548bf2ad71fed4747ab7adff5d"
+    },
+    "assets/images/beans/anomali_coffee_flores_bajawa.jpg": {
+      "cloud_path": "images/beans/anomali_coffee_flores_bajawa.jpg",
+      "original_bytes": 26959,
+      "compressed_bytes": 13908,
+      "sha256": "110bc53c7f2954b1ddf11608c081c6aea1dfe30889a4b95c35e71e2245a06a8b"
+    },
+    "assets/images/beans/anomali_coffee_java_preanger.jpg": {
+      "cloud_path": "images/beans/anomali_coffee_java_preanger.jpg",
+      "original_bytes": 27762,
+      "compressed_bytes": 14394,
+      "sha256": "5f0ed2e436b80ceffe05a43d49f5374744a96f791652b50bd29a780d295d8657"
+    },
+    "assets/images/beans/anomali_coffee_papua_wamena.jpg": {
+      "cloud_path": "images/beans/anomali_coffee_papua_wamena.jpg",
+      "original_bytes": 27043,
+      "compressed_bytes": 13957,
+      "sha256": "f27c0c9a6cb6a9ca7fe07ec0f8ede59f87d19eea33dbfb11be942e347b95944f"
+    },
+    "assets/images/beans/anomali_coffee_toraja_kalosi_sapan.jpg": {
+      "cloud_path": "images/beans/anomali_coffee_toraja_kalosi_sapan.jpg",
+      "original_bytes": 27280,
+      "compressed_bytes": 14138,
+      "sha256": "8ccbfc1b86811650f29bae9a3b9750e424aa297cc1596623a8a9a66ce31e77ab"
+    },
+    "assets/images/beans/arutala_coffee_arabika_bali_kintamani.jpg": {
+      "cloud_path": "images/beans/arutala_coffee_arabika_bali_kintamani.jpg",
+      "original_bytes": 26852,
+      "compressed_bytes": 13844,
+      "sha256": "787316ee02c369a1b4b7f01a75117a695b1cec8cdfdf5c670efb31d44928db53"
+    },
+    "assets/images/beans/arutala_coffee_arabika_flores_bajawa.jpg": {
+      "cloud_path": "images/beans/arutala_coffee_arabika_flores_bajawa.jpg",
+      "original_bytes": 27014,
+      "compressed_bytes": 13973,
+      "sha256": "82f9e4caf6d68b2febf6d3d859ec5809108d93da01e5467d0f0271d5907c3498"
+    },
+    "assets/images/beans/arutala_coffee_arabika_gayo_takengon.jpg": {
+      "cloud_path": "images/beans/arutala_coffee_arabika_gayo_takengon.jpg",
+      "original_bytes": 28160,
+      "compressed_bytes": 14538,
+      "sha256": "54af61fe3278960a90b672710729f572bd6c5cd06cd576f2c3b4507f56c55b6e"
+    },
+    "assets/images/beans/arutala_coffee_arabika_papua_wamena.jpg": {
+      "cloud_path": "images/beans/arutala_coffee_arabika_papua_wamena.jpg",
+      "original_bytes": 27111,
+      "compressed_bytes": 14036,
+      "sha256": "f5da684772122e3642c34f97c48682419892289bb93982ecec586470fae4f529"
+    },
+    "assets/images/beans/arutala_coffee_kopi_susu_blend_arutala.jpg": {
+      "cloud_path": "images/beans/arutala_coffee_kopi_susu_blend_arutala.jpg",
+      "original_bytes": 26256,
+      "compressed_bytes": 13303,
+      "sha256": "b4b6d45f34fa328d06dd2061f6f0d450fb27470994f8abb25ab3e7c9249f29de"
+    },
+    "assets/images/beans/arutala_coffee_robusta_toraja_rantebua.jpg": {
+      "cloud_path": "images/beans/arutala_coffee_robusta_toraja_rantebua.jpg",
+      "original_bytes": 25682,
+      "compressed_bytes": 12966,
+      "sha256": "bb6fab8d15ca66141872696e9c007007d581a1ace88b07e282e5ba6f25d95e52"
+    },
+    "assets/images/beans/blacklist_everhaos_blacklist_canggu_espresso_blend.jpg": {
+      "cloud_path": "images/beans/blacklist_everhaos_blacklist_canggu_espresso_blend.jpg",
+      "original_bytes": 27010,
+      "compressed_bytes": 13863,
+      "sha256": "147ce05b354a1044ae8eab59f2bf93f65ac052f51e4182cb5cc8fcabe7d0cb0c"
+    },
+    "assets/images/beans/blacklist_everhaos_everhaos_bali_ulian_everhaos.jpg": {
+      "cloud_path": "images/beans/blacklist_everhaos_everhaos_bali_ulian_everhaos.jpg",
+      "original_bytes": 28163,
+      "compressed_bytes": 14624,
+      "sha256": "60fb751d9398057e12a0113e8695cff1e84402553d39dadc994f6dab5b2d9334"
+    },
+    "assets/images/beans/blacklist_everhaos_everhaos_house_blend.jpg": {
+      "cloud_path": "images/beans/blacklist_everhaos_everhaos_house_blend.jpg",
+      "original_bytes": 29386,
+      "compressed_bytes": 15418,
+      "sha256": "34b672ecde10eaa883cb21cf9da77a4d0d469c42a11123c66856a2b3b60237f9"
+    },
+    "assets/images/beans/catur_coffee_bumi_series_earth.jpg": {
+      "cloud_path": "images/beans/catur_coffee_bumi_series_earth.jpg",
+      "original_bytes": 29537,
+      "compressed_bytes": 15302,
+      "sha256": "1ac4418e991df6a93219ffc18ab15768ffbb6170844038b4006c0e8ed4ef9be6"
+    },
+    "assets/images/beans/catur_coffee_catur_divine_decaf.jpg": {
+      "cloud_path": "images/beans/catur_coffee_catur_divine_decaf.jpg",
+      "original_bytes": 27058,
+      "compressed_bytes": 13895,
+      "sha256": "5feeba84ac3dd567280468c6b5e10b69e836eb7b082a7cb445ba7227411aefd2"
+    },
+    "assets/images/beans/catur_coffee_kamala_series_lotus.jpg": {
+      "cloud_path": "images/beans/catur_coffee_kamala_series_lotus.jpg",
+      "original_bytes": 28323,
+      "compressed_bytes": 14579,
+      "sha256": "6e4ba5551ca9d2292c9783147b18e260f56399d842e8b74036baac5680316cd4"
+    },
+    "assets/images/beans/catur_coffee_pucuk_series_tea_leaf_apex.jpg": {
+      "cloud_path": "images/beans/catur_coffee_pucuk_series_tea_leaf_apex.jpg",
+      "original_bytes": 27727,
+      "compressed_bytes": 14248,
+      "sha256": "1f801d1a42544ee20b2ec3a08b0933446ef47bacd4d2d5fe2e9c2cccc0492497"
+    },
+    "assets/images/beans/catur_coffee_senja_series_sunset.jpg": {
+      "cloud_path": "images/beans/catur_coffee_senja_series_sunset.jpg",
+      "original_bytes": 27943,
+      "compressed_bytes": 14342,
+      "sha256": "738f4621d20452cc8a9917762f79c84c0236488a41234b89565ff4bca601ad29"
+    },
+    "assets/images/beans/comfort_table_maharaja_comfort_blend_comfort_table.jpg": {
+      "cloud_path": "images/beans/comfort_table_maharaja_comfort_blend_comfort_table.jpg",
+      "original_bytes": 31492,
+      "compressed_bytes": 16392,
+      "sha256": "47381e35bbdffa6dab461806e9029ebccc44634a5b1b7a854f1671a07800f7ba"
+    },
+    "assets/images/beans/comfort_table_maharaja_flores_bajawa_organica_maharaja.jpg": {
+      "cloud_path": "images/beans/comfort_table_maharaja_flores_bajawa_organica_maharaja.jpg",
+      "original_bytes": 27824,
+      "compressed_bytes": 14171,
+      "sha256": "312343e090c426d3f9fc5ba890101a83079c016c65c2642421ae1dcfa4d7f2a8"
+    },
+    "assets/images/beans/comfort_table_maharaja_lintong_nihuta_organik_maharaja.jpg": {
+      "cloud_path": "images/beans/comfort_table_maharaja_lintong_nihuta_organik_maharaja.jpg",
+      "original_bytes": 28067,
+      "compressed_bytes": 14315,
+      "sha256": "2be0f6ca526912aaac964178b5f4917fb7104c4f798d075d68f5f62d50ce1fde"
+    },
+    "assets/images/beans/darat_motiv_roasters_darat_signature_filter_darat.jpg": {
+      "cloud_path": "images/beans/darat_motiv_roasters_darat_signature_filter_darat.jpg",
+      "original_bytes": 27227,
+      "compressed_bytes": 14194,
+      "sha256": "cada6a8687fd4559cd8da83b4007bf46d4f1f12df8d0ea85620c06a10aceb6af"
+    },
+    "assets/images/beans/darat_motiv_roasters_malang_fine_robusta_motiv.jpg": {
+      "cloud_path": "images/beans/darat_motiv_roasters_malang_fine_robusta_motiv.jpg",
+      "original_bytes": 26732,
+      "compressed_bytes": 13753,
+      "sha256": "a0e2ec0895e6c430009619f1db910fb61453306cce3fc5db6afa8d9429e9af10"
+    },
+    "assets/images/beans/darat_motiv_roasters_semeru_arabica_filter_motiv.jpg": {
+      "cloud_path": "images/beans/darat_motiv_roasters_semeru_arabica_filter_motiv.jpg",
+      "original_bytes": 27433,
+      "compressed_bytes": 14314,
+      "sha256": "965c352a07b51cb37049f994da9b362d848fb78ea326efbbda59e0e9f68aecd7"
+    },
+    "assets/images/beans/els_coffee_arabika_aceh_gayo.jpg": {
+      "cloud_path": "images/beans/els_coffee_arabika_aceh_gayo.jpg",
+      "original_bytes": 25740,
+      "compressed_bytes": 13342,
+      "sha256": "082da5c6afa1933d1f2e461bb829d2e376e41e3d3e23898fbb30cc80e3c609ec"
+    },
+    "assets/images/beans/els_coffee_fine_robusta_ulubelu.jpg": {
+      "cloud_path": "images/beans/els_coffee_fine_robusta_ulubelu.jpg",
+      "original_bytes": 28914,
+      "compressed_bytes": 14490,
+      "sha256": "bfabbb3e518b24bb91e5fd77437bac9e921199b8684ee91d8f0a154c7be193ea"
+    },
+    "assets/images/beans/els_coffee_pure_indonesia_coffee_beans_q1747.jpg": {
+      "cloud_path": "images/beans/els_coffee_pure_indonesia_coffee_beans_q1747.jpg",
+      "original_bytes": 27923,
+      "compressed_bytes": 14504,
+      "sha256": "bedabdd470f213d0cb315c55fa8e97f22aefaca34131f97a26caabc7ff3faa66"
+    },
+    "assets/images/beans/els_coffee_pure_indonesia_robusta_lampung.jpg": {
+      "cloud_path": "images/beans/els_coffee_pure_indonesia_robusta_lampung.jpg",
+      "original_bytes": 25122,
+      "compressed_bytes": 12658,
+      "sha256": "509f6152e713b61792bc214b35d1ce279da23a3c66c082556170d455936d8582"
+    },
+    "assets/images/beans/first_crack_coffee_bold_nutty_espresso_blend.jpg": {
+      "cloud_path": "images/beans/first_crack_coffee_bold_nutty_espresso_blend.jpg",
+      "original_bytes": 26379,
+      "compressed_bytes": 13330,
+      "sha256": "d69c6d9df2b8b6719640627148b79067c70a0c775a9acc84aa356fc20b218026"
+    },
+    "assets/images/beans/first_crack_coffee_dessert_rich_espresso_blend.jpg": {
+      "cloud_path": "images/beans/first_crack_coffee_dessert_rich_espresso_blend.jpg",
+      "original_bytes": 26240,
+      "compressed_bytes": 13255,
+      "sha256": "0bd6c4da9ea1a3a1b51b857104323d7926acfe1cefbb9e7e516b523c9c610c63"
+    },
+    "assets/images/beans/first_crack_coffee_floral_brightness_filter.jpg": {
+      "cloud_path": "images/beans/first_crack_coffee_floral_brightness_filter.jpg",
+      "original_bytes": 25921,
+      "compressed_bytes": 13284,
+      "sha256": "ac6e0078c0f9f60aa8b2f679037f736fec95cabd61a13254140d487ebbd67ba9"
+    },
+    "assets/images/beans/first_crack_coffee_golden_smooth_espresso_blend.jpg": {
+      "cloud_path": "images/beans/first_crack_coffee_golden_smooth_espresso_blend.jpg",
+      "original_bytes": 29485,
+      "compressed_bytes": 14826,
+      "sha256": "abb5dc3fab4216cdd2b6164d8bfc5ea3686da9415cf0eac4066ff278d5279aa3"
+    },
+    "assets/images/beans/first_crack_coffee_red_cherry_filter_single_origin.jpg": {
+      "cloud_path": "images/beans/first_crack_coffee_red_cherry_filter_single_origin.jpg",
+      "original_bytes": 26984,
+      "compressed_bytes": 13863,
+      "sha256": "f9dbc162e5d69d6d3948f331166299d574b7e7d129c57381f5b19874fd6b5a30"
+    },
+    "assets/images/beans/fugol_coffee_arabika_berry_smash.jpg": {
+      "cloud_path": "images/beans/fugol_coffee_arabika_berry_smash.jpg",
+      "original_bytes": 26437,
+      "compressed_bytes": 13485,
+      "sha256": "b094f3ba7435409f757c8f9901edf9085cb43e0f14330e36e8ff770ee212e634"
+    },
+    "assets/images/beans/fugol_coffee_arabika_malabar_black_tea.jpg": {
+      "cloud_path": "images/beans/fugol_coffee_arabika_malabar_black_tea.jpg",
+      "original_bytes": 27077,
+      "compressed_bytes": 13870,
+      "sha256": "c04d1fa7b51dd2751fd7c27fe8cae3370f81a3c9c182112c981d8a5355afb617"
+    },
+    "assets/images/beans/fugol_coffee_arabusta_greek_freak.jpg": {
+      "cloud_path": "images/beans/fugol_coffee_arabusta_greek_freak.jpg",
+      "original_bytes": 29341,
+      "compressed_bytes": 15110,
+      "sha256": "2909c24b3bbd42bca07fc0a445153cc72b342c98fec1d48f644bbd703ab86851"
+    },
+    "assets/images/beans/fugol_coffee_espresso_arabica_hemat_single_origin.jpg": {
+      "cloud_path": "images/beans/fugol_coffee_espresso_arabica_hemat_single_origin.jpg",
+      "original_bytes": 27978,
+      "compressed_bytes": 14084,
+      "sha256": "360b7132235159035f780ad3ca164d089e75fd53ed00fa3b3c58a25655285e4f"
+    },
+    "assets/images/beans/fugol_coffee_gayo_avatara_cm_honey.jpg": {
+      "cloud_path": "images/beans/fugol_coffee_gayo_avatara_cm_honey.jpg",
+      "original_bytes": 28353,
+      "compressed_bytes": 14459,
+      "sha256": "91a1058ae8b73599d057f1100948515565769caed7db4fed085b916361c22437"
+    },
+    "assets/images/beans/fugol_coffee_gayo_avatara_cm_natural.jpg": {
+      "cloud_path": "images/beans/fugol_coffee_gayo_avatara_cm_natural.jpg",
+      "original_bytes": 28583,
+      "compressed_bytes": 14615,
+      "sha256": "87d5188fa3c647e42c4e1c58bfb150254e516502ebb8a6e6ab363789b1e33d4a"
+    },
+    "assets/images/beans/fugol_coffee_kaki_gunung_guntur.jpg": {
+      "cloud_path": "images/beans/fugol_coffee_kaki_gunung_guntur.jpg",
+      "original_bytes": 26707,
+      "compressed_bytes": 13584,
+      "sha256": "6674e2a823e501029ed57d12fde80e8ddca8fe539d76536a013beef288e1785a"
+    },
+    "assets/images/beans/fugol_coffee_mekarwangi_anaerobic_natural.jpg": {
+      "cloud_path": "images/beans/fugol_coffee_mekarwangi_anaerobic_natural.jpg",
+      "original_bytes": 28184,
+      "compressed_bytes": 14403,
+      "sha256": "64e4c57f9608a22b0d803cfff28199cdeeb3bafe29652c3de9d8f31be314de4b"
+    },
+    "assets/images/beans/fugol_coffee_pangalengan_honey.jpg": {
+      "cloud_path": "images/beans/fugol_coffee_pangalengan_honey.jpg",
+      "original_bytes": 27753,
+      "compressed_bytes": 14184,
+      "sha256": "fe598431bfb70a7a93b95b7c607c79632c658fd2b759d4863f4fa93e2f592f21"
+    },
+    "assets/images/beans/fugol_sample_a.jpg": {
+      "cloud_path": "images/beans/fugol_sample_a.jpg",
+      "original_bytes": 19506,
+      "compressed_bytes": 8119,
+      "sha256": "e24a8dceb1e33f577cfe0fb2b77824e446d8d5ab4c46d134dc146fbdfb092978"
+    },
+    "assets/images/beans/fugol_sample_b.jpg": {
+      "cloud_path": "images/beans/fugol_sample_b.jpg",
+      "original_bytes": 24773,
+      "compressed_bytes": 10907,
+      "sha256": "0dfe0c7d8e018002cd02d14d3779da6a58308291afbaf5c12c9e27cec30009be"
+    },
+    "assets/images/beans/fugol_sample_c.jpg": {
+      "cloud_path": "images/beans/fugol_sample_c.jpg",
+      "original_bytes": 25407,
+      "compressed_bytes": 11325,
+      "sha256": "5221f98f38c957ba136c18a121e86db0bb865f4dc65dbb6900cff549ddede07e"
+    },
+    "assets/images/beans/fumidai_roastery_bali_catur_village_natural.jpg": {
+      "cloud_path": "images/beans/fumidai_roastery_bali_catur_village_natural.jpg",
+      "original_bytes": 25788,
+      "compressed_bytes": 13264,
+      "sha256": "e2ecca358e52aa922dd920e6655383a0b48a1423dcebce7bab0efd42eeb47f0f"
+    },
+    "assets/images/beans/fumidai_roastery_fumidai_espresso_blend.jpg": {
+      "cloud_path": "images/beans/fumidai_roastery_fumidai_espresso_blend.jpg",
+      "original_bytes": 27470,
+      "compressed_bytes": 14252,
+      "sha256": "54b97eb843f1dd19df78bd694f5abdb653b6fad8055fdeeee2176943476917a2"
+    },
+    "assets/images/beans/giyanti_coffee_bali_kintamani_natural.jpg": {
+      "cloud_path": "images/beans/giyanti_coffee_bali_kintamani_natural.jpg",
+      "original_bytes": 25961,
+      "compressed_bytes": 13305,
+      "sha256": "6aefdc5efa61416d15225c952ba4cd6c1009da6eead061c33238cd37be22757e"
+    },
+    "assets/images/beans/giyanti_coffee_flores_bajawa_washed.jpg": {
+      "cloud_path": "images/beans/giyanti_coffee_flores_bajawa_washed.jpg",
+      "original_bytes": 27870,
+      "compressed_bytes": 14418,
+      "sha256": "948a9178bc098538a8b51007cad2829146a0cf6916ace673886f0864fa92ff81"
+    },
+    "assets/images/beans/giyanti_coffee_giyanti_espresso_blend_wild_mild.jpg": {
+      "cloud_path": "images/beans/giyanti_coffee_giyanti_espresso_blend_wild_mild.jpg",
+      "original_bytes": 27574,
+      "compressed_bytes": 13888,
+      "sha256": "3694fcb3dfcdf3370f8bfe4d82d949615982887b21d6d131da940031b3aad119"
+    },
+    "assets/images/beans/giyanti_coffee_toraja_sapan_single_origin.jpg": {
+      "cloud_path": "images/beans/giyanti_coffee_toraja_sapan_single_origin.jpg",
+      "original_bytes": 28260,
+      "compressed_bytes": 14585,
+      "sha256": "60745199c10ff23d922571cd84a7cbc8df4e599fe6d29225c4dc3c95f2a65da1"
+    },
+    "assets/images/beans/hana_roastery_champion.jpg": {
+      "cloud_path": "images/beans/hana_roastery_champion.jpg",
+      "original_bytes": 26357,
+      "compressed_bytes": 13516,
+      "sha256": "211f015265cbcdfc3ec15c2371e5e6515ce0eafcc8eb731e79dc949196f1947c"
+    },
+    "assets/images/beans/hana_roastery_colombia_panama_competition_lot.jpg": {
+      "cloud_path": "images/beans/hana_roastery_colombia_panama_competition_lot.jpg",
+      "original_bytes": 26279,
+      "compressed_bytes": 13538,
+      "sha256": "88966f70bdcc6a3c01c271b8b33862f3cba27ff65840d46ae11206b5de499095"
+    },
+    "assets/images/beans/hana_roastery_hana_signature_espresso_blend.jpg": {
+      "cloud_path": "images/beans/hana_roastery_hana_signature_espresso_blend.jpg",
+      "original_bytes": 27949,
+      "compressed_bytes": 14514,
+      "sha256": "501048bd9879909dad10d2151f61b34653965c3d1f1a97a4e14e70dbb67948ce"
+    },
+    "assets/images/beans/hayati_coffee_avatara_blueberry_cheesecake.jpg": {
+      "cloud_path": "images/beans/hayati_coffee_avatara_blueberry_cheesecake.jpg",
+      "original_bytes": 28893,
+      "compressed_bytes": 14832,
+      "sha256": "c8161911da542589818e4bfe6ae82e48052245ef938b7e32888f91d3a3363506"
+    },
+    "assets/images/beans/hayati_coffee_avatara_orange_shortcake.jpg": {
+      "cloud_path": "images/beans/hayati_coffee_avatara_orange_shortcake.jpg",
+      "original_bytes": 28668,
+      "compressed_bytes": 14691,
+      "sha256": "34c362c339bdcdc30904016d899df4babb9a0d1e0b9c4ab1dc213623c8217fa1"
+    },
+    "assets/images/beans/hayati_coffee_halu_fruity_chocolate.jpg": {
+      "cloud_path": "images/beans/hayati_coffee_halu_fruity_chocolate.jpg",
+      "original_bytes": 30866,
+      "compressed_bytes": 15469,
+      "sha256": "7d5a1d4b450d323c1e82447b03792cf0f1552a5d9139faec6c002cc02ab535cc"
+    },
+    "assets/images/beans/hayati_coffee_lychee_dukun_merapi.jpg": {
+      "cloud_path": "images/beans/hayati_coffee_lychee_dukun_merapi.jpg",
+      "original_bytes": 28757,
+      "compressed_bytes": 14727,
+      "sha256": "6fe6542ead24f23d0ee43ba5e9f8d1051b36eb4521b9753a782b8bb94a08b638"
+    },
+    "assets/images/beans/hayati_coffee_rahagi_lituhayu_manglayang.jpg": {
+      "cloud_path": "images/beans/hayati_coffee_rahagi_lituhayu_manglayang.jpg",
+      "original_bytes": 31001,
+      "compressed_bytes": 16045,
+      "sha256": "25867c97e8b3b8e0e4824a031c7f7a24cbec0031c7817658abec93bae02fad38"
+    },
+    "assets/images/beans/hayati_coffee_the_red_flower_ethiopia.jpg": {
+      "cloud_path": "images/beans/hayati_coffee_the_red_flower_ethiopia.jpg",
+      "original_bytes": 28175,
+      "compressed_bytes": 14365,
+      "sha256": "961c7387010d9f930891c8b7982a4b99f589ce60b1cf79e3e139a0232671e854"
+    },
+    "assets/images/beans/hayati_coffee_timeless_blend.jpg": {
+      "cloud_path": "images/beans/hayati_coffee_timeless_blend.jpg",
+      "original_bytes": 29555,
+      "compressed_bytes": 15244,
+      "sha256": "3c42fde18aadf1847c4c06b8244839575a7ee9ff88f2c52d89b1b1e1d7da8085"
+    },
+    "assets/images/beans/hayati_coffee_twilight_filter_blend.jpg": {
+      "cloud_path": "images/beans/hayati_coffee_twilight_filter_blend.jpg",
+      "original_bytes": 28611,
+      "compressed_bytes": 14652,
+      "sha256": "80d435cfdb4af986c2f02b901eaa9749617050b9f8937ce5163ed0dc5df7e464"
+    },
+    "assets/images/beans/herd_coffee_halu_pink_honey.jpg": {
+      "cloud_path": "images/beans/herd_coffee_halu_pink_honey.jpg",
+      "original_bytes": 26440,
+      "compressed_bytes": 13610,
+      "sha256": "2cd22204c80f3c656a492d7b7acdbd45636d2beae7b97e72bcb220c2686c58a6"
+    },
+    "assets/images/beans/herd_coffee_house_blend_herd_espresso.jpg": {
+      "cloud_path": "images/beans/herd_coffee_house_blend_herd_espresso.jpg",
+      "original_bytes": 28656,
+      "compressed_bytes": 14877,
+      "sha256": "852708f469e8c86337de3e67659a06b4e977421f3d558cf48e8b3843561d61c2"
+    },
+    "assets/images/beans/herd_coffee_the_pink_tiger_coffee_series.jpg": {
+      "cloud_path": "images/beans/herd_coffee_the_pink_tiger_coffee_series.jpg",
+      "original_bytes": 27457,
+      "compressed_bytes": 14170,
+      "sha256": "2ee71c64b3a5cf94bde4149093b4c255432ffff8dc839b8bd764bfb36a08c48d"
+    },
+    "assets/images/beans/herd_coffee_the_white_rabbit_coffee_series.jpg": {
+      "cloud_path": "images/beans/herd_coffee_the_white_rabbit_coffee_series.jpg",
+      "original_bytes": 26949,
+      "compressed_bytes": 13884,
+      "sha256": "bdffd9da471baab46bc98f3f73dedd1048f7377d8be5ab22e65fba95267c3c41"
+    },
+    "assets/images/beans/hungry_bird_coffee_bali_kintamani_single_origin.jpg": {
+      "cloud_path": "images/beans/hungry_bird_coffee_bali_kintamani_single_origin.jpg",
+      "original_bytes": 27531,
+      "compressed_bytes": 13997,
+      "sha256": "47d6fc87ea73231be306f01ba39374bc8831e589e1c4c202d5d8ebfe975ba313"
+    },
+    "assets/images/beans/hungry_bird_coffee_berawa_blend.jpg": {
+      "cloud_path": "images/beans/hungry_bird_coffee_berawa_blend.jpg",
+      "original_bytes": 27034,
+      "compressed_bytes": 13514,
+      "sha256": "9ddfb592528bac522d493ee621d7bad9b9d7555e8e632bd94e0e295c055972ed"
+    },
+    "assets/images/beans/hungry_bird_coffee_canggu_blend.jpg": {
+      "cloud_path": "images/beans/hungry_bird_coffee_canggu_blend.jpg",
+      "original_bytes": 29028,
+      "compressed_bytes": 14834,
+      "sha256": "01f2eb4de2c2d7abd922c30a303b8b2a2385a1e93726dbad530567f6edc1f9b5"
+    },
+    "assets/images/beans/hungry_bird_coffee_flores_manggarai_filter.jpg": {
+      "cloud_path": "images/beans/hungry_bird_coffee_flores_manggarai_filter.jpg",
+      "original_bytes": 27017,
+      "compressed_bytes": 13733,
+      "sha256": "65549209b331f1105aa5d24bbde6750a2e30771db3d1dc6006512ffedf3e88d9"
+    },
+    "assets/images/beans/indibro_sutoyo_mknd_arabika_kerinci_sutoyo_coffee.jpg": {
+      "cloud_path": "images/beans/indibro_sutoyo_mknd_arabika_kerinci_sutoyo_coffee.jpg",
+      "original_bytes": 30907,
+      "compressed_bytes": 15468,
+      "sha256": "ea25cc74936941c8c3060e9d46b7ea3011c4a20aadbbcff6f96dd088be4505ce"
+    },
+    "assets/images/beans/indibro_sutoyo_mknd_indibro_gayo_takengon.jpg": {
+      "cloud_path": "images/beans/indibro_sutoyo_mknd_indibro_gayo_takengon.jpg",
+      "original_bytes": 28602,
+      "compressed_bytes": 14746,
+      "sha256": "59fa444ae1b8ac3d411feec2f57dccd10ab2269dc373fcc219642e6ff578e92c"
+    },
+    "assets/images/beans/indibro_sutoyo_mknd_indibro_robusta_robruno.jpg": {
+      "cloud_path": "images/beans/indibro_sutoyo_mknd_indibro_robusta_robruno.jpg",
+      "original_bytes": 27001,
+      "compressed_bytes": 13631,
+      "sha256": "ec452747b30544c76049759b54caaf4786911c1dcffa4dfd9344c6789785e376"
+    },
+    "assets/images/beans/indibro_sutoyo_mknd_mknd_specialty_arabica.jpg": {
+      "cloud_path": "images/beans/indibro_sutoyo_mknd_mknd_specialty_arabica.jpg",
+      "original_bytes": 30047,
+      "compressed_bytes": 14989,
+      "sha256": "bb606a9b6d77c4add4e0c4d6b8fa6fa3a0954ca82e6c277e60a7ebd64ff5cb4f"
+    },
+    "assets/images/beans/initial_coffee_100_arabica_cbc_early_riser.jpg": {
+      "cloud_path": "images/beans/initial_coffee_100_arabica_cbc_early_riser.jpg",
+      "original_bytes": 23620,
+      "compressed_bytes": 11966,
+      "sha256": "f24164a0f12bb34a07034a809d161ac89f73eea6650d3e8531ee8967068530be"
+    },
+    "assets/images/beans/initial_coffee_100_arabica_cbf_commercial_blend.jpg": {
+      "cloud_path": "images/beans/initial_coffee_100_arabica_cbf_commercial_blend.jpg",
+      "original_bytes": 26113,
+      "compressed_bytes": 13286,
+      "sha256": "4cb62a70a3547b07d5c70cd90af487925f59a2f70e45db91e6bcb1c9b7933757"
+    },
+    "assets/images/beans/initial_coffee_50_arabica_cbc_commercial_blend.jpg": {
+      "cloud_path": "images/beans/initial_coffee_50_arabica_cbc_commercial_blend.jpg",
+      "original_bytes": 26590,
+      "compressed_bytes": 13545,
+      "sha256": "835c792b29a3b2d6ebdf786fed22d58b91f35f3a19843da1a9cf113ed36e1877"
+    },
+    "assets/images/beans/initial_coffee_bali_floral_mango.jpg": {
+      "cloud_path": "images/beans/initial_coffee_bali_floral_mango.jpg",
+      "original_bytes": 25681,
+      "compressed_bytes": 13267,
+      "sha256": "0a5dc404695202e2cc85236e0f03ca2b750ef2b3937eb5a35a6e807f87e4bfc8"
+    },
+    "assets/images/beans/initial_coffee_full_100_robusta_cb_blend.jpg": {
+      "cloud_path": "images/beans/initial_coffee_full_100_robusta_cb_blend.jpg",
+      "original_bytes": 24838,
+      "compressed_bytes": 12710,
+      "sha256": "e46ebd548a4c1b6697b4ca7d546c46587b22702ce87ef3f0a0746045cde0325e"
+    },
+    "assets/images/beans/initial_coffee_houseblend_arabica_chocolicious.jpg": {
+      "cloud_path": "images/beans/initial_coffee_houseblend_arabica_chocolicious.jpg",
+      "original_bytes": 25588,
+      "compressed_bytes": 13065,
+      "sha256": "f17f29e4d5c56557cb64654a21b15d0eea51c17082aee9f216faf8c0de8f0b8f"
+    },
+    "assets/images/beans/initial_coffee_houseblend_gw02.jpg": {
+      "cloud_path": "images/beans/initial_coffee_houseblend_gw02.jpg",
+      "original_bytes": 24846,
+      "compressed_bytes": 12663,
+      "sha256": "126000a79f7c5c749570967c6e8893c8acb1b04668d1d3f3bcfbbbfd27ccea62"
+    },
+    "assets/images/beans/initial_coffee_ijen_berry_punch.jpg": {
+      "cloud_path": "images/beans/initial_coffee_ijen_berry_punch.jpg",
+      "original_bytes": 26085,
+      "compressed_bytes": 13492,
+      "sha256": "5f4029d6536eca9e533bcaec6736c7b729365f83c4be7f642442a36d63627daf"
+    },
+    "assets/images/beans/initial_coffee_ijen_yama_signature.jpg": {
+      "cloud_path": "images/beans/initial_coffee_ijen_yama_signature.jpg",
+      "original_bytes": 27059,
+      "compressed_bytes": 14048,
+      "sha256": "b71485d1733d60bcf87200b1edd0e21a64a1cc83efd24191fe034081f353a1cf"
+    },
+    "assets/images/beans/initial_coffee_infused_exotic_ijen_blueberry_jam.jpg": {
+      "cloud_path": "images/beans/initial_coffee_infused_exotic_ijen_blueberry_jam.jpg",
+      "original_bytes": 27719,
+      "compressed_bytes": 14363,
+      "sha256": "e776dc7f96f63d9a82b71b2a063caf542d613bd9a4e826beec9f4a4b15e247c3"
+    },
+    "assets/images/beans/initial_coffee_infused_exotic_ijen_grape_candy.jpg": {
+      "cloud_path": "images/beans/initial_coffee_infused_exotic_ijen_grape_candy.jpg",
+      "original_bytes": 27755,
+      "compressed_bytes": 14416,
+      "sha256": "ab912604caf7d4dab8841396bc9cd8f701b43eb0e710f6648b1d89644e4d69e6"
+    },
+    "assets/images/beans/initial_coffee_java_fine_robusta.jpg": {
+      "cloud_path": "images/beans/initial_coffee_java_fine_robusta.jpg",
+      "original_bytes": 24632,
+      "compressed_bytes": 12575,
+      "sha256": "f43240e4a0a17e86a2fedf640fa22c6572a0b15e847693963c0d264750d923eb"
+    },
+    "assets/images/beans/instinct_roastery_colombia_exotic_filter.jpg": {
+      "cloud_path": "images/beans/instinct_roastery_colombia_exotic_filter.jpg",
+      "original_bytes": 27088,
+      "compressed_bytes": 13919,
+      "sha256": "c53315805d721555ea18c26d82a1a4d0b349e0e0f367461ccb750f0615fed81a"
+    },
+    "assets/images/beans/instinct_roastery_ethiopia_yirgacheffe_espresso_filter.jpg": {
+      "cloud_path": "images/beans/instinct_roastery_ethiopia_yirgacheffe_espresso_filter.jpg",
+      "original_bytes": 27565,
+      "compressed_bytes": 14281,
+      "sha256": "59f2d851b136e66109cdbb602f7b3b974fcca6712c7dbd8ceb4437bccba6d098"
+    },
+    "assets/images/beans/instinct_roastery_gayo_avatara_anaerobic.jpg": {
+      "cloud_path": "images/beans/instinct_roastery_gayo_avatara_anaerobic.jpg",
+      "original_bytes": 25956,
+      "compressed_bytes": 13364,
+      "sha256": "e104d67903346527b6bd931547e455a80bbf6de47d7fc5706efbcd1300f68d26"
+    },
+    "assets/images/beans/instinct_roastery_kerinci_washed.jpg": {
+      "cloud_path": "images/beans/instinct_roastery_kerinci_washed.jpg",
+      "original_bytes": 26470,
+      "compressed_bytes": 13595,
+      "sha256": "cce175b3d2fa27d2bdda3c216bbf2190229b88eb90292e229aca633ef0627cc1"
+    },
+    "assets/images/beans/kamojang_classico.jpg": {
+      "cloud_path": "images/beans/kamojang_classico.jpg",
+      "original_bytes": 18474,
+      "compressed_bytes": 9797,
+      "sha256": "3cb1083707bd2a044a610b0589b1a5499ba0c518db2635d99a98e75c6d9c6715"
+    },
+    "assets/images/beans/klasik_beans_arabika_king_gayo.jpg": {
+      "cloud_path": "images/beans/klasik_beans_arabika_king_gayo.jpg",
+      "original_bytes": 28717,
+      "compressed_bytes": 15071,
+      "sha256": "15eb2162649e44610a3b3e6c5b7ee3c9a43f8dd7105e3bce3dba787390a10ea9"
+    },
+    "assets/images/beans/klasik_beans_java_preanger_sunda_hejo.jpg": {
+      "cloud_path": "images/beans/klasik_beans_java_preanger_sunda_hejo.jpg",
+      "original_bytes": 29759,
+      "compressed_bytes": 15114,
+      "sha256": "aacfc7902ace3154a079395162ce68838baa3574c1b609d3b1e81d162ee5f51a"
+    },
+    "assets/images/beans/klasik_beans_robusta_klasik.jpg": {
+      "cloud_path": "images/beans/klasik_beans_robusta_klasik.jpg",
+      "original_bytes": 25043,
+      "compressed_bytes": 12757,
+      "sha256": "b590dabcff6ceb7f2db7097e648bdedbd1f9abdfd620dc532a500b7d8f4ae12f"
+    },
+    "assets/images/beans/klasik_beans_sundanese_puntang_natural.jpg": {
+      "cloud_path": "images/beans/klasik_beans_sundanese_puntang_natural.jpg",
+      "original_bytes": 26763,
+      "compressed_bytes": 13952,
+      "sha256": "0621812c14c3b6e4cb60f93130db9e2a2b8aa6f73320197825bc77e7bc2f29e9"
+    },
+    "assets/images/beans/klinik_kopi_kintamani_bali_artisanal.jpg": {
+      "cloud_path": "images/beans/klinik_kopi_kintamani_bali_artisanal.jpg",
+      "original_bytes": 26218,
+      "compressed_bytes": 13534,
+      "sha256": "12c597c9bf228d45f0c8abf74d8dc1c3c76993ce04922b22665fb3e6d2c6b581"
+    },
+    "assets/images/beans/klinik_kopi_sumatra_gayo_artisanal_lot.jpg": {
+      "cloud_path": "images/beans/klinik_kopi_sumatra_gayo_artisanal_lot.jpg",
+      "original_bytes": 27033,
+      "compressed_bytes": 13931,
+      "sha256": "2a8f134ab171f85198082afd2c219a2962d05d659b9a6201379ea8b1d2f33ebc"
+    },
+    "assets/images/beans/klinik_kopi_sunda_priangan_puntang.jpg": {
+      "cloud_path": "images/beans/klinik_kopi_sunda_priangan_puntang.jpg",
+      "original_bytes": 26355,
+      "compressed_bytes": 13585,
+      "sha256": "20a1d7a0ec161f4e77f39b8511996861f1e465c444ceaa0e4c73d145472fdc50"
+    },
+    "assets/images/beans/klinik_kopi_wamena_baliem_papua.jpg": {
+      "cloud_path": "images/beans/klinik_kopi_wamena_baliem_papua.jpg",
+      "original_bytes": 26277,
+      "compressed_bytes": 13567,
+      "sha256": "20ca89974b42ce5c3c7a3a29c00b49eed5078b95ec43c1e90f459f9dffe82e48"
+    },
+    "assets/images/beans/koeslans_coffee_berry_jam_espresso_roast.jpg": {
+      "cloud_path": "images/beans/koeslans_coffee_berry_jam_espresso_roast.jpg",
+      "original_bytes": 26226,
+      "compressed_bytes": 13496,
+      "sha256": "714062c558b1764d118e26460e81e4f4a77f6f8ef129a609cd86905620a212bc"
+    },
+    "assets/images/beans/koeslans_coffee_lawu_single_origin_filter.jpg": {
+      "cloud_path": "images/beans/koeslans_coffee_lawu_single_origin_filter.jpg",
+      "original_bytes": 26116,
+      "compressed_bytes": 13416,
+      "sha256": "84aed1feb0e128467c58478c49ff3a35cd97cce248d664cc33e3ea5c57e54431"
+    },
+    "assets/images/beans/koeslans_coffee_raisin_cookies_espresso_roast.jpg": {
+      "cloud_path": "images/beans/koeslans_coffee_raisin_cookies_espresso_roast.jpg",
+      "original_bytes": 28702,
+      "compressed_bytes": 14893,
+      "sha256": "cba6fd818b3da9350ff5278726809646c88a62112f76915caa38076a38c5c6a8"
+    },
+    "assets/images/beans/kopirelo_coffee_relo_house_blend.jpg": {
+      "cloud_path": "images/beans/kopirelo_coffee_relo_house_blend.jpg",
+      "original_bytes": 26061,
+      "compressed_bytes": 13196,
+      "sha256": "52d4800bee266779a5accdecc96d35abc82cbe4b710d83209ff27baa271ac47f"
+    },
+    "assets/images/beans/kopirelo_coffee_temanggung_sindoro_natural.jpg": {
+      "cloud_path": "images/beans/kopirelo_coffee_temanggung_sindoro_natural.jpg",
+      "original_bytes": 27000,
+      "compressed_bytes": 13909,
+      "sha256": "9f3355175ab134e0b1f958ace210413ac7da174f441667c433f84e44b1ab86da"
+    },
+    "assets/images/beans/kopirelo_coffee_voyager_series_single_origin.jpg": {
+      "cloud_path": "images/beans/kopirelo_coffee_voyager_series_single_origin.jpg",
+      "original_bytes": 27935,
+      "compressed_bytes": 14360,
+      "sha256": "9bba1f2d2280bd7287f8e980f23c8d826675f9c0eb6738ff793bb317b4504e44"
+    },
+    "assets/images/beans/kopiteori_deapati_enrekang_kalosi_natural_kopiteori.jpg": {
+      "cloud_path": "images/beans/kopiteori_deapati_enrekang_kalosi_natural_kopiteori.jpg",
+      "original_bytes": 26940,
+      "compressed_bytes": 14044,
+      "sha256": "50743a8d0ed97670407188fa10f08a3886d9c73c986140773013c2c414bd9e9f"
+    },
+    "assets/images/beans/kopiteori_deapati_malino_highland_espresso_kopiteori.jpg": {
+      "cloud_path": "images/beans/kopiteori_deapati_malino_highland_espresso_kopiteori.jpg",
+      "original_bytes": 26836,
+      "compressed_bytes": 13685,
+      "sha256": "2ffbf1f5dd325e9995882d97932b4b6e371c8123d90648e8272497e1c80ab7ec"
+    },
+    "assets/images/beans/kopiteori_deapati_toraja_pulu_pulu_washed_kopiteori.jpg": {
+      "cloud_path": "images/beans/kopiteori_deapati_toraja_pulu_pulu_washed_kopiteori.jpg",
+      "original_bytes": 27489,
+      "compressed_bytes": 14233,
+      "sha256": "4e0b0477dfb8d22f485d19eec29cc5f84f0ecf1de7e78bfff2651ed0b2a88eb8"
+    },
+    "assets/images/beans/kopiteori_deapati_toraja_sapan_wet_hulled_deapati.jpg": {
+      "cloud_path": "images/beans/kopiteori_deapati_toraja_sapan_wet_hulled_deapati.jpg",
+      "original_bytes": 29215,
+      "compressed_bytes": 15287,
+      "sha256": "bb255ef7a777cbd0733e07cb63c0f71e6e627af817322c6edc6f2781c39acf04"
+    },
+    "assets/images/beans/kopi_anjis_gayo_wine_specialty.jpg": {
+      "cloud_path": "images/beans/kopi_anjis_gayo_wine_specialty.jpg",
+      "original_bytes": 27178,
+      "compressed_bytes": 13842,
+      "sha256": "2b9036920f509a18eff78e3d9afbdce02c749b74c4fa0e5aed46de4d23f491b2"
+    },
+    "assets/images/beans/kopi_anjis_halu_cau_banana.jpg": {
+      "cloud_path": "images/beans/kopi_anjis_halu_cau_banana.jpg",
+      "original_bytes": 26495,
+      "compressed_bytes": 13626,
+      "sha256": "aae7efed58df0718049f1daead34a67301a73a468a0a3a3c8a660de19a6c4505"
+    },
+    "assets/images/beans/kopi_anjis_kamojang_fruity_gum.jpg": {
+      "cloud_path": "images/beans/kopi_anjis_kamojang_fruity_gum.jpg",
+      "original_bytes": 26706,
+      "compressed_bytes": 13716,
+      "sha256": "50365cbdd9467ad74ea8b617dd555e0564406198fef87c21f0a708f246747c04"
+    },
+    "assets/images/beans/kopi_anjis_puntang_los_strawberry.jpg": {
+      "cloud_path": "images/beans/kopi_anjis_puntang_los_strawberry.jpg",
+      "original_bytes": 26155,
+      "compressed_bytes": 13457,
+      "sha256": "94dc515f1f43696b5f527b0c646b499453a935438a130df6f299280127ff55de"
+    },
+    "assets/images/beans/kopi_anjis_sunda_jasmine_honey.jpg": {
+      "cloud_path": "images/beans/kopi_anjis_sunda_jasmine_honey.jpg",
+      "original_bytes": 25883,
+      "compressed_bytes": 13278,
+      "sha256": "3e59068669dfd3b65fbc819d058dd12c9da1edad4b77df63913d114de97216aa"
+    },
+    "assets/images/beans/koro_roasters_arabica_toraja_citrus_delight.jpg": {
+      "cloud_path": "images/beans/koro_roasters_arabica_toraja_citrus_delight.jpg",
+      "original_bytes": 26126,
+      "compressed_bytes": 13469,
+      "sha256": "435ab05bb5913a0e610b6a187e0bb0cdd4fb398390cef0a3c926e2bf5ec86166"
+    },
+    "assets/images/beans/koro_roasters_bali_natural_escape.jpg": {
+      "cloud_path": "images/beans/koro_roasters_bali_natural_escape.jpg",
+      "original_bytes": 24958,
+      "compressed_bytes": 12832,
+      "sha256": "69190ca2e6b55e0e434643036a06d43f0fa466f4264b323e2f2ad283968523f3"
+    },
+    "assets/images/beans/koro_roasters_gayo_reserve.jpg": {
+      "cloud_path": "images/beans/koro_roasters_gayo_reserve.jpg",
+      "original_bytes": 27870,
+      "compressed_bytes": 14438,
+      "sha256": "c7ac0b952b8639519d3b1060b21d30ca4c114757952ea296ebebfa1264471a0c"
+    },
+    "assets/images/beans/koro_roasters_kamojang_women.jpg": {
+      "cloud_path": "images/beans/koro_roasters_kamojang_women.jpg",
+      "original_bytes": 25818,
+      "compressed_bytes": 13268,
+      "sha256": "ccea5d95357652b0126c658916ff94be246888ca299f5dd439fb231f5ce164b3"
+    },
+    "assets/images/beans/koro_roasters_kerinci_honey_velvet.jpg": {
+      "cloud_path": "images/beans/koro_roasters_kerinci_honey_velvet.jpg",
+      "original_bytes": 25708,
+      "compressed_bytes": 13235,
+      "sha256": "e539ecd7b6e9ac6ff05c33b94c7b686a5ce3e7da6df744c40852e90e9ae74bd3"
+    },
+    "assets/images/beans/life_coffee_ethiopia_competition_series.jpg": {
+      "cloud_path": "images/beans/life_coffee_ethiopia_competition_series.jpg",
+      "original_bytes": 27147,
+      "compressed_bytes": 13864,
+      "sha256": "0434800f0bd14549523ef3dd24a39023ef59f41429e70d66a7bace717a75a6cf"
+    },
+    "assets/images/beans/life_coffee_java_arabica_collection_series.jpg": {
+      "cloud_path": "images/beans/life_coffee_java_arabica_collection_series.jpg",
+      "original_bytes": 26488,
+      "compressed_bytes": 13639,
+      "sha256": "5f9d1ec7cb0fe8874d8d90179b25ca78a0d70282950245df1c2eecb7af4f6aba"
+    },
+    "assets/images/beans/life_coffee_life_daily_espresso_blend.jpg": {
+      "cloud_path": "images/beans/life_coffee_life_daily_espresso_blend.jpg",
+      "original_bytes": 28502,
+      "compressed_bytes": 14723,
+      "sha256": "9b96aa2c0579b4d7a4cdb9870d90c6959e606fd8806f16286fd4f7913690a822"
+    },
+    "assets/images/beans/mahugi_ijen_carbonic.jpg": {
+      "cloud_path": "images/beans/mahugi_ijen_carbonic.jpg",
+      "original_bytes": 22318,
+      "compressed_bytes": 9930,
+      "sha256": "632e9711a9e921fed6a16ecd9643b0afdbe84f1730ba528973b73d3a13e63035"
+    },
+    "assets/images/beans/mahugi_rancabali_patuha.jpg": {
+      "cloud_path": "images/beans/mahugi_rancabali_patuha.jpg",
+      "original_bytes": 18222,
+      "compressed_bytes": 9858,
+      "sha256": "db79f1cdc16e7334a1922fbe04884bda9f1a613e0692b309e47cea24a74d9740"
+    },
+    "assets/images/beans/makmur_jaya_halu_banana_natural.jpg": {
+      "cloud_path": "images/beans/makmur_jaya_halu_banana_natural.jpg",
+      "original_bytes": 27141,
+      "compressed_bytes": 13850,
+      "sha256": "bfd69aef70689c04490fb4e51335456ee72bf616d79b1eca44b0e6b3a9799752"
+    },
+    "assets/images/beans/makmur_jaya_makmur_jaya_signature_blend.jpg": {
+      "cloud_path": "images/beans/makmur_jaya_makmur_jaya_signature_blend.jpg",
+      "original_bytes": 27225,
+      "compressed_bytes": 13712,
+      "sha256": "3254229a020f6d350b30f73a5b5b7414fc83ac27e906a10ba73d174bc9f4699a"
+    },
+    "assets/images/beans/makmur_jaya_manglayang_honey.jpg": {
+      "cloud_path": "images/beans/makmur_jaya_manglayang_honey.jpg",
+      "original_bytes": 27383,
+      "compressed_bytes": 13987,
+      "sha256": "6be7aeab25c81a77ef302e17824531a67486b8c0f09fa6c5d16998d341c5b6d1"
+    },
+    "assets/images/beans/missibu_roaster_miss_maryam_coffee_series.jpg": {
+      "cloud_path": "images/beans/missibu_roaster_miss_maryam_coffee_series.jpg",
+      "original_bytes": 26220,
+      "compressed_bytes": 13421,
+      "sha256": "6a8b841a146d7b8e6d45cc7b4956095999c5ab008acafdbf69d86d44cdbae871"
+    },
+    "assets/images/beans/missibu_roaster_miss_natasha_coffee_series.jpg": {
+      "cloud_path": "images/beans/missibu_roaster_miss_natasha_coffee_series.jpg",
+      "original_bytes": 26070,
+      "compressed_bytes": 13356,
+      "sha256": "aca57273178edde37685abc6ac49cca0d1d35a55a7826c79c4f5f57dfdc0813f"
+    },
+    "assets/images/beans/mknd_aceh_gayo.jpg": {
+      "cloud_path": "images/beans/mknd_aceh_gayo.jpg",
+      "original_bytes": 34272,
+      "compressed_bytes": 15519,
+      "sha256": "023f079ebc632b8f0b0a63b0a4e1e9a02245f28d32c0965f09ce134422763cb8"
+    },
+    "assets/images/beans/mknd_bali_kintamani.jpg": {
+      "cloud_path": "images/beans/mknd_bali_kintamani.jpg",
+      "original_bytes": 36076,
+      "compressed_bytes": 16526,
+      "sha256": "6064b65c6bdcf0751404b703b9f7137e484963fd483377302fbc28af5f19be6e"
+    },
+    "assets/images/beans/mknd_kopi_excelsa.jpg": {
+      "cloud_path": "images/beans/mknd_kopi_excelsa.jpg",
+      "original_bytes": 42238,
+      "compressed_bytes": 19315,
+      "sha256": "b3a166cb5e63eee5a1da1eb1dc6200c0e2a984eb38b577e5f9b2bd5e0fedda61"
+    },
+    "assets/images/beans/mknd_toraja_sapan.jpg": {
+      "cloud_path": "images/beans/mknd_toraja_sapan.jpg",
+      "original_bytes": 25217,
+      "compressed_bytes": 11171,
+      "sha256": "c6ff305cf73744b53741c1d5902b75c6ba6299a41abaf87a8e15d089180dfafc"
+    },
+    "assets/images/beans/more_coffee_ciater_barulakek_filter_series.jpg": {
+      "cloud_path": "images/beans/more_coffee_ciater_barulakek_filter_series.jpg",
+      "original_bytes": 27487,
+      "compressed_bytes": 14208,
+      "sha256": "e1cce5efff31a6d4bff6da20e8bc1a24d0db9f6f9b89f7e5cc7223c457a3fb04"
+    },
+    "assets/images/beans/more_coffee_ciater_classic_washed.jpg": {
+      "cloud_path": "images/beans/more_coffee_ciater_classic_washed.jpg",
+      "original_bytes": 28104,
+      "compressed_bytes": 14701,
+      "sha256": "ec69a22d778e130ffbc5e0450740ad83c431b6057c8ea9a6cc4c5f3524ad19f0"
+    },
+    "assets/images/beans/more_coffee_subang_highland_espresso.jpg": {
+      "cloud_path": "images/beans/more_coffee_subang_highland_espresso.jpg",
+      "original_bytes": 26623,
+      "compressed_bytes": 13568,
+      "sha256": "ff3780d0bbea89beab21d0b85f0b6e6bba456dfda5e715d4478318bab7466d6e"
+    },
+    "assets/images/beans/movere_coffee_colombia_edwin_norena_campo_hermoso_geisha.jpg": {
+      "cloud_path": "images/beans/movere_coffee_colombia_edwin_norena_campo_hermoso_geisha.jpg",
+      "original_bytes": 29491,
+      "compressed_bytes": 15223,
+      "sha256": "6489885be8aea8b6968eb419c3e3318931d3d6df18065cf83c4cd0ea36e69918"
+    },
+    "assets/images/beans/movere_coffee_colombia_granja_paraiso_92_sudan_rume.jpg": {
+      "cloud_path": "images/beans/movere_coffee_colombia_granja_paraiso_92_sudan_rume.jpg",
+      "original_bytes": 29252,
+      "compressed_bytes": 15105,
+      "sha256": "008f1330e76d51d401a4e1db02a57a7da6d67139120a62c64578fa1ed0726b33"
+    },
+    "assets/images/beans/movere_coffee_panama_santa_maria_geisha_comp_series.jpg": {
+      "cloud_path": "images/beans/movere_coffee_panama_santa_maria_geisha_comp_series.jpg",
+      "original_bytes": 27831,
+      "compressed_bytes": 14383,
+      "sha256": "df3c99f7939f4c3af38fd2bd3678686829bc138414949f097619be670a9ba49b"
+    },
+    "assets/images/beans/one_fifteenth_morph_1_15_signature_house_blend.jpg": {
+      "cloud_path": "images/beans/one_fifteenth_morph_1_15_signature_house_blend.jpg",
+      "original_bytes": 30531,
+      "compressed_bytes": 16011,
+      "sha256": "47bc857697a409fd6eafdb6eef2f0569d6af39e30616ce9ddccce709f32dc63d"
+    },
+    "assets/images/beans/one_fifteenth_morph_brazil_fazenda_dona_nenem.jpg": {
+      "cloud_path": "images/beans/one_fifteenth_morph_brazil_fazenda_dona_nenem.jpg",
+      "original_bytes": 29424,
+      "compressed_bytes": 15436,
+      "sha256": "1b32f25c3f8fbdf188cca69651a9fd8f7c404944d325e43eaa21bfae78077a0c"
+    },
+    "assets/images/beans/one_fifteenth_morph_java_taneuh_sunda_gulali.jpg": {
+      "cloud_path": "images/beans/one_fifteenth_morph_java_taneuh_sunda_gulali.jpg",
+      "original_bytes": 26609,
+      "compressed_bytes": 13781,
+      "sha256": "587e5c5af991eb0151c90cabcb07674387e18ff8af70dcfcbdc0c900080f7687"
+    },
+    "assets/images/beans/one_fifteenth_morph_rojali_cold_press_blend.jpg": {
+      "cloud_path": "images/beans/one_fifteenth_morph_rojali_cold_press_blend.jpg",
+      "original_bytes": 26944,
+      "compressed_bytes": 13938,
+      "sha256": "e88eed851f950b25f47cc136ff2dfd53e804b42ce07df08a568f91aabcb94be9"
+    },
+    "assets/images/beans/onward_coffee_bali_kintamani_ulian.jpg": {
+      "cloud_path": "images/beans/onward_coffee_bali_kintamani_ulian.jpg",
+      "original_bytes": 26450,
+      "compressed_bytes": 13593,
+      "sha256": "3d7a040b6a4c00e3945ff58f7ead8aec1977cb4300423f2bd29ebf390c508329"
+    },
+    "assets/images/beans/onward_coffee_gayo_bener_meriah_natural.jpg": {
+      "cloud_path": "images/beans/onward_coffee_gayo_bener_meriah_natural.jpg",
+      "original_bytes": 26513,
+      "compressed_bytes": 13659,
+      "sha256": "49396f899d8ff2e42e2197124924fc6acc4500169e39866d8314f4dbf7da3b7f"
+    },
+    "assets/images/beans/onward_coffee_onward_daily_espresso_blend.jpg": {
+      "cloud_path": "images/beans/onward_coffee_onward_daily_espresso_blend.jpg",
+      "original_bytes": 29221,
+      "compressed_bytes": 15256,
+      "sha256": "f57c1ba67d26fa9880abfd18390ecae71e4f7e59ad4a1d53e959ad19f3bb784e"
+    },
+    "assets/images/beans/otten_coffee_70_30_signature_house_blend.jpg": {
+      "cloud_path": "images/beans/otten_coffee_70_30_signature_house_blend.jpg",
+      "original_bytes": 27085,
+      "compressed_bytes": 13684,
+      "sha256": "c225f99e1791362ec272887c59934bf148aa36836cac1de91eebe76c4277e387"
+    },
+    "assets/images/beans/otten_coffee_arabica_bali_kintamani.jpg": {
+      "cloud_path": "images/beans/otten_coffee_arabica_bali_kintamani.jpg",
+      "original_bytes": 27309,
+      "compressed_bytes": 14154,
+      "sha256": "f0e51cd103abc06fdaae19ada65d10d66bd9f7b90fc536ab82b00fc2953c9fe8"
+    },
+    "assets/images/beans/otten_coffee_crema_espresso_blend.jpg": {
+      "cloud_path": "images/beans/otten_coffee_crema_espresso_blend.jpg",
+      "original_bytes": 25987,
+      "compressed_bytes": 13089,
+      "sha256": "b04f40ad57a6758b111d18e94cc0886895f10041c9b92ab4f224162a0f37fcd9"
+    },
+    "assets/images/beans/otten_coffee_flores_bajawa_single_origin.jpg": {
+      "cloud_path": "images/beans/otten_coffee_flores_bajawa_single_origin.jpg",
+      "original_bytes": 27831,
+      "compressed_bytes": 14435,
+      "sha256": "dc5f2e68971ca6ab7f649f78343882df08bb6e7ad1c1690eebc9964d7fa5b183"
+    },
+    "assets/images/beans/otten_coffee_premium_espresso_blend.jpg": {
+      "cloud_path": "images/beans/otten_coffee_premium_espresso_blend.jpg",
+      "original_bytes": 26386,
+      "compressed_bytes": 13298,
+      "sha256": "2acd6879a179450caef34580db49ebf8bc8da827c471146e0ab1d395528429d9"
+    },
+    "assets/images/beans/otten_coffee_sumatra_mandheling_lintong.jpg": {
+      "cloud_path": "images/beans/otten_coffee_sumatra_mandheling_lintong.jpg",
+      "original_bytes": 26134,
+      "compressed_bytes": 13234,
+      "sha256": "9b9093f5a4163e60bfc65ecd00b755e16a9ce72d1817e9ca58cae026781083f8"
+    },
+    "assets/images/beans/pigeonhole_coffee_kerinci_koerintji_barokah.jpg": {
+      "cloud_path": "images/beans/pigeonhole_coffee_kerinci_koerintji_barokah.jpg",
+      "original_bytes": 26094,
+      "compressed_bytes": 13407,
+      "sha256": "c2e86c1c82cf236500326cc10a961b1bf68efac05c5c4015bf331a3fcde853be"
+    },
+    "assets/images/beans/pigeonhole_coffee_pigeonhole_signature_blend.jpg": {
+      "cloud_path": "images/beans/pigeonhole_coffee_pigeonhole_signature_blend.jpg",
+      "original_bytes": 28569,
+      "compressed_bytes": 14840,
+      "sha256": "80798df4a0bdd33f98e222270a77d4508fb2e2b1db04b62660a1e288d7cfa54f"
+    },
+    "assets/images/beans/pigeonhole_coffee_sunda_gulali_malabar.jpg": {
+      "cloud_path": "images/beans/pigeonhole_coffee_sunda_gulali_malabar.jpg",
+      "original_bytes": 25662,
+      "compressed_bytes": 13133,
+      "sha256": "e55cb526edfcc78428ff27ddacdf23d9b5d2c6faf41c47d6774abe05e2711569"
+    },
+    "assets/images/beans/revolver_espresso_decaf_espresso_blend.jpg": {
+      "cloud_path": "images/beans/revolver_espresso_decaf_espresso_blend.jpg",
+      "original_bytes": 24342,
+      "compressed_bytes": 12250,
+      "sha256": "0a07232d5f6ca68a632826c605e1654c63edcb0aa2c7dd8842c7097552f32c7d"
+    },
+    "assets/images/beans/revolver_espresso_kintamani_single_origin.jpg": {
+      "cloud_path": "images/beans/revolver_espresso_kintamani_single_origin.jpg",
+      "original_bytes": 27208,
+      "compressed_bytes": 14144,
+      "sha256": "5c9e0c832ff0cd0c0aaab148ae99f6720e6e4dcfcfaf6ec45616e3fe29f9928e"
+    },
+    "assets/images/beans/revolver_espresso_revolver_signature_blend.jpg": {
+      "cloud_path": "images/beans/revolver_espresso_revolver_signature_blend.jpg",
+      "original_bytes": 25449,
+      "compressed_bytes": 12790,
+      "sha256": "9c231389a7612094e20845ba3a83af1a31986b1673f17e7d3ef025c1815ad71b"
+    },
+    "assets/images/beans/sakha_coffee_100_full_arabica_commercial.jpg": {
+      "cloud_path": "images/beans/sakha_coffee_100_full_arabica_commercial.jpg",
+      "original_bytes": 25272,
+      "compressed_bytes": 12674,
+      "sha256": "2dd59ddae71d751db382b50df93915ccd48f79522050ef36242d2a635506fb99"
+    },
+    "assets/images/beans/sakha_coffee_50_arabica_ekonomis_blend.jpg": {
+      "cloud_path": "images/beans/sakha_coffee_50_arabica_ekonomis_blend.jpg",
+      "original_bytes": 27318,
+      "compressed_bytes": 13848,
+      "sha256": "19dc03c0024df48ecf9210c0ae54544b98c092d3285d0df01512d433a9e96393"
+    },
+    "assets/images/beans/sakha_coffee_75_arabica_crema_espresso_blend.jpg": {
+      "cloud_path": "images/beans/sakha_coffee_75_arabica_crema_espresso_blend.jpg",
+      "original_bytes": 27581,
+      "compressed_bytes": 13966,
+      "sha256": "955106cf55544f3b3bf4e1c8a8217a8777d353694bb244c9542a545a6b56a8cb"
+    },
+    "assets/images/beans/sakha_coffee_arabika_alexander_le_grape.jpg": {
+      "cloud_path": "images/beans/sakha_coffee_arabika_alexander_le_grape.jpg",
+      "original_bytes": 27719,
+      "compressed_bytes": 14204,
+      "sha256": "2654586be733aafbb39be298e93a024a0cf29b0bb1f58b408f052a7fffb01581"
+    },
+    "assets/images/beans/sakha_coffee_arabika_bali_kintamani.jpg": {
+      "cloud_path": "images/beans/sakha_coffee_arabika_bali_kintamani.jpg",
+      "original_bytes": 28739,
+      "compressed_bytes": 14854,
+      "sha256": "f9c033ab3138e3e0f4ba9a56307fd2d2e89613f59395137e0b629666f8f08f20"
+    },
+    "assets/images/beans/sakha_coffee_arabika_gayo_honey.jpg": {
+      "cloud_path": "images/beans/sakha_coffee_arabika_gayo_honey.jpg",
+      "original_bytes": 29389,
+      "compressed_bytes": 14663,
+      "sha256": "948945753cce8cc2f9f2e6121a26e3330266d689496b9e42563c14c5df6b12b4"
+    },
+    "assets/images/beans/sakha_coffee_arabika_gayo_wine.jpg": {
+      "cloud_path": "images/beans/sakha_coffee_arabika_gayo_wine.jpg",
+      "original_bytes": 28652,
+      "compressed_bytes": 14525,
+      "sha256": "ae6ba54a6b433e34ffa5ef2bac2f7c50a16edc53616915c06f1c487f116f7e3e"
+    },
+    "assets/images/beans/sakha_coffee_arabika_java_java_preanger_ijen.jpg": {
+      "cloud_path": "images/beans/sakha_coffee_arabika_java_java_preanger_ijen.jpg",
+      "original_bytes": 28087,
+      "compressed_bytes": 14550,
+      "sha256": "2fd5f453760349b456ecc0020e8013f3283ca4127b1cbde4b05cac88e6ded08d"
+    },
+    "assets/images/beans/sakha_coffee_arabika_mandailing_mandheling.jpg": {
+      "cloud_path": "images/beans/sakha_coffee_arabika_mandailing_mandheling.jpg",
+      "original_bytes": 26853,
+      "compressed_bytes": 13606,
+      "sha256": "247617308341fe0829d3648b1e36a039676e70a8337a5fb8ef58a7082736118d"
+    },
+    "assets/images/beans/sakha_coffee_arabika_semendo.jpg": {
+      "cloud_path": "images/beans/sakha_coffee_arabika_semendo.jpg",
+      "original_bytes": 28426,
+      "compressed_bytes": 14719,
+      "sha256": "cf0bc562c160266c5c12612dc6bc9e8e79b22f2f5a8c7105e1069f924e6f8601"
+    },
+    "assets/images/beans/sakha_coffee_fine_robusta_espresso_based.jpg": {
+      "cloud_path": "images/beans/sakha_coffee_fine_robusta_espresso_based.jpg",
+      "original_bytes": 26531,
+      "compressed_bytes": 13445,
+      "sha256": "c3153bd8a9f67c575ab5de25ccbfafdec65849ee28b4e353d432048ac19018bd"
+    },
+    "assets/images/beans/sakha_coffee_full_arabica_brazil_espresso.jpg": {
+      "cloud_path": "images/beans/sakha_coffee_full_arabica_brazil_espresso.jpg",
+      "original_bytes": 26327,
+      "compressed_bytes": 13333,
+      "sha256": "8478eacb976c13df16b78b79ccec184444b980d56d2283017e9528b43f956ff0"
+    },
+    "assets/images/beans/sakha_coffee_kintamani_robusta.jpg": {
+      "cloud_path": "images/beans/sakha_coffee_kintamani_robusta.jpg",
+      "original_bytes": 26057,
+      "compressed_bytes": 13239,
+      "sha256": "023d466aa27c141b592e7a4199af01c42c686b240ed705e736bdfa3c6b9c20eb"
+    },
+    "assets/images/beans/sematjam_coffee_ethiopia_alo_village_bombe_natural.jpg": {
+      "cloud_path": "images/beans/sematjam_coffee_ethiopia_alo_village_bombe_natural.jpg",
+      "original_bytes": 27594,
+      "compressed_bytes": 14247,
+      "sha256": "75707c06e1787736213c6090d0bb70bffae7421397f6136ce6e2a8780a620169"
+    },
+    "assets/images/beans/sematjam_coffee_sematjam_nusantara_filter.jpg": {
+      "cloud_path": "images/beans/sematjam_coffee_sematjam_nusantara_filter.jpg",
+      "original_bytes": 26906,
+      "compressed_bytes": 13795,
+      "sha256": "ad8cb1bbad76f868b8572476c2a0c4dd14f683968ed33ad506c20f915733a08f"
+    },
+    "assets/images/beans/semekar_coffee_arabica_aceh_gayo.jpg": {
+      "cloud_path": "images/beans/semekar_coffee_arabica_aceh_gayo.jpg",
+      "original_bytes": 26161,
+      "compressed_bytes": 13170,
+      "sha256": "9b0f9c33181316eb7c40fdac54119026f48a7aa47587c30e4c08edf2c1b2b5c7"
+    },
+    "assets/images/beans/semekar_coffee_arabica_bali_kintamani.jpg": {
+      "cloud_path": "images/beans/semekar_coffee_arabica_bali_kintamani.jpg",
+      "original_bytes": 26975,
+      "compressed_bytes": 13927,
+      "sha256": "27ac6e8689b0297034e7a7b4b5d72440165780c81fa66aefccdc4ccc15795027"
+    },
+    "assets/images/beans/semekar_coffee_house_blend_espresso.jpg": {
+      "cloud_path": "images/beans/semekar_coffee_house_blend_espresso.jpg",
+      "original_bytes": 26244,
+      "compressed_bytes": 13231,
+      "sha256": "f94a11598e4ee56abd30856b01d911589c6059a978329332f99633ff8c86fa03"
+    },
+    "assets/images/beans/semekar_coffee_robusta_aceh_gayo.jpg": {
+      "cloud_path": "images/beans/semekar_coffee_robusta_aceh_gayo.jpg",
+      "original_bytes": 25625,
+      "compressed_bytes": 12903,
+      "sha256": "2f4045f18d2d1ccc57106fb95d3e5d055c04ba62159005a9a1f9db983427fc3e"
+    },
+    "assets/images/beans/semekar_coffee_robusta_temanggung.jpg": {
+      "cloud_path": "images/beans/semekar_coffee_robusta_temanggung.jpg",
+      "original_bytes": 25812,
+      "compressed_bytes": 13033,
+      "sha256": "46c45d96218313d8e09e7d4c902da84007eaa078b7c2ede0406898f21e018bc6"
+    },
+    "assets/images/beans/seniman_coffee_kintamani_natural.jpg": {
+      "cloud_path": "images/beans/seniman_coffee_kintamani_natural.jpg",
+      "original_bytes": 26242,
+      "compressed_bytes": 13407,
+      "sha256": "ff1e40d86cbddce7149a3c0d662f57c9b1749f957c01828843cc9a47ef6b4080"
+    },
+    "assets/images/beans/seniman_coffee_kintamani_washed.jpg": {
+      "cloud_path": "images/beans/seniman_coffee_kintamani_washed.jpg",
+      "original_bytes": 28071,
+      "compressed_bytes": 14545,
+      "sha256": "0fe416a7f1c48c9b6de8ef4b585f8e013822e2685876a4de239e7c9e24a6714a"
+    },
+    "assets/images/beans/seniman_coffee_pupuan_fine_robusta.jpg": {
+      "cloud_path": "images/beans/seniman_coffee_pupuan_fine_robusta.jpg",
+      "original_bytes": 26172,
+      "compressed_bytes": 13230,
+      "sha256": "2199780630013134b3ba14740822b95d5f40f2c1d555c9b62cfb8456f231313f"
+    },
+    "assets/images/beans/seniman_coffee_seniman_house_espresso_blend.jpg": {
+      "cloud_path": "images/beans/seniman_coffee_seniman_house_espresso_blend.jpg",
+      "original_bytes": 26754,
+      "compressed_bytes": 13547,
+      "sha256": "84bbfa2ec12ed3129c57f86a24eb71992ec57229b12c9720ac176b93f67102ec"
+    },
+    "assets/images/beans/serkop_roastery_aceh_gayo_arabica_wine_process.jpg": {
+      "cloud_path": "images/beans/serkop_roastery_aceh_gayo_arabica_wine_process.jpg",
+      "original_bytes": 27927,
+      "compressed_bytes": 14354,
+      "sha256": "bc947353021d1151062ea3a3a5aa8a5438590aba5a224b610e8c9950965f9907"
+    },
+    "assets/images/beans/serkop_roastery_blend_50_50_temanggung_espresso.jpg": {
+      "cloud_path": "images/beans/serkop_roastery_blend_50_50_temanggung_espresso.jpg",
+      "original_bytes": 25455,
+      "compressed_bytes": 12919,
+      "sha256": "46f67978d6423f021b4a862590f13214fa92a30ff84ddb3d106dc3fc4ea179e5"
+    },
+    "assets/images/beans/serkop_roastery_garut_arabica_honey_process.jpg": {
+      "cloud_path": "images/beans/serkop_roastery_garut_arabica_honey_process.jpg",
+      "original_bytes": 28911,
+      "compressed_bytes": 14670,
+      "sha256": "30b920ec047b5480181a073a1de072fed024e05134091a34ca36be2d711adedb"
+    },
+    "assets/images/beans/serkop_roastery_kopi_halu_arabica_fullwash.jpg": {
+      "cloud_path": "images/beans/serkop_roastery_kopi_halu_arabica_fullwash.jpg",
+      "original_bytes": 27863,
+      "compressed_bytes": 14560,
+      "sha256": "569f274f10ff3fc7a4b0a6734d7cab68b43cb10400b05ebcee2d2dc7835caad3"
+    },
+    "assets/images/beans/serkop_roastery_kopi_halu_arabica_wine_process.jpg": {
+      "cloud_path": "images/beans/serkop_roastery_kopi_halu_arabica_wine_process.jpg",
+      "original_bytes": 26927,
+      "compressed_bytes": 13909,
+      "sha256": "daad490d565198a5bcd6239f2708c3f13e62ac4a0bdcf3785e82fbb0f991aa76"
+    },
+    "assets/images/beans/serkop_roastery_kopi_halu_specialty_natural.jpg": {
+      "cloud_path": "images/beans/serkop_roastery_kopi_halu_specialty_natural.jpg",
+      "original_bytes": 25984,
+      "compressed_bytes": 13441,
+      "sha256": "6bf655ab70a67ebe3948de3ae60622379f5899eb4db38acb9ac423f154232dd7"
+    },
+    "assets/images/beans/serkop_roastery_robusta_fullwash_for_espresso.jpg": {
+      "cloud_path": "images/beans/serkop_roastery_robusta_fullwash_for_espresso.jpg",
+      "original_bytes": 25000,
+      "compressed_bytes": 12696,
+      "sha256": "f431c0418381ae7782e0326d441f5f023dea8ebbf0f4f1b86571d5ac6ab4f927"
+    },
+    "assets/images/beans/smoking_barrels_ethiopia_bombe_worka.jpg": {
+      "cloud_path": "images/beans/smoking_barrels_ethiopia_bombe_worka.jpg",
+      "original_bytes": 26789,
+      "compressed_bytes": 13721,
+      "sha256": "dcd21f0bdce51c4be0ed116a2cfef4c86faea419ea6945cd33e99cdbfc7bf345"
+    },
+    "assets/images/beans/smoking_barrels_palem_house_espresso_blend.jpg": {
+      "cloud_path": "images/beans/smoking_barrels_palem_house_espresso_blend.jpg",
+      "original_bytes": 29949,
+      "compressed_bytes": 15504,
+      "sha256": "f95fb9010e192d308a511d79820402ee869ed8276abd5f9d30aa9c497bfa5d5a"
+    },
+    "assets/images/beans/smoking_barrels_wanoja_kamojang_lactic_natural.jpg": {
+      "cloud_path": "images/beans/smoking_barrels_wanoja_kamojang_lactic_natural.jpg",
+      "original_bytes": 27749,
+      "compressed_bytes": 14236,
+      "sha256": "530b2d3c1f8131ec849479122374e1b8104ba2f2e84287d0570e41ef01dcb946"
+    },
+    "assets/images/beans/space_coffee_50_arabica_commodity_blend.jpg": {
+      "cloud_path": "images/beans/space_coffee_50_arabica_commodity_blend.jpg",
+      "original_bytes": 26938,
+      "compressed_bytes": 13528,
+      "sha256": "0c8a03c9b537c0c80f98680e3eea807c7fcccbfb77b7e7e142c7e682b52082b9"
+    },
+    "assets/images/beans/space_coffee_flower_power_blend.jpg": {
+      "cloud_path": "images/beans/space_coffee_flower_power_blend.jpg",
+      "original_bytes": 31498,
+      "compressed_bytes": 15886,
+      "sha256": "2d64a530527329bf45693ebd13486f935eed48a9b98b153745dfd0da5d0e844c"
+    },
+    "assets/images/beans/space_coffee_machofee_espresso_blend.jpg": {
+      "cloud_path": "images/beans/space_coffee_machofee_espresso_blend.jpg",
+      "original_bytes": 27276,
+      "compressed_bytes": 13710,
+      "sha256": "55681c375168f072622d1440abc702fb70213503e91334d7ad16025d2193b5d5"
+    },
+    "assets/images/beans/space_coffee_seasonal_experimental_filter.jpg": {
+      "cloud_path": "images/beans/space_coffee_seasonal_experimental_filter.jpg",
+      "original_bytes": 27451,
+      "compressed_bytes": 14124,
+      "sha256": "88194948876fe51ad69df832b581adf91aad9136f405fde3df2a89eca6a8416c"
+    },
+    "assets/images/beans/steam_and_brew_java_sindoro_sumbing_honey.jpg": {
+      "cloud_path": "images/beans/steam_and_brew_java_sindoro_sumbing_honey.jpg",
+      "original_bytes": 25967,
+      "compressed_bytes": 13427,
+      "sha256": "2c9bff5331a03666e1e0a87001627e3e3412076a51b52530ccc542e92afb5854"
+    },
+    "assets/images/beans/steam_and_brew_robusta_muria_temanggung.jpg": {
+      "cloud_path": "images/beans/steam_and_brew_robusta_muria_temanggung.jpg",
+      "original_bytes": 25562,
+      "compressed_bytes": 12973,
+      "sha256": "00feb13458f977c5cb807f6f9b4a9e4d9b0c5b8e355366546689cbec78d88b7a"
+    },
+    "assets/images/beans/steam_and_brew_steam_brew_house_blend.jpg": {
+      "cloud_path": "images/beans/steam_and_brew_steam_brew_house_blend.jpg",
+      "original_bytes": 25631,
+      "compressed_bytes": 12974,
+      "sha256": "15119c7d8ca3b985a212cfa14a96a2964e3cfb79372b3c5ffbb38a17e5058e5a"
+    },
+    "assets/images/beans/tanamera_coffee_aceh_gayo_natural.jpg": {
+      "cloud_path": "images/beans/tanamera_coffee_aceh_gayo_natural.jpg",
+      "original_bytes": 27388,
+      "compressed_bytes": 13998,
+      "sha256": "be7fba2ab2a5fb29d439b86400f5d2495827bd30086f0a3c8a663d4ae2e9911d"
+    },
+    "assets/images/beans/tanamera_coffee_aceh_gayo_washed.jpg": {
+      "cloud_path": "images/beans/tanamera_coffee_aceh_gayo_washed.jpg",
+      "original_bytes": 28888,
+      "compressed_bytes": 15083,
+      "sha256": "9a9d4552ede5d861a4799a8f100b759db743f1224a093fd3beca3e6e632429ca"
+    },
+    "assets/images/beans/tanamera_coffee_bali_blend.jpg": {
+      "cloud_path": "images/beans/tanamera_coffee_bali_blend.jpg",
+      "original_bytes": 26355,
+      "compressed_bytes": 13243,
+      "sha256": "ff0dc2a3234b33994e4fda54bd3eeefd35c0110182aa929021916a6eb0522018"
+    },
+    "assets/images/beans/tanamera_coffee_bali_kintamani.jpg": {
+      "cloud_path": "images/beans/tanamera_coffee_bali_kintamani.jpg",
+      "original_bytes": 28339,
+      "compressed_bytes": 14723,
+      "sha256": "4969c114f384da47bef5912f0b9069aaa004991690eb08e76003e35e6522546d"
+    },
+    "assets/images/beans/tanamera_coffee_bali_mt_batukaru_natural.jpg": {
+      "cloud_path": "images/beans/tanamera_coffee_bali_mt_batukaru_natural.jpg",
+      "original_bytes": 27811,
+      "compressed_bytes": 14257,
+      "sha256": "d9d26d476143084449151ea35b90adddcbf9daf5d52e993d54fcbef36d741778"
+    },
+    "assets/images/beans/tanamera_coffee_bali_mt_batukaru_washed.jpg": {
+      "cloud_path": "images/beans/tanamera_coffee_bali_mt_batukaru_washed.jpg",
+      "original_bytes": 27320,
+      "compressed_bytes": 13982,
+      "sha256": "78cf545a4af2ad8194edadfaa8f888dc33a4d11ea9882aa9499117afcda50cf8"
+    },
+    "assets/images/beans/tanamera_coffee_breakfast_blend.jpg": {
+      "cloud_path": "images/beans/tanamera_coffee_breakfast_blend.jpg",
+      "original_bytes": 26472,
+      "compressed_bytes": 13331,
+      "sha256": "415e5e4356cfdb6b24db20e2c90f9e0b1bde23ad877ced46627a5d363c0aa02c"
+    },
+    "assets/images/beans/tanamera_coffee_decaf_specialty.jpg": {
+      "cloud_path": "images/beans/tanamera_coffee_decaf_specialty.jpg",
+      "original_bytes": 29634,
+      "compressed_bytes": 15344,
+      "sha256": "c3efffd611ee2ba25013238dbffc6f20f58cce2062eae479fb0934caa1bc433a"
+    },
+    "assets/images/beans/tanamera_coffee_east_bali_blend.jpg": {
+      "cloud_path": "images/beans/tanamera_coffee_east_bali_blend.jpg",
+      "original_bytes": 26679,
+      "compressed_bytes": 13444,
+      "sha256": "d6c3805edcf7b87eeb08370a6e054be8b5e61e549dbafcc402f1225db9071685"
+    },
+    "assets/images/beans/tanamera_coffee_espresso_blend.jpg": {
+      "cloud_path": "images/beans/tanamera_coffee_espresso_blend.jpg",
+      "original_bytes": 26545,
+      "compressed_bytes": 13342,
+      "sha256": "9a3ba175887b0d181bf8f8b9d219ad17504c94141c194f29d56ccb0a0a9a5d4b"
+    },
+    "assets/images/beans/tanamera_coffee_forte_blend.jpg": {
+      "cloud_path": "images/beans/tanamera_coffee_forte_blend.jpg",
+      "original_bytes": 26411,
+      "compressed_bytes": 13293,
+      "sha256": "0716b3cc9a0ca03f35625f9dd1089f018dccbee1ad892e9ffaf85081e2611a51"
+    },
+    "assets/images/beans/tanamera_coffee_malabar_solok_manggarai_rasuna.jpg": {
+      "cloud_path": "images/beans/tanamera_coffee_malabar_solok_manggarai_rasuna.jpg",
+      "original_bytes": 28865,
+      "compressed_bytes": 14847,
+      "sha256": "3dcc934bb2d575949e197d3947ed798e319977d1c3b066f9116666e94f291727"
+    },
+    "assets/images/beans/tanamera_coffee_mandailing_washed.jpg": {
+      "cloud_path": "images/beans/tanamera_coffee_mandailing_washed.jpg",
+      "original_bytes": 27360,
+      "compressed_bytes": 13776,
+      "sha256": "057cecee08ce66b536f4c221254758264b74e376bd87b0a91e44257363ad6efb"
+    },
+    "assets/images/beans/tanamera_coffee_premium_blend.jpg": {
+      "cloud_path": "images/beans/tanamera_coffee_premium_blend.jpg",
+      "original_bytes": 29022,
+      "compressed_bytes": 14996,
+      "sha256": "8e4cea83becc88914758d523432057b1c6da3980645716801ebd88b2e6ca258f"
+    },
+    "assets/images/beans/tanamera_coffee_toraja_pulu_pulu.jpg": {
+      "cloud_path": "images/beans/tanamera_coffee_toraja_pulu_pulu.jpg",
+      "original_bytes": 27605,
+      "compressed_bytes": 14106,
+      "sha256": "93a0ba04537825518752140ffa4f423abcdc82bbe518083cc052fc69984deb4e"
+    },
+    "assets/images/beans/tanamera_coffee_toraja_sapan.jpg": {
+      "cloud_path": "images/beans/tanamera_coffee_toraja_sapan.jpg",
+      "original_bytes": 29579,
+      "compressed_bytes": 15329,
+      "sha256": "fa7741f7e89d580af2a30120e338e49bf793a0e69483d49c9a1b6d420e6c7eac"
+    },
+    "assets/images/beans/thf_roastery_ethiopia_guji_yirgacheffe.jpg": {
+      "cloud_path": "images/beans/thf_roastery_ethiopia_guji_yirgacheffe.jpg",
+      "original_bytes": 26776,
+      "compressed_bytes": 13897,
+      "sha256": "a0ac15185852d1b58f4643135ab9580507d0f67bb4b92c23d8d73b5c5e6cdace"
+    },
+    "assets/images/beans/thf_roastery_gayo_pantan_musara.jpg": {
+      "cloud_path": "images/beans/thf_roastery_gayo_pantan_musara.jpg",
+      "original_bytes": 26180,
+      "compressed_bytes": 13544,
+      "sha256": "a437e0ea16fb4d68d00f446b214d7aebab3904b0feb4885b9dff395a64d952ad"
+    },
+    "assets/images/beans/thf_roastery_sunda_hejo_garut_washed.jpg": {
+      "cloud_path": "images/beans/thf_roastery_sunda_hejo_garut_washed.jpg",
+      "original_bytes": 26460,
+      "compressed_bytes": 13725,
+      "sha256": "827b0ca18806462cd553d17683a3c291702612d7213ee8c5e21926327a3e00e4"
+    },
+    "assets/images/beans/thf_roastery_thf_signature_house_blend.jpg": {
+      "cloud_path": "images/beans/thf_roastery_thf_signature_house_blend.jpg",
+      "original_bytes": 30033,
+      "compressed_bytes": 15762,
+      "sha256": "159088a8b428c6b1382e10c84c251b369ac62d069c6df6fb151f0bed05614996"
+    },
+    "assets/images/beans/toko_kopi_aroma_mix_arabika_robusta_50_50.jpg": {
+      "cloud_path": "images/beans/toko_kopi_aroma_mix_arabika_robusta_50_50.jpg",
+      "original_bytes": 28699,
+      "compressed_bytes": 14513,
+      "sha256": "0e9c8bdc41b750d74140d39649f8ac3f27170e99898aa31729eb298a8d0bb125"
+    },
+    "assets/images/beans/toko_kopi_aroma_mokka_arabika_aged_arabica.jpg": {
+      "cloud_path": "images/beans/toko_kopi_aroma_mokka_arabika_aged_arabica.jpg",
+      "original_bytes": 32431,
+      "compressed_bytes": 16823,
+      "sha256": "25863bb798e4a89b2953639e74f341cb27d776531b70d553cdfd5bb757c3b855"
+    },
+    "assets/images/beans/toko_kopi_aroma_robusta_aged_robusta.jpg": {
+      "cloud_path": "images/beans/toko_kopi_aroma_robusta_aged_robusta.jpg",
+      "original_bytes": 28146,
+      "compressed_bytes": 14200,
+      "sha256": "0346f0dd29786b8c930b1df7cf59b1d8320e5cbdad39cbbb68a9ba8087c074e3"
+    },
+    "assets/images/beans/typika_nordic_surabaya_argopuro_walida_natural_typika.jpg": {
+      "cloud_path": "images/beans/typika_nordic_surabaya_argopuro_walida_natural_typika.jpg",
+      "original_bytes": 28011,
+      "compressed_bytes": 14440,
+      "sha256": "f107431a9a053430a58f90099e01c3cb23eb45d3ec2bb29676c49e3fb1c5b2d0"
+    },
+    "assets/images/beans/typika_nordic_surabaya_arjuno_honey_nordic_coffee.jpg": {
+      "cloud_path": "images/beans/typika_nordic_surabaya_arjuno_honey_nordic_coffee.jpg",
+      "original_bytes": 28036,
+      "compressed_bytes": 14434,
+      "sha256": "69e352d65d6e390c94f24829e576b163ddfe073357dbe1242f51d31ef97d0f0e"
+    },
+    "assets/images/beans/typika_nordic_surabaya_ijen_washed_filter_drama_typika.jpg": {
+      "cloud_path": "images/beans/typika_nordic_surabaya_ijen_washed_filter_drama_typika.jpg",
+      "original_bytes": 27576,
+      "compressed_bytes": 14195,
+      "sha256": "b2b1d9329fb13366960c26b7dfc38e990cbc014b9a70117b1872f9e7ae1fedf2"
+    },
+    "assets/images/beans/village_coffee_kopi_bali_kintamani.jpg": {
+      "cloud_path": "images/beans/village_coffee_kopi_bali_kintamani.jpg",
+      "original_bytes": 27097,
+      "compressed_bytes": 14128,
+      "sha256": "3447031f66c805732c98736a08ae4d952391bddcfa6a3ad91e9006c5150a3aab"
+    },
+    "assets/images/beans/village_coffee_kopi_dried_orange_sunkist.jpg": {
+      "cloud_path": "images/beans/village_coffee_kopi_dried_orange_sunkist.jpg",
+      "original_bytes": 26789,
+      "compressed_bytes": 13876,
+      "sha256": "b3224ac70997cf6dfa1a62ecf927e6d4c9001da4ba8d6757ce5673da3b1ac75f"
+    },
+    "assets/images/beans/village_coffee_kopi_fine_robusta.jpg": {
+      "cloud_path": "images/beans/village_coffee_kopi_fine_robusta.jpg",
+      "original_bytes": 25300,
+      "compressed_bytes": 12923,
+      "sha256": "75fb6ceee67a48a936f87c69ba52923ba411a70eca347aa885bf765530aee8fa"
+    },
+    "assets/images/beans/village_coffee_kopi_halu_banana_honey.jpg": {
+      "cloud_path": "images/beans/village_coffee_kopi_halu_banana_honey.jpg",
+      "original_bytes": 25977,
+      "compressed_bytes": 13462,
+      "sha256": "2a9b90bda1c691581d8f0878e178dab68fba80b4ba0236d3824dce861ff632f7"
+    },
+    "assets/images/beans/village_coffee_kopi_robusta_gayo.jpg": {
+      "cloud_path": "images/beans/village_coffee_kopi_robusta_gayo.jpg",
+      "original_bytes": 25564,
+      "compressed_bytes": 13018,
+      "sha256": "07791cf3df2e936aa2176dddb9b1c74865c9390ca2b731318e6a642ec6406926"
+    },
+    "assets/images/beans/village_coffee_kopi_tropical_pineapple.jpg": {
+      "cloud_path": "images/beans/village_coffee_kopi_tropical_pineapple.jpg",
+      "original_bytes": 27082,
+      "compressed_bytes": 14030,
+      "sha256": "1b11d50f082061aa13d259f31299f5da58643c77784d3ba83b007f0ef91c66fe"
+    },
+    "assets/images/beans/village_coffee_premium_house_blend.jpg": {
+      "cloud_path": "images/beans/village_coffee_premium_house_blend.jpg",
+      "original_bytes": 25683,
+      "compressed_bytes": 13064,
+      "sha256": "dcd732980d346d9a3f0c1f8c6c531b2c9b5d4aad4b0d1e79c8d02f359e2799b8"
+    },
+    "assets/images/beans/wheels_coffee_eyckman_32_blend.jpg": {
+      "cloud_path": "images/beans/wheels_coffee_eyckman_32_blend.jpg",
+      "original_bytes": 25946,
+      "compressed_bytes": 13202,
+      "sha256": "220306e9f59c22b4d7114ec30468cc0b81b5c0526bb34dd2cb1dd251941eb56e"
+    },
+    "assets/images/beans/wheels_coffee_kamojang_honey_filter.jpg": {
+      "cloud_path": "images/beans/wheels_coffee_kamojang_honey_filter.jpg",
+      "original_bytes": 26079,
+      "compressed_bytes": 13487,
+      "sha256": "7dc8f594b0ba78843901937248370c9494d6aacb7db563046d85bc56d4ccd462"
+    },
+    "assets/images/beans/wheels_coffee_malabar_mountain_single_origin.jpg": {
+      "cloud_path": "images/beans/wheels_coffee_malabar_mountain_single_origin.jpg",
+      "original_bytes": 28533,
+      "compressed_bytes": 14894,
+      "sha256": "cbc0b727cc250f54b8110a4e510fc503866707f18b9c3a81ff50afe170c97685"
+    },
+    "assets/images/beans/wheels_coffee_wheels_signature_espresso_blend.jpg": {
+      "cloud_path": "images/beans/wheels_coffee_wheels_signature_espresso_blend.jpg",
+      "original_bytes": 26802,
+      "compressed_bytes": 13665,
+      "sha256": "d62977990e29d027c0499665da37aad24602df3969bc103fcb34c9162bc5db6b"
+    },
+    "assets/images/avatars/covers/alan_adler.jpg": {
+      "cloud_path": "images/avatars/covers/alan_adler.jpg",
+      "original_bytes": 116302,
+      "compressed_bytes": 36551,
+      "sha256": "dab26beaf57eb1c5e74fc7e187b507ffe22859949c85f7ab7c618c1cf177bcaa"
+    },
+    "assets/images/avatars/covers/alessandro_galtieri.jpg": {
+      "cloud_path": "images/avatars/covers/alessandro_galtieri.jpg",
+      "original_bytes": 73826,
+      "compressed_bytes": 23291,
+      "sha256": "f0e21dc1b9bcd505deb607252b2cbe57db7a90108b2e5d1bc103d0359882eb52"
+    },
+    "assets/images/avatars/covers/bavis_kwong.jpg": {
+      "cloud_path": "images/avatars/covers/bavis_kwong.jpg",
+      "original_bytes": 86408,
+      "compressed_bytes": 28125,
+      "sha256": "bcbbdbf8f65cd0afb9a6ce131e105650f0c1d9ba72e0229cd76b67d37f5dc7f7"
+    },
+    "assets/images/avatars/covers/bayu_prawiro.jpg": {
+      "cloud_path": "images/avatars/covers/bayu_prawiro.jpg",
+      "original_bytes": 160367,
+      "compressed_bytes": 43616,
+      "sha256": "c2a4b81abe5745cca994bcfa101a91b4759c06b48088bb1f4e459d99b9723642"
+    },
+    "assets/images/avatars/covers/benjamin_prager.jpg": {
+      "cloud_path": "images/avatars/covers/benjamin_prager.jpg",
+      "original_bytes": 82440,
+      "compressed_bytes": 26450,
+      "sha256": "ba7a8532d57ac32220fe7d2f67cccd80a9124564a0bd6f4d84c538d80380fb81"
+    },
+    "assets/images/avatars/covers/carlos_escobar.jpg": {
+      "cloud_path": "images/avatars/covers/carlos_escobar.jpg",
+      "original_bytes": 135162,
+      "compressed_bytes": 38614,
+      "sha256": "42592bf840a1952ae3fce71e31e18c6b28604a913b5fbb310ac77f305cf33f30"
+    },
+    "assets/images/avatars/covers/carlos_medina.jpg": {
+      "cloud_path": "images/avatars/covers/carlos_medina.jpg",
+      "original_bytes": 26361,
+      "compressed_bytes": 20219,
+      "sha256": "ed179cc6189e9a24dc30a2520ec455899e9847445a29c7f5d203d5490a8a2ee5"
+    },
+    "assets/images/avatars/covers/chad_wang.jpg": {
+      "cloud_path": "images/avatars/covers/chad_wang.jpg",
+      "original_bytes": 75857,
+      "compressed_bytes": 28899,
+      "sha256": "6110dbbb130f5af17a10495fe11f36719e9eb4f6f7ee783b64b166498a717ffb"
+    },
+    "assets/images/avatars/covers/daiki_hatakeyama.jpg": {
+      "cloud_path": "images/avatars/covers/daiki_hatakeyama.jpg",
+      "original_bytes": 131970,
+      "compressed_bytes": 40495,
+      "sha256": "60c328be5e10c54aac49839a375cf0940ce7316f3bed060c82d662af3911658d"
+    },
+    "assets/images/avatars/covers/dody_samsura.jpg": {
+      "cloud_path": "images/avatars/covers/dody_samsura.jpg",
+      "original_bytes": 122916,
+      "compressed_bytes": 35476,
+      "sha256": "9667b1ba9e1a8791aecd8ed74e84b482992f5251cf479cd5e7b7af11b69710ee"
+    },
+    "assets/images/avatars/covers/du_jianing.jpg": {
+      "cloud_path": "images/avatars/covers/du_jianing.jpg",
+      "original_bytes": 88817,
+      "compressed_bytes": 28343,
+      "sha256": "059b26ddbf74d199d02f94cc5c65f6db02b3036b0d2291fa7db7775033de3e87"
+    },
+    "assets/images/avatars/covers/elika_liftee.jpg": {
+      "cloud_path": "images/avatars/covers/elika_liftee.jpg",
+      "original_bytes": 21418,
+      "compressed_bytes": 15679,
+      "sha256": "310cc11fad6f3810f2a0b0950368f62fc7ad35682ac969cf22d69d202ee7766b"
+    },
+    "assets/images/avatars/covers/elysia_tan.jpg": {
+      "cloud_path": "images/avatars/covers/elysia_tan.jpg",
+      "original_bytes": 141125,
+      "compressed_bytes": 39899,
+      "sha256": "971a27acacb2f46aee8c289c8ca1ecb4549521c5d76ca1f8d0ba8868fca301c8"
+    },
+    "assets/images/avatars/covers/emi_fukahori.jpg": {
+      "cloud_path": "images/avatars/covers/emi_fukahori.jpg",
+      "original_bytes": 69592,
+      "compressed_bytes": 24015,
+      "sha256": "26dc390424344bbcf293c2024e5aeccde72568cfa29f428058cadaef0c8301db"
+    },
+    "assets/images/avatars/covers/garam_victor_um.jpg": {
+      "cloud_path": "images/avatars/covers/garam_victor_um.jpg",
+      "original_bytes": 105596,
+      "compressed_bytes": 33977,
+      "sha256": "6c79974c61275b0bab1599d32b445da30c2d76bc0623b1978e4b612a97ca79f7"
+    },
+    "assets/images/avatars/covers/harison_chandra.jpg": {
+      "cloud_path": "images/avatars/covers/harison_chandra.jpg",
+      "original_bytes": 107502,
+      "compressed_bytes": 33276,
+      "sha256": "a854f47b9d4a744157d03db66eea058aefafd4180db773be0ee7ae43e10cc540"
+    },
+    "assets/images/avatars/covers/hiro_lesmana.jpg": {
+      "cloud_path": "images/avatars/covers/hiro_lesmana.jpg",
+      "original_bytes": 121136,
+      "compressed_bytes": 38340,
+      "sha256": "204e994c5d38f7c135efe1bbae4684869907bfc85f25b01bccdd6156e455dabe"
+    },
+    "assets/images/avatars/covers/james_hoffmann.jpg": {
+      "cloud_path": "images/avatars/covers/james_hoffmann.jpg",
+      "original_bytes": 161157,
+      "compressed_bytes": 46914,
+      "sha256": "5954390cd2bdabbf32c04385d1a01fb78054026e2db41f4432c64dc10ffb0b0c"
+    },
+    "assets/images/avatars/covers/john_christopher.jpg": {
+      "cloud_path": "images/avatars/covers/john_christopher.jpg",
+      "original_bytes": 103700,
+      "compressed_bytes": 32624,
+      "sha256": "2c09db30c1b66416216fb96ff36bf769545393b8f72af0980f5f963b918eb2dd"
+    },
+    "assets/images/avatars/covers/jonathan_gagne.jpg": {
+      "cloud_path": "images/avatars/covers/jonathan_gagne.jpg",
+      "original_bytes": 135338,
+      "compressed_bytes": 44830,
+      "sha256": "4f0724ba186070113b406c8a0facf0226a6a0ba96596929939378423ca08c659"
+    },
+    "assets/images/avatars/covers/konstantinos_iatridis.jpg": {
+      "cloud_path": "images/avatars/covers/konstantinos_iatridis.jpg",
+      "original_bytes": 50392,
+      "compressed_bytes": 37157,
+      "sha256": "f1a5384c1a495e4ddae4756c2fcfab87b63c6a2a765309e2d2be184b85a1b652"
+    },
+    "assets/images/avatars/covers/lance_hedrick.jpg": {
+      "cloud_path": "images/avatars/covers/lance_hedrick.jpg",
+      "original_bytes": 87599,
+      "compressed_bytes": 25828,
+      "sha256": "cd2a38c4606064b2fee55a80bcafd46d547d1caa5574c6cbd375814358d244d1"
+    },
+    "assets/images/avatars/covers/martin_wolfl.jpg": {
+      "cloud_path": "images/avatars/covers/martin_wolfl.jpg",
+      "original_bytes": 126292,
+      "compressed_bytes": 38362,
+      "sha256": "6cadf29f5a85a0be6ad315273513fae8a4cfae6cac32c3ae2b3bb40509991afc"
+    },
+    "assets/images/avatars/covers/matt_perger.jpg": {
+      "cloud_path": "images/avatars/covers/matt_perger.jpg",
+      "original_bytes": 24555,
+      "compressed_bytes": 17930,
+      "sha256": "4ad1bcbaa4441df3563155776d96483c09725a6efec8135513cc5476ee7904fd"
+    },
+    "assets/images/avatars/covers/matt_winton.jpg": {
+      "cloud_path": "images/avatars/covers/matt_winton.jpg",
+      "original_bytes": 44459,
+      "compressed_bytes": 33098,
+      "sha256": "e788e5b4745fb676fde24f4552294145a21ff6e668208fe7f0edc37341142e96"
+    },
+    "assets/images/avatars/covers/melvin_fugol.jpg": {
+      "cloud_path": "images/avatars/covers/melvin_fugol.jpg",
+      "original_bytes": 58100,
+      "compressed_bytes": 51059,
+      "sha256": "0a8b351543ccaf57f1dfc1b17a025b736c44f4183bca1f0dde2fa9c575478891"
+    },
+    "assets/images/avatars/covers/mikaela_wallgren.jpg": {
+      "cloud_path": "images/avatars/covers/mikaela_wallgren.jpg",
+      "original_bytes": 19071,
+      "compressed_bytes": 16252,
+      "sha256": "a73d6819ec51c0331068f50a2a2b91ec36b91aabc7b4199950ee76a57ed8563b"
+    },
+    "assets/images/avatars/covers/mikael_jasin.jpg": {
+      "cloud_path": "images/avatars/covers/mikael_jasin.jpg",
+      "original_bytes": 105380,
+      "compressed_bytes": 33254,
+      "sha256": "cbc054359f7c9428b55f2e8496419d2914c4c3c6821cca9471ccb634546200b1"
+    },
+    "assets/images/avatars/covers/mirza_luqman.jpg": {
+      "cloud_path": "images/avatars/covers/mirza_luqman.jpg",
+      "original_bytes": 28793,
+      "compressed_bytes": 20896,
+      "sha256": "5beeeb0a8fce870dfaf8278dc5443df62a4ed40f35f478d33867b837d765367b"
+    },
+    "assets/images/avatars/covers/muhammad_aga.jpg": {
+      "cloud_path": "images/avatars/covers/muhammad_aga.jpg",
+      "original_bytes": 24680,
+      "compressed_bytes": 17992,
+      "sha256": "d729c76a23cd6cfc32c9686bbcc05ef25d0a10bab0d73d5700dae21e5c8db481"
+    },
+    "assets/images/avatars/covers/nas_jaafar.jpg": {
+      "cloud_path": "images/avatars/covers/nas_jaafar.jpg",
+      "original_bytes": 79997,
+      "compressed_bytes": 25509,
+      "sha256": "c2cb197453cc9e854a73e70c4feb5090dac2bbf7fe93fb108ccbb4c74aa6ac81"
+    },
+    "assets/images/avatars/covers/odd_steinar_tollefsen.jpg": {
+      "cloud_path": "images/avatars/covers/odd_steinar_tollefsen.jpg",
+      "original_bytes": 166923,
+      "compressed_bytes": 50728,
+      "sha256": "54fb220dfcf62db846e120cf0c8255193518bb762fe75720b8d17afe04eff04f"
+    },
+    "assets/images/avatars/covers/patrik_rolf.jpg": {
+      "cloud_path": "images/avatars/covers/patrik_rolf.jpg",
+      "original_bytes": 115285,
+      "compressed_bytes": 36353,
+      "sha256": "c28291ecbb02efd6c50f4ef65f46c7fbc77091fed4911fbe69c50eccc2a13953"
+    },
+    "assets/images/avatars/covers/peng_jinyang.jpg": {
+      "cloud_path": "images/avatars/covers/peng_jinyang.jpg",
+      "original_bytes": 140923,
+      "compressed_bytes": 41669,
+      "sha256": "1dfb1fb6f701d0a472bb9ba444cb5bd64db532837ca56b073240789ffc0b0cb5"
+    },
+    "assets/images/avatars/covers/pepeng_klinik_kopi.jpg": {
+      "cloud_path": "images/avatars/covers/pepeng_klinik_kopi.jpg",
+      "original_bytes": 68081,
+      "compressed_bytes": 58819,
+      "sha256": "8525df3e5d7e2bbd2d81a1ab5308a54950502fde60c692e980c27d5c189626cc"
+    },
+    "assets/images/avatars/covers/regine_wai_yee_beng.jpg": {
+      "cloud_path": "images/avatars/covers/regine_wai_yee_beng.jpg",
+      "original_bytes": 118716,
+      "compressed_bytes": 37753,
+      "sha256": "325b55aed1b9b143d23d81ea4c65ff045fe18958ef015e0fc21ac60b29bdcc91"
+    },
+    "assets/images/avatars/covers/ryan_wibawa.jpg": {
+      "cloud_path": "images/avatars/covers/ryan_wibawa.jpg",
+      "original_bytes": 69096,
+      "compressed_bytes": 30620,
+      "sha256": "27dfc1d860305d5f2c001c5bbef51881c9eda4c3a335012d35ba840b5edb46a5"
+    },
+    "assets/images/avatars/covers/sam_corra.jpg": {
+      "cloud_path": "images/avatars/covers/sam_corra.jpg",
+      "original_bytes": 28318,
+      "compressed_bytes": 19303,
+      "sha256": "70e0eb1fac16e172c748f97d3ae2417241eb12115830e7e957c38fdb9c8cbc6a"
+    },
+    "assets/images/avatars/covers/savina_giachgia.jpg": {
+      "cloud_path": "images/avatars/covers/savina_giachgia.jpg",
+      "original_bytes": 116203,
+      "compressed_bytes": 37955,
+      "sha256": "cc38eaf367dcadee3c70eeb832caa42f47d1b8582328b6ee3186ea088e93e762"
+    },
+    "assets/images/avatars/covers/scott_rao.jpg": {
+      "cloud_path": "images/avatars/covers/scott_rao.jpg",
+      "original_bytes": 25417,
+      "compressed_bytes": 18697,
+      "sha256": "6801dca3e446ba4006b757a19af1faceb7dd3639f6bfc615254290e7a62292f3"
+    },
+    "assets/images/avatars/covers/shayneella.jpg": {
+      "cloud_path": "images/avatars/covers/shayneella.jpg",
+      "original_bytes": 67371,
+      "compressed_bytes": 23176,
+      "sha256": "a0fd989956858d4187f55f7215d510ac7c0fe515283edc1fd75670e042306716"
+    },
+    "assets/images/avatars/covers/shih_yuan_hsu.jpg": {
+      "cloud_path": "images/avatars/covers/shih_yuan_hsu.jpg",
+      "original_bytes": 118794,
+      "compressed_bytes": 37951,
+      "sha256": "054ebfd068f38e8c32d7308ebed6635cf77eddbb568f42a695a6b42e8ea0f28f"
+    },
+    "assets/images/avatars/covers/simon_gautherin.jpg": {
+      "cloud_path": "images/avatars/covers/simon_gautherin.jpg",
+      "original_bytes": 79997,
+      "compressed_bytes": 25509,
+      "sha256": "c2cb197453cc9e854a73e70c4feb5090dac2bbf7fe93fb108ccbb4c74aa6ac81"
+    },
+    "assets/images/avatars/covers/stathis_koremtas.jpg": {
+      "cloud_path": "images/avatars/covers/stathis_koremtas.jpg",
+      "original_bytes": 69044,
+      "compressed_bytes": 23526,
+      "sha256": "8c640a50d19ac2221c136d96bc7558a63ea6f9e1977ceca3c89d6bc8cba59bfd"
+    },
+    "assets/images/avatars/covers/tetsu_kasuya.jpg": {
+      "cloud_path": "images/avatars/covers/tetsu_kasuya.jpg",
+      "original_bytes": 56160,
+      "compressed_bytes": 40435,
+      "sha256": "8987fb70c532cf93d86194ac7e68db13cf410317b1990d18c451a457ca2870b7"
+    },
+    "assets/images/avatars/covers/tim_wendelboe.jpg": {
+      "cloud_path": "images/avatars/covers/tim_wendelboe.jpg",
+      "original_bytes": 122248,
+      "compressed_bytes": 34271,
+      "sha256": "a6357b39b89e9eab4a4ee97ba7146f971736523e6e97ee71e75087c1aa06ba4c"
+    },
+    "assets/images/avatars/covers/tuomas_merikanto.jpg": {
+      "cloud_path": "images/avatars/covers/tuomas_merikanto.jpg",
+      "original_bytes": 174477,
+      "compressed_bytes": 46823,
+      "sha256": "d9a76446ff01c3dfb12824fc805d0ee63ac9b2bfcedb75bd37ac1a3f822cb426"
+    },
+    "assets/images/avatars/covers/wataru_iidaka.jpg": {
+      "cloud_path": "images/avatars/covers/wataru_iidaka.jpg",
+      "original_bytes": 104784,
+      "compressed_bytes": 32960,
+      "sha256": "13544d2c8ee02e997934e394c207717b1f28e545f92208c2d412dd17020d8cf4"
+    },
+    "assets/images/avatars/covers/wendelien_van_bunnik.jpg": {
+      "cloud_path": "images/avatars/covers/wendelien_van_bunnik.jpg",
+      "original_bytes": 83889,
+      "compressed_bytes": 26733,
+      "sha256": "485ea41057c84980875d91376af87bd4416080fb6f01e95cfc9d923c0b2effb1"
+    },
+    "assets/images/avatars/covers/wisnu_aji.jpg": {
+      "cloud_path": "images/avatars/covers/wisnu_aji.jpg",
+      "original_bytes": 31232,
+      "compressed_bytes": 22392,
+      "sha256": "f1c9af96393518ac356233a5af8d07c8d781325b83737076ac2f87e7566c2d4b"
+    },
+    "assets/images/avatars/covers/yoshua_tanu.jpg": {
+      "cloud_path": "images/avatars/covers/yoshua_tanu.jpg",
+      "original_bytes": 114426,
+      "compressed_bytes": 39230,
+      "sha256": "53cf8033255a45c0584a4bdc25d28c97b64178692ca8e7d8fa3d9e98c25e314a"
+    },
+    "assets/images/avatars/portraits/agnieszka_rojewska.jpg": {
+      "cloud_path": "images/avatars/portraits/agnieszka_rojewska.jpg",
+      "original_bytes": 52549,
+      "compressed_bytes": 26515,
+      "sha256": "6ce83c943fc684fd517427b167861acac77a8247749764fd5ebf0de17ea6d91c"
+    },
+    "assets/images/avatars/portraits/alan_adler.jpg": {
+      "cloud_path": "images/avatars/portraits/alan_adler.jpg",
+      "original_bytes": 52432,
+      "compressed_bytes": 18078,
+      "sha256": "5ba2ea7b453e35ec493ecb145ce473a3c233aeb5fa8ac64bbfde057ba43675d4"
+    },
+    "assets/images/avatars/portraits/alessandro_galtieri.jpg": {
+      "cloud_path": "images/avatars/portraits/alessandro_galtieri.jpg",
+      "original_bytes": 36187,
+      "compressed_bytes": 18482,
+      "sha256": "65b14083afc485c588ef871df9282b2423aa38d48d3773ab15508ed507ed01dc"
+    },
+    "assets/images/avatars/portraits/andanu_prasetyo.jpg": {
+      "cloud_path": "images/avatars/portraits/andanu_prasetyo.jpg",
+      "original_bytes": 12716,
+      "compressed_bytes": 9231,
+      "sha256": "844c9a89212f0d8fbc749e32455ca7099c2d030d1da6fea30ac96e2c9a991d1c"
+    },
+    "assets/images/avatars/portraits/anomali_coffee.jpg": {
+      "cloud_path": "images/avatars/portraits/anomali_coffee.jpg",
+      "original_bytes": 9309,
+      "compressed_bytes": 6276,
+      "sha256": "b3b64117fcac5a0773508ba0a1736f1ddb627d44eceaeb7a063195b902c0c577"
+    },
+    "assets/images/avatars/portraits/anthony_douglas.jpg": {
+      "cloud_path": "images/avatars/portraits/anthony_douglas.jpg",
+      "original_bytes": 21737,
+      "compressed_bytes": 14449,
+      "sha256": "bd6fe65a6eca47b270bc663584a5b4752c465813efcf040c7b1e03a6743b251c"
+    },
+    "assets/images/avatars/portraits/archivist_seoul.jpg": {
+      "cloud_path": "images/avatars/portraits/archivist_seoul.jpg",
+      "original_bytes": 15317,
+      "compressed_bytes": 10598,
+      "sha256": "b2409889090071071a56db779799fc80b028b035850f98850cc6762833760e81"
+    },
+    "assets/images/avatars/portraits/athens_barista_community.jpg": {
+      "cloud_path": "images/avatars/portraits/athens_barista_community.jpg",
+      "original_bytes": 10063,
+      "compressed_bytes": 8072,
+      "sha256": "3dfcaaa56114d046b4e7451df08367035b10f0b7d34368b4afc079087cb94891"
+    },
+    "assets/images/avatars/portraits/bavis_kwong.jpg": {
+      "cloud_path": "images/avatars/portraits/bavis_kwong.jpg",
+      "original_bytes": 15822,
+      "compressed_bytes": 10874,
+      "sha256": "a596b8a96b22b53e30f6f413832a52b76c59176a29409589fbe570c06149d849"
+    },
+    "assets/images/avatars/portraits/bayu_prawiro.jpg": {
+      "cloud_path": "images/avatars/portraits/bayu_prawiro.jpg",
+      "original_bytes": 31413,
+      "compressed_bytes": 17018,
+      "sha256": "373d98c1ae3cef1a98a62ca8ac362c3d4e02c2ff4fb50ea623e64994da687fd7"
+    },
+    "assets/images/avatars/portraits/benjamin_prager.jpg": {
+      "cloud_path": "images/avatars/portraits/benjamin_prager.jpg",
+      "original_bytes": 71535,
+      "compressed_bytes": 14217,
+      "sha256": "f3fcd4753e514ba1feac592239878d36df83f0035c6bc5348d83a75c4837858b"
+    },
+    "assets/images/avatars/portraits/blue_doors.jpg": {
+      "cloud_path": "images/avatars/portraits/blue_doors.jpg",
+      "original_bytes": 12328,
+      "compressed_bytes": 8213,
+      "sha256": "d6a04743d31673fa2ad806785db339b423aa05928e60b84eb02f9876249d6878"
+    },
+    "assets/images/avatars/portraits/carlos_escobar.jpg": {
+      "cloud_path": "images/avatars/portraits/carlos_escobar.jpg",
+      "original_bytes": 27590,
+      "compressed_bytes": 14249,
+      "sha256": "afc4a995e95d9f8169acedb750fe933510c49a5810311b2dadcaa906d6b85f57"
+    },
+    "assets/images/avatars/portraits/carlos_medina.jpg": {
+      "cloud_path": "images/avatars/portraits/carlos_medina.jpg",
+      "original_bytes": 27807,
+      "compressed_bytes": 17886,
+      "sha256": "c47ee0f64b5a457deb0aec6c38ccd476d845ca7cc6f804e92b24ba530dbcedd0"
+    },
+    "assets/images/avatars/portraits/chad_wang.jpg": {
+      "cloud_path": "images/avatars/portraits/chad_wang.jpg",
+      "original_bytes": 27666,
+      "compressed_bytes": 18005,
+      "sha256": "e13533c46b25523415665dbdcf3fe0bf3326a47ad7f7501d47f2015d233b2737"
+    },
+    "assets/images/avatars/portraits/chandra.jpg": {
+      "cloud_path": "images/avatars/portraits/chandra.jpg",
+      "original_bytes": 16996,
+      "compressed_bytes": 11292,
+      "sha256": "1b200e3a23a0c611afc1bb488aa0085688c8470d5eb28b5aefe8abea4b7f5667"
+    },
+    "assets/images/avatars/portraits/chandra_brewer.jpg": {
+      "cloud_path": "images/avatars/portraits/chandra_brewer.jpg",
+      "original_bytes": 16996,
+      "compressed_bytes": 11292,
+      "sha256": "1b200e3a23a0c611afc1bb488aa0085688c8470d5eb28b5aefe8abea4b7f5667"
+    },
+    "assets/images/avatars/portraits/common_grounds.jpg": {
+      "cloud_path": "images/avatars/portraits/common_grounds.jpg",
+      "original_bytes": 12898,
+      "compressed_bytes": 8622,
+      "sha256": "891706164f2003ee8f5e4c985cbf73ca11838f141f43b65c6dad0f631652bbd6"
+    },
+    "assets/images/avatars/portraits/daiki_hatakeyama.jpg": {
+      "cloud_path": "images/avatars/portraits/daiki_hatakeyama.jpg",
+      "original_bytes": 16735,
+      "compressed_bytes": 11586,
+      "sha256": "30a7a7ac1e3f3e69820bf7788c74da6648dd0e543182aa312d2ca780b9a2b2b2"
+    },
+    "assets/images/avatars/portraits/dick_bradsell.jpg": {
+      "cloud_path": "images/avatars/portraits/dick_bradsell.jpg",
+      "original_bytes": 16791,
+      "compressed_bytes": 13551,
+      "sha256": "ce96553ca3277c5f700ef79088e3c083d2283f135b2295699959d515b4e92cb4"
+    },
+    "assets/images/avatars/portraits/djournal_coffee.jpg": {
+      "cloud_path": "images/avatars/portraits/djournal_coffee.jpg",
+      "original_bytes": 6494,
+      "compressed_bytes": 5098,
+      "sha256": "c425a86cf7bc284d3066469460e455d6e1f4d0e8146402ffffe887238ebf1cdd"
+    },
+    "assets/images/avatars/portraits/dody_samsura.jpg": {
+      "cloud_path": "images/avatars/portraits/dody_samsura.jpg",
+      "original_bytes": 22757,
+      "compressed_bytes": 14783,
+      "sha256": "c40878dbff2604a65f3352be134f2336efdf5f17b7cd54227415de1072fcf52d"
+    },
+    "assets/images/avatars/portraits/dustin_wijaya.jpg": {
+      "cloud_path": "images/avatars/portraits/dustin_wijaya.jpg",
+      "original_bytes": 10406,
+      "compressed_bytes": 7159,
+      "sha256": "bb9ce5b25dc571e11487f6674315d2423ae2d4aa3803988bacccef7dc24e7124"
+    },
+    "assets/images/avatars/portraits/du_jianing.jpg": {
+      "cloud_path": "images/avatars/portraits/du_jianing.jpg",
+      "original_bytes": 22855,
+      "compressed_bytes": 16206,
+      "sha256": "6d52e5d193153935d1d6815f9a7de1833a29bf5c75f79e9cac9c6ded5c25feaf"
+    },
+    "assets/images/avatars/portraits/edrick.jpg": {
+      "cloud_path": "images/avatars/portraits/edrick.jpg",
+      "original_bytes": 6091,
+      "compressed_bytes": 4540,
+      "sha256": "4d62a55bfa4d763d0ef4cce845d2f5c843eacc543e34c2fc8e9359dfab83c44d"
+    },
+    "assets/images/avatars/portraits/elika_liftee.jpg": {
+      "cloud_path": "images/avatars/portraits/elika_liftee.jpg",
+      "original_bytes": 18852,
+      "compressed_bytes": 12168,
+      "sha256": "37a845ee23105dd6cb21f6cf9786bc8d35ed7772533a6b36995740ffa3869c57"
+    },
+    "assets/images/avatars/portraits/elysia_tan.jpg": {
+      "cloud_path": "images/avatars/portraits/elysia_tan.jpg",
+      "original_bytes": 7992,
+      "compressed_bytes": 5719,
+      "sha256": "0d8d1a608e9d1a329793b5e5859151213bedfb6f1188f19f60372a2ec16c7d6b"
+    },
+    "assets/images/avatars/portraits/emi_fukahori.jpg": {
+      "cloud_path": "images/avatars/portraits/emi_fukahori.jpg",
+      "original_bytes": 31812,
+      "compressed_bytes": 21231,
+      "sha256": "9d51f438409d7180f0cdb28d6c87445cd5912bfc30311b9609268842fd0ae175"
+    },
+    "assets/images/avatars/portraits/fore_coffee.jpg": {
+      "cloud_path": "images/avatars/portraits/fore_coffee.jpg",
+      "original_bytes": 5478,
+      "compressed_bytes": 3986,
+      "sha256": "ddc99a78b4f84d839aa329da2545f87ed17eba153c3a70e13f96477519c325c8"
+    },
+    "assets/images/avatars/portraits/fugol_coffee.jpg": {
+      "cloud_path": "images/avatars/portraits/fugol_coffee.jpg",
+      "original_bytes": 9173,
+      "compressed_bytes": 5262,
+      "sha256": "54824c0653c739cd717c78e55d716c2b394eebd7fe4603655f528dbc5f1ea3e1"
+    },
+    "assets/images/avatars/portraits/garam_victor_um.jpg": {
+      "cloud_path": "images/avatars/portraits/garam_victor_um.jpg",
+      "original_bytes": 16210,
+      "compressed_bytes": 10715,
+      "sha256": "e7c1be7356aa5deab54eb45028f8b28a2bb65d1105764ac00ad5cfd028790693"
+    },
+    "assets/images/avatars/portraits/gianni_frasi.jpg": {
+      "cloud_path": "images/avatars/portraits/gianni_frasi.jpg",
+      "original_bytes": 22991,
+      "compressed_bytes": 15683,
+      "sha256": "f4cda6f5b0d2df685d7d80948c58542225e3c7b48d897972f87622f141b003b3"
+    },
+    "assets/images/avatars/portraits/harison_chandra.jpg": {
+      "cloud_path": "images/avatars/portraits/harison_chandra.jpg",
+      "original_bytes": 18790,
+      "compressed_bytes": 12357,
+      "sha256": "5109165c84fbfe364e02d52a92779d7b3ff185de1360d9cc3ba60e43ac83984c"
+    },
+    "assets/images/avatars/portraits/hendri_kurniawan.jpg": {
+      "cloud_path": "images/avatars/portraits/hendri_kurniawan.jpg",
+      "original_bytes": 13604,
+      "compressed_bytes": 9846,
+      "sha256": "82c566d66409887e21da4d2549db40d72139eba4d6edde6822f5e7eec03d3270"
+    },
+    "assets/images/avatars/portraits/hiroshi_sawada.jpg": {
+      "cloud_path": "images/avatars/portraits/hiroshi_sawada.jpg",
+      "original_bytes": 20282,
+      "compressed_bytes": 13824,
+      "sha256": "466e116bcb14201bc0d7d65defec994af8daefb51c1039ceb085781cc143e0c7"
+    },
+    "assets/images/avatars/portraits/hiro_lesmana.jpg": {
+      "cloud_path": "images/avatars/portraits/hiro_lesmana.jpg",
+      "original_bytes": 19566,
+      "compressed_bytes": 14267,
+      "sha256": "056942bef015f6d9cea658c5331bc666e4f1150c26876c2a348eb9e183ea69ec"
+    },
+    "assets/images/avatars/portraits/hungry_bird_coffee.jpg": {
+      "cloud_path": "images/avatars/portraits/hungry_bird_coffee.jpg",
+      "original_bytes": 9509,
+      "compressed_bytes": 6570,
+      "sha256": "95f73170fa3fc708876b37f5d27a6e8b9278333923208e104f94dd761451628c"
+    },
+    "assets/images/avatars/portraits/instinct_roastery.jpg": {
+      "cloud_path": "images/avatars/portraits/instinct_roastery.jpg",
+      "original_bytes": 5571,
+      "compressed_bytes": 4303,
+      "sha256": "92ee0453f78cface17b04d29e7c863c51fd9154cab4b36fe6684b11bc6bf0fc7"
+    },
+    "assets/images/avatars/portraits/james_hoffmann.jpg": {
+      "cloud_path": "images/avatars/portraits/james_hoffmann.jpg",
+      "original_bytes": 19578,
+      "compressed_bytes": 14133,
+      "sha256": "bdda7e48abaada0132e7312c3bdab83dda0cf6f6b773f7c68b9454d853a7de10"
+    },
+    "assets/images/avatars/portraits/jaya_pranata.jpg": {
+      "cloud_path": "images/avatars/portraits/jaya_pranata.jpg",
+      "original_bytes": 14325,
+      "compressed_bytes": 9945,
+      "sha256": "f3339007b6b2d61b688de6f1b2c93b34913bb2489a9bac1a033de3896c27a3aa"
+    },
+    "assets/images/avatars/portraits/john_christopher.jpg": {
+      "cloud_path": "images/avatars/portraits/john_christopher.jpg",
+      "original_bytes": 14593,
+      "compressed_bytes": 10278,
+      "sha256": "62cedd29baaed1ae14d5dcb3a34db773908623f6dc69160708f1de21587289c0"
+    },
+    "assets/images/avatars/portraits/john_richard_christopher.jpg": {
+      "cloud_path": "images/avatars/portraits/john_richard_christopher.jpg",
+      "original_bytes": 19341,
+      "compressed_bytes": 13410,
+      "sha256": "b5687e3ba04f98fd67a9cdc28bed2aa3e10d1d6f1d0f756f2f9b5a39680a9ce3"
+    },
+    "assets/images/avatars/portraits/jonathan_gagne.jpg": {
+      "cloud_path": "images/avatars/portraits/jonathan_gagne.jpg",
+      "original_bytes": 18642,
+      "compressed_bytes": 13414,
+      "sha256": "b0ef234a175b03e04ec6593900ddb6cf64dc2362b7d77fd7adeadbdfbce75218"
+    },
+    "assets/images/avatars/portraits/konstantinos_iatridis.jpg": {
+      "cloud_path": "images/avatars/portraits/konstantinos_iatridis.jpg",
+      "original_bytes": 40782,
+      "compressed_bytes": 15394,
+      "sha256": "1bdbb5df2cd2c72060eea1188aba0603658ed06bd9494d994b1df5a676239068"
+    },
+    "assets/images/avatars/portraits/lance_hedrick.jpg": {
+      "cloud_path": "images/avatars/portraits/lance_hedrick.jpg",
+      "original_bytes": 29803,
+      "compressed_bytes": 18929,
+      "sha256": "8f482dbe997210331de86d541e9e27473ea3209e58e92c52ab2a9a4a4039e98c"
+    },
+    "assets/images/avatars/portraits/madan.jpg": {
+      "cloud_path": "images/avatars/portraits/madan.jpg",
+      "original_bytes": 18776,
+      "compressed_bytes": 12771,
+      "sha256": "0b3054d48f48eda6a740c78b254b48c3ae4edb03fb60da8e92bc54350566168c"
+    },
+    "assets/images/avatars/portraits/mandie_fugol.jpg": {
+      "cloud_path": "images/avatars/portraits/mandie_fugol.jpg",
+      "original_bytes": 12858,
+      "compressed_bytes": 8463,
+      "sha256": "dbda5de2cc1e09c902ad2ec4d1f3e97be0e6753f491149c47c9b96a3199a4668"
+    },
+    "assets/images/avatars/portraits/martin_wolfl.jpg": {
+      "cloud_path": "images/avatars/portraits/martin_wolfl.jpg",
+      "original_bytes": 10206,
+      "compressed_bytes": 8427,
+      "sha256": "d9e82d228226072596393c0f87842de3e81e532467e6d7f4bb5d8cb8cbae94f7"
+    },
+    "assets/images/avatars/portraits/matt_perger.jpg": {
+      "cloud_path": "images/avatars/portraits/matt_perger.jpg",
+      "original_bytes": 21057,
+      "compressed_bytes": 13864,
+      "sha256": "44f7b76d1e567900f1d5523a2bc16d45093ecc0aad838a576dcab44c8fdf4006"
+    },
+    "assets/images/avatars/portraits/matt_winton.jpg": {
+      "cloud_path": "images/avatars/portraits/matt_winton.jpg",
+      "original_bytes": 16037,
+      "compressed_bytes": 9983,
+      "sha256": "fbed6c634223d881a4f8b7f0b6775a5f3fdff275473ab604029f984c0c8ebaca"
+    },
+    "assets/images/avatars/portraits/melvin_fugol.jpg": {
+      "cloud_path": "images/avatars/portraits/melvin_fugol.jpg",
+      "original_bytes": 9173,
+      "compressed_bytes": 5262,
+      "sha256": "54824c0653c739cd717c78e55d716c2b394eebd7fe4603655f528dbc5f1ea3e1"
+    },
+    "assets/images/avatars/portraits/mikaela_wallgren.jpg": {
+      "cloud_path": "images/avatars/portraits/mikaela_wallgren.jpg",
+      "original_bytes": 22854,
+      "compressed_bytes": 15349,
+      "sha256": "bda38a1bc445bdbb9a9669426a14dae37cd8454520610e6750a72cf6f88049be"
+    },
+    "assets/images/avatars/portraits/mikael_jasin.jpg": {
+      "cloud_path": "images/avatars/portraits/mikael_jasin.jpg",
+      "original_bytes": 11863,
+      "compressed_bytes": 8401,
+      "sha256": "45d0c0e97cd356ca811c5936b5b3bcfd4bf6e1003a28ac322d590c7fcc95c1fa"
+    },
+    "assets/images/avatars/portraits/mirza_luqman.jpg": {
+      "cloud_path": "images/avatars/portraits/mirza_luqman.jpg",
+      "original_bytes": 20952,
+      "compressed_bytes": 14536,
+      "sha256": "6333c96f747ccba21e3288caf695a3bcd780a65e3db45c19f67a01317eace7e9"
+    },
+    "assets/images/avatars/portraits/muhammad_aga.jpg": {
+      "cloud_path": "images/avatars/portraits/muhammad_aga.jpg",
+      "original_bytes": 10412,
+      "compressed_bytes": 7224,
+      "sha256": "359c7911c3d3c8f563680d63167a5f915384c7b15c522e273f2f24647f429afb"
+    },
+    "assets/images/avatars/portraits/muhammad_fakhri.jpg": {
+      "cloud_path": "images/avatars/portraits/muhammad_fakhri.jpg",
+      "original_bytes": 14718,
+      "compressed_bytes": 11914,
+      "sha256": "77234f1b6630bd5ce949bbc91cd54e4773403ddaa831a8da0dd2acba84b5d35c"
+    },
+    "assets/images/avatars/portraits/nas_jaafar.jpg": {
+      "cloud_path": "images/avatars/portraits/nas_jaafar.jpg",
+      "original_bytes": 12213,
+      "compressed_bytes": 8428,
+      "sha256": "e8a20eb5f106c089a166f80510ddeaa6a845598616877f4196bb31b8b9e51414"
+    },
+    "assets/images/avatars/portraits/odd_steinar_tollefsen.jpg": {
+      "cloud_path": "images/avatars/portraits/odd_steinar_tollefsen.jpg",
+      "original_bytes": 25233,
+      "compressed_bytes": 16801,
+      "sha256": "734e5aba0b1feab7a7090cb3df1312255bd09c81850a7630abec728a687cf51c"
+    },
+    "assets/images/avatars/portraits/ombe_kofie.jpg": {
+      "cloud_path": "images/avatars/portraits/ombe_kofie.jpg",
+      "original_bytes": 13560,
+      "compressed_bytes": 10093,
+      "sha256": "ad18fa124e381384fe13eec78f32a49dea55d285fa6526199759cbd77f82dcb7"
+    },
+    "assets/images/avatars/portraits/one_fifteenth_coffee.jpg": {
+      "cloud_path": "images/avatars/portraits/one_fifteenth_coffee.jpg",
+      "original_bytes": 4390,
+      "compressed_bytes": 3734,
+      "sha256": "35be54f691eedfb3c848fef44f78cbf722f11f2f8a0cc0215d6ef56b96523f29"
+    },
+    "assets/images/avatars/portraits/opak_kopi.jpg": {
+      "cloud_path": "images/avatars/portraits/opak_kopi.jpg",
+      "original_bytes": 35642,
+      "compressed_bytes": 19884,
+      "sha256": "fc9c432ed17d7ba243110fe8f78d5500ad75031ef266e469bd6af1fbc8a42065"
+    },
+    "assets/images/avatars/portraits/otten_coffee.jpg": {
+      "cloud_path": "images/avatars/portraits/otten_coffee.jpg",
+      "original_bytes": 12528,
+      "compressed_bytes": 6853,
+      "sha256": "9040e074ffaa358ad0a30f10b0a6de92ad23bc259bd29b55910d044805e05965"
+    },
+    "assets/images/avatars/portraits/otten_coffee_academy.jpg": {
+      "cloud_path": "images/avatars/portraits/otten_coffee_academy.jpg",
+      "original_bytes": 12528,
+      "compressed_bytes": 6853,
+      "sha256": "9040e074ffaa358ad0a30f10b0a6de92ad23bc259bd29b55910d044805e05965"
+    },
+    "assets/images/avatars/portraits/panna_roastery.jpg": {
+      "cloud_path": "images/avatars/portraits/panna_roastery.jpg",
+      "original_bytes": 13492,
+      "compressed_bytes": 8876,
+      "sha256": "700d8b48b585e105eec8a87c72103f5bc89ae2c03ad165a07eb092072a67ca84"
+    },
+    "assets/images/avatars/portraits/patrik_rolf.jpg": {
+      "cloud_path": "images/avatars/portraits/patrik_rolf.jpg",
+      "original_bytes": 8765,
+      "compressed_bytes": 6451,
+      "sha256": "82d4e704b4c9b6d977281f58785fa6636ef7ea3fe0344a680d07364f1bffbc22"
+    },
+    "assets/images/avatars/portraits/peng_jinyang.jpg": {
+      "cloud_path": "images/avatars/portraits/peng_jinyang.jpg",
+      "original_bytes": 27158,
+      "compressed_bytes": 18340,
+      "sha256": "fd7dcbd8cb1cfcbed5b616c347b07dcd534487342890b974dcc1f2771fbd9a09"
+    },
+    "assets/images/avatars/portraits/pepeng_klinik_kopi.jpg": {
+      "cloud_path": "images/avatars/portraits/pepeng_klinik_kopi.jpg",
+      "original_bytes": 21053,
+      "compressed_bytes": 14642,
+      "sha256": "26f6f0eb867b11448e1539d8812add1b369240f9ec373ba9d47161a28e12af52"
+    },
+    "assets/images/avatars/portraits/ray_janson.jpg": {
+      "cloud_path": "images/avatars/portraits/ray_janson.jpg",
+      "original_bytes": 26604,
+      "compressed_bytes": 14689,
+      "sha256": "4f9521ed4d984218a2f59607e3e43c39d3dc6e8782674379530a4ef94dfb1728"
+    },
+    "assets/images/avatars/portraits/regine_wai_yee_beng.jpg": {
+      "cloud_path": "images/avatars/portraits/regine_wai_yee_beng.jpg",
+      "original_bytes": 35631,
+      "compressed_bytes": 19820,
+      "sha256": "42c39c96d46351c02dcb4a6932a06da4e902df8674bd7a899c0b8f64c42f9caf"
+    },
+    "assets/images/avatars/portraits/roy_panggabean.jpg": {
+      "cloud_path": "images/avatars/portraits/roy_panggabean.jpg",
+      "original_bytes": 16535,
+      "compressed_bytes": 11497,
+      "sha256": "dfb75b499f487b47bdedbc3df3c96d398a9cbaa7491aa41307a1c3cc4aa5701b"
+    },
+    "assets/images/avatars/portraits/ryan_wibawa.jpg": {
+      "cloud_path": "images/avatars/portraits/ryan_wibawa.jpg",
+      "original_bytes": 11552,
+      "compressed_bytes": 8697,
+      "sha256": "992a2398bfeb8b8ca414fd40d4340727e3c3f6af7f8f23340f52621b2b53cb18"
+    },
+    "assets/images/avatars/portraits/sam_corra.jpg": {
+      "cloud_path": "images/avatars/portraits/sam_corra.jpg",
+      "original_bytes": 14704,
+      "compressed_bytes": 9900,
+      "sha256": "466669263b1d6d1826d513a2c37cd16a097197de365b6be22535bc24ed5e14e7"
+    },
+    "assets/images/avatars/portraits/savina_giachgia.jpg": {
+      "cloud_path": "images/avatars/portraits/savina_giachgia.jpg",
+      "original_bytes": 43336,
+      "compressed_bytes": 15038,
+      "sha256": "d2eba9a3ecc3ea6f05e9eada42ea1a1c7f729fd8afc020143ae2c220c06de225"
+    },
+    "assets/images/avatars/portraits/scott_rao.jpg": {
+      "cloud_path": "images/avatars/portraits/scott_rao.jpg",
+      "original_bytes": 36025,
+      "compressed_bytes": 13590,
+      "sha256": "7be8c3c59e1bcc7a5f7842e9c166fee62a725fc76b8004ed21eb7e3607ea29a1"
+    },
+    "assets/images/avatars/portraits/shayneella.jpg": {
+      "cloud_path": "images/avatars/portraits/shayneella.jpg",
+      "original_bytes": 41888,
+      "compressed_bytes": 14957,
+      "sha256": "2ae85a0c43312886ecfea8a6a029560ca69706cd34cbce0b94d462fb47c6cc64"
+    },
+    "assets/images/avatars/portraits/shih_yuan_hsu.jpg": {
+      "cloud_path": "images/avatars/portraits/shih_yuan_hsu.jpg",
+      "original_bytes": 41196,
+      "compressed_bytes": 14695,
+      "sha256": "cbef0eb0a24d35b2ba69707cfc845eaac3b54b7c4cb6dff5747955c545b6d221"
+    },
+    "assets/images/avatars/portraits/simon_gautherin.jpg": {
+      "cloud_path": "images/avatars/portraits/simon_gautherin.jpg",
+      "original_bytes": 27861,
+      "compressed_bytes": 9985,
+      "sha256": "b8629a59de5d1745f732d644fee5a54cc4ec65d15ae796e15dee13a33736171c"
+    },
+    "assets/images/avatars/portraits/stathis_koremtas.jpg": {
+      "cloud_path": "images/avatars/portraits/stathis_koremtas.jpg",
+      "original_bytes": 77123,
+      "compressed_bytes": 13227,
+      "sha256": "bc6df6a348798100a65389d9a6fa1768c489fba8eb264c8d037ece9118dafca7"
+    },
+    "assets/images/avatars/portraits/tetsu_kasuya.jpg": {
+      "cloud_path": "images/avatars/portraits/tetsu_kasuya.jpg",
+      "original_bytes": 12066,
+      "compressed_bytes": 9063,
+      "sha256": "8c45833b6a8233bfb6ed084cf4dfd61bb37e403f817f6257136af0bd56300bac"
+    },
+    "assets/images/avatars/portraits/tim_wendelboe.jpg": {
+      "cloud_path": "images/avatars/portraits/tim_wendelboe.jpg",
+      "original_bytes": 58305,
+      "compressed_bytes": 15182,
+      "sha256": "7a01688b81742436d2e1e1ea47b396f25228c9ae5a5a9cfe523918e96bc76b3d"
+    },
+    "assets/images/avatars/portraits/tuomas_merikanto.jpg": {
+      "cloud_path": "images/avatars/portraits/tuomas_merikanto.jpg",
+      "original_bytes": 54340,
+      "compressed_bytes": 18092,
+      "sha256": "d2d15f04b40e685afb0b29ed9bb68c952ab2cdded7a010ee074ec045579488d6"
+    },
+    "assets/images/avatars/portraits/wataru_iidaka.jpg": {
+      "cloud_path": "images/avatars/portraits/wataru_iidaka.jpg",
+      "original_bytes": 41361,
+      "compressed_bytes": 13819,
+      "sha256": "078b1337650e782f2ad8e2ca90d9bdbed455d8f66c66880275d56b99144bf26c"
+    },
+    "assets/images/avatars/portraits/wendelien_van_bunnik.jpg": {
+      "cloud_path": "images/avatars/portraits/wendelien_van_bunnik.jpg",
+      "original_bytes": 47661,
+      "compressed_bytes": 15297,
+      "sha256": "7d2566449e66912085ce77a581e598f79822502ca48fa01096a2dbc115cd0df0"
+    },
+    "assets/images/avatars/portraits/wisnu_aji.jpg": {
+      "cloud_path": "images/avatars/portraits/wisnu_aji.jpg",
+      "original_bytes": 63140,
+      "compressed_bytes": 24755,
+      "sha256": "5f5cff9416e07863f9aa879f5afabfe99fe27eee9e54329d778b1c57d51a7fc1"
+    },
+    "assets/images/avatars/portraits/yoshua_tanu.jpg": {
+      "cloud_path": "images/avatars/portraits/yoshua_tanu.jpg",
+      "original_bytes": 43426,
+      "compressed_bytes": 13923,
+      "sha256": "98b980204ea8cc8998b6c97013433563014dd58bf59213efa8a94288f0e468ef"
+    },
+    "assets/images/roasteries/5758_coffee_lab.png": {
+      "cloud_path": "images/roasteries/5758_coffee_lab.png",
+      "original_bytes": 3686,
+      "compressed_bytes": 2337,
+      "sha256": "540304436e8a6a3cbc2003e672e4a460bd511106843a52371ea0abd9a8dce746"
+    },
+    "assets/images/roasteries/anomali_coffee.png": {
+      "cloud_path": "images/roasteries/anomali_coffee.png",
+      "original_bytes": 32260,
+      "compressed_bytes": 5032,
+      "sha256": "e46913c2fa73b56cb34c643cca3f800d2e9fd68af18633740e26753f4003aa37"
+    },
+    "assets/images/roasteries/arutala_coffee.png": {
+      "cloud_path": "images/roasteries/arutala_coffee.png",
+      "original_bytes": 3620,
+      "compressed_bytes": 2363,
+      "sha256": "76af1b02469777cff630b1b13b6f72c384f9de72835743e1f10884cfa40beb8c"
+    },
+    "assets/images/roasteries/blacklist_everhaos.png": {
+      "cloud_path": "images/roasteries/blacklist_everhaos.png",
+      "original_bytes": 3999,
+      "compressed_bytes": 2449,
+      "sha256": "65f2ea54b6555ff0fd908da4357c995eb01b3fc89b86687da6ab10dce2b2c920"
+    },
+    "assets/images/roasteries/catur_coffee.png": {
+      "cloud_path": "images/roasteries/catur_coffee.png",
+      "original_bytes": 3774,
+      "compressed_bytes": 2364,
+      "sha256": "e5966e40217c4a6d75506ea8485d07dc8b8d8c925a7d393fd81dfd59d5a5e436"
+    },
+    "assets/images/roasteries/comfort_table_maharaja.png": {
+      "cloud_path": "images/roasteries/comfort_table_maharaja.png",
+      "original_bytes": 3740,
+      "compressed_bytes": 2419,
+      "sha256": "de6d04cddd3cabed35b90ff5cd0c963605a4e195d9e5306978cd435cbbd4beca"
+    },
+    "assets/images/roasteries/darat_motiv_roasters.png": {
+      "cloud_path": "images/roasteries/darat_motiv_roasters.png",
+      "original_bytes": 3684,
+      "compressed_bytes": 2349,
+      "sha256": "1d8ae00565716fda848227a28610ce2a96b1febe9adc5c16711ccb389bc38fcc"
+    },
+    "assets/images/roasteries/els_coffee.png": {
+      "cloud_path": "images/roasteries/els_coffee.png",
+      "original_bytes": 3487,
+      "compressed_bytes": 2291,
+      "sha256": "a7430393dc00e284cd66f7519357299c29b1dfbf44d029cf75e376f7a4b47769"
+    },
+    "assets/images/roasteries/first_crack_coffee.png": {
+      "cloud_path": "images/roasteries/first_crack_coffee.png",
+      "original_bytes": 3937,
+      "compressed_bytes": 2433,
+      "sha256": "19afe9a321efe81036ed838262e8e4fa8d3f959f5312e0cc41fb431251a6c6b2"
+    },
+    "assets/images/roasteries/fugol_coffee.png": {
+      "cloud_path": "images/roasteries/fugol_coffee.png",
+      "original_bytes": 25864,
+      "compressed_bytes": 3662,
+      "sha256": "c0a0628b69fc52acd52a90a0cec7d762336ceea6d73231e1cb963f9583e842aa"
+    },
+    "assets/images/roasteries/fugol_logo.png": {
+      "cloud_path": "images/roasteries/fugol_logo.png",
+      "original_bytes": 19047,
+      "compressed_bytes": 9318,
+      "sha256": "9a259adbcfce6b2fa0cb4cafcf88fc8bfe8b391337fb900f3071d5d58137c3fe"
+    },
+    "assets/images/roasteries/fumidai_roastery.png": {
+      "cloud_path": "images/roasteries/fumidai_roastery.png",
+      "original_bytes": 3657,
+      "compressed_bytes": 2372,
+      "sha256": "66c356ac4a7600c2ea681f4419aa3af47b200234a8400b0465e3d6c16f2b44e8"
+    },
+    "assets/images/roasteries/giyanti_coffee.png": {
+      "cloud_path": "images/roasteries/giyanti_coffee.png",
+      "original_bytes": 3789,
+      "compressed_bytes": 2380,
+      "sha256": "4128386cc61689c8f73c906e35d1bd2ef618c82716023fd95878a76de7a86db3"
+    },
+    "assets/images/roasteries/hana_roastery.png": {
+      "cloud_path": "images/roasteries/hana_roastery.png",
+      "original_bytes": 3498,
+      "compressed_bytes": 2328,
+      "sha256": "c47a78d3555d16fa57951609b9a727ce35408729fa2b6677bc85d83f3bf8d0db"
+    },
+    "assets/images/roasteries/hayati_coffee.png": {
+      "cloud_path": "images/roasteries/hayati_coffee.png",
+      "original_bytes": 3564,
+      "compressed_bytes": 2334,
+      "sha256": "0b7269066b2ca7034d14190adf30c3556664d94660569bb7a0fad402fa633e83"
+    },
+    "assets/images/roasteries/herd_coffee.png": {
+      "cloud_path": "images/roasteries/herd_coffee.png",
+      "original_bytes": 3520,
+      "compressed_bytes": 2298,
+      "sha256": "0b444024bbbfd023160fb76d6ed5dbe28fbbb5973dd26a7b0821f412b14e6d4b"
+    },
+    "assets/images/roasteries/hungry_bird_coffee.png": {
+      "cloud_path": "images/roasteries/hungry_bird_coffee.png",
+      "original_bytes": 30851,
+      "compressed_bytes": 5501,
+      "sha256": "6a4c420290b272efe126a32fc1b6a53a485c4fdbb31d82287a85098a3b0694ed"
+    },
+    "assets/images/roasteries/indibro_sutoyo_mknd.png": {
+      "cloud_path": "images/roasteries/indibro_sutoyo_mknd.png",
+      "original_bytes": 3637,
+      "compressed_bytes": 2330,
+      "sha256": "81b7fe1142a3174a5a409a520772c2cadd70d0adb88ce887b644682e1372944b"
+    },
+    "assets/images/roasteries/initial_coffee.png": {
+      "cloud_path": "images/roasteries/initial_coffee.png",
+      "original_bytes": 3537,
+      "compressed_bytes": 2332,
+      "sha256": "1dd02956e4eb2c293d5924ee2540a462992d69f373920acbbbc80eb8f8e9de4e"
+    },
+    "assets/images/roasteries/instinct_roastery.png": {
+      "cloud_path": "images/roasteries/instinct_roastery.png",
+      "original_bytes": 11244,
+      "compressed_bytes": 3282,
+      "sha256": "a9e93e45164f5c61c12ed7dc897a40fa04424fe81ab77c11bbcb08dfc872c46f"
+    },
+    "assets/images/roasteries/klasik_beans.png": {
+      "cloud_path": "images/roasteries/klasik_beans.png",
+      "original_bytes": 3718,
+      "compressed_bytes": 2375,
+      "sha256": "16e7a874421b6b0719c73d5fa25358174af786242796e393c6f9a369aed0733f"
+    },
+    "assets/images/roasteries/klinik_kopi.png": {
+      "cloud_path": "images/roasteries/klinik_kopi.png",
+      "original_bytes": 117970,
+      "compressed_bytes": 26300,
+      "sha256": "cd3ec0b5bc1ce31ff2cd363d327ec708e487cf8c69af51e0251e5880b2577b04"
+    },
+    "assets/images/roasteries/koeslans_coffee.png": {
+      "cloud_path": "images/roasteries/koeslans_coffee.png",
+      "original_bytes": 3995,
+      "compressed_bytes": 2440,
+      "sha256": "b7efe9a0b9c446a815e8c126cce163bae728a6d9fa5b8ad15306d866be2d5ce2"
+    },
+    "assets/images/roasteries/kopirelo_coffee.png": {
+      "cloud_path": "images/roasteries/kopirelo_coffee.png",
+      "original_bytes": 3626,
+      "compressed_bytes": 2318,
+      "sha256": "3895260509f8e89cd8eb8c6a3fc4101632bd583aa6a9bff1341bf86aa31a0157"
+    },
+    "assets/images/roasteries/kopiteori_deapati.png": {
+      "cloud_path": "images/roasteries/kopiteori_deapati.png",
+      "original_bytes": 3649,
+      "compressed_bytes": 2309,
+      "sha256": "8b194f18f7ea9c1bdf5225a0f790ec2a9cac254be0e48ad1b8de832c9067a1a7"
+    },
+    "assets/images/roasteries/kopi_anjis.png": {
+      "cloud_path": "images/roasteries/kopi_anjis.png",
+      "original_bytes": 3650,
+      "compressed_bytes": 2359,
+      "sha256": "0cc08ca0de8259a708f1ff872c970042ff811cadd47721a6accefe15bf360667"
+    },
+    "assets/images/roasteries/koro_roasters.png": {
+      "cloud_path": "images/roasteries/koro_roasters.png",
+      "original_bytes": 3667,
+      "compressed_bytes": 2328,
+      "sha256": "1c09fc03f1ac29a7bb0c7778da6dc00cfc8e65015532abfbc94b9d2bab04746b"
+    },
+    "assets/images/roasteries/life_coffee.png": {
+      "cloud_path": "images/roasteries/life_coffee.png",
+      "original_bytes": 3317,
+      "compressed_bytes": 2254,
+      "sha256": "fcb2e85e01c99a9707e5b77e52feb94765ece0fbd9cf4268d08fa7f8e450525d"
+    },
+    "assets/images/roasteries/mahugi_logo.png": {
+      "cloud_path": "images/roasteries/mahugi_logo.png",
+      "original_bytes": 2736,
+      "compressed_bytes": 2643,
+      "sha256": "24f796af84d8707ac78b67d328601eb3b443b70b8c23c4f26dce4e997fda740c"
+    },
+    "assets/images/roasteries/makmur_jaya.png": {
+      "cloud_path": "images/roasteries/makmur_jaya.png",
+      "original_bytes": 3768,
+      "compressed_bytes": 2398,
+      "sha256": "fd8c8b9d29708f521bdfdb2664fece600da258594dd3f4fff173a54a504166d9"
+    },
+    "assets/images/roasteries/missibu_roaster.png": {
+      "cloud_path": "images/roasteries/missibu_roaster.png",
+      "original_bytes": 3674,
+      "compressed_bytes": 2361,
+      "sha256": "361d8311ab72aad20b143352186357d4ab8fff2e386946fa2365d87906b3294f"
+    },
+    "assets/images/roasteries/mknd_logo.png": {
+      "cloud_path": "images/roasteries/mknd_logo.png",
+      "original_bytes": 14244,
+      "compressed_bytes": 8157,
+      "sha256": "127aed00a837ef038fc98d63f1132db84f911bee3015de1a249929e956f2cc92"
+    },
+    "assets/images/roasteries/more_coffee.png": {
+      "cloud_path": "images/roasteries/more_coffee.png",
+      "original_bytes": 3710,
+      "compressed_bytes": 2341,
+      "sha256": "02376b96e88ca590a62df01e86d562d33f642af701a535f1102a22c9d3a63760"
+    },
+    "assets/images/roasteries/movere_coffee.png": {
+      "cloud_path": "images/roasteries/movere_coffee.png",
+      "original_bytes": 3892,
+      "compressed_bytes": 2411,
+      "sha256": "91c0ed8a3e6c32a866a97456b6ea7361d0945a027d87f37e311613c15f6f279a"
+    },
+    "assets/images/roasteries/one_fifteenth_morph.png": {
+      "cloud_path": "images/roasteries/one_fifteenth_morph.png",
+      "original_bytes": 8823,
+      "compressed_bytes": 3090,
+      "sha256": "6fc8ce3be35b34d79589f9b8866776aaf3bdc55b45f6594021009ed288a85dbc"
+    },
+    "assets/images/roasteries/onward_coffee.png": {
+      "cloud_path": "images/roasteries/onward_coffee.png",
+      "original_bytes": 4096,
+      "compressed_bytes": 2462,
+      "sha256": "e929f7a70ac8e080c7ffabb704b7d6ed7fb3051d009b9d3ccf3c00eb84ebd7b3"
+    },
+    "assets/images/roasteries/otten_coffee.png": {
+      "cloud_path": "images/roasteries/otten_coffee.png",
+      "original_bytes": 58014,
+      "compressed_bytes": 4041,
+      "sha256": "738f949faa63352a33b199c5c096cb2d8c9a1c0c2b85572afda34e2372fadf9f"
+    },
+    "assets/images/roasteries/pigeonhole_coffee.png": {
+      "cloud_path": "images/roasteries/pigeonhole_coffee.png",
+      "original_bytes": 3810,
+      "compressed_bytes": 2362,
+      "sha256": "257dfb697dd5a50b94112a2f4e1590c9d5e13e95c7656466edaadad595405912"
+    },
+    "assets/images/roasteries/revolver_espresso.png": {
+      "cloud_path": "images/roasteries/revolver_espresso.png",
+      "original_bytes": 3773,
+      "compressed_bytes": 2411,
+      "sha256": "6428006208b065735955c9a17c712be5038eafd72b190ba17a981ec444736f67"
+    },
+    "assets/images/roasteries/sakha_coffee.png": {
+      "cloud_path": "images/roasteries/sakha_coffee.png",
+      "original_bytes": 3758,
+      "compressed_bytes": 2383,
+      "sha256": "9f3dfce705da01f777fef4b07dff80cbd0be169a03c2c83382d60ffdebb4963b"
+    },
+    "assets/images/roasteries/sematjam_coffee.png": {
+      "cloud_path": "images/roasteries/sematjam_coffee.png",
+      "original_bytes": 3861,
+      "compressed_bytes": 2425,
+      "sha256": "5d1d5602ae5b671347e1fca4fb9d0ae6c04554d2e6c98abc3bcb9824f8e4a745"
+    },
+    "assets/images/roasteries/semekar_coffee.png": {
+      "cloud_path": "images/roasteries/semekar_coffee.png",
+      "original_bytes": 3902,
+      "compressed_bytes": 2424,
+      "sha256": "cdb63a0ae2960e0edd1fe745267dbded8de804514d5cc42273ef58e268305c87"
+    },
+    "assets/images/roasteries/seniman_coffee.png": {
+      "cloud_path": "images/roasteries/seniman_coffee.png",
+      "original_bytes": 3823,
+      "compressed_bytes": 2414,
+      "sha256": "b1baf55c0803e4d701485bf4e75d2bf9f92fc5e7469d9ab6386c7bb4bae29932"
+    },
+    "assets/images/roasteries/serkop_roastery.png": {
+      "cloud_path": "images/roasteries/serkop_roastery.png",
+      "original_bytes": 81239,
+      "compressed_bytes": 18784,
+      "sha256": "29aa7895405c6707e13090a91e58fe60073c4dfde5289809f32da32f82a310ce"
+    },
+    "assets/images/roasteries/smoking_barrels.png": {
+      "cloud_path": "images/roasteries/smoking_barrels.png",
+      "original_bytes": 3847,
+      "compressed_bytes": 2390,
+      "sha256": "654169faa345eb6dce2743709362788e90fd46847be55434088a2d391a2e31d2"
+    },
+    "assets/images/roasteries/space_coffee.png": {
+      "cloud_path": "images/roasteries/space_coffee.png",
+      "original_bytes": 3813,
+      "compressed_bytes": 2385,
+      "sha256": "ae5a9b8c154c9641d66591246bac9819ee4202b68e6ecd626544d36fdb696f40"
+    },
+    "assets/images/roasteries/steam_and_brew.png": {
+      "cloud_path": "images/roasteries/steam_and_brew.png",
+      "original_bytes": 3670,
+      "compressed_bytes": 2341,
+      "sha256": "b276c185afaa5759860d1c872bfcfd32dd5ea8c08c40699e12483fe96b192c6a"
+    },
+    "assets/images/roasteries/tanamera_coffee.png": {
+      "cloud_path": "images/roasteries/tanamera_coffee.png",
+      "original_bytes": 3384,
+      "compressed_bytes": 2272,
+      "sha256": "7a534129b4ca37dde60784a5652867037b5c428fc8e56cdc5f799922aedcb011"
+    },
+    "assets/images/roasteries/thf_roastery.png": {
+      "cloud_path": "images/roasteries/thf_roastery.png",
+      "original_bytes": 3309,
+      "compressed_bytes": 2259,
+      "sha256": "6b2c342c6d8328a3b8db9958652b03019673f811333fc0592379c224e4096514"
+    },
+    "assets/images/roasteries/toko_kopi_aroma.png": {
+      "cloud_path": "images/roasteries/toko_kopi_aroma.png",
+      "original_bytes": 3822,
+      "compressed_bytes": 2416,
+      "sha256": "22dbe3eaca4a533df74b4deae8f1b8602b4e4ba1b33260f5c17a477c1e945829"
+    },
+    "assets/images/roasteries/typika_nordic_surabaya.png": {
+      "cloud_path": "images/roasteries/typika_nordic_surabaya.png",
+      "original_bytes": 3744,
+      "compressed_bytes": 2346,
+      "sha256": "3b0d623822a2e2b688c91d8eeb551fced9918ca62607a88230849f69615c9f11"
+    },
+    "assets/images/roasteries/village_coffee.png": {
+      "cloud_path": "images/roasteries/village_coffee.png",
+      "original_bytes": 3734,
+      "compressed_bytes": 2368,
+      "sha256": "e00787f709c0d106a555b149df9573d1970b279ad5141e5abcac234c69df26b6"
+    },
+    "assets/images/roasteries/wheels_coffee.png": {
+      "cloud_path": "images/roasteries/wheels_coffee.png",
+      "original_bytes": 3750,
+      "compressed_bytes": 2378,
+      "sha256": "e46cfb36d4e4a2372ab5885b886d3f7a5f112689275f7e925dae74aa896e898f"
+    },
+    "assets/images/methods/aeropress.png": {
+      "cloud_path": "images/methods/aeropress.png",
+      "original_bytes": 109347,
+      "compressed_bytes": 60603,
+      "sha256": "88074e89ed85f4439fac8d53f256c05eb8e8e73f5fb77ef78a05a30cef0d9d9f"
+    },
+    "assets/images/methods/bee_house.png": {
+      "cloud_path": "images/methods/bee_house.png",
+      "original_bytes": 108292,
+      "compressed_bytes": 47033,
+      "sha256": "7c556e4181481dae98527c5f1046c4e36d56f92d9f86c33d60fd6f71bf66722f"
+    },
+    "assets/images/methods/bonmac.png": {
+      "cloud_path": "images/methods/bonmac.png",
+      "original_bytes": 102994,
+      "compressed_bytes": 48215,
+      "sha256": "ccb579fff61e842c501dad8ce076777819b64ecae692b934b614c552c4671f77"
+    },
+    "assets/images/methods/chemex.png": {
+      "cloud_path": "images/methods/chemex.png",
+      "original_bytes": 106741,
+      "compressed_bytes": 48343,
+      "sha256": "2cbd4d63f99985f79f63ce89e9d8b40b5254518d3ef6a071d8da48e114ff91fc"
+    },
+    "assets/images/methods/clever_dripper.png": {
+      "cloud_path": "images/methods/clever_dripper.png",
+      "original_bytes": 127250,
+      "compressed_bytes": 56406,
+      "sha256": "5ce145249cc36cade2384e219bd923c7cd63c56be60954ab6e1bd40b17fdade5"
+    },
+    "assets/images/methods/cold_brew.png": {
+      "cloud_path": "images/methods/cold_brew.png",
+      "original_bytes": 143370,
+      "compressed_bytes": 13907,
+      "sha256": "1fedff9e1934f0e282f66e4f9d8cb2adf212f8a9e33f92b4d9aa336201a4d254"
+    },
+    "assets/images/methods/cupping.png": {
+      "cloud_path": "images/methods/cupping.png",
+      "original_bytes": 146323,
+      "compressed_bytes": 91065,
+      "sha256": "f30f70fc7739575a36e56f8d40c3bef8267f878dad656ab2941364a1d9936550"
+    },
+    "assets/images/methods/drip_coffee_maker.png": {
+      "cloud_path": "images/methods/drip_coffee_maker.png",
+      "original_bytes": 105232,
+      "compressed_bytes": 52195,
+      "sha256": "396ef0610b99d5caf81df43ae0c323b62053562352af2d79b4d7443bcb0e86cc"
+    },
+    "assets/images/methods/espresso_machine.png": {
+      "cloud_path": "images/methods/espresso_machine.png",
+      "original_bytes": 192843,
+      "compressed_bytes": 87389,
+      "sha256": "0b9db5f20f63e035d6ec7207f7d9a037372d0e4a3c9a16aee6f604c094c42df6"
+    },
+    "assets/images/methods/french_press.png": {
+      "cloud_path": "images/methods/french_press.png",
+      "original_bytes": 106689,
+      "compressed_bytes": 54916,
+      "sha256": "8fd0fd87b89e7daed1455d39a9e9373864b41dd7c3738e8a115057f4dca6b02e"
+    },
+    "assets/images/methods/hario_v60.png": {
+      "cloud_path": "images/methods/hario_v60.png",
+      "original_bytes": 114827,
+      "compressed_bytes": 54907,
+      "sha256": "658e3bb5ad4854e04136e182af726d34f7a75e3aeb5f39b07771ce0ac0feaf88"
+    },
+    "assets/images/methods/japanese_drip.png": {
+      "cloud_path": "images/methods/japanese_drip.png",
+      "original_bytes": 178803,
+      "compressed_bytes": 96792,
+      "sha256": "393ebf86c31750dc10dee2e970b1cb9b0445960f7711a32ed85aa065338e494a"
+    },
+    "assets/images/methods/kalita_wave.png": {
+      "cloud_path": "images/methods/kalita_wave.png",
+      "original_bytes": 135706,
+      "compressed_bytes": 64198,
+      "sha256": "23e5364f18aad9dae9b039990cac2d858986315f6cef37963b12e28d79be9b8c"
+    },
+    "assets/images/methods/moka_pot.png": {
+      "cloud_path": "images/methods/moka_pot.png",
+      "original_bytes": 99452,
+      "compressed_bytes": 58191,
+      "sha256": "d7611388b2f5b3899ea872e45dba0a9926c7bf7c4aebe05165a2f27566f5a838"
+    },
+    "assets/images/methods/origami_dripper.png": {
+      "cloud_path": "images/methods/origami_dripper.png",
+      "original_bytes": 124144,
+      "compressed_bytes": 52405,
+      "sha256": "3e9aab54939c22ee7491c50cff293550f1991faa684e0b673d6a42307f445136"
+    },
+    "assets/images/methods/syphon.png": {
+      "cloud_path": "images/methods/syphon.png",
+      "original_bytes": 146549,
+      "compressed_bytes": 15532,
+      "sha256": "d10ee4dbe72e9c3bf782ee127289fc4802abfd6be834fd656177fc8a7dc67a31"
+    },
+    "assets/images/methods/turkish_coffee.png": {
+      "cloud_path": "images/methods/turkish_coffee.png",
+      "original_bytes": 163235,
+      "compressed_bytes": 91424,
+      "sha256": "609fb5f74f11e5ba4368af73b5ab42b7beeb3fed6d9a17535fd41a2d37c82864"
+    },
+    "assets/images/methods/vietnam_drip.png": {
+      "cloud_path": "images/methods/vietnam_drip.png",
+      "original_bytes": 151298,
+      "compressed_bytes": 85805,
+      "sha256": "42667e5ff0b22642a90205c80e1a7d1d67dec3d97dfd986d6a9f0b853bcf4149"
+    },
+    "assets/audio/calm_music.m4a": {
+      "cloud_path": "audio/calm_music.m4a",
+      "original_bytes": 2027813,
+      "compressed_bytes": 2027813,
+      "sha256": "4596865e41001f10935d7e882495d68a8ebeb6d6969cfca89b4ba5e3f68e4fac"
+    }
+  },
+  "datasets": {
+    "coffee": {
+      "asset_path": "assets/data/coffee.json",
+      "cloud_gzip_path": "data/coffee.json.gz",
+      "api_endpoint": "/api/v1/assets/datasets/coffee",
+      "original_bytes": 1067271,
+      "minified_bytes": 1067271,
+      "gzip_bytes": 132264,
+      "sha256": "c4612be04bf936e5794b569ef6d266ba9f5d9d0ea30aa0c1e6e779cbe4fba641"
+    },
+    "coffee_dictionary_seed": {
+      "asset_path": "assets/data/coffee_dictionary_seed.json",
+      "cloud_gzip_path": "data/coffee_dictionary_seed.json.gz",
+      "api_endpoint": "/api/v1/assets/datasets/coffee_dictionary_seed",
+      "original_bytes": 69395,
+      "minified_bytes": 59409,
+      "gzip_bytes": 17641,
+      "sha256": "2459ce820c044f2a6f2844e9314c66a147a4df0049ccd12d773054415601f572"
+    },
+    "coffee_knowledge_graph": {
+      "asset_path": "assets/data/coffee_knowledge_graph.json",
+      "cloud_gzip_path": "data/coffee_knowledge_graph.json.gz",
+      "api_endpoint": "/api/v1/assets/datasets/coffee_knowledge_graph",
+      "original_bytes": 93486,
+      "minified_bytes": 93486,
+      "gzip_bytes": 25327,
+      "sha256": "57805431b1f31eb904d2c2ee9ddf69406cfdc0a1b5402f75b1366b9ff8a06081"
+    },
+    "ebooks_catalog_seed": {
+      "asset_path": "assets/data/ebooks_catalog_seed.json",
+      "cloud_gzip_path": "data/ebooks_catalog_seed.json.gz",
+      "api_endpoint": "/api/v1/assets/datasets/ebooks_catalog_seed",
+      "original_bytes": 27899,
+      "minified_bytes": 24069,
+      "gzip_bytes": 7425,
+      "sha256": "1141305963a5a59a05d465b06182e1c72e3290db8dc9f2184771d11c2f8fd225"
+    },
+    "indonesia_radar_top_places": {
+      "asset_path": "assets/data/indonesia_radar_top_places.json",
+      "cloud_gzip_path": "data/indonesia_radar_top_places.json.gz",
+      "api_endpoint": "/api/v1/assets/datasets/indonesia_radar_top_places",
+      "original_bytes": 1189351,
+      "minified_bytes": 1189351,
+      "gzip_bytes": 398562,
+      "sha256": "313e120cfb63482ffad389189f8e79b39e6ed41bad8b8f3439743e6c291cce4d"
+    },
+    "initial_classes": {
+      "asset_path": "assets/data/initial_classes.json",
+      "cloud_gzip_path": "data/initial_classes.json.gz",
+      "api_endpoint": "/api/v1/assets/datasets/initial_classes",
+      "original_bytes": 9069,
+      "minified_bytes": 6917,
+      "gzip_bytes": 1604,
+      "sha256": "c57a08ac718e5ce946f395940ae7fc41fd1bb33f0c55e3c33f78fc7de03ead58"
+    },
+    "lms_manual_brew_seed": {
+      "asset_path": "assets/data/lms_manual_brew_seed.json",
+      "cloud_gzip_path": "data/lms_manual_brew_seed.json.gz",
+      "api_endpoint": "/api/v1/assets/datasets/lms_manual_brew_seed",
+      "original_bytes": 142831,
+      "minified_bytes": 108432,
+      "gzip_bytes": 36922,
+      "sha256": "6822104481060b84e088b8dec4afad22b20e67dcb3630a8b7ccdaa2bee22d87b"
+    },
+    "world_indonesia_beans_catalog": {
+      "asset_path": "assets/data/world_indonesia_beans_catalog.json",
+      "cloud_gzip_path": "data/world_indonesia_beans_catalog.json.gz",
+      "api_endpoint": "/api/v1/assets/datasets/world_indonesia_beans_catalog",
+      "original_bytes": 263135,
+      "minified_bytes": 263135,
+      "gzip_bytes": 34996,
+      "sha256": "8eca6ff068838bdbeeadc7fa68b3edcbefc9572fe49ba7f43ee3803a69923649"
+    }
+  },
+  "stats": {
+    "offloaded_media_files": 450,
+    "media_original_bytes": 18136245,
+    "media_compressed_bytes": 9380398,
+    "datasets_original_bytes": 2862437,
+    "datasets_gzip_bytes": 654741,
+    "local_icons_saved_bytes": 1634499
+  }
+}

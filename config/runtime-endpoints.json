@@ -1,10 +1,14 @@
 {
-  "schema_version": 1,
-  "manifest_revision": 1,
-  "updated_at": "2026-11-24T03:30:00Z",
+  "schema_version": 2,
+  "manifest_revision": 2,
+  "updated_at": "2026-11-24T10:15:00Z",
   "primary_api_url": "https://coffe-labs-backend-production.up.railway.app",
   "fallback_api_urls": [
     "https://coffe-labs-backend-production.up.railway.app"
+  ],
+  "asset_cdn_base_url": "https://cdn.jsdelivr.net/gh/rusdifn08/coffe-labs-mobile@main/cloud_assets",
+  "asset_cdn_fallback_urls": [
+    "https://raw.githubusercontent.com/rusdifn08/coffe-labs-mobile/main/cloud_assets"
   ],
   "health_path": "/api/health",
   "force_switch": false,

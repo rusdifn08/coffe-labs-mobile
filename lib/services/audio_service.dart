@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
+import '../core/assets/cloud_asset_manager.dart';
 
 class AudioService {
   static AudioPlayer? _bgmPlayer;
@@ -155,8 +156,9 @@ class AudioService {
         }
       });
 
-      await player.play(AssetSource(chillTrackPath), volume: 0.55);
-      debugPrint('☕ AudioService: Memutar $currentTrackTitle ($chillTrackPath)');
+      final bgmUrl = CloudAssetManager.resolveUrl('assets/$chillTrackPath');
+      await player.play(UrlSource(bgmUrl), volume: 0.55);
+      debugPrint('☕ AudioService: Memutar $currentTrackTitle dari Object Storage ($bgmUrl)');
     } catch (e) {
       debugPrint('⚠️ AudioService.startBgm error: $e');
     }

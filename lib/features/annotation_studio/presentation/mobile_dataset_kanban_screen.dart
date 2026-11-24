@@ -12,6 +12,7 @@ import 'controllers/annotation_studio_controller.dart';
 import 'mobile_full_annotation_studio_screen.dart';
 import 'mobile_versions_and_train_stepper_screen.dart';
 import 'widgets/batch_auto_label_config_sheet.dart';
+import '../../../core/assets/cloud_asset_manager.dart';
 
 /// Roboflow Studio Kanban & Dataset Management Screen
 /// Didesain dengan palet warna cerah resmi Coffee Labs (Warm Cream, White, Espresso & Gold),
@@ -154,10 +155,11 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
       final List<File> files = [];
       for (final assetPath in sampleAssets) {
         try {
-          final byteData = await rootBundle.load(assetPath);
+          final bytes = await CloudAssetManager.downloadBytes(assetPath);
+          if (bytes == null || bytes.isEmpty) continue;
           final fileName = p.basename(assetPath);
           final targetFile = File(p.join(datasetDir.path, 'demo_${DateTime.now().millisecondsSinceEpoch}_$fileName'));
-          await targetFile.writeAsBytes(byteData.buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes));
+          await targetFile.writeAsBytes(bytes);
           files.add(targetFile);
         } catch (e) {
           debugPrint('Error loading sample asset $assetPath: $e');
@@ -614,7 +616,7 @@ class _MobileDatasetKanbanScreenState extends ConsumerState<MobileDatasetKanbanS
                             ),
                           )
                         : item.filePath.startsWith('assets/')
-                            ? Image.asset(
+                            ? CloudAssetImage(
                                 item.filePath,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) => Container(

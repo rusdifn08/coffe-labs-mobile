@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
+import '../../../../core/assets/cloud_dataset_service.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../../scanner/data/local/prototype_database.dart';
@@ -104,7 +104,8 @@ class StudioDatabase {
     if (count > 0) return count;
 
     try {
-      final jsonStr = await rootBundle.loadString('assets/data/coffee.json');
+      final jsonStr = await CloudDatasetService.loadDatasetString('coffee');
+      if (jsonStr == null || jsonStr.isEmpty) return 0;
       return await importClassesFromJson(jsonStr);
     } catch (e) {
       debugPrint('Notice: Error seeding coffee.json: $e');

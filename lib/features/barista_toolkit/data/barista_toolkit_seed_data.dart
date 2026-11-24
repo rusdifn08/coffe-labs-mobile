@@ -1,7 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/services.dart' show rootBundle;
-
+import '../../../core/assets/cloud_dataset_service.dart';
 import '../domain/barista_toolkit_models.dart';
 
 class BaristaToolkitFallbackSeed {
@@ -151,7 +150,8 @@ class BaristaToolkitFallbackSeed {
       return _cachedCourses!;
     }
     try {
-      final raw = await rootBundle.loadString('assets/data/lms_manual_brew_seed.json');
+      final raw = await CloudDatasetService.loadDatasetString('lms_manual_brew_seed');
+      if (raw == null || raw.isEmpty) return offlineCourses();
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
       final list = decoded['courses'] as List? ?? [];
       final parsed = list
@@ -172,7 +172,8 @@ class BaristaToolkitFallbackSeed {
       return _cachedEbooks!;
     }
     try {
-      final raw = await rootBundle.loadString('assets/data/ebooks_catalog_seed.json');
+      final raw = await CloudDatasetService.loadDatasetString('ebooks_catalog_seed');
+      if (raw == null || raw.isEmpty) return const [];
       final decoded = jsonDecode(raw) as List<dynamic>;
       final parsed = decoded
           .map((e) => EbookCatalogItem.fromJson(Map<String, dynamic>.from(e as Map)))
@@ -189,7 +190,8 @@ class BaristaToolkitFallbackSeed {
       return _cachedDict!;
     }
     try {
-      final raw = await rootBundle.loadString('assets/data/coffee_dictionary_seed.json');
+      final raw = await CloudDatasetService.loadDatasetString('coffee_dictionary_seed');
+      if (raw == null || raw.isEmpty) return const [];
       final decoded = jsonDecode(raw) as List<dynamic>;
       final parsed = decoded
           .map((e) => CoffeeDictionaryEntryModel.fromJson(Map<String, dynamic>.from(e as Map)))

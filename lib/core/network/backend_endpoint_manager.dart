@@ -11,6 +11,8 @@ class RuntimeEndpointManifest {
   final int manifestRevision;
   final String primaryApiUrl;
   final List<String> fallbackApiUrls;
+  final String? assetCdnBaseUrl;
+  final List<String> assetCdnFallbackUrls;
   final String healthPath;
   final String? updatedAt;
   final bool forceSwitch;
@@ -23,6 +25,8 @@ class RuntimeEndpointManifest {
     required this.manifestRevision,
     required this.primaryApiUrl,
     this.fallbackApiUrls = const [],
+    this.assetCdnBaseUrl,
+    this.assetCdnFallbackUrls = const [],
     this.healthPath = '/api/health',
     this.updatedAt,
     this.forceSwitch = false,
@@ -55,6 +59,24 @@ class RuntimeEndpointManifest {
       }
     }
 
+    final assetCdnPrimary = BackendEndpointManager.normalizeAndValidateUrl(
+      json['asset_cdn_base_url']?.toString(),
+    );
+    final rawAssetFallbacks = json['asset_cdn_fallback_urls'];
+    final assetFallbacks = <String>[];
+    if (rawAssetFallbacks is List) {
+      for (final item in rawAssetFallbacks) {
+        final validated = BackendEndpointManager.normalizeAndValidateUrl(
+          item?.toString(),
+        );
+        if (validated != null &&
+            validated != assetCdnPrimary &&
+            !assetFallbacks.contains(validated)) {
+          assetFallbacks.add(validated);
+        }
+      }
+    }
+
     final rawHealthPath = json['health_path']?.toString().trim();
     final healthPath = (rawHealthPath != null && rawHealthPath.startsWith('/'))
         ? rawHealthPath
@@ -65,6 +87,8 @@ class RuntimeEndpointManifest {
       manifestRevision: int.tryParse('${json['manifest_revision'] ?? 1}') ?? 1,
       primaryApiUrl: primary,
       fallbackApiUrls: fallbacks,
+      assetCdnBaseUrl: assetCdnPrimary,
+      assetCdnFallbackUrls: assetFallbacks,
       healthPath: healthPath,
       updatedAt: json['updated_at']?.toString(),
       forceSwitch: json['force_switch'] == true,
@@ -79,6 +103,8 @@ class RuntimeEndpointManifest {
         'manifest_revision': manifestRevision,
         'primary_api_url': primaryApiUrl,
         'fallback_api_urls': fallbackApiUrls,
+        'asset_cdn_base_url': assetCdnBaseUrl,
+        'asset_cdn_fallback_urls': assetCdnFallbackUrls,
         'health_path': healthPath,
         'updated_at': updatedAt,
         'force_switch': forceSwitch,

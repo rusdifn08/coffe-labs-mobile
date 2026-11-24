@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
+import '../../../../core/assets/cloud_dataset_service.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -252,7 +252,8 @@ class PrototypeDatabase {
     if (count > 0) return;
 
     try {
-      final jsonStr = await rootBundle.loadString('assets/data/initial_classes.json');
+      final jsonStr = await CloudDatasetService.loadDatasetString('initial_classes');
+      if (jsonStr == null || jsonStr.isEmpty) return;
       final list = json.decode(jsonStr) as List;
 
       for (final item in list) {

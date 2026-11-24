@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../models/roastery.dart';
 import '../../../screens/coffee_roastery_screen.dart';
 import '../../../theme/app_theme.dart';
+import '../../../core/assets/cloud_asset_manager.dart';
 
 class NearbyRoasteryCard extends StatelessWidget {
   final Roastery roastery;
@@ -55,7 +56,7 @@ class NearbyRoasteryCard extends StatelessWidget {
                   ],
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: Image.asset(
+                child: CloudAssetImage(
                   'assets/images/roasteries/${roastery.id}.png',
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) => Container(

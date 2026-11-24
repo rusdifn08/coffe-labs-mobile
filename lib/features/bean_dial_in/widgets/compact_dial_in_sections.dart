@@ -9,6 +9,7 @@ import '../../brew/widgets/brew_flow_curve_chart.dart';
 import '../../brew/widgets/brew_radar_chart.dart';
 import 'bean_ai_customizer_card.dart';
 import 'roastery_bean_picker_modal.dart';
+import '../../../core/assets/cloud_asset_manager.dart';
 
 void showDialInInfoSheet({
   required BuildContext context,
@@ -341,7 +342,7 @@ class CompactBeanSelectorSection extends StatelessWidget {
                             child: SizedBox(
                               width: 40,
                               height: 62,
-                              child: Image.asset(
+                              child: CloudAssetImage(
                                 b.packageImageUrl,
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, _, _) => Container(
@@ -407,7 +408,7 @@ class CompactBeanSelectorSection extends StatelessWidget {
             child: SizedBox(
               width: 50,
               height: 58,
-              child: Image.asset(
+              child: CloudAssetImage(
                 selectedBean.packageImageUrl,
                 fit: BoxFit.cover,
                 errorBuilder: (_, _, _) => Container(

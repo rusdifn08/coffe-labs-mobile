@@ -7,6 +7,7 @@ import '../../../../theme/app_theme.dart';
 import '../../domain/models/social_thread_models.dart';
 import '../controllers/social_profile_controllers.dart';
 import 'thread_post_card.dart';
+import '../../../../core/assets/cloud_asset_manager.dart';
 
 class KeepAliveProfileFeedTabView extends ConsumerStatefulWidget {
   final String targetUserOrUsername;
@@ -162,7 +163,7 @@ class _KeepAliveProfileFeedTabViewState
                   fit: StackFit.expand,
                   children: [
                     entry.media.url.startsWith('assets/')
-                        ? Image.asset(
+                        ? CloudAssetImage(
                             entry.media.url,
                             fit: BoxFit.cover,
                             errorBuilder: (_, _, _) => _mediaPlaceholder(),

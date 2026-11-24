@@ -6,6 +6,7 @@ import '../features/grinder/services/grinder_conversion_engine.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../data/barista_catalog.dart';
 import '../theme/app_theme.dart';
+import '../core/assets/cloud_asset_manager.dart';
 
 /// Utilitas nama/negara/slug barista dari field author resep (100% Offline).
 class BaristaUtils {
@@ -301,7 +302,7 @@ class BaristaUtils {
       return _buildSafeFallbackWidget(width: width, height: height, fit: fit);
     }
     if (path.startsWith('assets/') || path.startsWith('lib/')) {
-      return Image.asset(
+      return CloudAssetImage(
         path,
         width: width,
         height: height,
@@ -338,7 +339,7 @@ class BaristaUtils {
     BoxFit fit = BoxFit.cover,
   }) {
     const fallback = 'assets/images/avatars/generic_fallback.jpg';
-    return Image.asset(
+    return CloudAssetImage(
       fallback,
       width: width,
       height: height,

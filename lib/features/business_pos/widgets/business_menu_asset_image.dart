@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../../core/assets/cloud_asset_manager.dart';
 
 /// Universal image widget for Business POS and AMOLED Menu Display.
 /// Safely renders:
@@ -177,7 +178,7 @@ class BusinessMenuAssetImage extends StatelessWidget {
           fit: fit,
         );
       }
-      return Image.asset(
+      return CloudAssetImage(
         cleanUrl,
         width: width,
         height: height,

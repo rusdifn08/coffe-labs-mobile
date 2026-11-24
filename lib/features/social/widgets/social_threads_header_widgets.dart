@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../features/notifications/presentation/controllers/notification_center_controller.dart';
 import '../../../theme/app_theme.dart';
+import '../../../core/assets/cloud_asset_manager.dart';
 
 /// Ikon garis 2 minimalis gaya Threads untuk membuka Sidebar kanan.
 class ThreadsTwoLineMenuIcon extends StatelessWidget {
@@ -175,7 +176,7 @@ class SocialThreadsComposerHeader extends StatelessWidget {
       return NetworkImage(avatarPath);
     }
     if (avatarPath.startsWith('assets/')) {
-      return AssetImage(avatarPath);
+      return CloudAssetManager.imageProvider(avatarPath);
     }
     return const AssetImage('assets/images/coffee_labs_emblem.png');
   }
@@ -272,7 +273,7 @@ class SocialThreadsEndDrawer extends StatelessWidget {
       return NetworkImage(avatarPath);
     }
     if (avatarPath.startsWith('assets/')) {
-      return AssetImage(avatarPath);
+      return CloudAssetManager.imageProvider(avatarPath);
     }
     return const AssetImage('assets/images/coffee_labs_emblem.png');
   }
@@ -338,7 +339,7 @@ class SocialThreadsEndDrawer extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Image.asset(
+                  CloudAssetImage(
                     'assets/images/coffee_labs_emblem.png',
                     width: 28,
                     height: 28,

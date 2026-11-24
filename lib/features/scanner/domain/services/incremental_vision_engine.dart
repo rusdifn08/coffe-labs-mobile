@@ -1,7 +1,5 @@
-import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
-import 'package:tflite_flutter/tflite_flutter.dart';
 import '../../data/local/prototype_database.dart';
 import 'image_tensor_isolate.dart';
 
@@ -46,7 +44,6 @@ class IncrementalVisionEngine {
 
   static IncrementalVisionEngine get instance => _instance;
 
-  Interpreter? _interpreter;
   bool _isInitialized = false;
 
   // --- High-Speed In-Memory RAM Cache for < 1ms NCM Lookup ---
@@ -59,7 +56,7 @@ class IncrementalVisionEngine {
   int get knownClassCount => _classPrototypes.length;
   List<CoffeePrototypeRecord> get cachedRecords => _classMetadata.values.toList();
 
-  /// Initialize LiteRT/TFLite Interpreter and warm up RAM cache from SQLite
+  /// Initialize Prototypical Memory and warm up RAM cache from SQLite
   Future<void> initialize() async {
     if (_isInitialized) return;
 
@@ -79,50 +76,12 @@ class IncrementalVisionEngine {
       debugPrint('IncrementalVisionEngine: SQLite init notice ($e)');
     }
 
-    // 2. Load TFLite Model with NPU/GPU Delegate Acceleration and Graceful CPU Fallback
-    try {
-      if (!kIsWeb && Platform.isWindows) {
-        try {
-          final exeDir = File(Platform.resolvedExecutable).parent.path;
-          final dllDirect = File('$exeDir\\libtensorflowlite_c-win.dll');
-          final dllBlobs = File('$exeDir\\blobs\\libtensorflowlite_c-win.dll');
-          if (!dllDirect.existsSync() && !dllBlobs.existsSync()) {
-            debugPrint('IncrementalVisionEngine: Desktop Windows (no libtensorflowlite_c-win.dll bundled). Using deterministic Dart feature extractor fallback.');
-            _isInitialized = true;
-            return;
-          }
-        } catch (_) {}
-      }
-
-      final options = InterpreterOptions()..threads = 4;
-      if (!kIsWeb && Platform.isAndroid) {
-        try {
-          // options.addDelegate(GpuDelegateV2());
-        } catch (_) {}
-      }
-      _interpreter = await Interpreter.fromAsset(modelAssetPath, options: options);
-      debugPrint('IncrementalVisionEngine: MobileNetV4 LiteRT interpreter initialized.');
-    } catch (e) {
-      debugPrint('IncrementalVisionEngine: TFLite native interpreter notice ($e). Using deterministic Dart feature extractor fallback.');
-    }
-
     _isInitialized = true;
   }
 
   /// Extracts 1280-D L2-normalized feature embedding from [1, 256, 256, 3] tensor
   Float32List extractEmbedding(List<List<List<List<double>>>> imageTensor) {
-    if (_interpreter != null) {
-      try {
-        final output = List.generate(1, (_) => List<double>.filled(embeddingDim, 0.0));
-        _interpreter!.run(imageTensor, output);
-        final rawVector = Float32List.fromList(output[0]);
-        return _l2Normalize(rawVector);
-      } catch (e) {
-        debugPrint('TFLite inference fallback to deterministic feature extractor: $e');
-      }
-    }
-
-    // High-performance deterministic fallback: spatial multi-bin color and edge descriptor projected to 1280-D
+    // High-performance deterministic spatial multi-bin color and edge descriptor projected to 1280-D
     return _extractDeterministicFallbackEmbedding(imageTensor);
   }
 

@@ -1,9 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 
+import '../../../core/assets/cloud_dataset_service.dart';
 import '../../../core/network/isolate_json_transformer.dart';
 import '../../../data/roastery_catalog.dart';
 import '../../../data/visual/beans_part_1.dart';
@@ -261,25 +260,31 @@ class CoffeeKnowledgeGraphService {
     }
 
     try {
-      final kgStr = await rootBundle.loadString('assets/data/coffee_knowledge_graph.json');
-      final decoded = await IsolateJsonTransformer.parseJsonInBackground(kgStr);
-      _loadKnowledgeGraphJson(decoded);
+      final kgStr = await CloudDatasetService.loadDatasetString('coffee_knowledge_graph');
+      if (kgStr != null && kgStr.isNotEmpty) {
+        final decoded = await IsolateJsonTransformer.parseJsonInBackground(kgStr);
+        _loadKnowledgeGraphJson(decoded);
+      }
     } catch (e) {
       debugPrint('CoffeeKnowledgeGraphService kg notice: $e');
     }
 
     try {
-      final initStr = await rootBundle.loadString('assets/data/initial_classes.json');
-      final decoded = await IsolateJsonTransformer.parseJsonInBackground(initStr);
-      _loadInitialClassesJson(decoded);
+      final initStr = await CloudDatasetService.loadDatasetString('initial_classes');
+      if (initStr != null && initStr.isNotEmpty) {
+        final decoded = await IsolateJsonTransformer.parseJsonInBackground(initStr);
+        _loadInitialClassesJson(decoded);
+      }
     } catch (e) {
       debugPrint('CoffeeKnowledgeGraphService initial_classes notice: $e');
     }
 
     try {
-      final coffeeStr = await rootBundle.loadString('assets/data/coffee.json');
-      final decoded = await IsolateJsonTransformer.parseJsonInBackground(coffeeStr);
-      _loadCoffeeCatalogJson(decoded);
+      final coffeeStr = await CloudDatasetService.loadDatasetString('coffee');
+      if (coffeeStr != null && coffeeStr.isNotEmpty) {
+        final decoded = await IsolateJsonTransformer.parseJsonInBackground(coffeeStr);
+        _loadCoffeeCatalogJson(decoded);
+      }
     } catch (e) {
       debugPrint('CoffeeKnowledgeGraphService coffee.json notice: $e');
     }
@@ -289,9 +294,9 @@ class CoffeeKnowledgeGraphService {
 
   void _tryLoadLocalJsonSync(String relPath, void Function(dynamic data) loader) {
     try {
-      final f = File(relPath);
-      if (f.existsSync()) {
-        loader(json.decode(f.readAsStringSync()));
+      final raw = CloudDatasetService.loadDatasetSyncForTest(relPath);
+      if (raw != null && raw.isNotEmpty) {
+        loader(json.decode(raw));
       }
     } catch (_) {}
   }

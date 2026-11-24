@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../core/assets/cloud_asset_manager.dart';
 
 /// Avatar lingkaran serbaguna untuk Social Chat, daftar peer, dan bubble pesan.
 /// Mendukung URL HTTPS (Cloudinary/CDN), asset karakter lokal (`assets/`), file galeri lokal,
@@ -78,7 +79,7 @@ class UserAvatarCircle extends StatelessWidget {
     }
 
     if (raw.startsWith('assets/')) {
-      return Image.asset(
+      return CloudAssetImage(
         raw,
         width: size,
         height: size,

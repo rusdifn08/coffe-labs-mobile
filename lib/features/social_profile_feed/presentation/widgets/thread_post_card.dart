@@ -7,6 +7,7 @@ import '../../domain/models/social_thread_models.dart';
 import 'thread_pouring_curve_card.dart';
 import 'thread_recipe_attachment_card.dart';
 import 'thread_scanned_bean_badge.dart';
+import '../../../../core/assets/cloud_asset_manager.dart';
 
 class ThreadPostCard extends StatelessWidget {
   final SocialThreadItem thread;
@@ -143,7 +144,7 @@ class ThreadPostCard extends StatelessWidget {
             radius: compact ? 18 : 20,
             backgroundColor: AppTheme.primaryBrown.withValues(alpha: 0.14),
             backgroundImage: hasAsset
-                ? AssetImage(avatar) as ImageProvider
+                ? CloudAssetManager.imageProvider(avatar)
                 : (hasNet ? NetworkImage(avatar) : null),
             child: (!hasAsset && !hasNet)
                 ? Text(
@@ -306,7 +307,7 @@ class _MediaImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (url.startsWith('assets/')) {
-      return Image.asset(
+      return CloudAssetImage(
         url,
         fit: BoxFit.cover,
         errorBuilder: (_, _, _) => _fallbackBox(),

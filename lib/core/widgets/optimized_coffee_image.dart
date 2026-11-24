@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import '../assets/cloud_asset_manager.dart';
 
 /// Widget gambar anti-jank dengan batas ukuran decode piksel (`cacheWidth` /
 /// `memCacheWidth`) berbasis Device Pixel Ratio (maksimal 2.5x) untuk memangkas
@@ -61,15 +62,20 @@ class OptimizedCoffeeImage extends StatelessWidget {
     final cacheW = computeCacheDimension(context, width);
     final cacheH = computeCacheDimension(context, height);
 
+    final bool isCloudAsset = CloudAssetManager.isCloudAsset(imageUrlOrAsset);
     final bool isNetwork = imageUrlOrAsset.startsWith('http://') ||
-        imageUrlOrAsset.startsWith('https://');
+        imageUrlOrAsset.startsWith('https://') ||
+        isCloudAsset;
+    final String resolvedNetworkUrl = isCloudAsset
+        ? CloudAssetManager.resolveUrl(imageUrlOrAsset)
+        : optimizeCloudinaryUrl(imageUrlOrAsset, cacheW);
 
     Widget imageWidget;
     if (imageUrlOrAsset.trim().isEmpty) {
       imageWidget = _buildFallback();
     } else if (isNetwork) {
       imageWidget = CachedNetworkImage(
-        imageUrl: optimizeCloudinaryUrl(imageUrlOrAsset, cacheW),
+        imageUrl: resolvedNetworkUrl,
         width: width,
         height: height,
         fit: fit,

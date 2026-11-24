@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 2.5.2+2010
+version: 2.5.3+2020
 
 environment:
   sdk: ^3.11.5
@@ -48,9 +48,7 @@ dependencies:
   flutter_riverpod: ^3.4.3
   riverpod_annotation: ^4.0.7
   flutter_tts: ^4.2.5
-  rive: 0.14.11
   flutter_animate: ^4.5.2
-  just_audio: ^0.9.46
   confetti: ^0.8.0
   haptic_feedback: ^0.5.1+1
   dio: ^5.11.1
@@ -73,10 +71,8 @@ dependencies:
   printing: ^5.15.1
   share_plus: ^13.3.1
   ml_linalg: ^13.12.9
-  google_mlkit_subject_segmentation: ^0.2.1
   sqflite: ^2.4.6
   sqflite_common_ffi: ^2.4.6
-  tflite_flutter: ^0.12.1
   web_socket_channel: ^3.0.3
   drift: ^2.35.4
   sqlite3_flutter_libs: ^0.6.0+eol
@@ -98,12 +94,6 @@ dependencies:
   media_kit_libs_video: ^1.0.7
   sensors_plus: ^7.1.1
   vector_math: ^2.2.0
-  three_js_core: ^0.3.0
-  three_js_math: ^0.3.0
-  three_js_geometry: ^0.3.0
-  three_js_curves: ^0.3.0
-  three_js_angle_renderer: ^0.0.1
-  flutter_angle: ^0.4.2
   archive: ^4.6.0
   xml: ^7.0.1
   geolocator: ^14.1.2
@@ -146,18 +136,11 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/models/
-    - assets/data/
     - assets/images/
     - assets/audio/
     - assets/images/avatars/
-    - assets/images/avatars/portraits/
-    - assets/images/avatars/covers/
     - assets/images/characters/
     - assets/images/grinders/
-    - assets/images/methods/
-    - assets/images/beans/
-    - assets/images/roasteries/
     - shorebird.yaml
 
   # To add assets to your application, add an assets section, like this:

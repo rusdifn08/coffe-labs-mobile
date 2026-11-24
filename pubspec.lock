@@ -97,14 +97,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.13.1"
-  audio_session:
-    dependency: transitive
-    description:
-      name: audio_session
-      sha256: "2b7fff16a552486d078bfc09a8cde19f426dc6d6329262b684182597bec5b1ac"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.25"
   audioplayers:
     dependency: "direct main"
     description:
@@ -481,14 +473,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.35.3"
-  dylib:
-    dependency: transitive
-    description:
-      name: dylib
-      sha256: bf609b3eb6492a3309b3d1dbe8f83a4031de5535dd7686be33487051cc760bb0
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.3.3"
   enum_to_string:
     dependency: transitive
     description:
@@ -654,14 +638,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_angle:
-    dependency: "direct main"
-    description:
-      name: flutter_angle
-      sha256: "63e596f964cb5952ed3b891a344e459514380fd3536b6d513af3237640ecc0e1"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.4.2"
   flutter_animate:
     dependency: "direct main"
     description:
@@ -1101,14 +1077,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.17.1"
-  google_mlkit_subject_segmentation:
-    dependency: "direct main"
-    description:
-      name: google_mlkit_subject_segmentation
-      sha256: "845fb24bd5279ae4fca741c7a1242373843bfa4c5aaad474e8d05645b78cb32b"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.2.1"
   google_mlkit_text_recognition:
     dependency: "direct main"
     description:
@@ -1301,30 +1269,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.15.2"
-  just_audio:
-    dependency: "direct main"
-    description:
-      name: just_audio
-      sha256: f978d5b4ccea08f267dae0232ec5405c1b05d3f3cd63f82097ea46c015d5c09e
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.9.46"
-  just_audio_platform_interface:
-    dependency: transitive
-    description:
-      name: just_audio_platform_interface
-      sha256: "2532c8d6702528824445921c5ff10548b518b13f808c2e34c2fd54793b999a6a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.6.0"
-  just_audio_web:
-    dependency: transitive
-    description:
-      name: just_audio_web
-      sha256: "6ba8a2a7e87d57d32f0f7b42856ade3d6a9fbe0f1a11fabae0a4f00bb73f0663"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.4.16"
   kdbush:
     dependency: transitive
     description:
@@ -1861,22 +1805,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.6.0"
-  rive:
-    dependency: "direct main"
-    description:
-      name: rive
-      sha256: "0319f216b753f5d8f3f624413cd5b5a18f6ed8f0a677f80d97b53ecd3d2080c3"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.14.11"
-  rive_native:
-    dependency: transitive
-    description:
-      name: rive_native
-      sha256: f1ae8a9ec4dab6b803fed006745e55c7de6cd568bd30750d4a6770479b9f8294
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.11"
   riverpod:
     dependency: transitive
     description:
@@ -2274,54 +2202,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.11"
-  tflite_flutter:
-    dependency: "direct main"
-    description:
-      name: tflite_flutter
-      sha256: "0bba9040d8decda0960d7abf8eabf32243bf092bc7d0084e8e19681866b0bdbe"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.12.1"
-  three_js_angle_renderer:
-    dependency: "direct main"
-    description:
-      name: three_js_angle_renderer
-      sha256: "2f2334f2289c939888db7229eb8698a3e3c307493413735de11703dd97dce3f3"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.1"
-  three_js_core:
-    dependency: "direct main"
-    description:
-      name: three_js_core
-      sha256: "550a9a9c3c61c51b62805830d0dca79392e7592a3b1652334f6b8da322100ca1"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.3.0"
-  three_js_curves:
-    dependency: "direct main"
-    description:
-      name: three_js_curves
-      sha256: a1510a58b5e80b2a4f5d6402669d467ac3dc85294151ad9f4880d610594c07a5
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.3.0"
-  three_js_geometry:
-    dependency: "direct main"
-    description:
-      name: three_js_geometry
-      sha256: "1572a040d7037531057ea02bfa6df7ac93ead8f718f5d31d8727df4e7f878f0a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.3.0"
-  three_js_math:
-    dependency: "direct main"
-    description:
-      name: three_js_math
-      sha256: "8b037cc90638971aec148d33b5fa7d59d33b778b6e0563a4203282a0e12a90d0"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.3.0"
   timezone:
     dependency: "direct main"
     description:

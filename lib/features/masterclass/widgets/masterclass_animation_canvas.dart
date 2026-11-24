@@ -1,12 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:rive/rive.dart' as rive;
 import '../../../../theme/app_theme.dart';
 import '../models/recipe_walkthrough_step.dart';
 import 'masterclass_method_painters.dart';
 
-/// Animated visual canvas orchestrating Rive vector animation with recipe-specific
-/// and method-specific Coffee Lab vector diagrams + live quantitative telemetry HUD.
+/// Animated visual canvas rendering recipe-specific and method-specific
+/// Coffee Lab vector diagrams + live quantitative telemetry HUD.
 class MasterclassAnimationCanvas extends StatefulWidget {
   final int stepIndex;
   final RecipeWalkthroughStep currentStep;
@@ -25,12 +24,6 @@ class MasterclassAnimationCanvas extends StatefulWidget {
 
 class _MasterclassAnimationCanvasState extends State<MasterclassAnimationCanvas>
     with SingleTickerProviderStateMixin {
-  rive.RiveWidgetController? _riveController;
-  rive.NumberInput? _stepIndexInput;
-  rive.File? _riveFile;
-  bool _riveFailed = false;
-  bool _riveLoaded = false;
-
   late AnimationController _pulseController;
 
   @override
@@ -40,40 +33,11 @@ class _MasterclassAnimationCanvasState extends State<MasterclassAnimationCanvas>
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     )..repeat(reverse: true);
-    _initRive();
-  }
-
-  Future<void> _initRive() async {
-    try {
-      final file = await rive.File.asset(
-        'assets/rive/coffee_recipe_state_machine.riv',
-        riveFactory: rive.Factory.flutter,
-      );
-      if (file != null && mounted) {
-        _riveFile = file;
-        final controller = rive.RiveWidgetController(
-          file,
-          stateMachineSelector: const rive.StateMachineNamed('RecipeStateMachine'),
-        );
-        _riveController = controller;
-        // ignore: deprecated_member_use
-        _stepIndexInput = controller.stateMachine.number('StepIndex');
-        _stepIndexInput?.value = widget.stepIndex.toDouble();
-        setState(() => _riveLoaded = true);
-      } else {
-        if (mounted) setState(() => _riveFailed = true);
-      }
-    } catch (_) {
-      if (mounted) setState(() => _riveFailed = true);
-    }
   }
 
   @override
   void didUpdateWidget(covariant MasterclassAnimationCanvas oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.stepIndex != widget.stepIndex) {
-      _stepIndexInput?.value = widget.stepIndex.toDouble();
-    }
     if (widget.isPlaying && !_pulseController.isAnimating) {
       _pulseController.repeat(reverse: true);
     } else if (!widget.isPlaying && _pulseController.isAnimating) {
@@ -83,9 +47,6 @@ class _MasterclassAnimationCanvasState extends State<MasterclassAnimationCanvas>
 
   @override
   void dispose() {
-    _stepIndexInput = null;
-    _riveController?.dispose();
-    _riveFile?.dispose();
     _pulseController.dispose();
     super.dispose();
   }
@@ -117,14 +78,7 @@ class _MasterclassAnimationCanvasState extends State<MasterclassAnimationCanvas>
         child: Stack(
           alignment: Alignment.center,
           children: [
-            // Rive Animation if asset exists, otherwise dynamic recipe-specific vector diagram
-            if (_riveLoaded && _riveController != null && !_riveFailed)
-              rive.RiveWidget(
-                controller: _riveController!,
-                fit: rive.Fit.contain,
-              )
-            else
-              _buildDynamicCoffeeCanvas(step),
+            _buildDynamicCoffeeCanvas(step),
 
             // Top-Left: Phase Badge
             Positioned(

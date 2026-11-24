@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/storage/user_scoped_storage.dart';
 import '../theme/app_theme.dart';
+import '../core/assets/cloud_asset_manager.dart';
 
 class ProfileService {
   static const String _userNameKey = 'coffeehub_user_name';
@@ -156,7 +157,7 @@ class ProfileService {
       return CachedNetworkImageProvider(raw);
     }
     if (raw.startsWith('assets/')) {
-      return AssetImage(raw);
+      return CloudAssetManager.imageProvider(raw);
     }
     final file = File(raw);
     if (file.existsSync()) {
@@ -343,7 +344,7 @@ class ProfileService {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Expanded(
-                                  child: Image.asset(
+                                  child: CloudAssetImage(
                                     avatarPath,
                                     fit: BoxFit.contain,
                                   ),

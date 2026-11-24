@@ -17,6 +17,7 @@ import '../utils/social_time_formatter.dart';
 import 'social_post_card.dart';
 import 'social_search_bar.dart';
 import 'social_threads_account_search.dart';
+import '../../../core/assets/cloud_asset_manager.dart';
 
 bool _hasProviderScope(BuildContext context) {
   try {
@@ -777,7 +778,7 @@ class _SocialThreadsProfileTabState extends State<SocialThreadsProfileTab> {
       return NetworkImage(widget.avatarPath);
     }
     if (widget.avatarPath.startsWith('assets/')) {
-      return AssetImage(widget.avatarPath);
+      return CloudAssetManager.imageProvider(widget.avatarPath);
     }
     return const AssetImage('assets/images/coffee_labs_emblem.png');
   }

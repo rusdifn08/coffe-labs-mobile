@@ -64,6 +64,13 @@ android {
             dimension = "distribution"
             // Package ID publik — TIDAK diubah, agar upgrade tetap mulus.
             resValue("string", "app_flavor_label", "Coffee Labs")
+            // Fokus ARM64 (98%+ perangkat Android modern), buang x86_64 emulator (~60 MB) & armeabi-v7a (~38 MB).
+            // Guard split-per-abi agar tidak bentrok dengan CI `--split-per-abi`.
+            if (project.findProperty("split-per-abi")?.toString() != "true") {
+                ndk {
+                    abiFilters += listOf("arm64-v8a")
+                }
+            }
         }
         create("merchant") {
             dimension = "distribution"
@@ -119,6 +126,8 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

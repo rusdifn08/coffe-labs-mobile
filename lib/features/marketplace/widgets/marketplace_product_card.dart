@@ -5,6 +5,7 @@ import '../../../screens/marketplace_product_detail_screen.dart';
 import '../../../services/marketplace_service.dart';
 import '../../../theme/app_theme.dart';
 import '../utils/currency_formatter.dart';
+import '../../../core/assets/cloud_asset_manager.dart';
 
 class MarketplaceProductCard extends StatelessWidget {
   final MarketplaceProduct product;
@@ -84,7 +85,7 @@ class MarketplaceProductCard extends StatelessWidget {
                       height: 100,
                       width: double.infinity,
                       color: AppTheme.bgCream,
-                      child: Image.asset(
+                      child: CloudAssetImage(
                         product.imageUrl,
                         fit: BoxFit.cover,
                         errorBuilder: (ctx, err, st) => const Center(
