@@ -61,8 +61,8 @@ class MarketplaceHeaderBanner extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   isEn
-                      ? 'Roasted to order. Use voucher COFFEEFIRST for 15% discount.'
-                      : 'Disangrai segar tiap batch. Gunakan voucher COFFEEFIRST untuk diskon 15%.',
+                      ? 'Roasted to order directly from verified Indonesian roasteries.'
+                      : 'Disangrai segar tiap batch langsung dari roastery resmi Indonesia.',
                   style: TextStyle(
                     fontSize: 11,
                     color: Colors.white.withValues(alpha: 0.85),

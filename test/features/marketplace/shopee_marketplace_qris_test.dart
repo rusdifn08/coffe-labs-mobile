@@ -67,8 +67,23 @@ void main() {
     );
   });
 
+  test('Marketplace has zero vouchers, zero Fresh Deals, and zero fake discounts', () {
+    final service = MarketplaceService.instance;
+    expect(service.flashSaleProducts, isEmpty);
+    expect(service.applyVoucher('COFFEEFIRST'), isFalse);
+    expect(service.applyVoucher('FREESHIP'), isFalse);
+    expect(service.appliedVoucher, isNull);
+    expect(service.voucherDiscount, 0);
+
+    for (final p in service.products) {
+      expect(p.isFlashSale, isFalse, reason: '${p.id} must not be flash sale');
+      expect(p.discountPct, 0, reason: '${p.id} must have transparent pricing (0% fake discount)');
+      expect(p.originalPrice200g, isNull);
+    }
+  });
+
   testWidgets(
-      'Shopee-style Marketplace renders search+cart+horizontal menus+grid without overflow at 360x780 and flows to QRIS-only checkout',
+      'Shopee/Tokopedia-style Marketplace renders 5-tab navbar without vouchers/Fresh Deals at 360x780 and flows to QRIS checkout',
       (WidgetTester tester) async {
     tester.view.physicalSize = const Size(360, 780);
     tester.view.devicePixelRatio = 1.0;
@@ -77,15 +92,33 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: MarketplaceScreen()));
     await tester.pump(const Duration(milliseconds: 250));
 
-    // Old truncated title header is gone; search bar + camera + cart + horizontal menus are rendered
-    expect(find.text('Marketplace Roastery'), findsNothing);
+    // Zero voucher & zero Fresh Deals UI
+    expect(find.textContaining('FRESH DEALS'), findsNothing);
+    expect(find.textContaining('COFFEEFIRST'), findsNothing);
+    expect(find.text('PROMO QRIS'), findsNothing);
+    expect(find.text('-15%'), findsNothing);
+
+    // Shopee / Tokopedia 5-tab bottom navbar + clean Trust & Official Roastery UI
+    expect(find.text('Beranda'), findsOneWidget);
+    expect(find.text('Roastery'), findsOneWidget);
+    expect(find.text('Favorit'), findsOneWidget);
+    expect(find.text('Keranjang'), findsOneWidget);
+    expect(find.text('Pesanan'), findsOneWidget);
+    expect(find.text('Roastery Official Pilihan'), findsOneWidget);
     expect(find.text('Single Origin'), findsWidgets);
     expect(find.text('Espresso'), findsWidgets);
     expect(find.text('Filter V60'), findsWidgets);
     expect(find.text('Terkait'), findsOneWidget);
-    expect(find.text('Terlaris'), findsWidgets);
     expect(find.byType(ShopeeCoffeeProductCard), findsWidgets);
     expect(find.byType(CoffeeBagProductVisual), findsWidgets);
+    expect(tester.takeException(), isNull);
+
+    // Navigate across all navbar tabs cleanly
+    for (final tab in ['Roastery', 'Favorit', 'Keranjang', 'Pesanan', 'Beranda']) {
+      await tester.tap(find.text(tab));
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(tester.takeException(), isNull);
+    }
 
     // Tap first product card to enter Shopee-style Detail Page
     await tester.tap(find.byType(ShopeeCoffeeProductCard).first);

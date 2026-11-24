@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 
 import '../../../models/marketplace_model.dart';
 import '../../../screens/marketplace_product_detail_screen.dart';
+import '../../../services/marketplace_service.dart';
 import '../../../theme/app_theme.dart';
 import '../utils/currency_formatter.dart';
 import 'coffee_bag_product_visual.dart';
 
+/// Kartu produk kopi profesional bergaya Shopee Mall / Tokopedia Official Store:
+/// harga bersih tanpa diskon/voucher palsu, badge Official terverifikasi, & tombol Wishlist.
 class ShopeeCoffeeProductCard extends StatelessWidget {
   final MarketplaceProduct product;
 
@@ -17,10 +20,13 @@ class ShopeeCoffeeProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final service = MarketplaceService.instance;
+    final isFav = service.isFavorite(product.id);
+
     return RepaintBoundary(
       child: Material(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () {
@@ -35,7 +41,7 @@ class ShopeeCoffeeProductCard extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               border: Border.all(color: const Color(0xFFEDE4D7), width: 0.9),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,69 +55,97 @@ class ShopeeCoffeeProductCard extends StatelessWidget {
                       CoffeeBagProductVisual(product: product),
                       if (product.isMallRoastery)
                         Positioned(
-                          top: 6,
+                          top: 8,
                           left: 0,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
+                              horizontal: 6,
+                              vertical: 2.5,
+                            ),
                             decoration: const BoxDecoration(
-                              color: Color(0xFF8B4513),
+                              color: AppTheme.primaryBrown,
                               borderRadius: BorderRadius.only(
-                                topRight: Radius.circular(6),
-                                bottomRight: Radius.circular(6),
+                                topRight: Radius.circular(7),
+                                bottomRight: Radius.circular(7),
                               ),
                             ),
-                            child: const Text(
-                              'Mall',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 8.5,
-                                fontWeight: FontWeight.w900,
-                              ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  CupertinoIcons.checkmark_seal_fill,
+                                  size: 9,
+                                  color: Color(0xFFFDE68A),
+                                ),
+                                SizedBox(width: 3),
+                                Text(
+                                  'Official',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 8.5,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                      if (product.discountPct > 0)
-                        Positioned(
-                          top: 0,
-                          right: 0,
+                      // Tombol Wishlist elegan di kanan atas
+                      Positioned(
+                        top: 6,
+                        right: 6,
+                        child: GestureDetector(
+                          onTap: () => service.toggleFavorite(product.id),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 3),
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFFEE2E2),
-                              borderRadius: BorderRadius.only(
-                                bottomLeft: Radius.circular(8),
-                              ),
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.92),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.08),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
                             ),
-                            child: Text(
-                              '-${product.discountPct}%',
-                              style: const TextStyle(
-                                color: Color(0xFFDC2626),
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w900,
-                              ),
+                            child: Icon(
+                              isFav
+                                  ? CupertinoIcons.heart_fill
+                                  : CupertinoIcons.heart,
+                              size: 14,
+                              color: isFav
+                                  ? const Color(0xFFDC2626)
+                                  : AppTheme.textMuted,
                             ),
                           ),
                         ),
+                      ),
                       Positioned(
                         bottom: 6,
                         left: 6,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.72),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            product.roastProfile,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 8.5,
-                              fontWeight: FontWeight.w700,
+                        right: 6,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.72),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              product.roastProfile,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ),
@@ -122,22 +156,33 @@ class ShopeeCoffeeProductCard extends StatelessWidget {
                 // Card Body
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+                    padding: const EdgeInsets.fromLTRB(9, 7, 9, 8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${product.roasteryName} - ${product.name}',
+                          product.roasteryName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textMuted,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          product.name,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 11.2,
-                            fontWeight: FontWeight.w700,
-                            height: 1.18,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w800,
+                            height: 1.2,
                             color: AppTheme.textDark,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 5),
                         Row(
                           children: [
                             Flexible(
@@ -153,53 +198,32 @@ class ShopeeCoffeeProductCard extends StatelessWidget {
                               Flexible(
                                 child: _microTag(
                                   product.badge!,
-                                  const Color(0xFFFFF7ED),
-                                  const Color(0xFFC2410C),
+                                  const Color(0xFFF0FDF4),
+                                  const Color(0xFF15803D),
                                 ),
                               ),
                             ],
                           ],
                         ),
                         const Spacer(),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                CurrencyFormatter.formatRp(product.price200g),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w900,
-                                  color: Color(0xFFC2410C),
-                                ),
-                              ),
-                            ),
-                            if (product.originalPrice200g != null) ...[
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Text(
-                                  CurrencyFormatter.formatRp(
-                                      product.originalPrice200g!),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 9.5,
-                                    color: AppTheme.textMuted,
-                                    decoration: TextDecoration.lineThrough,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
+                        Text(
+                          CurrencyFormatter.formatRp(product.price200g),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFFC2410C),
+                          ),
                         ),
                         const SizedBox(height: 3),
                         Row(
                           children: [
-                            const Icon(Icons.star_rounded,
-                                size: 12, color: Color(0xFFF59E0B)),
+                            const Icon(
+                              Icons.star_rounded,
+                              size: 12,
+                              color: Color(0xFFF59E0B),
+                            ),
                             const SizedBox(width: 2),
                             Text(
                               product.rating.toStringAsFixed(1),
@@ -226,8 +250,11 @@ class ShopeeCoffeeProductCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Row(
                           children: [
-                            const Icon(CupertinoIcons.location_solid,
-                                size: 10, color: AppTheme.textMuted),
+                            const Icon(
+                              CupertinoIcons.location_solid,
+                              size: 10,
+                              color: AppTheme.textMuted,
+                            ),
                             const SizedBox(width: 2),
                             Expanded(
                               child: Text(
@@ -259,7 +286,7 @@ class ShopeeCoffeeProductCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(5),
       ),
       child: Text(
         text,

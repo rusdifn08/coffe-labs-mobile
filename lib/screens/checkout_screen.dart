@@ -68,11 +68,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Widget build(BuildContext context) {
     final isEn = LanguageService.isEnglish;
     final subtotal = _marketplaceService.cartSubtotal;
-    final discount = _marketplaceService.voucherDiscount;
-    final hasFreeShip =
-        _marketplaceService.appliedVoucher?.contains('FREESHIP') == true;
-    final finalShipping = hasFreeShip ? 0 : _courierFee;
-    final total = (subtotal + finalShipping - discount).clamp(0, 99999999);
+    const discount = 0;
+    const hasFreeShip = false;
+    final finalShipping = _courierFee;
+    final total = (subtotal + finalShipping).clamp(0, 99999999);
 
     return Scaffold(
       backgroundColor: AppTheme.bgCream,

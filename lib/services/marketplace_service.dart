@@ -19,23 +19,26 @@ class MarketplaceService extends ChangeNotifier {
 
   static const String _keyCart = 'coffee_marketplace_cart_items';
   static const String _keyOrders = 'coffee_marketplace_orders_list';
+  static const String _keyFavorites = 'coffee_marketplace_favorite_ids_v1';
 
   final List<MarketplaceProduct> _allProducts = [];
   final Map<String, CartItem> _cartMap = {};
   final List<MarketplaceOrder> _orders = [];
-
-  String? _appliedVoucher;
-  int _voucherDiscount = 0;
+  final Set<String> _favoriteIds = {};
 
   List<MarketplaceProduct> get products => List.unmodifiable(_allProducts);
-  List<MarketplaceProduct> get flashSaleProducts =>
-      _allProducts.where((p) => p.isFlashSale && p.flashSaleStockLeft > 0).toList();
+  List<MarketplaceProduct> get flashSaleProducts => const [];
   List<CartItem> get cartItems => _cartMap.values.toList();
   List<MarketplaceOrder> get orders => List.unmodifiable(_orders);
+  Set<String> get favoriteIds => Set.unmodifiable(_favoriteIds);
+  List<MarketplaceProduct> get favoriteProducts =>
+      _allProducts.where((p) => _favoriteIds.contains(p.id)).toList(growable: false);
+  int get favoriteCount => _favoriteIds.length;
+  bool isFavorite(String productId) => _favoriteIds.contains(productId);
   int get cartCount =>
       _cartMap.values.fold(0, (sum, item) => sum + item.quantity);
-  String? get appliedVoucher => _appliedVoucher;
-  int get voucherDiscount => _voucherDiscount;
+  String? get appliedVoucher => null;
+  int get voucherDiscount => 0;
   int get cartSubtotal =>
       _cartMap.values.fold(0, (sum, item) => sum + item.totalPrice);
 
@@ -87,10 +90,6 @@ class MarketplaceService extends ChangeNotifier {
           explicitBagUrl: lineup.bagImageUrl,
         );
 
-        final isFlash = idx < 10 || (idx % 17 == 0);
-        final discount = isFlash ? 15 : (idx % 5 == 0 ? 10 : 0);
-        final origPrice =
-            discount > 0 ? (p200 / (1 - (discount / 100))).round() : null;
         final sold = 180 + ((roastery.name.length * 73 + idx * 41) % 2400);
 
         compiled.add(
@@ -129,11 +128,11 @@ class MarketplaceService extends ChangeNotifier {
                 '${roastery.description} Profil sangrai ${lineup.roastProfile} dengan proses ${lineup.process} menonjolkan ${lineup.tastingNotes}.',
             category: _inferCategory(lineup.name, lineup.origin, lineup.process),
             soldCount: sold,
-            discountPct: discount,
-            originalPrice200g: origPrice,
+            discountPct: 0,
+            originalPrice200g: null,
             isMallRoastery: true,
-            isFlashSale: isFlash,
-            flashSaleStockLeft: isFlash ? (3 + (idx % 6)) : 0,
+            isFlashSale: false,
+            flashSaleStockLeft: 0,
             createdAt: DateTime(2026, 11, 19).subtract(Duration(hours: idx * 3)),
           ),
         );
@@ -172,11 +171,11 @@ class MarketplaceService extends ChangeNotifier {
             'Dripper keramik V60 ukuran 02 standar kompetisi dunia untuk ekstraksi clean & manis optimal.',
         category: 'Alat Seduh',
         soldCount: 1450,
-        discountPct: 10,
-        originalPrice200g: 350000,
+        discountPct: 0,
+        originalPrice200g: null,
         isMallRoastery: true,
-        isFlashSale: true,
-        flashSaleStockLeft: 5,
+        isFlashSale: false,
+        flashSaleStockLeft: 0,
       ),
       MarketplaceProduct(
         id: 'equip_timemore_c3_esp_pro',
@@ -196,7 +195,7 @@ class MarketplaceService extends ChangeNotifier {
         reviewCount: 312,
         stock: 9,
         roastDate: 'Ready Stock',
-        badge: 'Flash Deal',
+        badge: 'Pilihan Barista',
         imageUrl: '',
         roasteryLogoUrl: 'assets/images/coffee_labs_emblem.png',
         hasVerifiedBagPhoto: false,
@@ -207,11 +206,11 @@ class MarketplaceService extends ChangeNotifier {
             'Hand grinder baja presisi tinggi dengan penyesuaian mikro untuk espresso hingga V60.',
         category: 'Alat Seduh',
         soldCount: 890,
-        discountPct: 15,
-        originalPrice200g: 1150000,
+        discountPct: 0,
+        originalPrice200g: null,
         isMallRoastery: true,
-        isFlashSale: true,
-        flashSaleStockLeft: 3,
+        isFlashSale: false,
+        flashSaleStockLeft: 0,
       ),
     ]);
 
@@ -251,7 +250,6 @@ class MarketplaceService extends ChangeNotifier {
       );
     }
 
-    _recalculateVoucher();
     await _saveCart();
     notifyListeners();
   }
@@ -263,66 +261,41 @@ class MarketplaceService extends ChangeNotifier {
     } else {
       _cartMap[cartKey]!.quantity = newQuantity;
     }
-    _recalculateVoucher();
     await _saveCart();
     notifyListeners();
   }
 
   Future<void> removeCartItem(String cartKey) async {
     _cartMap.remove(cartKey);
-    _recalculateVoucher();
     await _saveCart();
     notifyListeners();
   }
 
   Future<void> clearCart() async {
     _cartMap.clear();
-    _appliedVoucher = null;
-    _voucherDiscount = 0;
     await _saveCart();
     notifyListeners();
   }
 
-  bool applyVoucher(String code) {
-    final clean = code.trim().toUpperCase();
-    if (clean == 'COFFEEFIRST' || clean == 'NEWBREWER') {
-      _appliedVoucher = 'COFFEEFIRST (15% OFF)';
-      _recalculateVoucher();
-      notifyListeners();
-      return true;
-    } else if (clean == 'BARISTA20') {
-      _appliedVoucher = 'BARISTA20 (20% OFF)';
-      _recalculateVoucher();
-      notifyListeners();
-      return true;
-    } else if (clean == 'FREESHIP') {
-      _appliedVoucher = 'FREESHIP (Free Delivery)';
-      _recalculateVoucher();
-      notifyListeners();
-      return true;
+  Future<void> toggleFavorite(String productId) async {
+    if (_favoriteIds.contains(productId)) {
+      _favoriteIds.remove(productId);
+    } else {
+      _favoriteIds.add(productId);
     }
-    return false;
-  }
-
-  void removeVoucher() {
-    _appliedVoucher = null;
-    _voucherDiscount = 0;
     notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(_keyFavorites, _favoriteIds.toList());
+    } catch (e) {
+      debugPrint('Error saving marketplace favorites: $e');
+    }
   }
 
-  void _recalculateVoucher() {
-    if (_appliedVoucher == null) {
-      _voucherDiscount = 0;
-      return;
-    }
-    if (_appliedVoucher!.contains('15%')) {
-      _voucherDiscount = (cartSubtotal * 0.15).round();
-    } else if (_appliedVoucher!.contains('20%')) {
-      _voucherDiscount = (cartSubtotal * 0.20).round();
-    } else if (_appliedVoucher!.contains('FREESHIP')) {
-      _voucherDiscount = 18000;
-    }
-  }
+  /// Sistem voucher dinonaktifkan secara permanen — harga transparan langsung dari roastery.
+  bool applyVoucher(String code) => false;
+
+  void removeVoucher() {}
 
   // ==========================================
   // CHECKOUT QRIS-ONLY & ORDERS
@@ -338,12 +311,8 @@ class MarketplaceService extends ChangeNotifier {
     final orderId = 'CL-${DateTime.now().year}-$randId';
     final qrisRef = 'QRIS-${DateTime.now().year}-$randId';
 
-    var finalShipping = shippingFee;
-    if (_appliedVoucher != null && _appliedVoucher!.contains('FREESHIP')) {
-      finalShipping = 0;
-    }
-
-    final total = math.max(0, cartSubtotal + finalShipping - _voucherDiscount);
+    final finalShipping = shippingFee;
+    final total = math.max(0, cartSubtotal + finalShipping);
     final qrPayload = MarketplaceQrisPayloadBuilder.buildDynamicPayload(
       orderCode: orderId,
       totalIdr: total,
@@ -355,8 +324,8 @@ class MarketplaceService extends ChangeNotifier {
       items: List<CartItem>.from(cartItems),
       subtotal: cartSubtotal,
       shippingFee: finalShipping,
-      discount: _voucherDiscount,
-      voucherCode: _appliedVoucher,
+      discount: 0,
+      voucherCode: null,
       total: total,
       recipientName: recipientName,
       phoneNumber: phoneNumber,
@@ -477,6 +446,13 @@ class MarketplaceService extends ChangeNotifier {
         for (final oJson in decoded) {
           _orders.add(MarketplaceOrder.fromJson(oJson as Map<String, dynamic>));
         }
+      }
+
+      final favList = prefs.getStringList(_keyFavorites);
+      if (favList != null) {
+        _favoriteIds
+          ..clear()
+          ..addAll(favList);
       }
       notifyListeners();
     } catch (e) {

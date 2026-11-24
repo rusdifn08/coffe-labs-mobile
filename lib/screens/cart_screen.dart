@@ -3,7 +3,6 @@ import '../features/cart/widgets/cart_checkout_bottom_bar.dart';
 import '../features/cart/widgets/cart_empty_state.dart';
 import '../features/cart/widgets/cart_item_tile.dart';
 import '../features/cart/widgets/cart_summary_card.dart';
-import '../features/cart/widgets/cart_voucher_card.dart';
 import '../services/language_service.dart';
 import '../services/marketplace_service.dart';
 import '../theme/app_theme.dart';
@@ -39,10 +38,8 @@ class _CartScreenState extends State<CartScreen> {
     final isEn = LanguageService.isEnglish;
     final items = _marketplaceService.cartItems;
     final subtotal = _marketplaceService.cartSubtotal;
-    final discount = _marketplaceService.voucherDiscount;
-    const defaultShipping = 18000;
-    final shipping = _marketplaceService.appliedVoucher?.contains('FREESHIP') == true ? 0 : defaultShipping;
-    final grandTotal = (subtotal + shipping - discount).clamp(0, 99999999);
+    const shipping = 18000;
+    final grandTotal = (subtotal + shipping).clamp(0, 99999999);
 
     return Scaffold(
       backgroundColor: AppTheme.bgCream,
@@ -75,22 +72,14 @@ class _CartScreenState extends State<CartScreen> {
                 // Cart Items List
                 ...items.map((item) => CartItemTile(item: item)),
 
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
 
-                // Voucher Promo Box
-                CartVoucherCard(
-                  isEn: isEn,
-                  marketplaceService: _marketplaceService,
-                ),
-
-                const SizedBox(height: 14),
-
-                // Order Price Summary
+                // Order Price Summary (Transparan tanpa voucher)
                 CartSummaryCard(
                   isEn: isEn,
                   subtotal: subtotal,
                   shipping: shipping,
-                  discount: discount,
+                  discount: 0,
                   grandTotal: grandTotal,
                 ),
               ],
