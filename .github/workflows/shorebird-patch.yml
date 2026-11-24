@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       release_version:
-        description: "Versi rilis dasar Shorebird target (contoh: 2.5.1+9)"
+        description: "Versi rilis dasar Shorebird target (contoh: 2.5.2+2010)"
         required: true
-        default: "2.5.1+9"
+        default: "2.5.2+2010"
       flavor:
         description: "Flavor target (store = publik)"
         required: true

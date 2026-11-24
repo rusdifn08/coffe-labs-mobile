@@ -25,9 +25,9 @@ try {
   if ($Mode -eq "release") {
     Write-Host "Membangun rilis dasar Shorebird (flavor=$Flavor) yang mendukung Delta OTA..." -ForegroundColor Green
     if ($FlutterVersion -ne "") {
-      shorebird release android --flavor $Flavor --artifact apk --flutter-version=$FlutterVersion
+      shorebird release android --flavor $Flavor --artifact apk --target-platform android-arm64 --flutter-version=$FlutterVersion
     } else {
-      shorebird release android --flavor $Flavor --artifact apk
+      shorebird release android --flavor $Flavor --artifact apk --target-platform android-arm64
     }
   } else {
     Write-Host "Menerbitkan Delta OTA Patch (~1-5 MB, tanpa install ulang) untuk flavor=$Flavor..." -ForegroundColor Green
