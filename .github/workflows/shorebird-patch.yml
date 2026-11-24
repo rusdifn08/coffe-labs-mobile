@@ -1,0 +1,59 @@
+name: Publish Delta OTA Patch (Shorebird — Tanpa Install Ulang)
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: "Versi rilis dasar Shorebird target (contoh: 2.5.1+9)"
+        required: true
+        default: "2.5.1+9"
+      flavor:
+        description: "Flavor target (store = publik)"
+        required: true
+        default: "store"
+        type: choice
+        options:
+          - store
+          - merchant
+
+jobs:
+  shorebird-patch-android:
+    name: Publish Android Delta Patch (Shorebird)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Verify Shorebird Config & Token
+        env:
+          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ ! -f shorebird.yaml ]; then
+            echo "::error::shorebird.yaml belum ada. Jalankan 'shorebird init' sekali di lokal dan commit shorebird.yaml."
+            exit 1
+          fi
+          if [ -z "${SHOREBIRD_TOKEN:-}" ]; then
+            echo "::error::Secret SHOREBIRD_TOKEN belum diisi di GitHub Repository Settings -> Secrets."
+            exit 1
+          fi
+
+      - name: Set up Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Shorebird CLI
+        uses: shorebirdtech/setup-shorebird@v1
+
+      - name: Publish Delta OTA Patch (Android)
+        env:
+          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
+        run: |
+          set -euo pipefail
+          shorebird patch android \
+            --flavor "${{ github.event.inputs.flavor }}" \
+            --release-version "${{ github.event.inputs.release_version }}" \
+            --no-confirm

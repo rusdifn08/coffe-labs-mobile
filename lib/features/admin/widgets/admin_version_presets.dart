@@ -2,16 +2,29 @@ import 'package:flutter/material.dart';
 import '../../../theme/app_theme.dart';
 
 class AdminVersionPresets extends StatelessWidget {
+  final String currentVersion;
+  final int currentBuild;
+  final int currentPatch;
+  final int currentManifestVersion;
   final Function({
+    required String latestVersion,
     required int latestBuild,
     required int minBuild,
     required int latestPatch,
+    required int contentManifestVersion,
     required bool forceUpdate,
     required bool patchRequired,
     required String notes,
   }) onApplyPreset;
 
-  const AdminVersionPresets({super.key, required this.onApplyPreset});
+  const AdminVersionPresets({
+    super.key,
+    this.currentVersion = '2.5.1',
+    this.currentBuild = 9,
+    this.currentPatch = 0,
+    this.currentManifestVersion = 1,
+    required this.onApplyPreset,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +32,7 @@ class AdminVersionPresets extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Simulasi Cepat (Presets)',
+          'Aksi Cepat & Preset Rilis',
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.textDark),
         ),
         const SizedBox(height: 8),
@@ -28,38 +41,60 @@ class AdminVersionPresets extends StatelessWidget {
           child: Row(
             children: [
               _buildPresetChip(
-                title: '🟢 Normal (Up-To-Date)',
+                title: '🟢 Normal (v$currentVersion #$currentBuild)',
                 onTap: () => onApplyPreset(
-                  latestBuild: 1,
-                  minBuild: 1,
-                  latestPatch: 0,
+                  latestVersion: currentVersion,
+                  latestBuild: currentBuild,
+                  minBuild: 2,
+                  latestPatch: currentPatch,
+                  contentManifestVersion: currentManifestVersion,
                   forceUpdate: false,
                   patchRequired: false,
-                  notes: 'Sistem aplikasi stabil dan mutakhir.',
+                  notes: 'Coffee Labs v$currentVersion berjalan stabil dan mutakhir.',
                 ),
               ),
               const SizedBox(width: 8),
               _buildPresetChip(
-                title: '⚡ Shorebird Patch (#2)',
+                title: '⚡ Delta OTA Patch (#${currentPatch + 1})',
                 onTap: () => onApplyPreset(
-                  latestBuild: 1,
-                  minBuild: 1,
-                  latestPatch: 2,
-                  forceUpdate: false,
-                  patchRequired: true,
-                  notes: 'Pembaruan Shorebird Patch #2: Perbaikan performa kalkulator rasio seduh dan optimasi cache.',
-                ),
-              ),
-              const SizedBox(width: 8),
-              _buildPresetChip(
-                title: '🚨 Force Native Update',
-                onTap: () => onApplyPreset(
-                  latestBuild: 2,
+                  latestVersion: currentVersion,
+                  latestBuild: currentBuild,
                   minBuild: 2,
+                  latestPatch: currentPatch + 1,
+                  contentManifestVersion: currentManifestVersion,
+                  forceUpdate: false,
+                  patchRequired: false,
+                  notes:
+                      'Delta OTA Patch #${currentPatch + 1}: Perbaikan cepat langsung di dalam aplikasi (~1-5 MB) tanpa install ulang.',
+                ),
+              ),
+              const SizedBox(width: 8),
+              _buildPresetChip(
+                title: '☁️ Hot Content Sync (v${currentManifestVersion + 1})',
+                onTap: () => onApplyPreset(
+                  latestVersion: currentVersion,
+                  latestBuild: currentBuild,
+                  minBuild: 2,
+                  latestPatch: currentPatch,
+                  contentManifestVersion: currentManifestVersion + 1,
+                  forceUpdate: false,
+                  patchRequired: false,
+                  notes: 'Sinkronisasi katalog & kebijakan terbaru tanpa restart aplikasi.',
+                ),
+              ),
+              const SizedBox(width: 8),
+              _buildPresetChip(
+                title: '🚨 Force Native (#${currentBuild + 1})',
+                onTap: () => onApplyPreset(
+                  latestVersion: currentVersion,
+                  latestBuild: currentBuild + 1,
+                  minBuild: currentBuild + 1,
                   latestPatch: 0,
+                  contentManifestVersion: currentManifestVersion + 1,
                   forceUpdate: true,
                   patchRequired: false,
-                  notes: 'Pembaruan Besar v1.1.0 (Build #2): Upgrade native engine, sinkronisasi cloud real-time, dan perbaikan keamanan wajib.',
+                  notes:
+                      'Pembaruan Native Wajib Build #${currentBuild + 1}: Upgrade engine native & peningkatan keamanan wajib.',
                 ),
               ),
             ],

@@ -9,53 +9,120 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shorebird_code_push/shorebird_code_push.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'app_hot_content_sync_service.dart';
 import 'auth_service.dart';
 import '../widgets/app_update_dialog.dart';
 
+enum ShorebirdPatchOutcome {
+  downloaded,
+  restartRequired,
+  upToDate,
+  unavailable,
+  error,
+}
+
 class VersionCheckResult {
   final String actionCode; // "UP_TO_DATE", "SILENT_OTA_PATCH", "FORCE_OTA_PATCH", "FLEXIBLE_STORE_UPDATE", "FORCE_STORE_UPDATE"
+  final String updateChannel; // "up_to_date" | "shorebird_ota" | "native_browser"
   final int? targetPatch;
   final String latestBaseVersion;
   final int latestBuildNumber;
+  final int? normalizedClientBuild;
   final bool isForceUpdate;
   final String releaseNotes;
   final String? downloadUrl;
   final String? checksumSha256;
+  final int contentManifestVersion;
 
   const VersionCheckResult({
     required this.actionCode,
+    this.updateChannel = 'up_to_date',
     this.targetPatch,
     required this.latestBaseVersion,
     required this.latestBuildNumber,
+    this.normalizedClientBuild,
     required this.isForceUpdate,
     required this.releaseNotes,
     this.downloadUrl,
     this.checksumSha256,
+    this.contentManifestVersion = 1,
   });
 
   factory VersionCheckResult.fromJson(Map<String, dynamic> json) {
+    final code = json['action_code']?.toString() ?? 'UP_TO_DATE';
+    final rawUrl = json['download_url']?.toString().trim();
+    final sanitizedUrl = (rawUrl != null &&
+            rawUrl.isNotEmpty &&
+            !rawUrl.contains('rusdi-labs/coffee-hub-mobile'))
+        ? rawUrl
+        : null;
+    final inferredChannel = json['update_channel']?.toString() ??
+        ((code == 'SILENT_OTA_PATCH' || code == 'FORCE_OTA_PATCH')
+            ? 'shorebird_ota'
+            : ((code == 'FLEXIBLE_STORE_UPDATE' || code == 'FORCE_STORE_UPDATE')
+                ? 'native_browser'
+                : 'up_to_date'));
+
     return VersionCheckResult(
-      actionCode: json['action_code']?.toString() ?? 'UP_TO_DATE',
+      actionCode: code,
+      updateChannel: inferredChannel,
       targetPatch: (json['target_patch'] as num?)?.toInt(),
-      latestBaseVersion: json['latest_base_version']?.toString() ?? '1.0.0',
-      latestBuildNumber: (json['latest_build_number'] as num?)?.toInt() ?? 1,
+      latestBaseVersion: json['latest_base_version']?.toString() ?? '2.5.1',
+      latestBuildNumber: (json['latest_build_number'] as num?)?.toInt() ?? 9,
+      normalizedClientBuild: (json['normalized_client_build'] as num?)?.toInt(),
       isForceUpdate: json['is_force_update'] == true,
-      releaseNotes: json['release_notes']?.toString() ?? 'Pembaruan stabilitas dan optimasi performa.',
-      downloadUrl: json['download_url']?.toString(),
+      releaseNotes: json['release_notes']?.toString() ??
+          'Pembaruan stabilitas dan optimasi performa.',
+      downloadUrl: sanitizedUrl,
       checksumSha256: json['checksum_sha256']?.toString(),
+      contentManifestVersion:
+          (json['content_manifest_version'] as num?)?.toInt() ?? 1,
     );
   }
 
   bool get isUpToDate => actionCode == 'UP_TO_DATE';
-  bool get isShorebirdPatch => actionCode == 'SILENT_OTA_PATCH' || actionCode == 'FORCE_OTA_PATCH';
-  bool get isStoreUpdate => actionCode == 'FLEXIBLE_STORE_UPDATE' || actionCode == 'FORCE_STORE_UPDATE';
+  bool get isShorebirdPatch =>
+      actionCode == 'SILENT_OTA_PATCH' || actionCode == 'FORCE_OTA_PATCH';
+  bool get isStoreUpdate =>
+      actionCode == 'FLEXIBLE_STORE_UPDATE' || actionCode == 'FORCE_STORE_UPDATE';
 }
 
 class AppUpdateService {
+  static const String officialReleasesUrl =
+      'https://github.com/rusdifn08/coffe-labs-mobile/releases/latest';
+  static const String officialAndroidApkUrl =
+      'https://github.com/rusdifn08/coffe-labs-mobile/releases/latest/download/Coffe_Labs_25.apk';
+  static const String officialIosIpaUrl =
+      'https://github.com/rusdifn08/coffe-labs-mobile/releases/latest/download/CoffeLabs25.ipa';
+
+  static const String _cachedVersionCheckKey = 'gatekeeper_cached_version_check_v2';
+  static const String _snoozedVersionKey = 'gatekeeper_snoozed_version_v1';
+  static const String _snoozedUntilKey = 'gatekeeper_snoozed_until_ms_v1';
+  static const Duration _cacheTtl = Duration(hours: 24);
+  static const Duration _flexibleSnoozeDuration = Duration(hours: 24);
+
   static final ShorebirdUpdater _shorebird = ShorebirdUpdater();
+  static final ValueNotifier<bool> patchReadyNotifier = ValueNotifier<bool>(false);
   static bool _isChecking = false;
 
-  /// Cek apakah Shorebird Code Push updater aktif di environment ini
+  /// Menormalkan Android `--split-per-abi` versionCode (contoh: 2009 -> 9, 1008 -> 8).
+  static int normalizeAbiBuildNumber(int raw) {
+    if (raw >= 1000 && raw < 10000) {
+      final rem = raw % 1000;
+      if (rem > 0) return rem;
+    }
+    return raw > 0 ? raw : 1;
+  }
+
+  /// URL unduhan resmi sesuai platform aktif (Android APK / iOS IPA / Desktop Releases).
+  static String defaultPlatformDownloadUrl() {
+    if (kIsWeb) return officialReleasesUrl;
+    if (Platform.isAndroid) return officialAndroidApkUrl;
+    if (Platform.isIOS) return officialIosIpaUrl;
+    return officialReleasesUrl;
+  }
+
+  /// Cek apakah Shorebird Code Push updater aktif di binary rilis ini.
   static bool get isShorebirdAvailable {
     try {
       return _shorebird.isAvailable;
@@ -64,7 +131,7 @@ class AppUpdateService {
     }
   }
 
-  /// Dapatkan nomor patch Shorebird saat ini
+  /// Dapatkan nomor patch Shorebird yang sedang berjalan.
   static Future<int> getCurrentPatchNumber() async {
     try {
       if (isShorebirdAvailable) {
@@ -75,14 +142,16 @@ class AppUpdateService {
     return 0;
   }
 
-  /// Dapatkan info versi aplikasi saat ini
+  /// Dapatkan info versi aplikasi saat ini (termasuk raw & normalized buildNumber).
   static Future<Map<String, dynamic>> getAppVersionInfo() async {
     try {
       final info = await PackageInfo.fromPlatform();
       final patchNum = await getCurrentPatchNumber();
+      final rawBuild = int.tryParse(info.buildNumber) ?? 9;
       return {
         'version': info.version,
-        'buildNumber': int.tryParse(info.buildNumber) ?? 1,
+        'buildNumber': normalizeAbiBuildNumber(rawBuild),
+        'rawBuildNumber': rawBuild,
         'patchNumber': patchNum,
         'appName': info.appName,
       };
@@ -90,22 +159,47 @@ class AppUpdateService {
       return {
         'version': '2.5.1',
         'buildNumber': 9,
+        'rawBuildNumber': 9,
         'patchNumber': 0,
         'appName': 'Coffee Labs',
       };
     }
   }
 
-  static const String _cachedVersionCheckKey = 'gatekeeper_cached_version_check';
+  /// Simpan snooze 24 jam agar pengguna yang memilih "Nanti Saja" tidak terus terganggu.
+  static Future<void> snoozeFlexibleUpdate(String targetVersion) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final untilMs =
+          DateTime.now().add(_flexibleSnoozeDuration).millisecondsSinceEpoch;
+      await prefs.setString(_snoozedVersionKey, targetVersion.trim());
+      await prefs.setInt(_snoozedUntilKey, untilMs);
+    } catch (_) {}
+  }
 
-  /// Melakukan pengecekan versi ke Rust Axum Version Gatekeeper
-  /// Dilengkapi offline fallback & caching untuk mengatasi cold-start Render free tier
+  static Future<bool> isUpdateSnoozed(String targetVersion) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedVer = prefs.getString(_snoozedVersionKey);
+      final untilMs = prefs.getInt(_snoozedUntilKey) ?? 0;
+      if (savedVer != targetVersion.trim()) return false;
+      return DateTime.now().millisecondsSinceEpoch < untilMs;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Pengecekan versi ke Rust Axum Version Gatekeeper dengan cache ber-TTL & version-aware.
   static Future<VersionCheckResult?> checkVersionFromGatekeeper({
     Duration timeout = const Duration(seconds: 8),
   }) async {
+    final versionInfo = await getAppVersionInfo();
+    final appVersion = versionInfo['version']?.toString() ?? '2.5.1';
+    final buildNumber = (versionInfo['buildNumber'] as num?)?.toInt() ?? 9;
+    final patchNumber = (versionInfo['patchNumber'] as num?)?.toInt() ?? 0;
+
     try {
       final baseUrl = await AuthService.getBaseUrl();
-      final versionInfo = await getAppVersionInfo();
 
       String platformName = 'android';
       if (kIsWeb) {
@@ -119,55 +213,97 @@ class AppUpdateService {
       final uri = Uri.parse(
         '$baseUrl/api/v1/app/version-check'
         '?platform=$platformName'
-        '&base_version=${versionInfo['version']}'
-        '&build_number=${versionInfo['buildNumber']}'
-        '&patch_number=${versionInfo['patchNumber']}',
+        '&base_version=$appVersion'
+        '&build_number=$buildNumber'
+        '&patch_number=$patchNumber',
       );
 
       final response = await http.get(uri).timeout(timeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
-        // Cache hasil sukses ke SharedPreferences
         try {
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(_cachedVersionCheckKey, response.body);
+          await prefs.setString(
+            _cachedVersionCheckKey,
+            json.encode({
+              'checkedVersion': appVersion,
+              'checkedBuild': buildNumber,
+              'checkedPatch': patchNumber,
+              'cachedAtMs': DateTime.now().millisecondsSinceEpoch,
+              'payload': data,
+            }),
+          );
         } catch (_) {}
         return VersionCheckResult.fromJson(data);
       }
-      return _getCachedVersionResult();
+      return _getCachedVersionResult(
+        currentVersion: appVersion,
+        currentBuild: buildNumber,
+        currentPatch: patchNumber,
+      );
     } on TimeoutException {
-      debugPrint('Gatekeeper version check timeout ($timeout). Menggunakan fallback versi lokal.');
-      return _getCachedVersionResult();
+      debugPrint('Gatekeeper timeout ($timeout). Memakai fallback cache aman.');
+      return _getCachedVersionResult(
+        currentVersion: appVersion,
+        currentBuild: buildNumber,
+        currentPatch: patchNumber,
+      );
     } catch (e) {
-      debugPrint('Catatan Gatekeeper: $e. Menggunakan fallback versi lokal.');
-      return _getCachedVersionResult();
+      debugPrint('Catatan Gatekeeper: $e. Memakai fallback cache aman.');
+      return _getCachedVersionResult(
+        currentVersion: appVersion,
+        currentBuild: buildNumber,
+        currentPatch: patchNumber,
+      );
     }
   }
 
-  /// Ambil cache hasil version check terakhir jika jaringan offline atau backend sedang cold-start
-  static Future<VersionCheckResult?> _getCachedVersionResult() async {
+  /// Ambil cache hanya jika belum expired (< 24 jam) DAN cocok dengan versi aplikasi terpasang.
+  static Future<VersionCheckResult?> _getCachedVersionResult({
+    required String currentVersion,
+    required int currentBuild,
+    required int currentPatch,
+  }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final cached = prefs.getString(_cachedVersionCheckKey);
-      if (cached != null && cached.isNotEmpty) {
-        final data = json.decode(cached) as Map<String, dynamic>;
-        return VersionCheckResult.fromJson(data);
+      final raw = prefs.getString(_cachedVersionCheckKey);
+      if (raw != null && raw.isNotEmpty) {
+        final envelope = json.decode(raw) as Map<String, dynamic>;
+        final cachedAtMs = (envelope['cachedAtMs'] as num?)?.toInt() ?? 0;
+        final ageMs = DateTime.now().millisecondsSinceEpoch - cachedAtMs;
+        final sameClient = envelope['checkedVersion'] == currentVersion &&
+            envelope['checkedBuild'] == currentBuild &&
+            envelope['checkedPatch'] == currentPatch;
+        if (sameClient && ageMs >= 0 && ageMs <= _cacheTtl.inMilliseconds) {
+          final payload = envelope['payload'];
+          if (payload is Map<String, dynamic>) {
+            return VersionCheckResult.fromJson(payload);
+          }
+        } else {
+          await prefs.remove(_cachedVersionCheckKey);
+        }
       }
     } catch (_) {}
-    // Default safe fallback jika belum ada cache sama sekali
-    return const VersionCheckResult(
+
+    return VersionCheckResult(
       actionCode: 'UP_TO_DATE',
+      updateChannel: 'up_to_date',
       targetPatch: null,
-      latestBaseVersion: '2.5.1',
-      latestBuildNumber: 9,
+      latestBaseVersion: currentVersion,
+      latestBuildNumber: currentBuild,
+      normalizedClientBuild: currentBuild,
       isForceUpdate: false,
       releaseNotes: 'Aplikasi berjalan normal dengan versi stabil saat ini.',
-      downloadUrl: 'https://github.com/rusdifn08/coffe-labs-mobile/releases/latest',
+      downloadUrl: defaultPlatformDownloadUrl(),
+      contentManifestVersion: 1,
     );
   }
 
-  /// Eksekutor Orkestrasi Update (The Hybrid 3-Tier Execution)
+  /// Eksekutor Hybrid 3-Layer Delta Update:
+  /// 1) 0-Second Hot Content Delta Sync (katalog/kebijakan JSON KB tanpa restart)
+  /// 2) Shorebird Delta OTA Patch (hanya diff kode Dart ~1-5 MB tanpa install ulang)
+  /// 3) Native Release Update (Play-Protect clean browser/store handoff jika engine/plugin berubah)
   static Future<void> checkForUpdate({
     required BuildContext context,
     bool isManual = false,
@@ -178,138 +314,211 @@ class AppUpdateService {
     if (isManual) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Memeriksa pembaruan versi ke Version Gatekeeper...'),
+          content: Text('Memeriksa pembaruan OTA & versi ke server...'),
           duration: Duration(seconds: 1),
         ),
       );
     }
 
-    final result = await checkVersionFromGatekeeper();
-    _isChecking = false;
+    try {
+      final result = await checkVersionFromGatekeeper();
+      if (!context.mounted) return;
 
-    if (!context.mounted) return;
-
-    if (result == null) {
-      if (isManual) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tidak dapat terhubung ke Version Gatekeeper. Pastikan server backend aktif.'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
-      return;
-    }
-
-    // Eksekusi berdasarkan Action dari Rust Axum
-    switch (result.actionCode) {
-      case 'UP_TO_DATE':
+      if (result == null) {
         if (isManual) {
-          final info = await getAppVersionInfo();
-          if (context.mounted) {
-            showDialog(
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Tidak dapat terhubung ke server pembaruan. Cek koneksi internet.'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Layer 1: Sinkronkan konten ringan (0-second hot sync tanpa restart)
+      unawaited(
+        AppHotContentSyncService.syncIfNeeded(result.contentManifestVersion),
+      );
+
+      switch (result.actionCode) {
+        case 'UP_TO_DATE':
+          // Layer 2 Proaktif: cek apakah Shorebird CDN punya delta patch baru
+          final otaOutcome = await _checkAndDownloadShorebirdProactively();
+          if (!context.mounted) return;
+          if (otaOutcome == ShorebirdPatchOutcome.downloaded ||
+              otaOutcome == ShorebirdPatchOutcome.restartRequired) {
+            _notifyPatchReadySnackBar(context);
+            return;
+          }
+          if (isManual) {
+            final info = await getAppVersionInfo();
+            if (!context.mounted) return;
+            _showUpToDateDialog(context, info);
+          }
+          break;
+
+        case 'SILENT_OTA_PATCH':
+          final outcome = await runShorebirdPatchUpdate();
+          if (!context.mounted) return;
+          if (outcome == ShorebirdPatchOutcome.downloaded ||
+              outcome == ShorebirdPatchOutcome.restartRequired) {
+            _notifyPatchReadySnackBar(context);
+          } else if (isManual) {
+            showDialog<void>(
               context: context,
-              builder: (ctx) => AlertDialog(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                title: const Row(
-                  children: [
-                    Icon(CupertinoIcons.checkmark_seal_fill, color: Colors.green, size: 26),
-                    SizedBox(width: 10),
-                    Text('Aplikasi Terkini', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                content: Text(
-                  'Coffee Labs v${info['version']} (Build #${info['buildNumber']}${info['patchNumber'] > 0 ? ', Patch #${info['patchNumber']}' : ''}) telah menggunakan versi terbaru yang paling optimal.',
-                  style: const TextStyle(fontSize: 14, height: 1.4),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                ],
+              barrierDismissible: true,
+              builder: (_) => AppUpdateDialog(
+                result: result,
+                isShorebirdPatch: true,
               ),
             );
           }
-        }
-        break;
+          break;
 
-      case 'SILENT_OTA_PATCH':
-        // Unduh patch Shorebird secara diam-diam di latar belakang
-        _downloadShorebirdPatchSilently();
-        break;
+        case 'FORCE_OTA_PATCH':
+          showDialog<void>(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => AppUpdateDialog(
+              result: result,
+              isShorebirdPatch: true,
+            ),
+          );
+          break;
 
-      case 'FORCE_OTA_PATCH':
-        // Tampilkan dialog proses unduh patch Shorebird
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (ctx) => AppUpdateDialog(
-            result: result,
-            isShorebirdPatch: true,
-          ),
-        );
-        break;
+        case 'FLEXIBLE_STORE_UPDATE':
+          if (!isManual && await isUpdateSnoozed(result.latestBaseVersion)) {
+            return;
+          }
+          if (!context.mounted) return;
+          showDialog<void>(
+            context: context,
+            barrierDismissible: true,
+            builder: (_) => AppUpdateDialog(
+              result: result,
+              isShorebirdPatch: false,
+            ),
+          );
+          break;
 
-      case 'FLEXIBLE_STORE_UPDATE':
-      case 'FORCE_STORE_UPDATE':
-        // Tampilkan dialog pembaruan native / APK Streaming
-        showDialog(
-          context: context,
-          barrierDismissible: result.actionCode != 'FORCE_STORE_UPDATE',
-          builder: (ctx) => AppUpdateDialog(
-            result: result,
-            isShorebirdPatch: false,
-          ),
-        );
-        break;
-    }
-  }
-
-  /// Unduh patch Shorebird secara silent
-  static Future<void> _downloadShorebirdPatchSilently() async {
-    try {
-      if (isShorebirdAvailable) {
-        final status = await _shorebird.checkForUpdate();
-        if (status == UpdateStatus.outdated) {
-          await _shorebird.update();
-          debugPrint('Shorebird silent patch download completed successfully.');
-        }
+        case 'FORCE_STORE_UPDATE':
+          showDialog<void>(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => AppUpdateDialog(
+              result: result,
+              isShorebirdPatch: false,
+            ),
+          );
+          break;
       }
-    } catch (e) {
-      debugPrint('Error downloading silent patch: $e');
+    } finally {
+      _isChecking = false;
     }
   }
 
-  /// Unduh patch Shorebird dengan laporan progres
+  static void _notifyPatchReadySnackBar(BuildContext context) {
+    patchReadyNotifier.value = true;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          '⚡ Pembaruan ringan (Delta OTA) selesai diunduh! Tutup & buka kembali aplikasi untuk langsung menerapkannya tanpa install ulang.',
+        ),
+        backgroundColor: Color(0xFF6D28D9),
+        duration: Duration(seconds: 5),
+      ),
+    );
+  }
+
+  static void _showUpToDateDialog(
+    BuildContext context,
+    Map<String, dynamic> info,
+  ) {
+    final patchNum = (info['patchNumber'] as num?)?.toInt() ?? 0;
+    final shorebirdBadge = isShorebirdAvailable
+        ? 'Delta OTA Aktif (Patch #$patchNum)'
+        : 'Rilis Native Standar';
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(CupertinoIcons.checkmark_seal_fill, color: Colors.green, size: 26),
+            SizedBox(width: 10),
+            Text('Aplikasi Terkini', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(
+          'Coffee Labs v${info['version']} (Build #${info['buildNumber']})\n'
+          'Status Mesin Update: $shorebirdBadge\n\n'
+          'Anda sudah menggunakan versi paling mutakhir.',
+          style: const TextStyle(fontSize: 13.5, height: 1.45),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Future<ShorebirdPatchOutcome> _checkAndDownloadShorebirdProactively() async {
+    if (!isShorebirdAvailable) return ShorebirdPatchOutcome.unavailable;
+    return runShorebirdPatchUpdate();
+  }
+
+  /// Jalankan pengecekan & unduh delta patch Shorebird dengan status hasil yang jujur & presisi.
+  static Future<ShorebirdPatchOutcome> runShorebirdPatchUpdate() async {
+    if (!isShorebirdAvailable) {
+      return ShorebirdPatchOutcome.unavailable;
+    }
+    try {
+      final status = await _shorebird.checkForUpdate();
+      if (status == UpdateStatus.restartRequired) {
+        patchReadyNotifier.value = true;
+        return ShorebirdPatchOutcome.restartRequired;
+      }
+      if (status == UpdateStatus.outdated) {
+        await _shorebird.update();
+        patchReadyNotifier.value = true;
+        return ShorebirdPatchOutcome.downloaded;
+      }
+      return ShorebirdPatchOutcome.upToDate;
+    } catch (e) {
+      debugPrint('⚠️ Shorebird delta patch error: $e');
+      return ShorebirdPatchOutcome.error;
+    }
+  }
+
+  /// Alias kompatibilitas untuk memicu unduh delta patch Shorebird.
   static Future<bool> performShorebirdUpdate() async {
-    try {
-      if (isShorebirdAvailable) {
-        final status = await _shorebird.checkForUpdate();
-        if (status == UpdateStatus.outdated) {
-          await _shorebird.update();
-          return true;
-        }
-      }
-      return false;
-    } catch (e) {
-      debugPrint('Error performing Shorebird update: $e');
-      return false;
-    }
+    final outcome = await runShorebirdPatchUpdate();
+    return outcome == ShorebirdPatchOutcome.downloaded ||
+        outcome == ShorebirdPatchOutcome.restartRequired;
   }
 
-  /// Buka URL unduhan APK / Play Store di browser eksternal
-  static Future<void> openDownloadUrl(String? url) async {
-    final target = url ?? 'https://github.com/rusdi-labs/coffee-hub-mobile/releases/latest';
-    final uri = Uri.parse(target);
+  /// Buka URL unduhan rilis resmi di browser/Download Manager OS (100% aman Google Play Protect).
+  static Future<bool> openDownloadUrl(String? url) async {
+    final raw = url?.trim();
+    final target = (raw != null &&
+            raw.isNotEmpty &&
+            !raw.contains('rusdi-labs/coffee-hub-mobile'))
+        ? raw
+        : defaultPlatformDownloadUrl();
+    final uri = Uri.tryParse(target);
+    if (uri == null) return false;
     if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      return launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+    return false;
   }
 
   // ================= ADMIN VERSION MANAGEMENT =================
 
-  /// Ambil konfigurasi Version Gatekeeper dari backend (Khusus Admin)
   static Future<Map<String, dynamic>?> adminGetConfig() async {
     try {
       final token = await AuthService.getToken();
@@ -337,7 +546,6 @@ class AppUpdateService {
     }
   }
 
-  /// Perbarui konfigurasi Version Gatekeeper di backend (Khusus Admin)
   static Future<bool> adminUpdateConfig(Map<String, dynamic> payload) async {
     try {
       final token = await AuthService.getToken();
@@ -359,6 +567,34 @@ class AppUpdateService {
     } catch (e) {
       debugPrint('Admin config update error: $e');
       return false;
+    }
+  }
+
+  /// Sinkronisasi 1-klik konfigurasi Gatekeeper dari GitHub Release terbaru (`rusdifn08/coffe-labs-mobile`).
+  static Future<Map<String, dynamic>?> adminSyncFromGitHub() async {
+    try {
+      final token = await AuthService.getToken();
+      if (token == null) return null;
+
+      final baseUrl = await AuthService.getBaseUrl();
+      final uri = Uri.parse('$baseUrl/api/admin/app-version/sync-github');
+
+      final response = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        return data['data'] as Map<String, dynamic>?;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Admin GitHub sync error: $e');
+      return null;
     }
   }
 }

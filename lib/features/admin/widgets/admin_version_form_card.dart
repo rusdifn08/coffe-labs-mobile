@@ -8,8 +8,10 @@ class AdminVersionFormCard extends StatelessWidget {
   final TextEditingController latestBaseVersionCtrl;
   final TextEditingController minBaseVersionCtrl;
   final TextEditingController latestPatchNumberCtrl;
+  final TextEditingController contentManifestCtrl;
   final TextEditingController releaseNotesCtrl;
   final TextEditingController downloadUrlCtrl;
+  final TextEditingController iosDownloadUrlCtrl;
   final bool isForceUpdate;
   final ValueChanged<bool> onForceUpdateChanged;
   final bool isPatchRequired;
@@ -22,8 +24,10 @@ class AdminVersionFormCard extends StatelessWidget {
     required this.latestBaseVersionCtrl,
     required this.minBaseVersionCtrl,
     required this.latestPatchNumberCtrl,
+    required this.contentManifestCtrl,
     required this.releaseNotesCtrl,
     required this.downloadUrlCtrl,
+    required this.iosDownloadUrlCtrl,
     required this.isForceUpdate,
     required this.onForceUpdateChanged,
     required this.isPatchRequired,
@@ -107,13 +111,29 @@ class AdminVersionFormCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
 
-          // Shorebird Latest Patch Number
-          _buildTextField(
-            controller: latestPatchNumberCtrl,
-            label: 'Shorebird Target Patch #',
-            hint: '0',
-            keyboardType: TextInputType.number,
-            helperText: 'Isi angka patch jika ada pembaruan kode Dart via Shorebird (0 = tidak ada patch)',
+          // Shorebird Latest Patch Number & Hot Content Manifest
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: latestPatchNumberCtrl,
+                  label: 'Shorebird Delta Patch #',
+                  hint: '0',
+                  keyboardType: TextInputType.number,
+                  helperText: 'Update kode Dart tanpa install ulang',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: contentManifestCtrl,
+                  label: 'Content Manifest v#',
+                  hint: '1',
+                  keyboardType: TextInputType.number,
+                  helperText: 'Naikkan untuk hot sync tanpa restart',
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
 
@@ -169,11 +189,19 @@ class AdminVersionFormCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
 
-          // Download URL
+          // Download URL Android
           _buildTextField(
             controller: downloadUrlCtrl,
-            label: 'URL Unduhan APK / Toko Aplikasi',
-            hint: 'https://github.com/rusdi-labs/coffee-hub-mobile/releases/latest',
+            label: 'URL Unduhan Android (.apk)',
+            hint: 'https://github.com/rusdifn08/coffe-labs-mobile/releases/latest/download/Coffe_Labs_25.apk',
+          ),
+          const SizedBox(height: 14),
+
+          // Download URL iOS
+          _buildTextField(
+            controller: iosDownloadUrlCtrl,
+            label: 'URL Unduhan iOS (.ipa)',
+            hint: 'https://github.com/rusdifn08/coffe-labs-mobile/releases/latest/download/CoffeLabs25.ipa',
           ),
         ],
       ),

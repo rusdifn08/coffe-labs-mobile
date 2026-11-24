@@ -60,9 +60,11 @@ class AdminVersionClientCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isShorebird ? Colors.purple.shade50 : Colors.grey.shade100,
+                  color: isShorebird ? Colors.purple.shade50 : Colors.amber.shade50,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: isShorebird ? Colors.purple.shade200 : Colors.grey.shade300),
+                  border: Border.all(
+                    color: isShorebird ? Colors.purple.shade200 : Colors.amber.shade300,
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -70,15 +72,15 @@ class AdminVersionClientCard extends StatelessWidget {
                     Icon(
                       isShorebird ? CupertinoIcons.bolt_fill : CupertinoIcons.bolt_slash,
                       size: 12,
-                      color: isShorebird ? Colors.purple : Colors.grey,
+                      color: isShorebird ? Colors.purple : Colors.amber.shade800,
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      isShorebird ? 'Shorebird Aktif' : 'Shorebird Dev/Desktop',
+                      isShorebird ? 'Delta OTA Aktif' : 'Non-Shorebird Build',
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
-                        color: isShorebird ? Colors.purple : Colors.grey.shade700,
+                        color: isShorebird ? Colors.purple : Colors.amber.shade900,
                       ),
                     ),
                   ],
@@ -91,11 +93,17 @@ class AdminVersionClientCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              _buildInfoPill('Base Version', 'v${clientInfo['version'] ?? '1.0.0'}'),
+              _buildInfoPill('Base Version', 'v${clientInfo['version'] ?? '2.5.1'}'),
               const SizedBox(width: 10),
-              _buildInfoPill('Build Number', '#${clientInfo['buildNumber'] ?? 1}'),
+              _buildInfoPill(
+                'Build (Norm)',
+                clientInfo['rawBuildNumber'] != null &&
+                        clientInfo['rawBuildNumber'] != clientInfo['buildNumber']
+                    ? '#${clientInfo['buildNumber']} (${clientInfo['rawBuildNumber']})'
+                    : '#${clientInfo['buildNumber'] ?? 9}',
+              ),
               const SizedBox(width: 10),
-              _buildInfoPill('Current Patch', '#${clientInfo['patchNumber'] ?? 0}'),
+              _buildInfoPill('OTA Patch', '#${clientInfo['patchNumber'] ?? 0}'),
             ],
           ),
         ],

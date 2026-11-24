@@ -547,28 +547,71 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       },
                     ),
                     const Divider(height: 1),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.purple.shade100,
-                          borderRadius: BorderRadius.circular(12),
+                    ValueListenableBuilder<bool>(
+                      valueListenable: AppUpdateService.patchReadyNotifier,
+                      builder: (context, patchReady, _) => ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: patchReady ? const Color(0xFFDCFCE7) : Colors.purple.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            patchReady
+                                ? CupertinoIcons.checkmark_seal_fill
+                                : CupertinoIcons.arrow_clockwise_circle_fill,
+                            color: patchReady ? const Color(0xFF15803D) : Colors.purple,
+                            size: 22,
+                          ),
                         ),
-                        child: const Icon(CupertinoIcons.arrow_clockwise_circle_fill, color: Colors.purple, size: 22),
+                        title: Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                isEn ? 'Check System Updates' : 'Periksa Pembaruan Sistem',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                            ),
+                            if (patchReady) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.purple,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  'SIAP RESTART',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        subtitle: Text(
+                          patchReady
+                              ? (isEn
+                                  ? 'Delta OTA patch downloaded — reopen app to apply'
+                                  : 'Delta OTA selesai diunduh — buka ulang app untuk menerapkan')
+                              : (isEn
+                                  ? 'Delta OTA Patch (No Reinstall) & Native Version'
+                                  : 'Delta OTA Patch (Tanpa Install Ulang) & Versi Native'),
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: patchReady ? const Color(0xFF15803D) : AppTheme.textMuted,
+                            fontWeight: patchReady ? FontWeight.w600 : FontWeight.normal,
+                          ),
+                        ),
+                        trailing: const Icon(CupertinoIcons.chevron_forward, size: 18, color: AppTheme.textMuted),
+                        onTap: () {
+                          AppUpdateService.checkForUpdate(context: context, isManual: true);
+                        },
                       ),
-                      title: Text(
-                        isEn ? 'Check System Updates' : 'Periksa Pembaruan Sistem',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
-                      subtitle: Text(
-                        isEn ? 'OTA Shorebird Patch & Native Version' : 'OTA Shorebird Patch & Versi Native',
-                        style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted),
-                      ),
-                      trailing: const Icon(CupertinoIcons.chevron_forward, size: 18, color: AppTheme.textMuted),
-                      onTap: () {
-                        AppUpdateService.checkForUpdate(context: context, isManual: true);
-                      },
                     ),
                   ],
                 ),

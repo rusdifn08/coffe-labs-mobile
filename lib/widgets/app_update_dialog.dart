@@ -1,20 +1,24 @@
-import 'dart:io';
-import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import 'package:flutter/services.dart';
 import '../services/app_update_service.dart';
-import '../services/apk_installer_service.dart';
+import '../theme/app_theme.dart';
+
+typedef ShorebirdPatchRunner = Future<ShorebirdPatchOutcome> Function();
+typedef ExternalDownloadLauncher = Future<bool> Function(String? url);
 
 class AppUpdateDialog extends StatefulWidget {
   final VersionCheckResult result;
   final bool isShorebirdPatch;
+  final ShorebirdPatchRunner? shorebirdRunner;
+  final ExternalDownloadLauncher? downloadLauncher;
 
   const AppUpdateDialog({
     super.key,
     required this.result,
     required this.isShorebirdPatch,
+    this.shorebirdRunner,
+    this.downloadLauncher,
   });
 
   @override
@@ -22,11 +26,11 @@ class AppUpdateDialog extends StatefulWidget {
 }
 
 class _AppUpdateDialogState extends State<AppUpdateDialog> {
-  bool _isDownloading = false;
-  bool _isDownloaded = false;
-  double _downloadProgress = 0.0;
+  bool _isWorking = false;
+  bool _isPatchReady = false;
+  bool _isShorebirdUnavailable = false;
   String? _statusMessage;
-  CancelToken? _cancelToken;
+  bool _isErrorStatus = false;
 
   @override
   void initState() {
@@ -36,169 +40,105 @@ class _AppUpdateDialogState extends State<AppUpdateDialog> {
     }
   }
 
-  @override
-  void dispose() {
-    _cancelToken?.cancel();
-    super.dispose();
-  }
-
   Future<void> _startShorebirdDownload() async {
     setState(() {
-      _isDownloading = true;
-      _statusMessage = 'Mengunduh patch diff Dart via Shorebird...';
+      _isWorking = true;
+      _isErrorStatus = false;
+      _isShorebirdUnavailable = false;
+      _statusMessage = 'Mengunduh delta patch ringan (~1–5 MB) tanpa install ulang...';
     });
 
-    final success = await AppUpdateService.performShorebirdUpdate();
+    final runner = widget.shorebirdRunner ?? AppUpdateService.runShorebirdPatchUpdate;
+    final outcome = await runner();
 
     if (!mounted) return;
     setState(() {
-      _isDownloading = false;
-      _isDownloaded = true;
-      _statusMessage = success
-          ? 'Patch berhasil diunduh! Silakan mulai ulang aplikasi.'
-          : 'Patch siap diterapkan pada pembukaan aplikasi berikutnya.';
+      _isWorking = false;
+      switch (outcome) {
+        case ShorebirdPatchOutcome.downloaded:
+        case ShorebirdPatchOutcome.restartRequired:
+          _isPatchReady = true;
+          _isErrorStatus = false;
+          _statusMessage =
+              'Delta patch selesai diunduh! Tutup lalu buka ulang aplikasi untuk menerapkan pembaruan tanpa install ulang.';
+          break;
+        case ShorebirdPatchOutcome.upToDate:
+          _isPatchReady = true;
+          _isErrorStatus = false;
+          _statusMessage = 'Aplikasi Anda sudah menjalankan patch terbaru.';
+          break;
+        case ShorebirdPatchOutcome.unavailable:
+          _isPatchReady = false;
+          _isShorebirdUnavailable = true;
+          _isErrorStatus = true;
+          _statusMessage =
+              'Build APK ini belum memuat mesin Delta OTA (Shorebird). Unduh rilis resmi terbaru satu kali agar pembaruan berikutnya otomatis ringan di dalam aplikasi.';
+          break;
+        case ShorebirdPatchOutcome.error:
+          _isPatchReady = false;
+          _isErrorStatus = true;
+          _statusMessage =
+              'Gagal mengunduh delta patch. Periksa koneksi internet lalu coba lagi.';
+          break;
+      }
     });
   }
 
-  Future<void> _startApkDownload() async {
-    final downloadUrl = widget.result.downloadUrl ??
-        'https://github.com/rusdifn08/coffe-labs-mobile/releases/latest/download/CoffeeLabs-arm64-v8a.apk';
-
-    // Jika bukan Android, buka browser langsung
-    if (kIsWeb || !Platform.isAndroid) {
-      await AppUpdateService.openDownloadUrl(downloadUrl);
-      if (mounted) Navigator.pop(context);
-      return;
-    }
-
-    _cancelToken = CancelToken();
-
+  Future<void> _launchOfficialReleaseDownload() async {
     setState(() {
-      _isDownloading = true;
-      _downloadProgress = 0.0;
-      _statusMessage = 'Menyiapkan unduhan APK...';
+      _isWorking = true;
+      _isErrorStatus = false;
+      _statusMessage = 'Membuka unduhan rilis resmi di pengelola unduhan perangkat...';
     });
 
-    try {
-      // Cek apakah permission install unknown apps aktif
-      final canInstall = await ApkInstallerService.canRequestPackageInstalls();
-      if (!canInstall && mounted) {
-        final ask = await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: const Text('Izin Pemasangan APK', style: TextStyle(fontWeight: FontWeight.bold)),
-            content: const Text(
-              'Untuk memperbarui aplikasi langsung dari Coffee Labs, aktifkan izin "Install unknown apps" di pengaturan Android.',
-              style: TextStyle(fontSize: 13, height: 1.4),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Batal'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  ApkInstallerService.openInstallPermissionSettings();
-                  Navigator.pop(ctx, true);
-                },
-                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryBrown),
-                child: const Text('Buka Pengaturan', style: TextStyle(color: Colors.white)),
-              ),
-            ],
-          ),
-        );
+    final launcher = widget.downloadLauncher ?? AppUpdateService.openDownloadUrl;
+    final opened = await launcher(widget.result.downloadUrl);
 
-        if (ask != true) {
-          if (mounted) {
-            setState(() {
-              _isDownloading = false;
-              _statusMessage = 'Unduhan dibatalkan: Izin instalasi belum diberikan.';
-            });
-          }
-          return;
-        }
-      }
-
-      await ApkInstallerService.downloadAndInstallApk(
-        downloadUrl: downloadUrl,
-        cancelToken: _cancelToken,
-        onProgress: (received, total) {
-          if (!mounted) return;
-          if (total > 0) {
-            final progress = (received / total).clamp(0.0, 1.0);
-            final mbReceived = (received / (1024 * 1024)).toStringAsFixed(1);
-            final mbTotal = (total / (1024 * 1024)).toStringAsFixed(1);
-            final percent = (progress * 100).toInt();
-
-            setState(() {
-              _downloadProgress = progress;
-              _statusMessage = 'Mengunduh APK: $percent% ($mbReceived MB / $mbTotal MB)';
-            });
-          } else {
-            final mbReceived = (received / (1024 * 1024)).toStringAsFixed(1);
-            setState(() {
-              _downloadProgress = 0.0;
-              _statusMessage = 'Mengunduh APK: $mbReceived MB...';
-            });
-          }
-        },
-      );
-
-      if (!mounted) return;
-      setState(() {
-        _isDownloading = false;
-        _isDownloaded = true;
-        _statusMessage = 'Membuka jendela pemasang sistem Android...';
-      });
-    } on DioException catch (dioErr) {
-      if (!mounted) return;
-      if (CancelToken.isCancel(dioErr)) {
-        setState(() {
-          _isDownloading = false;
-          _statusMessage = 'Unduhan dibatalkan.';
-        });
-      } else {
-        setState(() {
-          _isDownloading = false;
-          _statusMessage = 'Gagal mengunduh: ${dioErr.message}';
-        });
-      }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isDownloading = false;
-        _statusMessage = 'Terjadi kendala saat memasang APK: $e';
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _isWorking = false;
+      _isErrorStatus = !opened;
+      _statusMessage = opened
+          ? 'Unduhan rilis resmi dimulai di browser/Download Manager perangkat Anda (aman Google Play Protect).'
+          : 'Tidak dapat membuka tautan unduhan secara otomatis. Anda bisa menyalin link di bawah.';
+    });
   }
 
-  void _cancelDownload() {
-    _cancelToken?.cancel('User cancelled download');
-    setState(() {
-      _isDownloading = false;
-      _statusMessage = 'Unduhan dibatalkan.';
-    });
+  Future<void> _copyDownloadLink() async {
+    final url = widget.result.downloadUrl ?? AppUpdateService.defaultPlatformDownloadUrl();
+    await Clipboard.setData(ClipboardData(text: url));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Tautan unduhan rilis resmi disalin ke clipboard.'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<void> _snoozeAndClose() async {
+    await AppUpdateService.snoozeFlexibleUpdate(widget.result.latestBaseVersion);
+    if (mounted) Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     final bool isForce = widget.result.actionCode == 'FORCE_STORE_UPDATE' ||
         widget.result.actionCode == 'FORCE_OTA_PATCH';
+    final bool showNativeFallback = !widget.isShorebirdPatch || _isShorebirdUnavailable;
 
     return PopScope(
-      canPop: !isForce && !_isDownloading,
+      canPop: !isForce && !_isWorking,
       child: Dialog(
         backgroundColor: AppTheme.surfaceWhite,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-        child: Padding(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(22.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Icon & Type Badge
               Center(
                 child: Container(
                   width: 64,
@@ -236,43 +176,48 @@ class _AppUpdateDialogState extends State<AppUpdateDialog> {
                   ),
                   child: Text(
                     widget.isShorebirdPatch
-                        ? '⚡ Shorebird OTA Code Push (Patch #${widget.result.targetPatch ?? 1})'
-                        : (isForce ? '🚨 Pembaruan Wajib' : '✨ Pembaruan Versi Baru Tersedia'),
+                        ? '⚡ Delta OTA Patch #${widget.result.targetPatch ?? 1} (Tanpa Install Ulang)'
+                        : (isForce ? '🚨 Pembaruan Native Wajib' : '✨ Pembaruan Resmi Tersedia'),
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: widget.isShorebirdPatch ? Colors.purple.shade800 : Colors.brown.shade800,
+                      color: widget.isShorebirdPatch
+                          ? Colors.purple.shade800
+                          : Colors.brown.shade800,
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 12),
 
-              // Title
               Text(
                 widget.isShorebirdPatch
-                    ? 'Pembaruan Fitur Siap Diterapkan'
+                    ? 'Pembaruan Ringan Siap Diterapkan'
                     : 'Coffee Labs v${widget.result.latestBaseVersion}',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTheme.textDark),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: AppTheme.textDark,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 6),
               Text(
                 widget.isShorebirdPatch
-                    ? 'Sistem mendeteksi patch baru tanpa perlu download ulang seluruh aplikasi.'
-                    : 'Pembaruan rilis resmi. Unduh langsung satu ketukan tanpa Play Store.',
-                style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                    ? 'Hanya mengunduh perubahan kode yang diperlukan langsung di aplikasi — hemat kuota & tanpa install ulang.'
+                    : 'Pembaruan modul native & performa baru. Unduhan dijalankan lewat pengelola unduhan OS agar 100% aman Google Play Protect.',
+                style: const TextStyle(fontSize: 12, color: AppTheme.textMuted, height: 1.35),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
 
-              // Release Notes Box
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: AppTheme.bgCream,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppTheme.primaryBrown.withValues(alpha: 0.1)),
+                  border: Border.all(color: AppTheme.primaryBrown.withValues(alpha: 0.12)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,7 +226,18 @@ class _AppUpdateDialogState extends State<AppUpdateDialog> {
                       children: [
                         Icon(CupertinoIcons.sparkles, size: 14, color: AppTheme.primaryBrown),
                         SizedBox(width: 6),
-                        Text('Catatan Rilis (Changelog):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryBrown)),
+                        Expanded(
+                          child: Text(
+                            'Catatan Rilis (Changelog):',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryBrown,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 6),
@@ -289,108 +245,145 @@ class _AppUpdateDialogState extends State<AppUpdateDialog> {
                       widget.result.releaseNotes,
                       style: const TextStyle(fontSize: 12, color: AppTheme.textDark, height: 1.4),
                     ),
+                    if (widget.result.checksumSha256 != null &&
+                        widget.result.checksumSha256!.trim().isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'SHA-256: ${widget.result.checksumSha256!.trim()}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontFamily: 'monospace',
+                          color: AppTheme.textMuted,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
 
-              // Progress bar if downloading patch or APK
-              if (_isDownloading) ...[
-                const SizedBox(height: 18),
+              if (_isWorking) ...[
+                const SizedBox(height: 16),
                 LinearProgressIndicator(
-                  value: _downloadProgress > 0.0 ? _downloadProgress : null,
                   color: widget.isShorebirdPatch ? Colors.purple : AppTheme.primaryBrown,
                   backgroundColor: AppTheme.primaryBrown.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _statusMessage ?? 'Mengunduh...',
+                  _statusMessage ?? 'Memproses pembaruan...',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 11.5,
                     color: widget.isShorebirdPatch ? Colors.purple : AppTheme.primaryBrown,
                     fontWeight: FontWeight.w600,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 10),
-                Center(
-                  child: TextButton.icon(
-                    onPressed: _cancelDownload,
-                    icon: const Icon(CupertinoIcons.clear_circled, size: 16, color: Colors.redAccent),
-                    label: const Text('Batalkan Unduhan', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
-                  ),
-                ),
               ] else if (_statusMessage != null) ...[
                 const SizedBox(height: 14),
-                Text(
-                  _statusMessage!,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: _isDownloaded ? Colors.green : Colors.brown,
-                    fontWeight: FontWeight.w600,
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: _isErrorStatus
+                        ? Colors.amber.shade50
+                        : (_isPatchReady ? const Color(0xFFF0FDF4) : AppTheme.bgCream),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _isErrorStatus
+                          ? Colors.amber.shade300
+                          : (_isPatchReady
+                              ? const Color(0xFFBBF7D0)
+                              : AppTheme.primaryBrown.withValues(alpha: 0.15)),
+                    ),
                   ),
-                  textAlign: TextAlign.center,
+                  child: Text(
+                    _statusMessage!,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: _isErrorStatus
+                          ? Colors.brown.shade900
+                          : (_isPatchReady ? const Color(0xFF166534) : AppTheme.textDark),
+                      fontWeight: FontWeight.w600,
+                      height: 1.35,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ],
 
-              const SizedBox(height: 22),
+              const SizedBox(height: 20),
 
-              // Actions
-              if (widget.isShorebirdPatch) ...[
-                if (_isDownloaded) ...[
-                  ElevatedButton(
+              if (widget.isShorebirdPatch && !_isShorebirdUnavailable) ...[
+                if (_isPatchReady) ...[
+                  ElevatedButton.icon(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.purple,
+                      backgroundColor: const Color(0xFF15803D),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
                     ),
-                    child: const Text('Selesai (Restart Nanti)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    icon: const Icon(CupertinoIcons.checkmark_alt_circle_fill, color: Colors.white, size: 18),
+                    label: const Text(
+                      'Siap — Mulai Ulang Aplikasi',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
                   ),
-                ] else if (!_isDownloading) ...[
+                ] else if (!_isWorking) ...[
                   ElevatedButton.icon(
                     onPressed: _startShorebirdDownload,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.purple,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
                     ),
                     icon: const Icon(CupertinoIcons.arrow_down_circle_fill, color: Colors.white, size: 18),
-                    label: const Text('Unduh Patch Sekarang', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ] else ...[
-                if (!_isDownloading) ...[
-                  ElevatedButton.icon(
-                    onPressed: _startApkDownload,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryBrown,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    icon: const Icon(CupertinoIcons.arrow_down_to_line_alt, color: Colors.white, size: 18),
-                    label: const Text('Unduh & Pasang Sekarang', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                  ),
-                  const SizedBox(height: 6),
-                  Center(
-                    child: TextButton(
-                      onPressed: () {
-                        AppUpdateService.openDownloadUrl(widget.result.downloadUrl);
-                      },
-                      child: const Text(
-                        'Atau buka tautan di browser external',
-                        style: TextStyle(fontSize: 11, color: AppTheme.textMuted, decoration: TextDecoration.underline),
-                      ),
+                    label: const Text(
+                      'Unduh Delta Patch Sekarang',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
               ],
 
-              if (!isForce && !_isDownloading) ...[
+              if (showNativeFallback && !_isWorking) ...[
+                ElevatedButton.icon(
+                  onPressed: _launchOfficialReleaseDownload,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryBrown,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  ),
+                  icon: const Icon(CupertinoIcons.arrow_down_to_line_alt, color: Colors.white, size: 18),
+                  label: const Text(
+                    'Unduh Rilis Resmi Terbaru',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
+                  ),
+                ),
                 const SizedBox(height: 6),
+                Center(
+                  child: TextButton.icon(
+                    onPressed: _copyDownloadLink,
+                    icon: const Icon(CupertinoIcons.doc_on_clipboard, size: 14, color: AppTheme.textMuted),
+                    label: const Text(
+                      'Salin Link Unduhan',
+                      style: TextStyle(fontSize: 11.5, color: AppTheme.textMuted),
+                    ),
+                  ),
+                ),
+              ],
+
+              if (!isForce && !_isWorking) ...[
+                const SizedBox(height: 4),
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Nanti Saja', style: TextStyle(color: AppTheme.textMuted)),
+                  onPressed: _snoozeAndClose,
+                  child: const Text(
+                    'Nanti Saja (Ingatkan Besok)',
+                    style: TextStyle(color: AppTheme.textMuted),
+                  ),
                 ),
               ],
             ],
