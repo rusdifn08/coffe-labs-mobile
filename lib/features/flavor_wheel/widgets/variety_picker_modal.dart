@@ -4,34 +4,42 @@ import '../../../../data/world_indonesia_beans_service.dart';
 import '../../../../theme/app_theme.dart';
 import '../data/coffee_varieties_catalog.dart';
 
+/// Multi-select, searchable Coffee Variety popup bottom sheet (30+ varieties + custom).
+/// Eliminates cramped horizontal scrolling and allows picking 1 or multiple varieties
+/// (e.g., mixed heirloom / multi-varietal lots).
 class VarietyPickerModal {
-  static void show({
+  static Future<void> show({
     required BuildContext context,
-    required String effectiveVariety,
-    required ValueChanged<String> onSelectVariety,
-    required ValueChanged<String> onSelectCustom,
-  }) {
+    required Set<String> selectedVarieties,
+    required ValueChanged<Set<String>> onConfirmVarieties,
+  }) async {
     WorldIndonesiaBeansService.instance.ensureLoaded();
     String searchQuery = '';
     String selectedCategory = 'Semua';
     bool triggeredLoad = false;
+    final Set<String> workingSelection = Set<String>.from(selectedVarieties);
+    final TextEditingController customController = TextEditingController();
 
-    showModalBottomSheet(
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         return StatefulBuilder(
           builder: (modalCtx, setModalState) {
-            if (!triggeredLoad && !WorldIndonesiaBeansService.instance.isLoaded) {
+            if (!triggeredLoad &&
+                !WorldIndonesiaBeansService.instance.isLoaded) {
               triggeredLoad = true;
               WorldIndonesiaBeansService.instance.ensureLoaded().then((_) {
                 if (modalCtx.mounted) setModalState(() {});
               });
             }
-            final filtered = CoffeeVarietiesCatalog.getMergedVarieties().where((v) {
-              final matchCat = selectedCategory == 'Semua' || v.category.contains(selectedCategory);
-              final q = searchQuery.toLowerCase();
+
+            final allVarieties = CoffeeVarietiesCatalog.getMergedVarieties();
+            final filtered = allVarieties.where((v) {
+              final matchCat = selectedCategory == 'Semua' ||
+                  v.category.contains(selectedCategory);
+              final q = searchQuery.trim().toLowerCase();
               final matchQuery = q.isEmpty ||
                   v.name.toLowerCase().contains(q) ||
                   v.origin.toLowerCase().contains(q) ||
@@ -39,11 +47,35 @@ class VarietyPickerModal {
               return matchCat && matchQuery;
             }).toList();
 
+            void toggleVariety(String name) {
+              setModalState(() {
+                if (workingSelection.contains(name)) {
+                  workingSelection.remove(name);
+                } else {
+                  workingSelection.add(name);
+                }
+              });
+            }
+
+            void addCustomVariety(String raw) {
+              final trimmed = raw.trim();
+              if (trimmed.isEmpty) return;
+              setModalState(() {
+                workingSelection.add(trimmed);
+                customController.clear();
+              });
+            }
+
             return Container(
-              height: MediaQuery.of(ctx).size.height * 0.82,
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              height: MediaQuery.of(ctx).size.height * 0.84,
+              padding: EdgeInsets.fromLTRB(
+                16,
+                12,
+                16,
+                16 + MediaQuery.of(ctx).viewInsets.bottom,
+              ),
               decoration: const BoxDecoration(
-                color: Colors.white,
+                color: AppTheme.bgCream,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
               ),
               child: Column(
@@ -51,154 +83,431 @@ class VarietyPickerModal {
                 children: [
                   Center(
                     child: Container(
-                      width: 44,
-                      height: 5,
-                      decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)),
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppTheme.borderWarm,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
+
+                  // Header
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.eco_rounded, color: Color(0xFF2E7D32), size: 22),
-                          SizedBox(width: 8),
-                          Text('Katalog Lengkap Varietas Kopi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textDark)),
-                        ],
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2E7D32).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(11),
+                        ),
+                        child: const Icon(
+                          Icons.eco_rounded,
+                          color: Color(0xFF2E7D32),
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Pilih Varietas Kopi',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 15.5,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.textDark,
+                              ),
+                            ),
+                            Text(
+                              'Bisa pilih lebih dari 1 varietas (${workingSelection.length} dipilih)',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppTheme.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       IconButton(
                         onPressed: () => Navigator.pop(ctx),
-                        icon: const Icon(CupertinoIcons.xmark_circle_fill, color: AppTheme.textMuted),
+                        icon: const Icon(
+                          CupertinoIcons.xmark_circle_fill,
+                          color: AppTheme.textMuted,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 10),
+
+                  // Selected preview strip
+                  if (workingSelection.isNotEmpty) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(13),
+                        border: Border.all(
+                          color: const Color(0xFF2E7D32).withValues(alpha: 0.25),
+                        ),
+                      ),
+                      child: Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: workingSelection.map((v) {
+                          return InkWell(
+                            onTap: () => toggleVariety(v),
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 9,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2E7D32),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      v,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Icon(
+                                    CupertinoIcons.xmark,
+                                    size: 11,
+                                    color: Colors.white,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+
+                  // Search field
                   TextField(
                     decoration: InputDecoration(
-                      hintText: 'Cari varietas (Bourbon, Typica, Geisha, S-795)...',
-                      hintStyle: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
-                      prefixIcon: const Icon(CupertinoIcons.search, size: 18, color: Color(0xFF2E7D32)),
+                      hintText: 'Cari varietas (Bourbon, Typica, Gesha, S-795)...',
+                      hintStyle: const TextStyle(
+                        fontSize: 12.5,
+                        color: AppTheme.textMuted,
+                      ),
+                      prefixIcon: const Icon(
+                        CupertinoIcons.search,
+                        size: 17,
+                        color: Color(0xFF2E7D32),
+                      ),
                       filled: true,
-                      fillColor: AppTheme.bgCream,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(13),
+                        borderSide: const BorderSide(color: AppTheme.borderWarm),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(13),
+                        borderSide: const BorderSide(color: AppTheme.borderWarm),
+                      ),
                     ),
                     onChanged: (val) => setModalState(() => searchQuery = val),
                   ),
-                  const SizedBox(height: 10),
-                  // Kategori Chip
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: ['Semua', 'Bourbon', 'Nusantara', 'Eksotik', 'Spesies'].map((cat) {
-                        final isSel = selectedCategory == cat;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 6),
-                          child: ChoiceChip(
-                            label: Text(cat == 'Semua' ? 'Semua (${CoffeeVarietiesCatalog.all.length})' : cat),
-                            selected: isSel,
-                            selectedColor: const Color(0xFF2E7D32),
-                            backgroundColor: AppTheme.bgCream,
-                            labelStyle: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.bold,
+                  const SizedBox(height: 8),
+
+                  // Category Wrap chips (no cramped horizontal scroll)
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      'Semua',
+                      'Bourbon',
+                      'Nusantara',
+                      'Eksotik',
+                      'Spesies',
+                    ].map((cat) {
+                      final isSel = selectedCategory == cat;
+                      return InkWell(
+                        onTap: () => setModalState(() => selectedCategory = cat),
+                        borderRadius: BorderRadius.circular(9),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSel
+                                ? const Color(0xFF2E7D32)
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(9),
+                            border: Border.all(
+                              color: isSel
+                                  ? const Color(0xFF2E7D32)
+                                  : AppTheme.borderWarm,
+                            ),
+                          ),
+                          child: Text(
+                            cat == 'Semua'
+                                ? 'Semua (${allVarieties.length})'
+                                : cat,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
                               color: isSel ? Colors.white : AppTheme.textDark,
                             ),
-                            onSelected: (_) => setModalState(() => selectedCategory = cat),
                           ),
-                        );
-                      }).toList(),
-                    ),
+                        ),
+                      );
+                    }).toList(),
                   ),
                   const SizedBox(height: 10),
+
+                  // Variety List
                   Expanded(
                     child: filtered.isEmpty
                         ? Center(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Text('Varietas tidak ditemukan dalam katalog.', style: TextStyle(color: AppTheme.textMuted)),
-                                const SizedBox(height: 10),
-                                ElevatedButton.icon(
-                                  onPressed: () {
-                                    onSelectCustom(searchQuery);
-                                    Navigator.pop(ctx);
-                                  },
-                                  icon: const Icon(CupertinoIcons.plus, size: 16),
-                                  label: Text('Gunakan "$searchQuery" sebagai Kustom'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF2E7D32),
-                                    foregroundColor: Colors.white,
+                                const Text(
+                                  'Varietas tidak ditemukan di katalog.',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    color: AppTheme.textMuted,
                                   ),
                                 ),
+                                if (searchQuery.trim().isNotEmpty) ...[
+                                  const SizedBox(height: 10),
+                                  ElevatedButton.icon(
+                                    onPressed: () => addCustomVariety(searchQuery),
+                                    icon: const Icon(CupertinoIcons.plus, size: 15),
+                                    label: Text('Tambah "${searchQuery.trim()}"'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF2E7D32),
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           )
                         : ListView.separated(
                             itemCount: filtered.length,
-                            separatorBuilder: (context, index) => const SizedBox(height: 8),
-                            itemBuilder: (context, idx) {
+                            separatorBuilder: (_, _) => const SizedBox(height: 7),
+                            itemBuilder: (_, idx) {
                               final item = filtered[idx];
-                              final isCurrent = effectiveVariety.toLowerCase().contains(item.name.toLowerCase());
-                              return Container(
-                                decoration: BoxDecoration(
-                                  color: isCurrent ? const Color(0xFF2E7D32).withValues(alpha: 0.08) : AppTheme.bgCream,
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                    color: isCurrent ? const Color(0xFF2E7D32) : Colors.transparent,
-                                    width: 1.2,
+                              final isSelected =
+                                  workingSelection.contains(item.name);
+                              return InkWell(
+                                onTap: () => toggleVariety(item.name),
+                                borderRadius: BorderRadius.circular(13),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 10,
                                   ),
-                                ),
-                                child: Material(
-                                  color: Colors.transparent,
-                                  borderRadius: BorderRadius.circular(14),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: ListTile(
-                                    title: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            item.name,
-                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFF2E7D32).withValues(alpha: 0.12),
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: Text(
-                                            item.origin,
-                                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32)),
-                                          ),
-                                        ),
-                                      ],
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? const Color(0xFFECFDF5)
+                                        : Colors.white,
+                                    borderRadius: BorderRadius.circular(13),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? const Color(0xFF2E7D32)
+                                          : AppTheme.borderWarm,
+                                      width: isSelected ? 1.4 : 1,
                                     ),
-                                    subtitle: Padding(
-                                      padding: const EdgeInsets.only(top: 4),
-                                      child: Text(
-                                        item.tasteProfile,
-                                        style: const TextStyle(fontSize: 11.5, color: AppTheme.textMuted, height: 1.3),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        isSelected
+                                            ? CupertinoIcons.checkmark_circle_fill
+                                            : CupertinoIcons.circle,
+                                        color: isSelected
+                                            ? const Color(0xFF2E7D32)
+                                            : AppTheme.textMuted,
+                                        size: 20,
                                       ),
-                                    ),
-                                    trailing: Icon(
-                                      isCurrent ? CupertinoIcons.checkmark_circle_fill : CupertinoIcons.chevron_right,
-                                      color: isCurrent ? const Color(0xFF2E7D32) : AppTheme.textMuted,
-                                      size: 18,
-                                    ),
-                                    onTap: () {
-                                      onSelectVariety(item.name);
-                                      Navigator.pop(ctx);
-                                    },
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    item.name,
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: const TextStyle(
+                                                      fontSize: 13,
+                                                      fontWeight:
+                                                          FontWeight.w800,
+                                                      color: AppTheme.textDark,
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 6),
+                                                Flexible(
+                                                  child: Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                      horizontal: 6,
+                                                      vertical: 2,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(0xFF2E7D32)
+                                                          .withValues(alpha: 0.1),
+                                                      borderRadius:
+                                                          BorderRadius.circular(6),
+                                                    ),
+                                                    child: Text(
+                                                      item.origin,
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: const TextStyle(
+                                                        fontSize: 9.5,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        color: Color(0xFF2E7D32),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 3),
+                                            Text(
+                                              item.tasteProfile,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                color: AppTheme.textMuted,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               );
                             },
                           ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Quick custom variety input inside popup
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: customController,
+                          style: const TextStyle(fontSize: 12.5),
+                          decoration: InputDecoration(
+                            hintText: 'Tambah varietas kustom (mis. Sidra, Chiroso)...',
+                            hintStyle: const TextStyle(
+                              fontSize: 11.5,
+                              color: AppTheme.textMuted,
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 9,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(11),
+                              borderSide:
+                                  const BorderSide(color: AppTheme.borderWarm),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(11),
+                              borderSide:
+                                  const BorderSide(color: AppTheme.borderWarm),
+                            ),
+                          ),
+                          onSubmitted: addCustomVariety,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: () => addCustomVariety(customController.text),
+                        borderRadius: BorderRadius.circular(11),
+                        child: Container(
+                          height: 42,
+                          width: 42,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2E7D32),
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                          child: const Icon(
+                            CupertinoIcons.plus,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Confirm Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 46,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        onConfirmVarieties(workingSelection);
+                        Navigator.pop(ctx);
+                      },
+                      icon: const Icon(CupertinoIcons.checkmark, size: 17),
+                      label: Text(
+                        workingSelection.isEmpty
+                            ? 'Simpan Tanpa Varietas'
+                            : 'Terapkan Varietas (${workingSelection.length})',
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryBrown,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(13),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -207,5 +516,7 @@ class VarietyPickerModal {
         );
       },
     );
+
+    customController.dispose();
   }
 }

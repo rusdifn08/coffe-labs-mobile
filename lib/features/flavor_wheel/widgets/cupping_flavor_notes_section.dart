@@ -1,170 +1,150 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../../theme/app_theme.dart';
-import '../../../../data/brew_visual_catalog.dart';
 
+/// Compact SCA Flavor Wheel & Tasting Notes card that opens `FlavorNotesPickerModal`
+/// instead of flooding the page with 25+ chips.
 class CuppingFlavorNotesSection extends StatelessWidget {
-  final String activeNoteCategory;
-  final List<String> noteCategories;
   final Set<String> selectedNotes;
-  final TextEditingController customNoteInputController;
-  final ValueChanged<String> onCategorySelected;
-  final ValueChanged<String> onToggleNote;
-  final VoidCallback onAddCustomNote;
+  final VoidCallback onOpenNotesPopup;
   final ValueChanged<String> onRemoveNote;
 
   const CuppingFlavorNotesSection({
     super.key,
-    required this.activeNoteCategory,
-    required this.noteCategories,
     required this.selectedNotes,
-    required this.customNoteInputController,
-    required this.onCategorySelected,
-    required this.onToggleNote,
-    required this.onAddCustomNote,
+    required this.onOpenNotesPopup,
     required this.onRemoveNote,
   });
 
   @override
   Widget build(BuildContext context) {
-    final catClean = activeNoteCategory.toLowerCase();
-    final List<FlavorNoteVisualItem> displayedNotes = BrewVisualCatalog.flavorNotes.where((fn) {
-      final g = fn.group.toLowerCase();
-      if (catClean.contains('fruity')) return g == 'stone fruit' || g == 'tropical';
-      if (catClean.contains('orchard')) return g == 'orchard fruit';
-      if (catClean.contains('berry')) return g == 'berry';
-      if (catClean.contains('citrus')) return g == 'citrus';
-      if (catClean.contains('floral')) return g == 'floral';
-      if (catClean.contains('cokelat') || catClean.contains('manis')) return g == 'sweet' || g == 'cocoa';
-      if (catClean.contains('nutty') || catClean.contains('rempah')) return g == 'nutty' || g == 'herbal';
-      if (catClean.contains('teh') || catClean.contains('fermentasi')) return g == 'tea-like' || g == 'winey';
-      if (catClean.contains('body') || catClean.contains('finish')) return g == 'mouthfeel';
-      return false;
-    }).toList();
-
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: AppTheme.surfaceWhite,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.primaryBrown.withValues(alpha: 0.12)),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.borderWarm),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
-                children: [
-                  Icon(CupertinoIcons.sparkles, color: AppTheme.accentAmber, size: 20),
-                  SizedBox(width: 8),
-                  Text(
-                    '2. Flavor Wheel & Tasting Notes',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textDark),
-                  ),
-                ],
+              const Icon(
+                CupertinoIcons.sparkles,
+                color: AppTheme.accentAmber,
+                size: 18,
               ),
+              const SizedBox(width: 7),
+              const Expanded(
+                child: Text(
+                  'Flavor Wheel & Tasting Notes',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.textDark,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryBrown.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(9),
                 ),
                 child: Text(
-                  '${selectedNotes.length} Terpilih',
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryBrown),
+                  '${selectedNotes.length} Notes',
+                  style: const TextStyle(
+                    fontSize: 10.8,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.primaryBrown,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-
-          // Horizontal Category Bar
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: noteCategories.map((cat) {
-                final isSelected = activeNoteCategory == cat;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: ChoiceChip(
-                    label: Text(cat),
-                    selected: isSelected,
-                    selectedColor: AppTheme.primaryBrown,
-                    backgroundColor: AppTheme.bgCream,
-                    labelStyle: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected ? Colors.white : AppTheme.textDark,
-                    ),
-                    onSelected: (_) => onCategorySelected(cat),
-                  ),
-                );
-              }).toList(),
-            ),
+          const SizedBox(height: 5),
+          const Text(
+            'Pilih profil aroma & rasa dari SCA Flavor Wheel lewat pop-up pencarian.',
+            style: TextStyle(fontSize: 11.5, color: AppTheme.textMuted),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 11),
 
-          // Flavor Notes Wrap Chips
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: displayedNotes.map((fn) {
-              final isSelected = selectedNotes.contains(fn.label);
-              return FlavorNoteVisualBadge(
-                noteText: fn.label,
-                selected: isSelected,
-                onTap: () => onToggleNote(fn.label),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 12),
-
-          // Custom Note Input
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: customNoteInputController,
-                  decoration: InputDecoration(
-                    hintText: 'Tambah rasa unik custom (misal: Earl Grey Apricot)...',
-                    hintStyle: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                    filled: true,
-                    fillColor: AppTheme.bgCream,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  ),
-                  onSubmitted: (_) => onAddCustomNote(),
-                ),
-              ),
-              const SizedBox(width: 8),
-              IconButton.filled(
-                onPressed: onAddCustomNote,
-                icon: const Icon(CupertinoIcons.plus, size: 18),
-                style: IconButton.styleFrom(backgroundColor: AppTheme.primaryBrown),
-              ),
-            ],
-          ),
-
-          // Selected Notes Summary
           if (selectedNotes.isNotEmpty) ...[
-            const SizedBox(height: 10),
             Wrap(
               spacing: 6,
               runSpacing: 6,
               children: selectedNotes.map((note) {
-                return Chip(
-                  label: Text(note, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
-                  backgroundColor: AppTheme.primaryBrown,
-                  deleteIcon: const Icon(CupertinoIcons.xmark, size: 12, color: Colors.white),
-                  onDeleted: () => onRemoveNote(note),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                return InkWell(
+                  onTap: () => onRemoveNote(note),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBrown,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            note,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 11.2,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        const Icon(
+                          CupertinoIcons.xmark,
+                          size: 11,
+                          color: Colors.white,
+                        ),
+                      ],
+                    ),
+                  ),
                 );
               }).toList(),
             ),
+            const SizedBox(height: 11),
           ],
+
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: onOpenNotesPopup,
+              icon: const Icon(CupertinoIcons.plus, size: 15),
+              label: Text(
+                selectedNotes.isEmpty
+                    ? 'Pilih Tasting Notes (SCA Wheel)'
+                    : 'Tambah / Ubah Tasting Notes',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12.2,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.primaryBrown,
+                backgroundColor: AppTheme.bgCream,
+                side: const BorderSide(color: AppTheme.primaryBrown),
+                padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import '../../../../screens/brew_journal_screen.dart';
 import '../../../../theme/app_theme.dart';
 
+/// Clean Coffee Labs light-theme AppBar for SCA Cupping with crisp contrast
+/// and zero overflow on narrow mobile screens.
 class CuppingAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onOpenBeanCatalog;
   final VoidCallback onOpenVarietyModal;
   final VoidCallback onResetForm;
   final VoidCallback onLoadDemo;
+  final PreferredSizeWidget? bottom;
 
   const CuppingAppBar({
     super.key,
@@ -15,33 +18,63 @@ class CuppingAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.onOpenVarietyModal,
     required this.onResetForm,
     required this.onLoadDemo,
+    this.bottom,
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => Size.fromHeight(
+        kToolbarHeight + (bottom?.preferredSize.height ?? 0),
+      );
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: const Text('Coffee Cupping & Flavor Wheel'),
-      centerTitle: true,
-      backgroundColor: AppTheme.primaryBrown,
-      foregroundColor: Colors.white,
-      elevation: 1,
+      backgroundColor: AppTheme.bgCream,
+      surfaceTintColor: Colors.transparent,
+      foregroundColor: AppTheme.textDark,
+      elevation: 0,
+      centerTitle: false,
+      titleSpacing: 0,
+      title: const Row(
+        children: [
+          Icon(Icons.coffee_rounded, color: AppTheme.primaryBrown, size: 19),
+          SizedBox(width: 7),
+          Flexible(
+            child: Text(
+              'SCA Cupping Lab',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.textDark,
+              ),
+            ),
+          ),
+        ],
+      ),
       actions: [
         IconButton(
           tooltip: 'Pilih Biji dari Katalog',
-          icon: const Icon(Icons.coffee_rounded, color: Colors.white),
+          icon: const Icon(
+            Icons.coffee_rounded,
+            color: AppTheme.primaryBrown,
+            size: 20,
+          ),
           onPressed: onOpenBeanCatalog,
         ),
         IconButton(
-          tooltip: 'Katalog Varietas Lengkap',
-          icon: const Icon(Icons.eco_rounded, color: Colors.white),
+          tooltip: 'Pilih Varietas (Multi-Select)',
+          icon: const Icon(
+            Icons.eco_rounded,
+            color: Color(0xFF2E7D32),
+            size: 20,
+          ),
           onPressed: onOpenVarietyModal,
         ),
         PopupMenuButton<String>(
           tooltip: 'Opsi Lembar Cupping',
-          icon: const Icon(Icons.more_vert, color: Colors.white),
+          icon: const Icon(Icons.more_vert, color: AppTheme.textDark, size: 20),
           onSelected: (val) {
             if (val == 'reset') {
               onResetForm();
@@ -54,32 +87,44 @@ class CuppingAppBar extends StatelessWidget implements PreferredSizeWidget {
               );
             }
           },
-          itemBuilder: (_) => [
-            const PopupMenuItem(
+          itemBuilder: (_) => const [
+            PopupMenuItem(
               value: 'demo',
               child: Row(
                 children: [
-                  Icon(CupertinoIcons.sparkles, size: 16, color: AppTheme.accentAmber),
+                  Icon(
+                    CupertinoIcons.sparkles,
+                    size: 16,
+                    color: AppTheme.accentAmber,
+                  ),
                   SizedBox(width: 8),
-                  Text('Muat Contoh Demo (90.75)'),
+                  Text('Muat Contoh Demo (91.25)'),
                 ],
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'reset',
               child: Row(
                 children: [
-                  Icon(CupertinoIcons.arrow_counterclockwise, size: 16, color: Colors.redAccent),
+                  Icon(
+                    CupertinoIcons.arrow_counterclockwise,
+                    size: 16,
+                    color: Colors.redAccent,
+                  ),
                   SizedBox(width: 8),
                   Text('Reset / Formulir Baru'),
                 ],
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'journal',
               child: Row(
                 children: [
-                  Icon(CupertinoIcons.book_fill, size: 16, color: AppTheme.primaryBrown),
+                  Icon(
+                    CupertinoIcons.book_fill,
+                    size: 16,
+                    color: AppTheme.primaryBrown,
+                  ),
                   SizedBox(width: 8),
                   Text('Buka Brew Journal'),
                 ],
@@ -88,6 +133,7 @@ class CuppingAppBar extends StatelessWidget implements PreferredSizeWidget {
           ],
         ),
       ],
+      bottom: bottom,
     );
   }
 }

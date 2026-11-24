@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../../theme/app_theme.dart';
 
+/// Compact, zero-overflow SCA Cupping Live Score card.
 class CuppingHeroScoreCard extends StatelessWidget {
   final bool hasEvaluated;
   final double totalCuppingScore;
@@ -12,6 +13,7 @@ class CuppingHeroScoreCard extends StatelessWidget {
   final double sweetnessScore;
   final double mouthfeelScore;
   final double aftertasteScore;
+  final double balanceScore;
   final VoidCallback onStartEvaluate;
   final VoidCallback onLoadDemo;
   final VoidCallback onReset;
@@ -27,6 +29,7 @@ class CuppingHeroScoreCard extends StatelessWidget {
     required this.sweetnessScore,
     required this.mouthfeelScore,
     required this.aftertasteScore,
+    this.balanceScore = 8.00,
     required this.onStartEvaluate,
     required this.onLoadDemo,
     required this.onReset,
@@ -36,91 +39,113 @@ class CuppingHeroScoreCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
         color: AppTheme.surfaceWhite,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppTheme.primaryBrown.withValues(alpha: 0.15)),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.borderWarm),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryBrown.withValues(alpha: 0.06),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
+            color: AppTheme.primaryBrown.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Column(
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'TOTAL CUPPING SCORE',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.1,
-                      color: AppTheme.textMuted,
+              Expanded(
+                flex: 5,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'TOTAL SCA SCORE',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 9.8,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.8,
+                        color: AppTheme.textMuted,
+                      ),
+                    ),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            hasEvaluated
+                                ? totalCuppingScore.toStringAsFixed(2)
+                                : '--',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w900,
+                              color: cuppingGradeColor,
+                              letterSpacing: -0.8,
+                              fontFeatures: const [FontFeature.tabularFigures()],
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Text(
+                            '/ 100',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                flex: 5,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: cuppingGradeColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(11),
+                    border: Border.all(
+                      color: cuppingGradeColor.withValues(alpha: 0.3),
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        hasEvaluated ? totalCuppingScore.toStringAsFixed(2) : '--',
-                        style: TextStyle(
-                          fontSize: 38,
-                          fontWeight: FontWeight.w900,
-                          color: cuppingGradeColor,
-                          letterSpacing: -1,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Text(
-                        '/ 100',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: cuppingGradeColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: cuppingGradeColor.withValues(alpha: 0.3)),
-                ),
-                child: Text(
-                  cuppingGradeLabel.split('(').first.trim(),
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.bold,
-                    color: cuppingGradeColor,
+                  child: Text(
+                    cuppingGradeLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 10.8,
+                      fontWeight: FontWeight.w800,
+                      color: cuppingGradeColor,
+                    ),
                   ),
                 ),
               ),
             ],
           ),
-          const Divider(height: 24),
-          // Mini Metrics Bar
+          const Divider(height: 16, color: AppTheme.dividerColor),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildMiniMetric('Aroma', hasEvaluated ? aromaScore : null),
-              _buildMiniMetric('Acidity', hasEvaluated ? acidityScore : null),
+              _buildMiniMetric('Acid', hasEvaluated ? acidityScore : null),
               _buildMiniMetric('Sweet', hasEvaluated ? sweetnessScore : null),
-              _buildMiniMetric('Mouthfeel', hasEvaluated ? mouthfeelScore : null),
-              _buildMiniMetric('Aftertaste', hasEvaluated ? aftertasteScore : null),
+              _buildMiniMetric('Body', hasEvaluated ? mouthfeelScore : null),
+              _buildMiniMetric('After', hasEvaluated ? aftertasteScore : null),
+              _buildMiniMetric('Bal', hasEvaluated ? balanceScore : null),
             ],
           ),
           if (!hasEvaluated) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
@@ -128,12 +153,26 @@ class CuppingHeroScoreCard extends StatelessWidget {
                     onPressed: onStartEvaluate,
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppTheme.primaryBrown,
-                      side: const BorderSide(color: AppTheme.primaryBrown, width: 1.2),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      side: const BorderSide(
+                        color: AppTheme.primaryBrown,
+                        width: 1.2,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 8,
+                      ),
                     ),
-                    icon: const Icon(CupertinoIcons.play_fill, size: 14),
-                    label: const Text('Mulai Penilaian', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    icon: const Icon(CupertinoIcons.play_fill, size: 13),
+                    label: const Text(
+                      'Mulai Nilai',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style:
+                          TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -141,27 +180,31 @@ class CuppingHeroScoreCard extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: onLoadDemo,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.accentAmber.withValues(alpha: 0.2),
+                      backgroundColor:
+                          AppTheme.accentAmber.withValues(alpha: 0.2),
                       foregroundColor: AppTheme.primaryBrown,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 8,
+                      ),
                     ),
-                    icon: const Icon(CupertinoIcons.sparkles, size: 14, color: AppTheme.primaryBrown),
-                    label: const Text('Muat Contoh Demo', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    icon: const Icon(
+                      CupertinoIcons.sparkles,
+                      size: 13,
+                      color: AppTheme.primaryBrown,
+                    ),
+                    label: const Text(
+                      'Contoh Demo',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style:
+                          TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ] else ...[
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton.icon(
-                  onPressed: onReset,
-                  icon: const Icon(CupertinoIcons.arrow_counterclockwise, size: 13, color: AppTheme.textMuted),
-                  label: const Text('Reset Form', style: TextStyle(fontSize: 11.5, color: AppTheme.textMuted)),
                 ),
               ],
             ),
@@ -172,18 +215,32 @@ class CuppingHeroScoreCard extends StatelessWidget {
   }
 
   Widget _buildMiniMetric(String label, double? val) {
-    return Column(
-      children: [
-        Text(
-          val != null ? val.toStringAsFixed(2) : '--',
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.textDark),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 10.5, color: AppTheme.textMuted, fontWeight: FontWeight.w500),
-        ),
-      ],
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            val != null ? val.toStringAsFixed(1) : '--',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 11.5,
+              color: AppTheme.textDark,
+              fontFeatures: [FontFeature.tabularFigures()],
+            ),
+          ),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 9.5,
+              color: AppTheme.textMuted,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

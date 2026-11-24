@@ -23,24 +23,26 @@ class CuppingConstants {
     'Pacamara',
     'Andungsari',
     'Kopyol (Bali)',
-    'Custom...',
   ];
 
   static const List<String> popularProcesses = [
     'Washed',
     'Natural',
     'Honey Process',
+    'Black Honey',
+    'Wet-Hulled (Giling Basah)',
     'Natural Anaerobic',
     'Washed Anaerobic',
+    'Carbonic Maceration',
     'Yeast Inoculation',
     'Thermal Shock',
     'Slow Dry Natural',
-    'Custom...',
   ];
 
   static const List<String> noteCategories = [
-    '🍑 Fruity (Tropis & Batu)',
-    '🍎 Orchard Fruit',
+    'Semua',
+    '🍑 Fruity',
+    '🍎 Orchard',
     '🍓 Berry',
     '🍋 Citrus',
     '🌸 Floral',
@@ -52,13 +54,15 @@ class CuppingConstants {
 
   static const List<String> aftertastePresets = [
     'Juicy',
-    'Creamy',
     'Lingering Sweetness',
     'Clean & Refreshing',
+    'Creamy',
     'Dark Chocolate Finish',
     'Winey & Fruity',
     'Silky Tea-like',
-    'Custom...',
+    'Floral & Crisp',
+    'Caramelized Brown Sugar',
+    'Short & Dry',
   ];
 
   static const List<String> mouthfeelPresets = [
@@ -69,13 +73,17 @@ class CuppingConstants {
     'Syrupy & Heavy',
     'Velvety & Dense',
     'Clean & Crisp',
-    'Custom...',
+    'Coating & Rich',
   ];
 
   static String normalizeRoast(String raw) {
     final lower = raw.trim().toLowerCase();
-    if (lower.contains('light-medium') || lower.contains('light medium')) return 'Light-Medium';
-    if (lower.contains('medium-dark') || lower.contains('medium dark')) return 'Medium-Dark';
+    if (lower.contains('light-medium') || lower.contains('light medium')) {
+      return 'Light-Medium';
+    }
+    if (lower.contains('medium-dark') || lower.contains('medium dark')) {
+      return 'Medium-Dark';
+    }
     if (lower.contains('light')) return 'Light';
     if (lower.contains('dark')) return 'Dark';
     if (lower.contains('medium')) return 'Medium';
@@ -83,11 +91,11 @@ class CuppingConstants {
   }
 
   static String getGradeLabel(bool hasEvaluated, double score) {
-    if (!hasEvaluated) return '📋 Belum Dinilai (Siap Cupping)';
-    if (score >= 90.0) return '🌟 Outstanding (Presidential Award)';
-    if (score >= 85.0) return '🏆 Specialty Grade (Excellent)';
-    if (score >= 80.0) return '✨ Specialty Grade (Very Good)';
-    return '☕ Commercial / Below Specialty';
+    if (!hasEvaluated) return 'Belum Dinilai';
+    if (score >= 90.0) return 'Outstanding (90+)';
+    if (score >= 85.0) return 'Specialty Excellent';
+    if (score >= 80.0) return 'Specialty Very Good';
+    return 'Below Specialty';
   }
 
   static Color getGradeColor(bool hasEvaluated, double score) {
@@ -101,14 +109,14 @@ class CuppingConstants {
 
 class CuppingDemoData {
   static const String beanName = 'Aceh Gayo Bener Meriah';
-  static const String origin = 'Bener Meriah, Aceh 🇮🇩';
+  static const String origin = 'Bener Meriah, Aceh';
   static const String cupper = 'Q-Grader Cupping Lab';
-  static const String variety = 'Bourbon';
-  static const String process = 'Natural Anaerobic';
+  static const List<String> varieties = ['Bourbon', 'Ateng Super / TimTim'];
+  static const List<String> processes = ['Natural Anaerobic'];
   static const String roast = 'Light-Medium';
   static const List<String> notes = ['Jasmine', 'Sweet Orange', 'Wild Honey'];
-  static const String aftertaste = 'Juicy';
-  static const String mouthfeel = 'Silky & Smooth';
+  static const List<String> aftertaste = ['Juicy', 'Lingering Sweetness'];
+  static const List<String> mouthfeel = ['Silky & Smooth', 'Juicy & Round'];
   static const double aromaScore = 8.50;
   static const double acidityScore = 8.50;
   static const double sweetnessScore = 8.75;
