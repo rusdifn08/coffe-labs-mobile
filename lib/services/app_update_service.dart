@@ -9,6 +9,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shorebird_code_push/shorebird_code_push.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../core/network/backend_endpoint_manager.dart';
 import 'app_hot_content_sync_service.dart';
 import 'auth_service.dart';
 import '../widgets/app_update_dialog.dart';
@@ -198,8 +199,9 @@ class AppUpdateService {
     final buildNumber = (versionInfo['buildNumber'] as num?)?.toInt() ?? 9;
     final patchNumber = (versionInfo['patchNumber'] as num?)?.toInt() ?? 0;
 
+    String activeBaseUrl = BackendEndpointManager.defaultProductionUrl;
     try {
-      final baseUrl = await AuthService.getBaseUrl();
+      activeBaseUrl = await AuthService.getBaseUrl();
 
       String platformName = 'android';
       if (kIsWeb) {
@@ -210,17 +212,41 @@ class AppUpdateService {
         platformName = 'windows';
       }
 
-      final uri = Uri.parse(
-        '$baseUrl/api/v1/app/version-check'
-        '?platform=$platformName'
-        '&base_version=$appVersion'
-        '&build_number=$buildNumber'
-        '&patch_number=$patchNumber',
-      );
+      Uri buildCheckUri(String base) => Uri.parse(
+            '$base/api/v1/app/version-check'
+            '?platform=$platformName'
+            '&base_version=$appVersion'
+            '&build_number=$buildNumber'
+            '&patch_number=$patchNumber',
+          );
 
-      final response = await http.get(uri).timeout(timeout);
+      http.Response response;
+      try {
+        response = await http.get(buildCheckUri(activeBaseUrl)).timeout(timeout);
+        if (response.statusCode >= 502 && response.statusCode <= 504) {
+          final failoverUrl = await BackendEndpointManager.instance
+              .failoverOnTransportError(failedUrl: activeBaseUrl);
+          if (failoverUrl != null && failoverUrl != activeBaseUrl) {
+            response = await http.get(buildCheckUri(failoverUrl)).timeout(timeout);
+          }
+        }
+      } catch (_) {
+        final failoverUrl = await BackendEndpointManager.instance
+            .failoverOnTransportError(failedUrl: activeBaseUrl);
+        if (failoverUrl != null && failoverUrl != activeBaseUrl) {
+          response = await http.get(buildCheckUri(failoverUrl)).timeout(timeout);
+        } else {
+          rethrow;
+        }
+      }
 
       if (response.statusCode == 200) {
+        final migrationHint = response.headers['x-coffeelabs-api-base'];
+        if (migrationHint != null && migrationHint.trim().isNotEmpty) {
+          unawaited(
+            BackendEndpointManager.instance.applyServerMigrationHint(migrationHint),
+          );
+        }
         final data = json.decode(response.body) as Map<String, dynamic>;
         try {
           final prefs = await SharedPreferences.getInstance();

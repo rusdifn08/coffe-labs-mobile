@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show PlatformDispatcher, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
+import 'core/network/backend_endpoint_manager.dart';
 import 'core/network/dio_client.dart';
 import 'core/router/app_router.dart';
 import 'data/world_indonesia_beans_service.dart';
@@ -60,8 +61,9 @@ void main() {
   // Inisialisasi sqflite FFI untuk platform desktop (Windows / Linux / macOS)
   PrototypeDatabase.ensureFfiInitialized();
 
-  // Pra-muat Knowledge Graph Kopi (v3.0) & Katalog Biji Sabang-Merauke/Dunia setelah frame pertama tampil
+  // Pra-muat Knowledge Graph Kopi (v3.0), Katalog Biji, & Sinkronisasi Dynamic Backend Endpoint setelah frame pertama tampil
   WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(BackendEndpointManager.instance.initializeInBackground());
     unawaited(CoffeeKnowledgeGraphService.instance.initialize());
     unawaited(WorldIndonesiaBeansService.instance.ensureLoaded());
   });

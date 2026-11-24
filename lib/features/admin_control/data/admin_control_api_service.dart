@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/network/backend_endpoint_manager.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../services/auth_service.dart';
 import '../models/admin_control_models.dart';
@@ -27,20 +28,11 @@ class AdminControlApiService {
     );
   }
 
-  /// Resolves the WebSocket URL for real-time control snapshot broadcast.
+  /// Resolves the WebSocket URL for real-time control snapshot broadcast dynamically.
   Uri resolveControlWsUri() {
-    final base = AuthAndRefreshInterceptor.normalizeBaseUrl(_dio.options.baseUrl);
-    final parsed = Uri.tryParse(base);
-    if (parsed == null || parsed.host.isEmpty) {
-      return Uri.parse(
-        'wss://coffe-labs-backend-production.up.railway.app/api/v1/system/control-ws',
-      );
-    }
-    final wsScheme = parsed.scheme == 'https' ? 'wss' : 'ws';
-    return parsed.replace(
-      scheme: wsScheme,
-      path: '/api/v1/system/control-ws',
-      query: null,
+    return BackendEndpointManager.instance.buildWebSocketUri(
+      '/api/v1/system/control-ws',
+      overrideBaseUrl: _dio.options.baseUrl,
     );
   }
 

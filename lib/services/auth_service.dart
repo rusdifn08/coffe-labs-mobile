@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/moderation/content_moderation_guard.dart';
+import '../core/network/backend_endpoint_manager.dart';
 import '../core/storage/user_scoped_storage.dart';
 import '../features/gamification/services/gamification_service.dart';
 import 'api_service.dart';
@@ -170,9 +171,8 @@ class AuthService {
   static const String _v1TokenKey = 'coffeehub_auth_token_v1';
   static const String _userKey = 'coffeehub_auth_user_json';
   static const String _sessionUserKey = 'coffeehub_auth_session_user';
-  static const String _serverUrlKey = 'coffeehub_backend_server_url';
   static const String defaultProductionUrl =
-      'https://coffe-labs-backend-production.up.railway.app';
+      BackendEndpointManager.defaultProductionUrl;
 
   static final ValueNotifier<int> changeNotifier = ValueNotifier<int>(0);
   static final http.Client _httpClient = http.Client();
@@ -215,47 +215,31 @@ class AuthService {
     getBaseUrl().then((url) {
       _httpClient
           .get(Uri.parse('$url/api/health'), headers: {'Connection': 'keep-alive'})
-          .timeout(const Duration(seconds: 30))
+          .timeout(const Duration(seconds: 15))
           .then((res) {
         if (res.statusCode == 200) {
-          debugPrint('☕ Backend heartbeat sukses ($url) - Railway online');
+          debugPrint('☕ Backend heartbeat sukses ($url) - Server online');
+        } else if (res.statusCode >= 502 && res.statusCode <= 504) {
+          unawaited(
+            BackendEndpointManager.instance.failoverOnTransportError(failedUrl: url),
+          );
         }
-      }).catchError((_) {});
+      }).catchError((_) {
+        unawaited(
+          BackendEndpointManager.instance.failoverOnTransportError(failedUrl: url),
+        );
+      });
     }).catchError((_) {});
   }
 
-  /// Deteksi Base URL backend secara dinamis:
-  /// Mengutamakan URL Railway Production, dengan auto-migrasi URL Render lama
-  static Future<String> getBaseUrl() async {
-    final prefs = await SharedPreferences.getInstance();
-    final customUrl = prefs.getString(_serverUrlKey);
-    if (customUrl != null && customUrl.trim().isNotEmpty) {
-      final trimmed = customUrl.trim();
-      final lower = trimmed.toLowerCase();
-      // Jika tersimpan URL Render lama, migrasi otomatis ke Railway
-      if (lower.contains('onrender.com')) {
-        await prefs.setString(_serverUrlKey, defaultProductionUrl);
-        return defaultProductionUrl;
-      }
-      // Jika masih tersimpan url lokal lama (localhost / 10.0.2.2), otomatis alihkan ke Railway
-      if (!lower.contains('localhost') && !lower.contains('10.0.2.2')) {
-        return trimmed.endsWith('/')
-            ? trimmed.substring(0, trimmed.length - 1)
-            : trimmed;
-      }
-    }
+  /// Deteksi Base URL backend secara dinamis via [BackendEndpointManager]:
+  /// Mendukung Multi-CDN Discovery (Vercel -> jsDelivr -> GitHub Raw) & Auto-Failover ke VPS.
+  static Future<String> getBaseUrl() =>
+      BackendEndpointManager.instance.getActiveBaseUrl();
 
-    return defaultProductionUrl;
-  }
-
-  /// Memperbarui alamat server backend jika diperlukan
+  /// Memperbarui alamat server backend (override manual admin / kosongkan untuk auto-discovery)
   static Future<void> setCustomBaseUrl(String url) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (url.trim().isEmpty) {
-      await prefs.remove(_serverUrlKey);
-    } else {
-      await prefs.setString(_serverUrlKey, url.trim());
-    }
+    await BackendEndpointManager.instance.setManualOverrideUrl(url);
     changeNotifier.value++;
   }
 

@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'backend_endpoint_manager.dart';
 import 'isolate_json_transformer.dart';
 
 part 'dio_client.g.dart';
@@ -27,51 +29,23 @@ class ApiException implements Exception {
 /// 2. Mendukung override Base URL dari pengaturan lokal (SharedPreferences).
 /// 3. Menangani error 401 Unauthorized dengan percobaan refresh JWT otomatis (`/api/auth/refresh`).
 class AuthAndRefreshInterceptor extends QueuedInterceptor {
-  static const String _serverUrlKey = 'coffeehub_backend_server_url';
   static const String _authTokenKey = 'coffeehub_auth_token_v1';
   static const String _legacyJwtKey = 'coffeehub_auth_jwt_token';
   static const String _refreshTokenKey = 'coffeehub_refresh_token_v1';
   static const String defaultBaseUrl =
-      'https://coffe-labs-backend-production.up.railway.app';
+      BackendEndpointManager.defaultProductionUrl;
 
   final Dio _dio;
 
   AuthAndRefreshInterceptor(this._dio);
 
-  /// Menormalisasi URL server tersimpan dan otomatis memigrasi URL lokal
-  /// maupun domain Render lama (`*.onrender.com`) ke domain Railway produksi.
-  static String normalizeBaseUrl(String? savedUrl) {
-    final trimmed = savedUrl?.trim();
-    if (trimmed == null || trimmed.isEmpty) {
-      return defaultBaseUrl;
-    }
-    final lower = trimmed.toLowerCase();
-    if (lower.contains('localhost') ||
-        lower.contains('10.0.2.2') ||
-        lower.contains('onrender.com')) {
-      return defaultBaseUrl;
-    }
-    return trimmed.endsWith('/')
-        ? trimmed.substring(0, trimmed.length - 1)
-        : trimmed;
-  }
+  /// Menormalisasi URL server tersimpan via [BackendEndpointManager].
+  static String normalizeBaseUrl(String? savedUrl) =>
+      BackendEndpointManager.normalizeBaseUrl(savedUrl);
 
-  /// Resolusi Base URL aktif sekaligus auto-migrasi cache `SharedPreferences`
-  /// perangkat user lama yang masih menyimpan URL Render.
-  static Future<String> resolveActiveBaseUrl() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final savedUrl = prefs.getString(_serverUrlKey)?.trim();
-      final normalized = normalizeBaseUrl(savedUrl);
-      if (savedUrl != null &&
-          savedUrl.isNotEmpty &&
-          savedUrl.toLowerCase().contains('onrender.com')) {
-        await prefs.setString(_serverUrlKey, defaultBaseUrl);
-      }
-      return normalized;
-    } catch (_) {}
-    return defaultBaseUrl;
-  }
+  /// Resolusi Base URL aktif dari [BackendEndpointManager] (Multi-CDN + Auto-Failover).
+  static Future<String> resolveActiveBaseUrl() =>
+      BackendEndpointManager.instance.getActiveBaseUrl();
 
   Future<String> _resolveBaseUrl() => resolveActiveBaseUrl();
 
@@ -100,29 +74,67 @@ class AuthAndRefreshInterceptor extends QueuedInterceptor {
   }
 
   @override
+  void onResponse(Response response, ResponseInterceptorHandler handler) {
+    // Mendukung petunjuk migrasi server zero-downtime melalui header respons
+    final migrationHint = response.headers.value('x-coffeelabs-api-base');
+    if (migrationHint != null && migrationHint.trim().isNotEmpty) {
+      unawaited(
+        BackendEndpointManager.instance.applyServerMigrationHint(migrationHint),
+      );
+    }
+    handler.next(response);
+  }
+
+  bool _shouldTriggerEndpointFailover(DioException err) {
+    final statusCode = err.response?.statusCode;
+    if (statusCode == 502 || statusCode == 503 || statusCode == 504) {
+      return true;
+    }
+    return err.type == DioExceptionType.connectionTimeout ||
+        err.type == DioExceptionType.connectionError ||
+        err.type == DioExceptionType.receiveTimeout ||
+        err.type == DioExceptionType.unknown;
+  }
+
+  @override
   Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
-    // Jika 401 Unauthorized dan bukan endpoint login/refresh, coba refresh token otomatis
     final statusCode = err.response?.statusCode;
     final path = err.requestOptions.path;
     final isAuthEndpoint = path.contains('/api/auth/login') ||
         path.contains('/api/auth/register') ||
         path.contains('/api/auth/refresh');
 
+    // 1. Automatic Zero-Downtime Endpoint Failover (Railway -> VPS / Fallback)
+    if (_shouldTriggerEndpointFailover(err) &&
+        err.requestOptions.extra['failover_retried'] != true) {
+      final failedUrl = err.requestOptions.baseUrl.isNotEmpty
+          ? err.requestOptions.baseUrl
+          : await _resolveBaseUrl();
+      final replacementUrl = await BackendEndpointManager.instance
+          .failoverOnTransportError(failedUrl: failedUrl);
+      if (replacementUrl != null && replacementUrl != failedUrl) {
+        try {
+          final retryOptions = err.requestOptions;
+          retryOptions.extra['failover_retried'] = true;
+          retryOptions.baseUrl = replacementUrl;
+          final failoverResponse = await _dio.fetch(retryOptions);
+          return handler.resolve(failoverResponse);
+        } catch (_) {
+          // Lanjutkan ke error handler jika retry di endpoint baru juga gagal
+        }
+      }
+    }
+
+    // 2. Backoff sopan untuk HTTP 429 Too Many Requests (tanpa fallback localhost!)
     if (statusCode == 429 && err.requestOptions.extra['retried_429'] != true) {
       final retryOptions = err.requestOptions;
       retryOptions.extra['retried_429'] = true;
       try {
-        retryOptions.baseUrl = 'http://localhost:3000';
-        final localResponse = await _dio.fetch(retryOptions);
-        return handler.resolve(localResponse);
-      } catch (_) {
-        try {
-          await Future.delayed(const Duration(seconds: 3));
-          retryOptions.baseUrl = await _resolveBaseUrl();
-          final retryResponse = await _dio.fetch(retryOptions);
-          return handler.resolve(retryResponse);
-        } catch (_) {}
-      }
+        await Future.delayed(const Duration(seconds: 2));
+        retryOptions.baseUrl = await _resolveBaseUrl();
+        final retryResponse = await _dio.fetch(retryOptions);
+        return handler.resolve(retryResponse);
+      } catch (_) {}
     }
 
     if (statusCode == 401 && !isAuthEndpoint) {
