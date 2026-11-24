@@ -89,7 +89,7 @@ class _RdtCalculatorCardState extends State<RdtCalculatorCard> {
             children: [
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
@@ -98,13 +98,21 @@ class _RdtCalculatorCardState extends State<RdtCalculatorCard> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Dosis:', style: TextStyle(fontSize: 11, color: Colors.black54)),
+                      const Flexible(
+                        child: Text(
+                          'Dosis:',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 11, color: Colors.black54),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
                       DropdownButtonHideUnderline(
                         child: DropdownButton<int>(
                           value: _doseGrams,
                           isDense: true,
                           items: [12, 15, 18, 20, 24, 30].map((d) {
-                            return DropdownMenuItem(value: d, child: Text('${d}g', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)));
+                            return DropdownMenuItem(value: d, child: Text('${d}g', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)));
                           }).toList(),
                           onChanged: (val) {
                             if (val != null) setState(() => _doseGrams = val);
@@ -118,7 +126,7 @@ class _RdtCalculatorCardState extends State<RdtCalculatorCard> {
               const SizedBox(width: 8),
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
@@ -127,13 +135,21 @@ class _RdtCalculatorCardState extends State<RdtCalculatorCard> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Roast:', style: TextStyle(fontSize: 11, color: Colors.black54)),
+                      const Flexible(
+                        child: Text(
+                          'Roast:',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 11, color: Colors.black54),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
                       DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: _roastLevel,
                           isDense: true,
                           items: ['Light', 'Medium', 'Dark'].map((r) {
-                            return DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)));
+                            return DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)));
                           }).toList(),
                           onChanged: (val) {
                             if (val != null) setState(() => _roastLevel = val);

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flag/flag.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import '../features/grinder/services/grinder_conversion_engine.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../data/barista_catalog.dart';
 import '../theme/app_theme.dart';
@@ -208,82 +209,83 @@ class BaristaUtils {
     return cleaned;
   }
 
-  /// Menghasilkan estimasi konversi gilingan untuk berbagai grinder populer.
+  /// Menghasilkan estimasi konversi gilingan akurat berbasis Interpolasi Multi-Jangkar
+  /// dari [GrinderConversionEngine] (dilengkapi notasi posisi dial fisik Putaran.Angka.Klik).
   static Map<String, String> grinderConversions(String? rawGrind) {
     final g = (rawGrind ?? 'Medium').toLowerCase();
-    // Cek jika ada angka klik Comandante eksplisit di string
+    // Cek jika ada angka klik Comandante eksplisit di string resep
     final clickMatch = RegExp(r'(\d+)\s*klik', caseSensitive: false).firstMatch(rawGrind ?? '');
-    final int c40Clicks = clickMatch != null
-        ? (int.tryParse(clickMatch.group(1)!) ?? 23)
-        : (g.contains('extra fine')
-            ? 12
-            : g.contains('medium-fine') || g.contains('medium fine')
-                ? 19
-                : g.contains('fine')
-                    ? 15
-                    : g.contains('medium-coarse') || g.contains('medium coarse')
-                        ? 27
-                        : g.contains('coarse')
-                            ? 31
-                            : 23);
+    final c40 = GrinderConversionEngine.findById('comandante_c40_mk4')!;
 
-    final int microns = (c40Clicks * 30).clamp(300, 1100);
-    final int timemoreC2C3 = (c40Clicks * 0.72).round().clamp(10, 28);
-    final int timemoreEsp = (c40Clicks * 2.5).round().clamp(25, 80);
-    final String oneZpressoK = (c40Clicks * 0.32).clamp(4.0, 9.5).toStringAsFixed(1);
-    final int oneZpressoJxPro = (c40Clicks * 1.5).round().clamp(20, 48);
-    final int oneZpressoQ2 = (c40Clicks * 0.75).round().clamp(12, 28);
-    final int kingrinderK6 = (c40Clicks * 3.7).round().clamp(50, 130);
-    final int kingrinderK2 = (c40Clicks * 2.8).round().clamp(40, 110);
-    final int baratzaEncore = (c40Clicks * 0.68).round().clamp(10, 28);
-    final int baratzaEsp = (c40Clicks * 1.1).round().clamp(18, 38);
-    final String fellowOde = (c40Clicks * 0.22).clamp(2.0, 8.5).toStringAsFixed(1);
-    final String eurekaMignon = (c40Clicks * 0.25).clamp(2.0, 7.0).toStringAsFixed(1);
-    final String ek43 = (c40Clicks * 0.42).clamp(6.0, 12.5).toStringAsFixed(1);
-    final int harioSkerton = (c40Clicks * 0.45).round().clamp(5, 14);
-    final int porlex = (c40Clicks * 0.48).round().clamp(6, 15);
-
-    String texture = 'Gula Pasir Halus (Table Salt)';
-    if (c40Clicks <= 16) {
-      texture = 'Garam Meja Halus (Fine Salt)';
-    } else if (c40Clicks <= 20) {
-      texture = 'Pasir Pantai Halus (Caster Sugar)';
-    } else if (c40Clicks <= 25) {
-      texture = 'Gula Pasir Kristal (Granulated Sugar)';
-    } else if (c40Clicks <= 28) {
-      texture = 'Garam Kosher / Gula Kasar';
+    final double microns;
+    if (clickMatch != null) {
+      final parsedClicks = (int.tryParse(clickMatch.group(1)!) ?? 24).clamp(4, 40).toDouble();
+      microns = GrinderConversionEngine.settingToMicrons(c40, parsedClicks);
+    } else if (g.contains('turkish') || g.contains('ibrik')) {
+      microns = 150.0;
+    } else if (g.contains('extra fine') || g.contains('espresso')) {
+      microns = 280.0;
+    } else if (g.contains('moka')) {
+      microns = 480.0;
+    } else if (g.contains('medium-fine') || g.contains('medium fine')) {
+      microns = 550.0;
+    } else if (g.contains('fine')) {
+      microns = 420.0;
+    } else if (g.contains('medium-coarse') || g.contains('medium coarse')) {
+      microns = 820.0;
+    } else if (g.contains('cold brew') || g.contains('extra coarse')) {
+      microns = 1175.0;
+    } else if (g.contains('coarse')) {
+      microns = 975.0;
     } else {
-      texture = 'Garam Laut Kasar (Sea Salt)';
+      microns = 650.0; // V60 / Medium Pour Over acuan
     }
 
-    String wilfaSetting = 'Filter (Tengah)';
-    if (c40Clicks <= 18) {
-      wilfaSetting = 'Aeropress / Fine Filter';
-    } else if (c40Clicks <= 24) {
-      wilfaSetting = 'Filter / V60 (Tengah)';
-    } else {
-      wilfaSetting = 'French Press / Coarse';
+    String formatForId(String id) {
+      final spec = GrinderConversionEngine.findById(id);
+      if (spec == null) return '-';
+      final val = GrinderConversionEngine.micronsToSetting(spec, microns);
+      if (val == null) return 'Kalibrasi Visual';
+      final reading = GrinderConversionEngine.formatDialReading(
+        spec,
+        val,
+        targetMicrons: microns,
+      );
+      if (reading.warning != null && spec.filterOnly && microns < (spec.minRecommendedMicrons ?? 0)) {
+        return 'N/A (Khusus Filter)';
+      }
+      if (reading.physicalNotation.contains('.') || reading.physicalNotation.contains('+')) {
+        return '${reading.primaryDisplay} (${reading.physicalNotation})';
+      }
+      return reading.primaryDisplay;
     }
+
+    final texture = GrinderConversionEngine.textureForMicrons(microns);
+    final zone = GrinderConversionEngine.brewZoneForMicrons(microns);
 
     return {
-      'Kategori': shortGrindLabel(rawGrind),
-      'Ukuran Partikel': '~$microns µm ($texture)',
-      'Comandante C40 MK3/MK4': '$c40Clicks Klik',
-      'Timemore C2 / C3 / Slim': '$timemoreC2C3 Klik',
-      'Timemore C3 ESP': '$timemoreEsp Klik (Dial Luar)',
-      '1Zpresso K-Ultra / K-Max': 'Angka $oneZpressoK',
-      '1Zpresso JX-Pro / J-Max': '$oneZpressoJxPro Klik (2-3 Putaran)',
-      '1Zpresso Q2 / Q Air': '$oneZpressoQ2 Klik',
-      'Kingrinder K6': '$kingrinderK6 Klik (Dial Luar)',
-      'Kingrinder K2 / K4': '$kingrinderK2 Klik',
-      'Fellow Ode Gen 2': 'Setting $fellowOde (Skala 1-11)',
-      'Baratza Encore': 'Setting $baratzaEncore',
-      'Baratza Encore ESP': 'Setting $baratzaEsp (Filter Range)',
-      'Wilfa Svart Aroma': wilfaSetting,
-      'Eureka Mignon Filtro/Crono': 'Setting $eurekaMignon',
-      'Mahlkönig EK43 / EK43S': 'Skala $ek43',
-      'Hario Skerton Pro / Smart G': '$harioSkerton Klik',
-      'Porlex Mini / Tall II': '$porlex Klik',
+      'Kategori & Zona': '${shortGrindLabel(rawGrind)} · $zone',
+      'Ukuran Partikel': '~${microns.round()} µm ($texture)',
+      'Comandante C40 MK4': formatForId('comandante_c40_mk4'),
+      'Comandante C40 (Red Clix)': formatForId('comandante_c40_red_clix'),
+      '1Zpresso K-Ultra': formatForId('1zpresso_k_ultra'),
+      '1Zpresso J-Ultra': formatForId('1zpresso_j_ultra'),
+      '1Zpresso JX-Pro': formatForId('1zpresso_jx_pro'),
+      '1Zpresso Q2': formatForId('1zpresso_q2'),
+      'KINGrinder K6': formatForId('kingrinder_k6'),
+      'KINGrinder K2': formatForId('kingrinder_k2'),
+      'Timemore Chestnut C3 / C3S': formatForId('timemore_c3'),
+      'Timemore Chestnut C3 ESP': formatForId('timemore_c3_esp'),
+      'Timemore Chestnut S3': formatForId('timemore_s3'),
+      'MHW-3BOMBER Blade R3': formatForId('mhw3bomber_blade_r3'),
+      'Normcore Manual V2': formatForId('normcore_manual_v2'),
+      'Kinu M47 Classic': formatForId('kinu_m47_classic'),
+      'DF64 Gen 2 (Elektrik)': formatForId('df64_gen2'),
+      'Baratza Encore ESP (Elektrik)': formatForId('baratza_encore_esp'),
+      'Fellow Ode Gen 2 (Elektrik)': formatForId('fellow_ode_gen2'),
+      'Eureka Mignon Specialità': formatForId('eureka_mignon_specialita'),
+      'Mahlkönig EK43 (Dial 0–16)': formatForId('mahlkonig_ek43'),
+      'Porlex Mini / Tall II': formatForId('porlex_mini_ii'),
     };
   }
 
