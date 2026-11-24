@@ -58,3 +58,5 @@ test/goldens/
 android/key.properties
 android/app/*.jks
 android/app/*.keystore
+
+dist/
