@@ -74,7 +74,7 @@ class _GrinderConverterScreenState extends State<GrinderConverterScreen> {
                 children: [
                   _ModeTabButton(
                     title: isEn ? 'Grinder → Grinder' : 'Konversi Grinder',
-                    icon: CupertinoIcons.arrow_right_arrow_left,
+                    icon: CupertinoIcons.arrow_up_arrow_down,
                     selected: _activeTab == 0,
                     onTap: () => setState(() => _activeTab = 0),
                   ),

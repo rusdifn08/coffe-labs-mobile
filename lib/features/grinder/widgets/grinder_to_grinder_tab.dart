@@ -283,7 +283,7 @@ class _GrinderToGrinderTabState extends State<GrinderToGrinderTab> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(CupertinoIcons.scope, size: 18, color: Color(0xFF00695C)),
+                      const Icon(CupertinoIcons.circle_grid_hex_fill, size: 18, color: Color(0xFF00695C)),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(
