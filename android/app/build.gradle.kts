@@ -154,3 +154,17 @@ configurations.all {
 flutter {
     source = "../.."
 }
+
+// ==========================================================================
+// ANTI-STALE NATIVE SNAPSHOT GUARD (CRITICAL FOR SHOREBIRD OTA & RELEASE)
+// ==========================================================================
+// AGP incremental cache pada `strip*DebugSymbols` / `merge*JniLibFolders`
+// terkadang menahan `libapp.so` lama meski `app.dill` & `app.so` baru sudah
+// dikompilasi Flutter. Memaksa upToDateWhen = false menjamin setiap release
+// dan Shorebird patch selalu membungkus `libapp.so` paling mutakhir!
+tasks.configureEach {
+    if ((name.startsWith("strip") && name.endsWith("DebugSymbols")) ||
+        (name.startsWith("merge") && (name.endsWith("JniLibFolders") || name.endsWith("NativeLibs")))) {
+        outputs.upToDateWhen { false }
+    }
+}
