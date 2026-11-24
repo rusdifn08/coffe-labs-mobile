@@ -104,6 +104,8 @@ class AppUpdateService {
 
   static final ShorebirdUpdater _shorebird = ShorebirdUpdater();
   static final ValueNotifier<bool> patchReadyNotifier = ValueNotifier<bool>(false);
+  static String? lastShorebirdDiagnostic;
+  static int? lastDownloadedPatchNumber;
   static bool _isChecking = false;
 
   /// Menormalkan Android `--split-per-abi` versionCode (contoh: 2009 -> 9, 1008 -> 8).
@@ -143,25 +145,39 @@ class AppUpdateService {
     return 0;
   }
 
+  /// Dapatkan nomor patch berikutnya yang sudah terunduh & menunggu restart aplikasi.
+  static Future<int?> getNextPatchNumber() async {
+    try {
+      if (isShorebirdAvailable) {
+        final patch = await _shorebird.readNextPatch();
+        return patch?.number;
+      }
+    } catch (_) {}
+    return null;
+  }
+
   /// Dapatkan info versi aplikasi saat ini (termasuk raw & normalized buildNumber).
   static Future<Map<String, dynamic>> getAppVersionInfo() async {
     try {
       final info = await PackageInfo.fromPlatform();
       final patchNum = await getCurrentPatchNumber();
+      final nextPatch = await getNextPatchNumber();
       final rawBuild = int.tryParse(info.buildNumber) ?? 9;
       return {
         'version': info.version,
         'buildNumber': normalizeAbiBuildNumber(rawBuild),
         'rawBuildNumber': rawBuild,
         'patchNumber': patchNum,
+        'nextPatchNumber': nextPatch,
         'appName': info.appName,
       };
     } catch (_) {
       return {
-        'version': '2.5.1',
-        'buildNumber': 9,
-        'rawBuildNumber': 9,
+        'version': '2.5.4',
+        'buildNumber': 24,
+        'rawBuildNumber': 2024,
         'patchNumber': 0,
+        'nextPatchNumber': null,
         'appName': 'Coffee Labs',
       };
     }
@@ -374,13 +390,21 @@ class AppUpdateService {
           if (!context.mounted) return;
           if (otaOutcome == ShorebirdPatchOutcome.downloaded ||
               otaOutcome == ShorebirdPatchOutcome.restartRequired) {
-            _notifyPatchReadySnackBar(context);
+            if (isManual) {
+              await _showPatchRestartDialog(context);
+            } else {
+              _notifyPatchReadySnackBar(context);
+            }
             return;
           }
           if (isManual) {
             final info = await getAppVersionInfo();
             if (!context.mounted) return;
-            _showUpToDateDialog(context, info);
+            if (otaOutcome == ShorebirdPatchOutcome.error) {
+              _showOtaErrorDialog(context, info);
+            } else {
+              _showUpToDateDialog(context, info);
+            }
           }
           break;
 
@@ -457,13 +481,108 @@ class AppUpdateService {
     );
   }
 
+  static Future<void> _showPatchRestartDialog(BuildContext context) async {
+    patchReadyNotifier.value = true;
+    final info = await getAppVersionInfo();
+    if (!context.mounted) return;
+    final int? nextNum = (info['nextPatchNumber'] as num?)?.toInt() ??
+        lastDownloadedPatchNumber;
+    final String patchLabel =
+        nextNum != null && nextNum > 0 ? 'Patch #$nextNum' : 'Patch OTA Baru';
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(CupertinoIcons.bolt_circle_fill,
+                color: Color(0xFF6D28D9), size: 26),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Pembaruan OTA Siap!',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          '$patchLabel selesai diunduh & terverifikasi untuk Coffee Labs v${info['version']}.\n\n'
+          'Tutup penuh aplikasi (swipe dari Recent Apps) lalu buka kembali agar pembaruan langsung aktif tanpa install APK baru.',
+          style: const TextStyle(fontSize: 13.5, height: 1.45),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6D28D9),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Mengerti'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static void _showOtaErrorDialog(
+    BuildContext context,
+    Map<String, dynamic> info,
+  ) {
+    final detail = lastShorebirdDiagnostic ??
+        'Gagal mengunduh atau memverifikasi patch OTA dari Shorebird CDN.';
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(CupertinoIcons.exclamationmark_triangle_fill,
+                color: Colors.orange, size: 24),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Sinkronisasi OTA Tertunda',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Coffee Labs v${info['version']} (Build #${info['rawBuildNumber'] ?? info['buildNumber']})\n'
+          'Patch Aktif: #${info['patchNumber'] ?? 0}\n\n'
+          'Diagnostik: $detail\n\n'
+          'Pastikan koneksi internet stabil lalu coba lagi, atau unduh rilis terbaru jika ada pembaruan native.',
+          style: const TextStyle(fontSize: 13, height: 1.45),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Tutup'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              openDownloadUrl(defaultPlatformDownloadUrl());
+            },
+            child: const Text('Halaman Rilis'),
+          ),
+        ],
+      ),
+    );
+  }
+
   static void _showUpToDateDialog(
     BuildContext context,
     Map<String, dynamic> info,
   ) {
     final patchNum = (info['patchNumber'] as num?)?.toInt() ?? 0;
+    final nextPatch = (info['nextPatchNumber'] as num?)?.toInt();
+    final rawBuild = info['rawBuildNumber'] ?? info['buildNumber'];
     final shorebirdBadge = isShorebirdAvailable
-        ? 'Delta OTA Aktif (Patch #$patchNum)'
+        ? (nextPatch != null && nextPatch != patchNum
+            ? 'Delta OTA Aktif (Patch #$patchNum → Siap #$nextPatch)'
+            : 'Delta OTA Aktif (Patch #$patchNum)')
         : 'Rilis Native Standar';
     showDialog<void>(
       context: context,
@@ -477,7 +596,7 @@ class AppUpdateService {
           ],
         ),
         content: Text(
-          'Coffee Labs v${info['version']} (Build #${info['buildNumber']})\n'
+          'Coffee Labs v${info['version']} (Build #$rawBuild)\n'
           'Status Mesin Update: $shorebirdBadge\n\n'
           'Anda sudah menggunakan versi paling mutakhir.',
           style: const TextStyle(fontSize: 13.5, height: 1.45),
@@ -500,21 +619,30 @@ class AppUpdateService {
   /// Jalankan pengecekan & unduh delta patch Shorebird dengan status hasil yang jujur & presisi.
   static Future<ShorebirdPatchOutcome> runShorebirdPatchUpdate() async {
     if (!isShorebirdAvailable) {
+      lastShorebirdDiagnostic = 'Mesin Shorebird tidak aktif pada build ini.';
       return ShorebirdPatchOutcome.unavailable;
     }
+    lastShorebirdDiagnostic = null;
     try {
-      final status = await _shorebird.checkForUpdate();
+      final status = await _shorebird.checkForUpdate(track: UpdateTrack.stable);
       if (status == UpdateStatus.restartRequired) {
+        lastDownloadedPatchNumber = await getNextPatchNumber();
         patchReadyNotifier.value = true;
         return ShorebirdPatchOutcome.restartRequired;
       }
       if (status == UpdateStatus.outdated) {
-        await _shorebird.update();
+        await _shorebird.update(track: UpdateTrack.stable);
+        lastDownloadedPatchNumber = await getNextPatchNumber();
         patchReadyNotifier.value = true;
         return ShorebirdPatchOutcome.downloaded;
       }
       return ShorebirdPatchOutcome.upToDate;
+    } on UpdateException catch (e) {
+      lastShorebirdDiagnostic = '${e.reason.name}: ${e.message}';
+      debugPrint('⚠️ Shorebird UpdateException: $lastShorebirdDiagnostic');
+      return ShorebirdPatchOutcome.error;
     } catch (e) {
+      lastShorebirdDiagnostic = e.toString();
       debugPrint('⚠️ Shorebird delta patch error: $e');
       return ShorebirdPatchOutcome.error;
     }
