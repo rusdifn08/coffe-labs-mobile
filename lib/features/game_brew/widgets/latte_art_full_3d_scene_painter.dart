@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../domain/game_brew_studio_models.dart';
 import '../engine/latte_art_cfd_engine.dart';
 
-/// Ceramic cup color palette matching the reference Latte Art 3D studio.
+/// Ceramic cup color palette matching the Coffee Labs Barista Studio.
 enum LatteCupColorTheme {
   cobaltBlue(
     label: 'Cobalt Blue',
@@ -57,12 +57,13 @@ enum LatteCupColorTheme {
   });
 }
 
-/// Full-Screen 3D Perspective Latte Art Studio Painter:
-/// - Full-bleed warm walnut barista wood table with grain & studio lighting
-/// - 3D Saucer + 3D Curved Ceramic Latte Bowl + Sculpted 3D Handle + Rising Inner Liquid Level
-/// - 3D Rim Overflow Spill Drips & Saucer Puddle when overfilled (> 100%)
-/// - 3D Hovering & Tilting Milk Pitcher (Transparent Borosilicate Glass OR Ceramic Matte)
-///   with visible sloshing internal milk/microfoam, V-spout & 3D Tapered Milk Stream!
+/// Photorealistic First-Person Barista POV 3D Latte Art Studio Painter:
+/// - Warm walnut barista countertop with woodgrain & overhead café pendant spotlight
+/// - Glazed 3D porcelain cup & saucer positioned cleanly in upper-middle with realistic
+///   counter-tilt shading, inner meniscus shadow & ZERO-pixelation anti-aliased CFD crema!
+/// - FIRST-PERSON BARISTA POV: Brushed Stainless-Steel (or Borosilicate Glass) Milk Pitcher
+///   positioned in the FOREGROUND (bottom-right / bottom-left, close to the barista's hand!),
+///   tilting FORWARD to pour a gleaming 3D tapered microfoam stream forward into the cup!
 class LatteArtFull3DScenePainter extends CustomPainter {
   final LatteArtCfdEngine cfd;
   final ui.Image? fluidImage;
@@ -73,20 +74,22 @@ class LatteArtFull3DScenePainter extends CustomPainter {
   final LatteArtPattern targetPattern;
   final double activePitchDeg;
   final double activeRollDeg;
+  final bool pitcherOnRight;
 
   const LatteArtFull3DScenePainter({
     required this.cfd,
     required this.fluidImage,
     required this.cupTheme,
-    this.transparentGlassPitcher = true,
+    this.transparentGlassPitcher = false,
     this.topDownInspectionMode = false,
     required this.showGhostGuide,
     required this.targetPattern,
     required this.activePitchDeg,
     required this.activeRollDeg,
+    this.pitcherOnRight = true,
   });
 
-  /// Helper to convert a local screen touch inside [size] into normalized cup coords `[-0.8..0.8]`.
+  /// Converts a screen touch inside [size] into normalized cup coordinates `[-0.78..0.78]`.
   static Offset screenToCupNormalized(
     Offset localPos,
     Size size, {
@@ -95,7 +98,7 @@ class LatteArtFull3DScenePainter extends CustomPainter {
   }) {
     final center = cupCenterForSize(size, isLandscape: isLandscape, topDown: topDown);
     final double cupR = cupRadiusForSize(size, isLandscape: isLandscape);
-    final double tiltYScale = topDown ? 1.0 : 0.84;
+    final double tiltYScale = topDown ? 1.0 : 0.86;
     final double nx = ((localPos.dx - center.dx) / (cupR * 0.88)).clamp(-0.78, 0.78);
     final double ny =
         ((localPos.dy - center.dy) / (cupR * 0.88 * tiltYScale)).clamp(-0.78, 0.78);
@@ -113,22 +116,23 @@ class LatteArtFull3DScenePainter extends CustomPainter {
         size.height * (isLandscape ? 0.50 : 0.34),
       );
     }
+    // Cup sits cleanly in the mid-upper workspace so the foreground pitcher has natural barista room below!
     return Offset(
-      size.width * (isLandscape ? 0.52 : 0.54),
-      size.height * (isLandscape ? 0.58 : 0.56),
+      size.width * (isLandscape ? 0.48 : 0.52),
+      size.height * (isLandscape ? 0.44 : 0.41),
     );
   }
 
   static double cupRadiusForSize(Size size, {required bool isLandscape}) {
     final double shortest = math.min(size.width, size.height);
-    return isLandscape ? shortest * 0.34 : shortest * 0.36;
+    return isLandscape ? shortest * 0.34 : shortest * 0.35;
   }
 
   @override
   void paint(Canvas canvas, Size size) {
     final bool isLandscape = size.width > size.height;
 
-    // 1. Full-Bleed Walnut Barista Wood Countertop
+    // 1. Full-Bleed Walnut Barista Wood Countertop + Studio Pendant Spotlight
     _drawWoodCountertop(canvas, size);
 
     final Offset cupCenter = cupCenterForSize(
@@ -137,15 +141,20 @@ class LatteArtFull3DScenePainter extends CustomPainter {
       topDown: topDownInspectionMode,
     );
     final double cupR = cupRadiusForSize(size, isLandscape: isLandscape);
-    final double ySquash = topDownInspectionMode ? 1.0 : 0.84;
 
-    // 2. 3D Wide Ceramic Saucer + Spill Puddle
+    // Subtle real-world Barista Cup Counter-Tilt: cup angles slightly toward pouring hand early on,
+    // and levels smoothly as it reaches 100% fill!
+    final double fillNorm = (cfd.cupFillPct / 100.0).clamp(0.18, 1.0);
+    final double ySquash =
+        topDownInspectionMode ? 1.0 : (0.83 + 0.05 * fillNorm);
+
+    // 2. 3D Glazed Ceramic Saucer + Spill Puddle
     _draw3DSaucer(canvas, cupCenter, cupR, ySquash);
 
-    // 3. 3D Curved Ceramic Cup Handle (Right Side)
+    // 3. 3D Curved Ceramic Cup Handle (opposite side of foreground pouring pitcher!)
     _draw3DCupHandle(canvas, cupCenter, cupR, ySquash);
 
-    // 4. 3D Outer Ceramic Bowl Body + Rim Lip + Inner Rising Crema Surface
+    // 4. 3D Glazed Ceramic Cup Bowl + Smooth Anti-Aliased CFD Crema/Microfoam Surface
     final Offset streamImpactScreen = _draw3DCupAndFluidSurface(
       canvas,
       cupCenter,
@@ -153,15 +162,16 @@ class LatteArtFull3DScenePainter extends CustomPainter {
       ySquash,
     );
 
-    // 5. 3D Rim Spill Drips (when overfilled > 100%, just like 69s-70s of reference video!)
+    // 5. Realistic Rim Spill Drips when overfilled (> 100%)
     if (cfd.spilled) {
       _draw3DRimSpillDrips(canvas, cupCenter, cupR, ySquash);
     }
 
-    // 6. 3D Sculpted Milk Pitcher Hovering & Tilting Above the Cup!
+    // 6. FIRST-PERSON BARISTA POV: Foreground Brushed-Steel / Glass Pitcher Pouring FORWARD!
     if (!topDownInspectionMode) {
-      _draw3DPitcherAndMilkStream(
+      _drawForegroundBaristaPitcherAndStream(
         canvas,
+        size: size,
         cupCenter: cupCenter,
         cupR: cupR,
         streamImpactScreen: streamImpactScreen,
@@ -178,36 +188,47 @@ class LatteArtFull3DScenePainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFF7A5238),
-            Color(0xFF66422B),
-            Color(0xFF533421),
+            Color(0xFF6B462E),
+            Color(0xFF5A3924),
+            Color(0xFF472B1A),
           ],
         ).createShader(rect),
     );
 
-    // Horizontal wood planks & subtle natural grain lines
+    // Natural walnut planks + smooth curved woodgrain lines
     final plankLinePaint = Paint()
-      ..color = const Color(0xFF3B2214).withValues(alpha: 0.34)
+      ..color = const Color(0xFF2D190E).withValues(alpha: 0.34)
       ..strokeWidth = 1.6;
     final grainPaint = Paint()
-      ..color = const Color(0xFF8E6346).withValues(alpha: 0.16)
+      ..color = const Color(0xFF8C6143).withValues(alpha: 0.14)
+      ..style = PaintingStyle.stroke
       ..strokeWidth = 1.1;
 
-    const double plankH = 68.0;
+    const double plankH = 66.0;
     for (double y = 24.0; y < size.height; y += plankH) {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), plankLinePaint);
       for (int g = 1; g <= 3; g++) {
         final double gy = y + g * (plankH / 4.0);
         final path = Path()..moveTo(0, gy);
-        for (double x = 0; x <= size.width; x += 60) {
-          path.lineTo(x, gy + math.sin(x * 0.02 + y) * 1.8);
+        for (double x = 0; x <= size.width; x += 52) {
+          path.lineTo(x, gy + math.sin(x * 0.022 + y * 0.04) * 1.9);
         }
-        canvas.drawPath(
-          path,
-          grainPaint..style = PaintingStyle.stroke,
-        );
+        canvas.drawPath(path, grainPaint);
       }
     }
+
+    // Soft warm café pendant spotlight centered over the latte cup
+    canvas.drawCircle(
+      Offset(size.width * 0.5, size.height * 0.38),
+      math.max(size.width, size.height) * 0.55,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            const Color(0xFFFFF4D2).withValues(alpha: 0.14),
+            Colors.transparent,
+          ],
+        ).createShader(rect),
+    );
   }
 
   void _draw3DSaucer(
@@ -217,30 +238,30 @@ class LatteArtFull3DScenePainter extends CustomPainter {
     double ySquash,
   ) {
     final Offset saucerCenter =
-        cupCenter + Offset(0, topDownInspectionMode ? 0 : cupR * 0.18);
-    final double saucerRx = cupR * 1.46;
-    final double saucerRy = saucerRx * (topDownInspectionMode ? 1.0 : 0.80);
+        cupCenter + Offset(0, topDownInspectionMode ? 0 : cupR * 0.16);
+    final double saucerRx = cupR * 1.44;
+    final double saucerRy = saucerRx * (topDownInspectionMode ? 1.0 : 0.82);
 
-    // Table drop shadow under saucer
+    // Soft multi-layer ambient occlusion drop shadow under saucer
     canvas.drawOval(
       Rect.fromCenter(
-        center: saucerCenter + const Offset(4, 14),
+        center: saucerCenter + const Offset(5, 14),
         width: saucerRx * 2.04,
         height: saucerRy * 2.04,
       ),
       Paint()
-        ..color = Colors.black.withValues(alpha: 0.36)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14),
+        ..color = Colors.black.withValues(alpha: 0.40)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16),
     );
 
-    // Table overflow coffee puddle if heavily spilled (70s of video)
+    // Overflow coffee puddle on saucer when heavily spilled
     if (cfd.spillAmountMl > 8.0) {
       final double puddleGrow = (cfd.spillAmountMl / 35.0).clamp(0.15, 1.0);
       canvas.drawOval(
         Rect.fromCenter(
           center: saucerCenter + Offset(-cupR * 0.15, cupR * 0.12),
-          width: saucerRx * (1.8 + puddleGrow * 0.7),
-          height: saucerRy * (1.6 + puddleGrow * 0.6),
+          width: saucerRx * (1.78 + puddleGrow * 0.65),
+          height: saucerRy * (1.58 + puddleGrow * 0.55),
         ),
         Paint()..color = const Color(0xFFC89B73).withValues(alpha: 0.72),
       );
@@ -264,19 +285,25 @@ class LatteArtFull3DScenePainter extends CustomPainter {
     // Saucer inner concave well shadow
     final wellRect = Rect.fromCenter(
       center: saucerCenter + Offset(0, topDownInspectionMode ? 0 : 4),
-      width: cupR * 1.45,
-      height: cupR * 1.45 * ySquash,
+      width: cupR * 1.44,
+      height: cupR * 1.44 * ySquash,
     );
     canvas.drawOval(
       wellRect,
-      Paint()..color = Colors.black.withValues(alpha: 0.18),
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            Colors.black.withValues(alpha: 0.28),
+            Colors.black.withValues(alpha: 0.08),
+          ],
+        ).createShader(wellRect),
     );
 
-    // Specular saucer rim highlight
+    // Glazed specular saucer rim highlight
     canvas.drawOval(
       saucerRect.deflate(1.5),
       Paint()
-        ..color = Colors.white.withValues(alpha: 0.25)
+        ..color = Colors.white.withValues(alpha: 0.28)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.6,
     );
@@ -288,31 +315,31 @@ class LatteArtFull3DScenePainter extends CustomPainter {
     double cupR,
     double ySquash,
   ) {
+    // Place handle opposite the pouring hand so barista holds cup with off-hand naturally!
+    final double hSign = pitcherOnRight ? -1.0 : 1.0;
     final Offset attachTop =
-        cupCenter + Offset(cupR * 0.92, -cupR * 0.08 * ySquash);
+        cupCenter + Offset(hSign * cupR * 0.90, -cupR * 0.08 * ySquash);
     final Offset attachBot =
-        cupCenter + Offset(cupR * 0.80, cupR * 0.30 * ySquash);
+        cupCenter + Offset(hSign * cupR * 0.78, cupR * 0.30 * ySquash);
     final Path handlePath = Path()
       ..moveTo(attachTop.dx, attachTop.dy)
       ..cubicTo(
-        cupCenter.dx + cupR * 1.38,
+        cupCenter.dx + hSign * cupR * 1.38,
         cupCenter.dy - cupR * 0.14 * ySquash,
-        cupCenter.dx + cupR * 1.36,
+        cupCenter.dx + hSign * cupR * 1.36,
         cupCenter.dy + cupR * 0.36 * ySquash,
         attachBot.dx,
         attachBot.dy,
       );
 
-    // Handle shadow
     canvas.drawPath(
       handlePath.shift(const Offset(2, 6)),
       Paint()
-        ..color = Colors.black.withValues(alpha: 0.28)
+        ..color = Colors.black.withValues(alpha: 0.30)
         ..style = PaintingStyle.stroke
         ..strokeWidth = cupR * 0.16
         ..strokeCap = StrokeCap.round,
     );
-    // Handle ceramic body
     canvas.drawPath(
       handlePath,
       Paint()
@@ -321,11 +348,10 @@ class LatteArtFull3DScenePainter extends CustomPainter {
         ..strokeWidth = cupR * 0.16
         ..strokeCap = StrokeCap.round,
     );
-    // Handle specular highlight
     canvas.drawPath(
-      handlePath.shift(const Offset(-1, -2)),
+      handlePath.shift(Offset(-hSign * 1.0, -2.0)),
       Paint()
-        ..color = cupTheme.outerLight.withValues(alpha: 0.85)
+        ..color = cupTheme.outerLight.withValues(alpha: 0.88)
         ..style = PaintingStyle.stroke
         ..strokeWidth = cupR * 0.06
         ..strokeCap = StrokeCap.round,
@@ -338,16 +364,16 @@ class LatteArtFull3DScenePainter extends CustomPainter {
     double cupR,
     double ySquash,
   ) {
-    // 1. 3D Outer Curved Bowl Wall (visible below the rim in 3/4 barista view!)
+    // 1. 3D Outer Curved Porcelain Bowl Wall
     if (!topDownInspectionMode) {
       final double bowlDepth = cupR * 0.56;
       final Path bowlBody = Path()
         ..moveTo(cupCenter.dx - cupR, cupCenter.dy)
         ..cubicTo(
           cupCenter.dx - cupR * 0.96,
-          cupCenter.dy + bowlDepth * 1.25,
+          cupCenter.dy + bowlDepth * 1.24,
           cupCenter.dx + cupR * 0.96,
-          cupCenter.dy + bowlDepth * 1.25,
+          cupCenter.dy + bowlDepth * 1.24,
           cupCenter.dx + cupR,
           cupCenter.dy,
         )
@@ -363,13 +389,13 @@ class LatteArtFull3DScenePainter extends CustomPainter {
             colors: [
               cupTheme.outerLight,
               cupTheme.outerDark,
-              Color.lerp(cupTheme.outerDark, Colors.black, 0.35)!,
+              Color.lerp(cupTheme.outerDark, Colors.black, 0.38)!,
             ],
           ).createShader(bowlBounds),
       );
     }
 
-    // 2. Outer Rim & Thick Glazed White Inner Porcelain Lip
+    // 2. Outer Ceramic Rim + Thick Glazed White Porcelain Inner Wall
     final outerRimRect = Rect.fromCenter(
       center: cupCenter,
       width: cupR * 2.0,
@@ -379,30 +405,27 @@ class LatteArtFull3DScenePainter extends CustomPainter {
 
     final innerWallRect = Rect.fromCenter(
       center: cupCenter,
-      width: cupR * 1.89,
-      height: cupR * 1.89 * ySquash,
+      width: cupR * 1.88,
+      height: cupR * 1.88 * ySquash,
     );
-    // Glazed inner porcelain wall (shaded top-to-bottom so rising liquid looks 3D!)
     canvas.drawOval(
       innerWallRect,
       Paint()
-        ..shader = LinearGradient(
+        ..shader = const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: const [
-            Color(0xFFDCD6CE),
-            Color(0xFFFAF8F5),
+          colors: [
+            Color(0xFFD5CFC7),
+            Color(0xFFF6F3EE),
             Color(0xFFFFFFFF),
           ],
         ).createShader(innerWallRect),
     );
 
-    // 3. Rising Liquid Level Inside the 3D Cup!
-    // At 18% fill, liquid sits deeper inside the cup; at 100%, it reaches the very lip!
+    // 3. Rising Liquid Level Inside the 3D Cup (ZERO Pixelation Anti-Aliased Clip!)
     final double fillNorm = (cfd.cupFillPct / 100.0).clamp(0.18, 1.0);
-    final double dropDown = topDownInspectionMode
-        ? 0.0
-        : (1.0 - fillNorm) * (cupR * 0.24);
+    final double dropDown =
+        topDownInspectionMode ? 0.0 : (1.0 - fillNorm) * (cupR * 0.22);
     final double radiusScale = 0.80 + 0.14 * fillNorm;
     final Offset liquidCenter = cupCenter + Offset(0, dropDown);
     final Rect liquidOval = Rect.fromCenter(
@@ -412,25 +435,59 @@ class LatteArtFull3DScenePainter extends CustomPainter {
     );
 
     canvas.save();
-    canvas.clipPath(Path()..addOval(innerWallRect));
+    canvas.clipPath(Path()..addOval(innerWallRect), doAntiAlias: true);
     canvas.save();
-    canvas.clipPath(Path()..addOval(liquidOval));
+    canvas.clipPath(Path()..addOval(liquidOval), doAntiAlias: true);
 
     if (fluidImage != null) {
+      // Sample inner 96% of 112x112 buffer so edge crema fills the anti-aliased oval 100% smoothly!
+      final double inset = fluidImage!.width * 0.025;
       canvas.drawImageRect(
         fluidImage!,
         Rect.fromLTWH(
-          0,
-          0,
-          fluidImage!.width.toDouble(),
-          fluidImage!.height.toDouble(),
+          inset,
+          inset,
+          fluidImage!.width.toDouble() - inset * 2,
+          fluidImage!.height.toDouble() - inset * 2,
         ),
         liquidOval,
-        Paint()..filterQuality = FilterQuality.high,
+        Paint()
+          ..filterQuality = FilterQuality.high
+          ..isAntiAlias = true,
       );
     } else {
-      canvas.drawOval(liquidOval, Paint()..color = const Color(0xFF783E18));
+      canvas.drawOval(
+        liquidOval,
+        Paint()
+          ..shader = const RadialGradient(
+            colors: [Color(0xFF9E5A2B), Color(0xFF6B3312)],
+          ).createShader(liquidOval),
+      );
     }
+
+    // Subtle porcelain-to-crema contact meniscus shadow ring
+    canvas.drawOval(
+      liquidOval.deflate(0.5),
+      Paint()
+        ..color = const Color(0xFF2B1105).withValues(alpha: 0.22)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.2
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5),
+    );
+
+    // Subtle glossy overhead café window reflection arc across microfoam surface
+    canvas.drawArc(
+      liquidOval.deflate(liquidOval.width * 0.10),
+      -math.pi * 0.82,
+      math.pi * 0.36,
+      false,
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.16)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.6
+        ..strokeCap = StrokeCap.round
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3.0),
+    );
 
     if (showGhostGuide) {
       _drawGhostGuide(canvas, liquidCenter, liquidOval.width * 0.48, ySquash);
@@ -439,27 +496,48 @@ class LatteArtFull3DScenePainter extends CustomPainter {
     canvas.restore();
     canvas.restore();
 
-    // Crisp porcelain top lip ring highlight
+    // Crisp glazed porcelain lip rim highlight
     canvas.drawOval(
       innerWallRect,
       Paint()
-        ..color = Colors.white.withValues(alpha: 0.92)
+        ..color = Colors.white.withValues(alpha: 0.94)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.6,
+        ..strokeWidth = 2.8,
     );
 
     final Offset streamImpact = Offset(
-      liquidCenter.dx + cfd.pourPos.dx * (liquidOval.width * 0.48),
-      liquidCenter.dy + cfd.pourPos.dy * (liquidOval.height * 0.48),
+      liquidCenter.dx + cfd.pourPos.dx * (liquidOval.width * 0.46),
+      liquidCenter.dy + cfd.pourPos.dy * (liquidOval.height * 0.46),
     );
+
+    // Subtle delicate steam wisps rising from hot espresso/milk
+    if (!topDownInspectionMode) {
+      for (int s = 0; s < 3; s++) {
+        final double ph = (cfd.elapsedSec * 0.42 + s * 0.33) % 1.0;
+        final Offset sp = Offset(
+          liquidCenter.dx + math.sin(cfd.elapsedSec + s * 2.1) * cupR * 0.24,
+          liquidCenter.dy - ph * cupR * 0.95,
+        );
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: sp,
+            width: 18 + ph * 22,
+            height: 24 + ph * 28,
+          ),
+          Paint()
+            ..color =
+                Colors.white.withValues(alpha: math.sin(ph * math.pi) * 0.10)
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
+        );
+      }
+    }
 
     // Subtle target reticle when idle
     if (cfd.pitcherSlosh.currentFlowMlS <= 0.22 && !topDownInspectionMode) {
-      canvas.drawCircle(
-        streamImpact,
-        5.5,
+      canvas.drawOval(
+        Rect.fromCenter(center: streamImpact, width: 14, height: 11),
         Paint()
-          ..color = Colors.white.withValues(alpha: 0.7)
+          ..color = Colors.white.withValues(alpha: 0.72)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.6,
       );
@@ -481,7 +559,8 @@ class LatteArtFull3DScenePainter extends CustomPainter {
       if (len <= 0.02) continue;
       final double a = angles[i % angles.length];
       final double rimX = cupCenter.dx + math.cos(a) * cupR * 0.96;
-      final double rimY = cupCenter.dy + math.sin(a).abs() * cupR * ySquash * 0.95;
+      final double rimY =
+          cupCenter.dy + math.sin(a).abs() * cupR * ySquash * 0.95;
       final double dripH = 8.0 + len * (cupR * 0.36);
       final bool whiteDrip = i.isEven;
       final Color col =
@@ -500,10 +579,13 @@ class LatteArtFull3DScenePainter extends CustomPainter {
     }
   }
 
-  /// Renders the 3D Milk Pitcher hovering above the cup, tilting with Gyroscope/Slider,
-  /// showing real sloshing internal milk/microfoam, and pouring a 3D milk stream!
-  void _draw3DPitcherAndMilkStream(
+  /// FIRST-PERSON BARISTA POV:
+  /// Renders the photorealistic 3D Brushed Stainless-Steel (or Glass) Barista Milk Pitcher
+  /// in the FOREGROUND (lower-right / lower-left, closest to the user's pouring hand!)
+  /// tilted FORWARD over the cup lip, pouring a silky 3D tapered milk stream FORWARD!
+  void _drawForegroundBaristaPitcherAndStream(
     Canvas canvas, {
+    required Size size,
     required Offset cupCenter,
     required double cupR,
     required Offset streamImpactScreen,
@@ -511,225 +593,309 @@ class LatteArtFull3DScenePainter extends CustomPainter {
     final double flow = cfd.pitcherSlosh.currentFlowMlS;
     final double alphaFloat = cfd.computeFloatFactor(cfd.pourHeightCm, flow);
     final double heightNorm =
-        ((cfd.pourHeightCm - 0.6) / 6.9).clamp(0.0, 1.0); // 0 = close, 1 = high
+        ((cfd.pourHeightCm - 0.6) / 6.0).clamp(0.0, 1.0); // 0 = close, 1 = high
+    final double side = pitcherOnRight ? 1.0 : -1.0;
 
-    // Spout tip hovers above `streamImpactScreen`: closer when Low Pour, higher when High Pour!
-    final double verticalGap = cupR * (0.14 + heightNorm * 0.68);
-    final Offset spoutTip =
-        streamImpactScreen - Offset(cupR * 0.08, verticalGap);
+    // FOREGROUND POV Geometry:
+    // Spout tip sits slightly toward the barista's foreground (+Y) & elevated by `pourHeightCm`!
+    // When low pour (close to crema), spout hugs the cup surface right in front of `streamImpactScreen`.
+    // When high pour (dive), pitcher lifts cleanly higher & slightly back toward the barista.
+    final Offset spoutTip = Offset(
+      streamImpactScreen.dx + side * cupR * (0.14 + heightNorm * 0.10),
+      streamImpactScreen.dy + cupR * (0.18 + heightNorm * 0.14) -
+          cupR * (0.14 + heightNorm * 0.34),
+    );
 
-    // 1. 3D Tapered Milk Stream from Pitcher Spout Tip -> Crema Dimple!
-    if (flow > 0.22) {
+    // 1. 3D Tapered Parabolic Milk Stream arching FORWARD from Foreground Spout Tip -> Crema!
+    if (flow > 0.20) {
       final double topW =
-          (alphaFloat > 0.45 ? 7.5 : 3.4) * (0.65 + (flow / 17.0) * 0.65);
-      final double botW = alphaFloat > 0.45 ? topW * 0.82 : 2.2;
-      final double curveSway = (activeRollDeg / 45.0) * 8.0;
+          (alphaFloat > 0.45 ? 8.2 : 3.6) * (0.65 + (flow / 17.0) * 0.60);
+      final double botW = alphaFloat > 0.45 ? topW * 0.84 : 2.3;
+      final double curveSway = (activeRollDeg / 45.0) * 7.5;
 
-      final Path streamPath = Path()
-        ..moveTo(spoutTip.dx - topW * 0.5, spoutTip.dy)
-        ..quadraticBezierTo(
-          (spoutTip.dx + streamImpactScreen.dx) * 0.5 + curveSway - botW,
-          (spoutTip.dy + streamImpactScreen.dy) * 0.5,
-          streamImpactScreen.dx - botW * 0.5,
-          streamImpactScreen.dy,
-        )
-        ..lineTo(streamImpactScreen.dx + botW * 0.5, streamImpactScreen.dy)
-        ..quadraticBezierTo(
-          (spoutTip.dx + streamImpactScreen.dx) * 0.5 + curveSway + botW,
-          (spoutTip.dy + streamImpactScreen.dy) * 0.5,
-          spoutTip.dx + topW * 0.5,
-          spoutTip.dy,
-        )
-        ..close();
+      // Parabolic control point bends forward from spout tip into crema surface
+      final Offset midCtrl = Offset(
+        (spoutTip.dx + streamImpactScreen.dx) * 0.5 + curveSway,
+        math.min(spoutTip.dy, streamImpactScreen.dy) - 6.0 + heightNorm * 14.0,
+      );
 
+      final List<Offset> leftPts = [];
+      final List<Offset> rightPts = [];
+      const int segs = 14;
+      for (int i = 0; i <= segs; i++) {
+        final double t = i / segs;
+        final double u = 1.0 - t;
+        final Offset pt = Offset(
+          u * u * spoutTip.dx +
+              2 * u * t * midCtrl.dx +
+              t * t * streamImpactScreen.dx,
+          u * u * spoutTip.dy +
+              2 * u * t * midCtrl.dy +
+              t * t * streamImpactScreen.dy,
+        );
+        final double hw = (topW + (botW - topW) * t) * 0.5;
+        leftPts.add(Offset(pt.dx - hw, pt.dy));
+        rightPts.add(Offset(pt.dx + hw, pt.dy));
+      }
+
+      final Path streamPath = Path()..moveTo(leftPts.first.dx, leftPts.first.dy);
+      for (final p in leftPts) {
+        streamPath.lineTo(p.dx, p.dy);
+      }
+      for (int i = rightPts.length - 1; i >= 0; i--) {
+        streamPath.lineTo(rightPts[i].dx, rightPts[i].dy);
+      }
+      streamPath.close();
+
+      // Subtle milk stream shadow onto crema
+      canvas.drawPath(
+        streamPath.shift(const Offset(2, 4)),
+        Paint()
+          ..color = Colors.black.withValues(alpha: 0.16)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+      );
+      // Silky gleaming steamed milk ribbon
       canvas.drawPath(
         streamPath,
         Paint()
           ..shader = LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
             colors: const [
+              Color(0xFFEDE4D7),
               Color(0xFFFFFFFF),
-              Color(0xFFF5EFE6),
+              Color(0xFFF6F0E6),
             ],
           ).createShader(streamPath.getBounds()),
       );
 
-      // Soft impact foam crown ripple
+      // Animated Microfoam Crown & Concentric Surface Ripple at Impact Point!
       canvas.drawOval(
         Rect.fromCenter(
           center: streamImpactScreen,
-          width: botW * 3.2,
-          height: botW * 2.4,
+          width: botW * 3.4,
+          height: botW * 2.5,
         ),
-        Paint()..color = Colors.white.withValues(alpha: alphaFloat > 0.4 ? 0.85 : 0.35),
+        Paint()
+          ..color = Colors.white
+              .withValues(alpha: alphaFloat > 0.4 ? 0.88 : 0.36),
+      );
+      final double rp = (cfd.elapsedSec * 2.8) % 1.0;
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: streamImpactScreen,
+          width: botW * (2.6 + rp * 5.0),
+          height: botW * (1.8 + rp * 3.4),
+        ),
+        Paint()
+          ..color = Colors.white.withValues(alpha: (1.0 - rp) * 0.42)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.4,
       );
     }
 
-    // 2. 3D Sculpted Milk Pitcher Body (anchored so its sharp V-spout sits at `spoutTip`)
+    // 2. FOREGROUND 3D Brushed Stainless-Steel / Glass Barista Pitcher!
+    // Anchored at `spoutTip` (0, 0), body extends DOWN-RIGHT (or DOWN-LEFT) into the foreground!
     canvas.save();
     canvas.translate(spoutTip.dx, spoutTip.dy);
 
-    final double tiltRad =
-        (0.42 + (activePitchDeg / 55.0) * 0.58 + (activeRollDeg / 140.0))
-            .clamp(0.28, 1.18);
-    canvas.rotate(tiltRad);
+    final double pourTilt =
+        ((activePitchDeg / 48.0).clamp(0.0, 1.0)) * 0.36;
+    final double wiggleTilt = (activeRollDeg / 90.0).clamp(-0.32, 0.32);
+    // Natural barista wrist angle: pitcher angled forward toward cup center!
+    canvas.rotate(side * (-0.30 - pourTilt) + wiggleTilt);
 
-    final double pW = cupR * 0.86;
-    final double pH = cupR * 0.98;
-    // Spout tip is at (0, 0); pitcher body extends up-left in local rotated frame
-    final Rect bodyRect = Rect.fromLTWH(-pW * 0.95, -pH * 0.92, pW, pH);
-
-    // Pitcher Drop Shadow onto Cup
-    canvas.drawOval(
-      bodyRect.shift(const Offset(8, 18)),
-      Paint()
-        ..color = Colors.black.withValues(alpha: 0.20)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
+    final double pW = cupR * 0.94;
+    final double pH = cupR * 1.12;
+    // In local pitcher space: V-spout tip is at (0, 0); body extends DOWN (+Y) & slightly outward (`side * X`)!
+    final Rect bodyRect = Rect.fromLTWH(
+      side > 0 ? -pW * 0.16 : -pW * 0.84,
+      pH * 0.06,
+      pW,
+      pH,
     );
 
-    // 3D Ergonomic Pitcher Handle (top-back)
+    // Soft cast shadow projected onto lower cup rim & walnut bar
+    canvas.drawOval(
+      bodyRect.shift(Offset(side * 8, 16)),
+      Paint()
+        ..color = Colors.black.withValues(alpha: 0.32)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16),
+    );
+
+    // Ergonomic Welded Stainless-Steel Handle (on user-facing lower/outer side!)
+    final double handleX = side > 0 ? bodyRect.right : bodyRect.left;
     final Path pHandle = Path()
-      ..moveTo(bodyRect.left + pW * 0.12, bodyRect.top + pH * 0.14)
+      ..moveTo(handleX - side * pW * 0.08, bodyRect.top + pH * 0.24)
       ..cubicTo(
-        bodyRect.left - pW * 0.34,
-        bodyRect.top - pH * 0.10,
-        bodyRect.left - pW * 0.36,
-        bodyRect.bottom - pH * 0.25,
-        bodyRect.left + pW * 0.06,
+        handleX + side * pW * 0.40,
+        bodyRect.top + pH * 0.20,
+        handleX + side * pW * 0.38,
+        bodyRect.bottom - pH * 0.14,
+        handleX - side * pW * 0.06,
         bodyRect.bottom - pH * 0.18,
       );
     canvas.drawPath(
       pHandle,
       Paint()
-        ..color = transparentGlassPitcher
-            ? Colors.white.withValues(alpha: 0.72)
-            : const Color(0xFFD6D2CC)
+        ..color = const Color(0xFF64748B)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = pW * 0.10
+        ..strokeWidth = pW * 0.11
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.drawPath(
+      pHandle.shift(Offset(-side * 1.5, -1.5)),
+      Paint()
+        ..color = const Color(0xFFF1F5F9)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = pW * 0.04
         ..strokeCap = StrokeCap.round,
     );
 
-    // Sculpted 3D Pitcher Silhouette with tapered V-Spout at (0, 0)
+    // Sculpted Conical Barista Pitcher Silhouette tapering forward to sharp V-spout at (0, 0)
     final Path pitcherBody = Path()
-      ..moveTo(0, 0) // Sharp V-spout tip!
+      ..moveTo(0, 0) // Sharp precision V-spout tip pointing FORWARD!
       ..quadraticBezierTo(
-        bodyRect.right + pW * 0.08,
-        bodyRect.top + pH * 0.22,
-        bodyRect.right - pW * 0.04,
+        bodyRect.left - pW * 0.04,
+        bodyRect.top + pH * 0.16,
+        bodyRect.left + pW * 0.02,
         bodyRect.bottom - pH * 0.10,
       )
       ..cubicTo(
+        bodyRect.left + pW * 0.10,
+        bodyRect.bottom + pH * 0.10,
         bodyRect.right - pW * 0.10,
-        bodyRect.bottom + pH * 0.06,
-        bodyRect.left + pW * 0.12,
-        bodyRect.bottom + pH * 0.06,
-        bodyRect.left + pW * 0.02,
-        bodyRect.bottom - pH * 0.14,
+        bodyRect.bottom + pH * 0.10,
+        bodyRect.right - pW * 0.02,
+        bodyRect.bottom - pH * 0.10,
       )
-      ..lineTo(bodyRect.left + pW * 0.08, bodyRect.top + pH * 0.08)
       ..quadraticBezierTo(
-        bodyRect.center.dx,
-        bodyRect.top - pH * 0.05,
+        bodyRect.right + pW * 0.04,
+        bodyRect.top + pH * 0.16,
         0,
         0,
       )
       ..close();
 
     if (transparentGlassPitcher) {
-      // Crystal Borosilicate Glass Pitcher + Live Sloshing Dual-Layer Milk & Microfoam!
+      // Crystal Borosilicate Glass Pitcher + Live Sloshing Steamed Milk & Microfoam!
       canvas.drawPath(
         pitcherBody,
         Paint()
           ..shader = LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
             colors: [
-              Colors.white.withValues(alpha: 0.58),
-              const Color(0xFFE2E8F0).withValues(alpha: 0.26),
+              Colors.white.withValues(alpha: 0.56),
+              const Color(0xFFE2E8F0).withValues(alpha: 0.24),
               Colors.white.withValues(alpha: 0.52),
             ],
           ).createShader(bodyRect),
       );
-
       canvas.save();
       canvas.clipPath(pitcherBody);
-      final double fill = cfd.pitcherSlosh.fillFraction.clamp(0.05, 1.0);
-      final double liqTop = bodyRect.bottom - bodyRect.height * (0.25 + 0.65 * fill);
+      final double fill = cfd.pitcherSlosh.fillFraction.clamp(0.08, 1.0);
+      final double liqTop = bodyRect.bottom - bodyRect.height * (0.28 + 0.58 * fill);
       final double slosh =
-          math.tan((cfd.pitcherSlosh.psiXRad - tiltRad * 0.45).clamp(-0.6, 0.6)) *
-              (pW * 0.45);
-
+          math.tan((cfd.pitcherSlosh.psiXRad).clamp(-0.5, 0.5)) * (pW * 0.42);
       final Path milkPoly = Path()
-        ..moveTo(bodyRect.left - 20, bodyRect.bottom + 20)
-        ..lineTo(bodyRect.left - 10, liqTop - slosh)
-        ..lineTo(bodyRect.right + 20, liqTop + slosh)
-        ..lineTo(bodyRect.right + 20, bodyRect.bottom + 20)
+        ..moveTo(bodyRect.left - 18, bodyRect.bottom + 24)
+        ..lineTo(bodyRect.left - 12, liqTop - slosh)
+        ..lineTo(bodyRect.right + 18, liqTop + slosh)
+        ..lineTo(bodyRect.right + 18, bodyRect.bottom + 24)
         ..close();
       canvas.drawPath(
         milkPoly,
-        Paint()..color = const Color(0xFFF4EAD8).withValues(alpha: 0.88),
+        Paint()..color = const Color(0xFFF6EFE4).withValues(alpha: 0.90),
       );
-
-      // Velvety White Microfoam Top Layer
-      final Path foamBand = Path()
-        ..moveTo(bodyRect.left - 10, liqTop - slosh)
-        ..lineTo(bodyRect.right + 20, liqTop + slosh)
-        ..lineTo(bodyRect.right + 20, liqTop + slosh + 14)
-        ..lineTo(bodyRect.left - 10, liqTop - slosh + 14)
-        ..close();
-      canvas.drawPath(foamBand, Paint()..color = Colors.white);
-
-      // Printed ml scale lines on glass wall
-      for (int m = 1; m <= 3; m++) {
-        final double my = bodyRect.bottom - bodyRect.height * (m * 0.22);
-        canvas.drawLine(
-          Offset(bodyRect.center.dx - 8, my),
-          Offset(bodyRect.center.dx + 8, my),
-          Paint()
-            ..color = Colors.black.withValues(alpha: 0.35)
-            ..strokeWidth = 1.1,
-        );
-      }
       canvas.restore();
-
       canvas.drawPath(
         pitcherBody,
         Paint()
-          ..color = Colors.white.withValues(alpha: 0.82)
+          ..color = Colors.white.withValues(alpha: 0.85)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.8,
       );
     } else {
-      // Matte Barista Ceramic / Brushed Steel Pitcher (matching reference video!)
+      // Photorealistic Brushed Stainless-Steel Chrome Barista Pitcher (Motta / WPM style!)
       canvas.drawPath(
         pitcherBody,
         Paint()
           ..shader = LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            stops: const [0.0, 0.22, 0.46, 0.72, 0.88, 1.0],
             colors: const [
-              Color(0xFFF2EFEA),
-              Color(0xFFD5CFC7),
-              Color(0xFFA9A299),
+              Color(0xFF64748B),
+              Color(0xFFE2E8F0),
+              Color(0xFFFFFFFF),
+              Color(0xFF94A3B8),
+              Color(0xFF475569),
+              Color(0xFFCBD5E1),
             ],
           ).createShader(bodyRect),
       );
+      // Crisp specular metallic rim outline
+      canvas.drawPath(
+        pitcherBody,
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.55)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.4,
+      );
     }
 
-    // 3D Open Top Mouth of Pitcher showing bright white milk pool inside!
+    // 3D Open Top Mouth of Foreground Pitcher (Looking slightly DOWN into gleaming white milk!)
     final Rect openMouth = Rect.fromCenter(
-      center: Offset(bodyRect.center.dx + pW * 0.08, bodyRect.top + pH * 0.24),
-      width: pW * 0.72,
-      height: pH * 0.44,
+      center: Offset(bodyRect.center.dx * 0.72, bodyRect.top + pH * 0.24),
+      width: pW * 0.78,
+      height: pH * 0.34,
     );
+    // Polished steel inner wall rim
     canvas.drawOval(
       openMouth,
-      Paint()..color = const Color(0xFFBDB6AE),
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF475569), Color(0xFFE2E8F0), Color(0xFF94A3B8)],
+        ).createShader(openMouth),
     );
+
+    // Glossy Swirling Steamed Milk Pool inside Pitcher Mouth (shifts forward as you tilt!)
+    canvas.save();
+    canvas.clipPath(Path()..addOval(openMouth.deflate(3.0)));
+    final double milkShiftY = -pourTilt * pH * 0.16 + cfd.pitcherSlosh.psiXRad * 10.0;
+    final Rect milkPool = openMouth.deflate(3.5).shift(Offset(0, milkShiftY));
     canvas.drawOval(
-      openMouth.deflate(pW * 0.05),
-      Paint()..color = const Color(0xFFFCFBF9),
+      milkPool,
+      Paint()
+        ..shader = const RadialGradient(
+          center: Alignment(-0.2, -0.2),
+          colors: [Color(0xFFFFFFFF), Color(0xFFF3ECE0)],
+        ).createShader(milkPool),
+    );
+    // Subtle milk vortex sheen inside pitcher
+    canvas.drawArc(
+      milkPool.deflate(6),
+      0.4,
+      2.2,
+      false,
+      Paint()
+        ..color = const Color(0xFFE6DCCB).withValues(alpha: 0.7)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0,
+    );
+    canvas.restore();
+
+    // Gleaming V-Spout Inner Channel Highlight leading right to (0, 0)
+    canvas.drawLine(
+      Offset(openMouth.center.dx * 0.45, openMouth.top + 4),
+      const Offset(0, 2),
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.92)
+        ..strokeWidth = 3.2
+        ..strokeCap = StrokeCap.round,
     );
 
     canvas.restore();
@@ -742,17 +908,19 @@ class LatteArtFull3DScenePainter extends CustomPainter {
     double ySquash,
   ) {
     final p = Paint()
-      ..color = Colors.white.withValues(alpha: 0.36)
+      ..color = Colors.white.withValues(alpha: 0.34)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.7;
+      ..strokeWidth = 1.6;
     final double ry = r * ySquash;
 
     switch (targetPattern) {
       case LatteArtPattern.canvasBase:
-        canvas.drawOval(Rect.fromCenter(center: c, width: r * 0.5, height: ry * 0.5), p);
+        canvas.drawOval(
+            Rect.fromCenter(center: c, width: r * 0.5, height: ry * 0.5), p);
         break;
       case LatteArtPattern.monksHead:
-        canvas.drawOval(Rect.fromCenter(center: c, width: r * 0.85, height: ry * 0.85), p);
+        canvas.drawOval(
+            Rect.fromCenter(center: c, width: r * 0.85, height: ry * 0.85), p);
         break;
       case LatteArtPattern.heart:
         final path = Path()
@@ -783,7 +951,8 @@ class LatteArtFull3DScenePainter extends CustomPainter {
           final double offY = (1 - s) * ry * 0.22;
           final double w = r * (1.05 - s * 0.20);
           canvas.drawArc(
-            Rect.fromCenter(center: c + Offset(0, offY), width: w, height: ry * 0.55),
+            Rect.fromCenter(
+                center: c + Offset(0, offY), width: w, height: ry * 0.55),
             0.1,
             math.pi - 0.2,
             false,
@@ -798,7 +967,8 @@ class LatteArtFull3DScenePainter extends CustomPainter {
           final double y = c.dy + i * (ry * 0.18);
           final double w = r * (0.44 - (i.abs() * 0.06));
           canvas.drawOval(
-            Rect.fromCenter(center: Offset(c.dx, y), width: w * 2, height: ry * 0.14),
+            Rect.fromCenter(
+                center: Offset(c.dx, y), width: w * 2, height: ry * 0.14),
             p,
           );
         }

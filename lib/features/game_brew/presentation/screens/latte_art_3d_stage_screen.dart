@@ -38,8 +38,8 @@ class _LatteArt3DStageScreenState extends State<LatteArt3DStageScreen> {
   bool _decodingImage = false;
 
   final bool _useGyroControl = true;
-  bool _controlsOnLeft = true; // Ergonomic Left/Right swap like reference video!
-  bool _transparentGlassPitcher = true;
+  bool _controlsOnLeft = true; // Ergonomic Left/Right swap
+  bool _transparentGlassPitcher = false; // Default to photorealistic Brushed Stainless-Steel Pitcher
   bool _showGhostGuide = true;
   LatteCupColorTheme _cupTheme = LatteCupColorTheme.cobaltBlue;
 
@@ -89,18 +89,24 @@ class _LatteArt3DStageScreenState extends State<LatteArt3DStageScreen> {
         _cfd.pourHeightCm = 4.8;
       }
 
-      // Subtle Gyroscope roll assists cup aiming + injects authentic Wiggle Vorticity!
+      // Full 2-Axis Gyroscope Steering + Rosetta Wiggle Vorticity + Forward Push!
       final double effectiveRoll = gyroActive ? _sensorSnap.rollDeg : 0.0;
       final double wiggleVel = gyroActive
-          ? ((_sensorSnap.rollRateDegS / 38.0) + _touchWiggleVel).clamp(-6.5, 6.5)
+          ? ((_sensorSnap.rollRateDegS / 34.0) + _touchWiggleVel).clamp(-6.8, 6.8)
           : _touchWiggleVel;
 
-      if (gyroActive && _sensorSnap.rollDeg.abs() > 2.5) {
-        _cfd.pourPos = Offset(
-          (_cfd.pourPos.dx + (_sensorSnap.rollDeg / 45.0) * 0.018)
-              .clamp(-0.76, 0.76),
-          _cfd.pourPos.dy,
-        );
+      if (gyroActive) {
+        final double rollStep =
+            _sensorSnap.rollDeg.abs() > 2.2 ? (_sensorSnap.rollDeg / 38.0) * 0.018 : 0.0;
+        final double surgeStep = _sensorSnap.linearAccelZ.abs() > 0.35
+            ? (-_sensorSnap.linearAccelZ * 0.014)
+            : 0.0;
+        if (rollStep != 0.0 || surgeStep != 0.0) {
+          _cfd.pourPos = Offset(
+            (_cfd.pourPos.dx + rollStep).clamp(-0.76, 0.76),
+            (_cfd.pourPos.dy + surgeStep).clamp(-0.76, 0.76),
+          );
+        }
       }
 
       _cfd.step(
@@ -272,6 +278,7 @@ class _LatteArt3DStageScreenState extends State<LatteArt3DStageScreen> {
                             activePitchDeg: activePitch,
                             activeRollDeg:
                                 gyroOn ? _sensorSnap.rollDeg : _touchWiggleVel * 4,
+                            pitcherOnRight: _controlsOnLeft,
                           ),
                         ),
                       );

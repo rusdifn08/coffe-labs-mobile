@@ -68,6 +68,11 @@ class ManualBrew3DPhysicsEngine {
   // Phase 5: Rao Swirl & Extraction
   bool raoSwirlDone = false;
   double swirlProgress = 0.0;
+  double swirlAngularVel = 0.0; // rad/s slurry vortex rotation
+  double swirlPhaseRad = 0.0;
+  double bloomDomeFactor = 0.0; // 0..1 CO2 bloom expansion dome
+  final Float32List _wetScratch = Float32List(gridSize * gridSize);
+  final Float32List _filterScratch = Float32List(filterSegments);
   final List<Offset> recentPourTrail = [];
 
   ManualBrew3DPhysicsEngine({required this.spec}) {
@@ -120,6 +125,9 @@ class ManualBrew3DPhysicsEngine {
 
     raoSwirlDone = false;
     swirlProgress = 0.0;
+    swirlAngularVel = 0.0;
+    swirlPhaseRad = 0.0;
+    bloomDomeFactor = 0.0;
     recentPourTrail.clear();
 
     // Direct technique drills skip straight to precision pouring unless ritual drill!
@@ -270,7 +278,7 @@ class ManualBrew3DPhysicsEngine {
       maxFlowMlS: 10.5,
     );
 
-    // Phase 1: Wet Paper Filter circumference
+    // Phase 1: Wet Paper Filter circumference + Capillary Wicking Diffusion
     if (phase == ManualBrewPhase.wetFilter) {
       if (flow > 0.25) {
         rinseWaterInServerMl += flow * safeDt;
@@ -279,15 +287,27 @@ class ManualBrew3DPhysicsEngine {
         final double normA = (angle + math.pi) / (2.0 * math.pi);
         final int centerSeg =
             (normA * filterSegments).floor().clamp(0, filterSegments - 1);
-        for (int offset = -4; offset <= 4; offset++) {
+        for (int offset = -5; offset <= 5; offset++) {
           final int s = (centerSeg + offset) % filterSegments;
           final int wrapped = s < 0 ? s + filterSegments : s;
-          final double falloff = 1.0 - (offset.abs() / 5.2);
+          final double falloff = math.exp(-(offset * offset) / 10.5);
           filterWetness[wrapped] =
-              (filterWetness[wrapped] + flow * safeDt * 0.16 * falloff)
+              (filterWetness[wrapped] + flow * safeDt * 0.19 * falloff)
                   .clamp(0.0, 1.0);
         }
       }
+      // Natural capillary wicking across adjacent Japanese paper fibers!
+      const double wickRate = 0.85;
+      for (int i = 0; i < filterSegments; i++) {
+        final int prev = (i - 1 + filterSegments) % filterSegments;
+        final int next = (i + 1) % filterSegments;
+        final double avg = (filterWetness[prev] + filterWetness[next]) * 0.5;
+        final double w = filterWetness[i];
+        _filterScratch[i] = avg > w
+            ? (w + (avg - w) * wickRate * safeDt).clamp(0.0, 1.0)
+            : w;
+      }
+      filterWetness.setAll(0, _filterScratch);
       return;
     }
 
@@ -345,8 +365,15 @@ class ManualBrew3DPhysicsEngine {
       // Pattern accuracy scoring
       _scorePourPatternStep(safeDt, aimPos, _prevAimPos);
 
-      // Update 32x32 Wetness Map, CO2 Degassing & Cratering
+      // Update 32x32 Wetness Map, CO2 Bloom Dome, Vortex Torque & Cratering
       final double divotBoost = isDivotOptimal ? 1.18 : 1.0;
+      final Offset aimDelta = aimPos - _prevAimPos;
+      final double tangTorque =
+          (aimPos.dx * aimDelta.dy - aimPos.dy * aimDelta.dx) * 32.0;
+      swirlAngularVel =
+          (swirlAngularVel + tangTorque * (flow / 6.0)).clamp(-6.5, 6.5);
+
+      double bloomRelease = 0.0;
       for (int y = 0; y < gridSize; y++) {
         for (int x = 0; x < gridSize; x++) {
           final double nx = (x / (gridSize - 1)) * 2.0 - 1.0;
@@ -357,18 +384,56 @@ class ManualBrew3DPhysicsEngine {
           final double d2 = dx * dx + dy * dy;
           final int idx = y * gridSize + x;
 
-          final double hit = math.exp(-d2 / 0.16);
+          final double hit = math.exp(-d2 / 0.17);
+          final double prevCo2 = co2Map[idx];
           wetnessMap[idx] =
-              (wetnessMap[idx] + flow * safeDt * 0.24 * hit * divotBoost)
+              (wetnessMap[idx] + flow * safeDt * 0.25 * hit * divotBoost)
                   .clamp(0.0, 1.0);
-          co2Map[idx] = (co2Map[idx] - 0.35 * safeDt * hit).clamp(0.0, 1.0);
+          co2Map[idx] = (prevCo2 - 0.34 * safeDt * hit).clamp(0.0, 1.0);
+          bloomRelease += (prevCo2 - co2Map[idx]) * wetnessMap[idx];
+
+          // Gentle bloom puffing on fresh grounds vs turbulent cratering on high pour
           if (turbulent) {
             bedHeight[idx] =
-                (bedHeight[idx] - 0.03 * safeDt * hit).clamp(0.12, 0.9);
+                (bedHeight[idx] - 0.032 * safeDt * hit).clamp(0.12, 0.9);
+          } else if (prevCo2 > 0.55) {
+            bedHeight[idx] =
+                (bedHeight[idx] + 0.018 * safeDt * hit).clamp(0.14, 0.88);
           }
         }
       }
+      bloomDomeFactor =
+          (bloomDomeFactor + bloomRelease * 0.045).clamp(0.0, 1.0);
     }
+
+    // Smooth capillary wetting diffusion across coffee bed + swirl damping
+    if (slurryMl > 0.4 || pouredCoffeeWaterMl > 1.0) {
+      for (int y = 1; y < gridSize - 1; y++) {
+        final int row = y * gridSize;
+        for (int x = 1; x < gridSize - 1; x++) {
+          final int idx = row + x;
+          final double avg = (wetnessMap[idx - 1] +
+                  wetnessMap[idx + 1] +
+                  wetnessMap[idx - gridSize] +
+                  wetnessMap[idx + gridSize]) *
+              0.25;
+          final double cur = wetnessMap[idx];
+          _wetScratch[idx] = avg > cur
+              ? (cur + (avg - cur) * 0.55 * safeDt).clamp(0.0, 1.0)
+              : cur;
+        }
+      }
+      for (int y = 1; y < gridSize - 1; y++) {
+        final int row = y * gridSize;
+        for (int x = 1; x < gridSize - 1; x++) {
+          wetnessMap[row + x] = _wetScratch[row + x];
+        }
+      }
+    }
+
+    bloomDomeFactor = (bloomDomeFactor * (1.0 - 0.14 * safeDt)).clamp(0.0, 1.0);
+    swirlPhaseRad += swirlAngularVel * safeDt;
+    swirlAngularVel *= (1.0 - 1.35 * safeDt).clamp(0.0, 1.0);
 
     _prevAimPos = aimPos;
 

@@ -193,26 +193,56 @@ class LatteArtCfdEngine {
       );
     }
 
-    // High-stability Jos Stam solver on 112x112 grid
-    _diffuse(1, uPrev, u, 0.00014, safeDt, 3);
-    _diffuse(2, vPrev, v, 0.00014, safeDt, 3);
+    // High-stability Jos Stam Navier-Stokes + Vorticity Confinement on 112x112 grid
+    _applyVorticityConfinement(safeDt, strength: 0.42);
+    _diffuse(1, uPrev, u, 0.00011, safeDt, 3);
+    _diffuse(2, vPrev, v, 0.00011, safeDt, 3);
     _project(uPrev, vPrev, p, div, 8);
 
     _advect(1, u, uPrev, uPrev, vPrev, safeDt);
     _advect(2, v, vPrev, uPrev, vPrev, safeDt);
     _project(u, v, p, div, 8);
 
-    // Silky microfoam viscous settling so tulip stacks stay razor-crisp!
+    // Silky microfoam viscous settling so tulip stacks & rosetta leaves stay razor-crisp!
     for (int i = 0; i < _cellCount; i++) {
-      u[i] *= 0.962;
-      v[i] *= 0.962;
+      u[i] *= 0.964;
+      v[i] *= 0.964;
     }
 
-    _diffuse(0, foamPrev, foam, 0.000018, safeDt, 2);
+    _diffuse(0, foamPrev, foam, 0.000014, safeDt, 2);
     _advect(0, foam, foamPrev, u, v, safeDt);
+    // Also advect espresso crema tiger-striping subtly with the fluid!
+    _advect(0, p, cremaTone, u, v, safeDt * 0.65);
+    cremaTone.setAll(0, p);
 
     _prevPourPos = pourPos;
     renderToRgbaBuffer();
+  }
+
+  /// Vorticity confinement preserves crisp curly eddies for Rosettas, Swans & Winged Tulips.
+  void _applyVorticityConfinement(double dt, {required double strength}) {
+    // Compute curl (vorticity) in `div` scratch buffer
+    for (int j = 1; j < n - 1; j++) {
+      final int row = j * n;
+      for (int i = 1; i < n - 1; i++) {
+        final int idx = row + i;
+        div[idx] = 0.5 * ((v[idx + 1] - v[idx - 1]) - (u[idx + n] - u[idx - n]));
+      }
+    }
+    for (int j = 2; j < n - 2; j++) {
+      final int row = j * n;
+      for (int i = 2; i < n - 2; i++) {
+        final int idx = row + i;
+        final double dwDx = (div[idx + 1].abs() - div[idx - 1].abs()) * 0.5;
+        final double dwDy = (div[idx + n].abs() - div[idx - n].abs()) * 0.5;
+        final double len = math.sqrt(dwDx * dwDx + dwDy * dwDy) + 1e-5;
+        final double nx = dwDx / len;
+        final double ny = dwDy / len;
+        final double vort = div[idx];
+        u[idx] += (ny * vort) * strength * dt;
+        v[idx] += (-nx * vort) * strength * dt;
+      }
+    }
   }
 
   void _injectPourSource({
@@ -226,11 +256,11 @@ class LatteArtCfdEngine {
 
     final Offset moveDelta = pourPos - _prevPourPos;
     final double pushDirX =
-        (moveDelta.dx * 26.0 + wiggleVel * 1.05).clamp(-7.5, 7.5);
-    // Forward push toward front of cup (+Y in screen cup space) or pull-through drag
-    final double pushDirY = (moveDelta.dy * 28.0 +
-            (alphaFloat > 0.45 ? 1.55 * (flowMlS / 12.0) : 0.0))
-        .clamp(-8.0, 8.0);
+        (moveDelta.dx * 28.0 + wiggleVel * 1.15).clamp(-7.8, 7.8);
+    // First-Person Barista Foreground POV: milk pours FORWARD (-Y toward far rim of cup)!
+    final double pushDirY = (moveDelta.dy * 28.0 -
+            (alphaFloat > 0.45 ? 1.65 * (flowMlS / 12.0) : 0.25))
+        .clamp(-8.5, 8.5);
 
     final double radiusCells = alphaFloat > 0.45 ? 6.8 : 3.2;
     final int rInt = radiusCells.ceil() + 1;
@@ -422,60 +452,68 @@ class LatteArtCfdEngine {
         final int idx = row + i;
         final int pIdx = idx * 4;
 
-        if (r > 1.0) {
-          rgbaBuffer[pIdx] = 0;
-          rgbaBuffer[pIdx + 1] = 0;
-          rgbaBuffer[pIdx + 2] = 0;
-          rgbaBuffer[pIdx + 3] = 0;
-          continue;
-        }
-
-        // Sharp oil-paint-like meniscus edge between espresso crema & white microfoam!
-        final double rawF = foam[idx].clamp(0.0, 1.0);
+        // IMPORTANT: Fill crema beyond r=1.0 so Canvas anti-aliased oval clip produces
+        // a 100% smooth, ZERO-pixelation ceramic-to-crema boundary!
+        final double rawF = r <= 1.04 ? foam[idx].clamp(0.0, 1.0) : 0.0;
         final double sharpF =
-            (1.0 / (1.0 + math.exp(-(rawF - 0.34) * 13.5))).clamp(0.0, 1.0);
+            (1.0 / (1.0 + math.exp(-(rawF - 0.33) * 14.5))).clamp(0.0, 1.0);
         final double tone = cremaTone[idx];
 
-        // Rich velvety hazelnut espresso crema (#783E18 -> #9E5C2E)
-        final double baseR = 120.0 + tone * 46.0;
-        final double baseG = 62.0 + tone * 38.0;
-        final double baseB = 24.0 + tone * 24.0;
+        // Organic espresso tiger-striping & roasted hazelnut crema mottling
+        final double mottle = math.sin(nx * 9.5 + ny * 6.2 + tone * 5.0) *
+                math.cos(ny * 8.4 - nx * 5.3) *
+                0.5 +
+            0.5;
+        final double swirlStreak =
+            math.sin(r * 14.0 - math.atan2(ny, nx) * 2.0 + tone * 4.0) * 0.5 +
+                0.5;
+        final double cremaRichness = (mottle * 0.62 + swirlStreak * 0.38);
 
-        // Silky steamed milk microfoam (#FCF9F2)
+        // Rich velvety roasted espresso crema (#6B3312 -> #A45E2E -> #C27E46)
+        final double baseR = 108.0 + cremaRichness * 34.0 + tone * 42.0;
+        final double baseG = 52.0 + cremaRichness * 26.0 + tone * 34.0;
+        final double baseB = 20.0 + cremaRichness * 14.0 + tone * 22.0;
+
+        // Silky steamed milk microfoam (#FCF8F0) with warm cream undertone
         double rCol = baseR + (252.0 - baseR) * sharpF;
-        double gCol = baseG + (249.0 - baseG) * sharpF;
-        double bCol = baseB + (242.0 - baseB) * sharpF;
+        double gCol = baseG + (248.0 - baseG) * sharpF;
+        double bCol = baseB + (240.0 - baseB) * sharpF;
 
-        // Realistic stream impact indentation shadow (visible in reference video!)
+        // Realistic stream impact indentation dimple + subtle concentric ripple wave
         if (pouring) {
           final double dxP = nx - pourPos.dx;
           final double dyP = ny - pourPos.dy;
           final double d2P = dxP * dxP + dyP * dyP;
-          final double dimple = 1.0 - 0.16 * math.exp(-d2P / 0.012);
-          rCol *= dimple;
-          gCol *= dimple;
-          bCol *= dimple;
+          final double distP = math.sqrt(d2P);
+          final double dimple = 1.0 - 0.18 * math.exp(-d2P / 0.011);
+          final double ripple =
+              math.sin(distP * 38.0 - elapsedSec * 16.0) *
+                  math.exp(-d2P / 0.045) *
+                  7.0;
+          rCol = rCol * dimple + ripple;
+          gCol = gCol * dimple + ripple * 0.9;
+          bCol = bCol * dimple + ripple * 0.8;
         }
 
-        // Inner ceramic meniscus contact shadow + soft studio sheen
+        // Porcelain wall ambient meniscus contact shadow + glossy studio skylight reflection
         final double rimShade =
-            r > 0.88 ? (1.0 - (r - 0.88) * 1.85).clamp(0.65, 1.0) : 1.0;
-        final double spec = math.exp(
-              -((nx + 0.30) * (nx + 0.30) + (ny + 0.34) * (ny + 0.34)) * 5.2,
+            r > 0.84 ? (1.0 - (r - 0.84) * 1.45).clamp(0.72, 1.0) : 1.0;
+        final double mainSpec = math.exp(
+              -((nx + 0.28) * (nx + 0.28) + (ny + 0.36) * (ny + 0.36)) * 6.5,
             ) *
-            14.0;
+            (18.0 + sharpF * 10.0);
+        final double rimSpec = math.exp(
+              -((nx - 0.34) * (nx - 0.34) + (ny - 0.26) * (ny - 0.26)) * 12.0,
+            ) *
+            8.0;
 
-        // Smooth sub-pixel alpha anti-aliasing along circular rim!
-        final int alpha = r > 0.975
-            ? (((1.0 - r) / 0.025) * 255.0).clamp(0.0, 255.0).toInt()
-            : 255;
-
-        rgbaBuffer[pIdx] = (rCol * rimShade + spec).clamp(0.0, 255.0).toInt();
+        rgbaBuffer[pIdx] =
+            (rCol * rimShade + mainSpec + rimSpec).clamp(0.0, 255.0).toInt();
         rgbaBuffer[pIdx + 1] =
-            (gCol * rimShade + spec).clamp(0.0, 255.0).toInt();
+            (gCol * rimShade + mainSpec + rimSpec).clamp(0.0, 255.0).toInt();
         rgbaBuffer[pIdx + 2] =
-            (bCol * rimShade + spec).clamp(0.0, 255.0).toInt();
-        rgbaBuffer[pIdx + 3] = alpha;
+            (bCol * rimShade + mainSpec + rimSpec).clamp(0.0, 255.0).toInt();
+        rgbaBuffer[pIdx + 3] = 255;
       }
     }
   }

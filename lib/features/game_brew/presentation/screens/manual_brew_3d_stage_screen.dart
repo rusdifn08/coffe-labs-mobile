@@ -65,13 +65,20 @@ class _ManualBrew3DStageScreenState extends State<ManualBrew3DStageScreen> {
           : leverPitch;
       final double effectiveRoll = gyroActive ? _sensorSnap.rollDeg : 0.0;
 
-      // Subtle Gyroscope roll assists spiral steering!
-      if (gyroActive && _sensorSnap.rollDeg.abs() > 3.0) {
-        _engine.aimPos = Offset(
-          (_engine.aimPos.dx + (_sensorSnap.rollDeg / 45.0) * 0.016)
-              .clamp(-0.92, 0.92),
-          _engine.aimPos.dy,
-        );
+      // Full 2-Axis Natural Gyroscope Steering:
+      // Roll tilts aim left/right; gentle forward/back wrist surge & pitch assist circular/zigzag patterns!
+      if (gyroActive) {
+        final double rollStep =
+            _sensorSnap.rollDeg.abs() > 2.2 ? (_sensorSnap.rollDeg / 38.0) * 0.018 : 0.0;
+        final double surgeStep = _sensorSnap.linearAccelZ.abs() > 0.35
+            ? (-_sensorSnap.linearAccelZ * 0.012)
+            : 0.0;
+        if (rollStep != 0.0 || surgeStep != 0.0) {
+          _engine.aimPos = Offset(
+            (_engine.aimPos.dx + rollStep).clamp(-0.90, 0.90),
+            (_engine.aimPos.dy + surgeStep).clamp(-0.90, 0.90),
+          );
+        }
       }
 
       // Automatic physical Gentle Rao Swirl via circular hand motion!
@@ -288,6 +295,7 @@ class _ManualBrew3DStageScreenState extends State<ManualBrew3DStageScreen> {
                             showPatternGuide: _showPatternGuide,
                             blindScaleMode: widget.spec.blindScaleMode,
                             animTimeSec: _animTimeSec,
+                            kettleOnRight: _controlsOnLeft,
                           ),
                         ),
                       );
