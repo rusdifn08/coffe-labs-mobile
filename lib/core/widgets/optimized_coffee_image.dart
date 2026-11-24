@@ -64,18 +64,25 @@ class OptimizedCoffeeImage extends StatelessWidget {
 
     final bool isCloudAsset = CloudAssetManager.isCloudAsset(imageUrlOrAsset);
     final bool isNetwork = imageUrlOrAsset.startsWith('http://') ||
-        imageUrlOrAsset.startsWith('https://') ||
-        isCloudAsset;
-    final String resolvedNetworkUrl = isCloudAsset
-        ? CloudAssetManager.resolveUrl(imageUrlOrAsset)
-        : optimizeCloudinaryUrl(imageUrlOrAsset, cacheW);
+        imageUrlOrAsset.startsWith('https://');
 
     Widget imageWidget;
     if (imageUrlOrAsset.trim().isEmpty) {
       imageWidget = _buildFallback();
+    } else if (isCloudAsset) {
+      // Gunakan CloudAssetImage yang memiliki auto-fallback Primary CDN (jsDelivr) -> Mirror CDN (GitHub Raw) + disk cache permanen!
+      imageWidget = CloudAssetImage(
+        imageUrlOrAsset,
+        width: width,
+        height: height,
+        fit: fit,
+        cacheWidth: cacheW,
+        cacheHeight: cacheH,
+        errorBuilder: (_, _, _) => _buildFallback(),
+      );
     } else if (isNetwork) {
       imageWidget = CachedNetworkImage(
-        imageUrl: resolvedNetworkUrl,
+        imageUrl: optimizeCloudinaryUrl(imageUrlOrAsset, cacheW),
         width: width,
         height: height,
         fit: fit,

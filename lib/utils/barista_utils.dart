@@ -301,7 +301,10 @@ class BaristaUtils {
     if (path == null || path.isEmpty) {
       return _buildSafeFallbackWidget(width: width, height: height, fit: fit);
     }
-    if (path.startsWith('assets/') || path.startsWith('lib/')) {
+    if (path.startsWith('assets/') ||
+        path.startsWith('lib/') ||
+        path.startsWith('http://') ||
+        path.startsWith('https://')) {
       return CloudAssetImage(
         path,
         width: width,
