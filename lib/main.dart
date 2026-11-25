@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 import 'dart:ui' show PointerDeviceKind;
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart' show PlatformDispatcher, kIsWeb;
 import 'package:flutter/material.dart';
@@ -51,9 +52,24 @@ class CoffeeLabsSmoothScrollBehavior extends MaterialScrollBehavior {
   }
 }
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   UserCloudSyncService.ensureHooksRegistered();
+
+  // Inisialisasi Firebase Core secara aman sebelum mendaftarkan background FCM handler
+  // agar push notification tetap bangun saat aplikasi di-swipe mati total / layar terkunci.
+  if (!kIsWeb &&
+      !Platform.environment.containsKey('FLUTTER_TEST') &&
+      (Platform.isAndroid || Platform.isIOS || Platform.isMacOS)) {
+    try {
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp();
+      }
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    } catch (e) {
+      debugPrint('⚠️ Firebase init di main() dilewati: $e');
+    }
+  }
 
   // Batasi cache tekstur gambar GPU agar perangkat RAM rendah tidak OOM & bebas jank
   PaintingBinding.instance.imageCache.maximumSize = 150;
@@ -76,13 +92,6 @@ void main() {
     try {
       LmsVideoSessionManager.sanitizeDebugHotRestartCallbacks();
       MediaKit.ensureInitialized();
-    } catch (_) {}
-  }
-
-  // Daftarkan background FCM handler secara aman pada platform mobile tanpa crash bila config Firebase belum ada.
-  if (!kIsWeb && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS)) {
-    try {
-      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
     } catch (_) {}
   }
 

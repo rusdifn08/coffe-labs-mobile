@@ -260,7 +260,7 @@ class DeviceTokenLifecycleService {
         platform: _platformWireValue,
         fcmToken: cleanToken,
         apnsToken: apnsToken,
-        appVersion: '2.5.4',
+        appVersion: '2.5.5',
         isKioskAodActive: _isKioskAodActive,
       );
       _lastSyncedToken = cleanToken;

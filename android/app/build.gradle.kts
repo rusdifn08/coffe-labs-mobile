@@ -155,6 +155,12 @@ flutter {
     source = "../.."
 }
 
+// Aktifkan Google Services Plugin otomatis ketika google-services.json tersedia
+// sehingga Firebase Core & FCM Background Push 100% aktif tanpa merusak CI tanpa file rahasia.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 // ==========================================================================
 // ANTI-STALE NATIVE SNAPSHOT GUARD (CRITICAL FOR SHOREBIRD OTA & RELEASE)
 // ==========================================================================

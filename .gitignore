@@ -54,9 +54,10 @@ brewer/
 
 test/goldens/
 
-# Release signing secrets (never commit to git)
+# Release signing & Firebase client secrets (never commit to public git)
 android/key.properties
 android/app/*.jks
 android/app/*.keystore
+android/app/google-services.json
 
 dist/
