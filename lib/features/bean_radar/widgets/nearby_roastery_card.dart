@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../../../core/utils/external_url_launcher.dart';
 import '../../../models/roastery.dart';
 import '../../../screens/coffee_roastery_screen.dart';
 import '../../../theme/app_theme.dart';
@@ -139,9 +139,7 @@ class NearbyRoasteryCard extends StatelessWidget {
                   onPressed: () async {
                     final query = Uri.encodeComponent('${roastery.name} ${roastery.address}');
                     final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
-                    if (await canLaunchUrl(url)) {
-                      await launchUrl(url, mode: LaunchMode.externalApplication);
-                    }
+                    await launchExternalUri(url);
                   },
                 ),
               ),

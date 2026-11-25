@@ -2,8 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/utils/external_url_launcher.dart';
 import '../../../../core/widgets/optimized_coffee_image.dart';
 import '../../../../models/roastery.dart';
 import '../../../../screens/brew_timer_screen.dart';
@@ -203,9 +203,7 @@ class _RoasteryDetailScreenState extends ConsumerState<RoasteryDetailScreen> {
     final normalized =
         digits.startsWith('0') ? '62${digits.substring(1)}' : digits;
     final uri = Uri.parse('https://wa.me/$normalized');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
+    if (!await launchExternalUri(uri)) {
       await Clipboard.setData(ClipboardData(text: rawPhone));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/utils/external_url_launcher.dart';
 import '../../../../core/widgets/optimized_coffee_image.dart';
 import '../../../../theme/app_theme.dart';
 import '../../data/beans_radar_repository.dart';
@@ -40,9 +40,7 @@ class CoffeePlaceDetailSheet {
     final uri = Uri.parse(
       'https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}&travelmode=driving',
     );
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+    await launchExternalUri(uri);
   }
 }
 
@@ -113,8 +111,8 @@ class _CoffeePlaceDetailBodyState extends State<_CoffeePlaceDetailBody> {
 
   Future<void> _openExternalUrl(String rawUrl) async {
     final uri = Uri.tryParse(rawUrl);
-    if (uri != null && await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (uri != null) {
+      await launchExternalUri(uri);
     }
   }
 

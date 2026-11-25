@@ -11,7 +11,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../core/utils/external_url_launcher.dart';
 import 'receipt_settings_service.dart';
 
 class ReceiptPrintService {
@@ -603,18 +603,10 @@ class ReceiptPrintService {
     final encoded = Uri.encodeComponent(text);
 
     final rawBtUri = Uri.parse('rawbt:data:text/plain;base64,${base64Encode(utf8.encode(text))}');
-    try {
-      if (await canLaunchUrl(rawBtUri)) {
-        return await launchUrl(rawBtUri);
-      }
-    } catch (_) {}
+    if (await launchExternalUri(rawBtUri)) return true;
 
     final shareUri = Uri.parse('sms:?body=$encoded');
-    try {
-      if (await canLaunchUrl(shareUri)) {
-        return await launchUrl(shareUri);
-      }
-    } catch (_) {}
+    if (await launchExternalUri(shareUri)) return true;
 
     await copyReceiptToClipboard(recipe, tastingNotes: tastingNotes, settings: settings);
     return true;

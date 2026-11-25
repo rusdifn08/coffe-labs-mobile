@@ -8,8 +8,8 @@ import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shorebird_code_push/shorebird_code_push.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../core/network/backend_endpoint_manager.dart';
+import '../core/utils/external_url_launcher.dart';
 import 'app_hot_content_sync_service.dart';
 import 'auth_service.dart';
 import '../widgets/app_update_dialog.dart';
@@ -92,9 +92,9 @@ class AppUpdateService {
   static const String officialReleasesUrl =
       'https://github.com/rusdifn08/coffe-labs-mobile/releases/latest';
   static const String officialAndroidApkUrl =
-      'https://github.com/rusdifn08/coffe-labs-mobile/releases/latest/download/Coffe_Labs_25.apk';
+      'https://github.com/rusdifn08/coffe-labs-mobile/releases/download/v2.5.4/Coffee.Labs.254.apk';
   static const String officialIosIpaUrl =
-      'https://github.com/rusdifn08/coffe-labs-mobile/releases/latest/download/CoffeLabs25.ipa';
+      'https://github.com/rusdifn08/coffe-labs-mobile/releases/download/v2.5.2/CoffeLabs25.ipa';
 
   static const String _cachedVersionCheckKey = 'gatekeeper_cached_version_check_v2';
   static const String _snoozedVersionKey = 'gatekeeper_snoozed_version_v1';
@@ -665,8 +665,12 @@ class AppUpdateService {
         : defaultPlatformDownloadUrl();
     final uri = Uri.tryParse(target);
     if (uri == null) return false;
-    if (await canLaunchUrl(uri)) {
-      return launchUrl(uri, mode: LaunchMode.externalApplication);
+    final opened = await launchExternalUri(uri);
+    if (opened) return true;
+    // Fallback terakhir: buka Landing Page resmi Coffee Labs jika direct APK intent ditolak
+    final landingUri = Uri.parse('https://brewingcoffee.vercel.app/');
+    if (uri.toString() != landingUri.toString()) {
+      return launchExternalUri(landingUri);
     }
     return false;
   }

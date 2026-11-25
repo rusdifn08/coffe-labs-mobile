@@ -7,8 +7,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/utils/external_url_launcher.dart';
 import '../../../services/coffee_translator.dart';
 import '../../../utils/barista_utils.dart';
 import '../utils/recipe_attribute_deducer.dart';
@@ -326,21 +326,11 @@ class RecipeShareService {
 
     // 1. Coba WhatsApp app scheme langsung
     final nativeUri = Uri.parse('whatsapp://send?text=$encoded');
-    try {
-      if (await canLaunchUrl(nativeUri)) {
-        final ok = await launchUrl(nativeUri, mode: LaunchMode.externalApplication);
-        if (ok) return true;
-      }
-    } catch (_) {}
+    if (await launchExternalUri(nativeUri)) return true;
 
     // 2. Fallback universal wa.me intent
     final webUri = Uri.parse('https://wa.me/?text=$encoded');
-    try {
-      if (await canLaunchUrl(webUri)) {
-        final ok = await launchUrl(webUri, mode: LaunchMode.externalApplication);
-        if (ok) return true;
-      }
-    } catch (_) {}
+    if (await launchExternalUri(webUri)) return true;
 
     // 3. Fallback system share + poster jika tersedia
     return sharePosterAndLink(recipe, posterKey: posterKey, customText: text);
@@ -355,12 +345,7 @@ class RecipeShareService {
     final intentUri = Uri.parse(
       'https://www.threads.net/intent/post?text=${Uri.encodeComponent(text)}',
     );
-    try {
-      if (await canLaunchUrl(intentUri)) {
-        final ok = await launchUrl(intentUri, mode: LaunchMode.externalApplication);
-        if (ok) return true;
-      }
-    } catch (_) {}
+    if (await launchExternalUri(intentUri)) return true;
 
     return sharePosterAndLink(recipe, posterKey: posterKey, customText: text);
   }
