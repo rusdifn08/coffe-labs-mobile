@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,11 +10,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
+import '../../../../core/network/dio_client.dart';
 import '../../../../theme/app_theme.dart';
 import '../../data/barista_toolkit_api_service.dart';
 import '../../data/barista_toolkit_seed_data.dart';
 import '../../data/ebook_drm_vault_service.dart';
 import '../../data/lms_video_session_manager.dart';
+import '../../data/lms_video_stream_resolver.dart';
 import '../../domain/barista_toolkit_models.dart';
 import '../ebook_reader/ebook_library_screen.dart';
 import '../ebook_reader/encrypted_ebook_reader_screen.dart';
@@ -99,8 +102,11 @@ class _LmsCoursePlayerScreenState
   bool _pendingPlayOnReady = false;
   bool _isFullscreen = false;
   bool _showInteractiveLab = false;
+  bool _didFallbackToMp4 = false;
   double _playbackSpeed = 1.0;
   String? _streamStatusText;
+  String? _posterUrl;
+  String? _fallbackMp4Source;
   bool _submitting = false;
 
   bool get _isHeadlessTest =>
@@ -236,33 +242,8 @@ class _LmsCoursePlayerScreenState
     _playerSubs.clear();
   }
 
-  static const Map<String, String> _bab1ObjectKeys = {
-    '1.1': 'coffeelabs/lms/bab1/sub_1_1_bcc',
-    '1.2': 'coffeelabs/lms/bab1/sub_1_2_water',
-    '1.3': 'coffeelabs/lms/bab1/sub_1_3_degassing',
-    '1.4': 'coffeelabs/lms/bab1/sub_1_4_paragon',
-  };
-
-  Future<bool> _probeHttpReachable(
-    String url, {
-    Duration timeout = const Duration(milliseconds: 1500),
-  }) async {
-    final uri = Uri.tryParse(url);
-    if (uri == null || !(uri.isScheme('http') || uri.isScheme('https'))) {
-      return false;
-    }
-    final client = HttpClient()..connectionTimeout = timeout;
-    try {
-      final req = await client.headUrl(uri).timeout(timeout);
-      final res = await req.close().timeout(timeout);
-      await res.drain<void>();
-      return res.statusCode >= 200 && res.statusCode < 300;
-    } catch (_) {
-      return false;
-    } finally {
-      client.close(force: true);
-    }
-  }
+  static const Map<String, String> _bab1ObjectKeys =
+      LmsVideoStreamResolver.knownSubchapterStems;
 
   /// Menemukan berkas video MP4 lokal di bucket Object Storage backend saat menjalankan mode desktop dev.
   File? _findLocalWorkspaceObjectFile(String objectKeyNoExt) {
@@ -295,63 +276,120 @@ class _LmsCoursePlayerScreenState
     return null;
   }
 
-  Future<(String source, String badge)?> _resolveBestPlayableSource({
-    required BaristaToolkitApiService api,
+  Future<LmsVideoCandidate?> _resolveBestPlayableSource({
+    required String apiBaseUrl,
     required String? serverUrl,
   }) async {
-    final bab1Stem = _bab1ObjectKeys[widget.lesson.subchapterCode];
-    final cleanServer = (serverUrl ?? '').trim();
-    final isRealRemote = cleanServer.isNotEmpty && !cleanServer.contains('cdn.coffeelabs.app');
-
-    // 1. Remote / Cloud CDN / Backend aktif (.m3u8 lalu .mp4)
-    final remoteCandidates = <String>[];
-    if (isRealRemote) {
-      final resolved = api.resolveMediaUrl(cleanServer);
-      remoteCandidates.add(resolved);
-      if (resolved.endsWith('.m3u8')) {
-        remoteCandidates.add(resolved.replaceAll('.m3u8', '.mp4'));
-      }
-    } else if (bab1Stem != null) {
-      remoteCandidates.add(api.resolveMediaUrl('/api/v1/toolkit/object-storage/$bab1Stem.m3u8'));
-      remoteCandidates.add(api.resolveMediaUrl('/api/v1/toolkit/object-storage/$bab1Stem.mp4'));
-    }
-
-    // Pada desktop dev, bila berkas lokal tersedia langsung di disk dan server mengembalikan URL placeholder,
-    // prioritaskan berkas lokal agar langsung putar dalam < 50ms tanpa menunggu timeout cloud 404.
+    final stem = LmsVideoStreamResolver.extractObjectStem(
+      subchapterCode: widget.lesson.subchapterCode,
+      serverUrl: serverUrl,
+    );
     final isDesktop =
         !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
-    if (isDesktop && bab1Stem != null && !isRealRemote) {
-      final localFile = _findLocalWorkspaceObjectFile(bab1Stem);
+    final cleanServer = (serverUrl ?? '').trim();
+    final isRealNonCloudRemote = cleanServer.isNotEmpty &&
+        !cleanServer.contains('cdn.coffeelabs.app') &&
+        !cleanServer.contains('res.cloudinary.com');
+
+    // Pada desktop dev, bila berkas lokal tersedia langsung di disk dan tidak ada CDN khusus,
+    // prioritaskan berkas lokal agar langsung putar dalam < 50ms.
+    if (isDesktop && stem != null && !isRealNonCloudRemote) {
+      final localFile = _findLocalWorkspaceObjectFile(stem);
       if (localFile != null) {
         final cleanPath = localFile.resolveSymbolicLinksSync();
-        return (cleanPath, 'HD Object Storage (Lokal)');
+        return LmsVideoCandidate(
+          url: cleanPath,
+          badge: 'HD Object Storage (Lokal)',
+        );
       }
     }
 
-    for (final url in remoteCandidates) {
+    // 1. Multi-tier Remote Candidates (Object Storage HLS -> Object Storage MP4 -> Cloudinary fallback)
+    final remoteCandidates = LmsVideoStreamResolver.buildRemoteCandidates(
+      subchapterCode: widget.lesson.subchapterCode,
+      apiBaseUrl: apiBaseUrl,
+      serverUrl: serverUrl,
+    );
+
+    for (final candidate in remoteCandidates) {
       if (_isDisposed) return null;
-      if (await _probeHttpReachable(url)) {
-        final badge = url.endsWith('.m3u8') ? 'HLS Object Storage' : 'HD MP4 Cloud';
-        return (url, badge);
+      if (await LmsVideoStreamResolver.probeHttpReachable(candidate.url)) {
+        return candidate;
       }
     }
 
     // 2. Backend lokal dev (127.0.0.1:3000) & fallback disk lokal pada desktop
-    if (bab1Stem != null && isDesktop && !_isDisposed) {
+    if (stem != null && isDesktop && !_isDisposed) {
       for (final ext in const ['m3u8', 'mp4']) {
-        final localUrl = 'http://127.0.0.1:3000/api/v1/toolkit/object-storage/$bab1Stem.$ext';
-        if (await _probeHttpReachable(localUrl, timeout: const Duration(milliseconds: 500))) {
-          return (localUrl, ext == 'm3u8' ? 'HLS Local Storage' : 'HD MP4 Local');
+        final localUrl =
+            'http://127.0.0.1:3000/api/v1/toolkit/object-storage/$stem.$ext';
+        if (await LmsVideoStreamResolver.probeHttpReachable(
+          localUrl,
+          timeout: const Duration(milliseconds: 800),
+        )) {
+          return LmsVideoCandidate(
+            url: localUrl,
+            badge: ext == 'm3u8' ? 'HLS Local Storage' : 'HD MP4 Local',
+            fallbackMp4Url: ext == 'm3u8'
+                ? 'http://127.0.0.1:3000/api/v1/toolkit/object-storage/$stem.mp4'
+                : null,
+          );
         }
       }
 
-      final localFile = _findLocalWorkspaceObjectFile(bab1Stem);
+      final localFile = _findLocalWorkspaceObjectFile(stem);
       if (localFile != null) {
         final cleanPath = localFile.resolveSymbolicLinksSync();
-        return (cleanPath, 'HD Object Storage (Lokal)');
+        return LmsVideoCandidate(
+          url: cleanPath,
+          badge: 'HD Object Storage (Lokal)',
+        );
       }
     }
     return null;
+  }
+
+  Future<void> _switchToFallbackMp4() async {
+    final fallbackUrl = _fallbackMp4Source;
+    if (_isDisposed || !mounted || _didFallbackToMp4 || fallbackUrl == null) {
+      return;
+    }
+    _didFallbackToMp4 = true;
+    final resumePosSec = _positionSecNotifier.value.round();
+    final wasPlaying = _isPlayingNotifier.value;
+    final session = await LmsVideoSessionManager.instance.openMedia(
+      token: _sessionToken,
+      playableSource: fallbackUrl,
+    );
+    if (_isDisposed || !mounted || session == null) return;
+    final (player, vc) = session;
+    if (resumePosSec > 1) {
+      unawaited(
+        player.seek(Duration(seconds: resumePosSec)).catchError((_) {}),
+      );
+    }
+    if (_playbackSpeed != 1.0) {
+      unawaited(player.setRate(_playbackSpeed).catchError((_) {}));
+    }
+    setState(() {
+      _player = player;
+      _videoController = vc;
+      _usingNativeVideo = true;
+      _streamStatusText = 'Video Animasi HD Siap Diputar (HD MP4 Stream)';
+    });
+    if (wasPlaying) {
+      unawaited(player.play().catchError((_) {}));
+    }
+  }
+
+  Future<void> _retryInitStreamPlayer() async {
+    if (_isInitializingPlayer || _isDisposed) return;
+    _didFallbackToMp4 = false;
+    setState(() {
+      _isInitializingPlayer = true;
+      _streamStatusText = 'Menghubungkan ulang ke server video cloud...';
+    });
+    await _initStreamPlayer();
   }
 
   Future<void> _initStreamPlayer() async {
@@ -360,19 +398,28 @@ class _LmsCoursePlayerScreenState
     _isInitializingPlayer = !_isHeadlessTest;
 
     if (!_isHeadlessTest) {
-      // Jalur cepat (< 5ms): pada desktop dev, langsung cek berkas MP4 Object Storage lokal
-      // TANPA menunggu request HTTP ke Render agar saat user klik Play suara langsung keluar instan.
       final isDesktop =
           !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
       final bab1Stem = _bab1ObjectKeys[widget.lesson.subchapterCode];
-      (String source, String badge)? resolved;
+      final activeBaseUrl = await AuthAndRefreshInterceptor.resolveActiveBaseUrl();
+      if (_isDisposed || !mounted) return;
+
+      final initialPoster = LmsVideoStreamResolver.posterUrlFor(
+        subchapterCode: widget.lesson.subchapterCode,
+        apiBaseUrl: activeBaseUrl,
+      );
+      if (initialPoster != null && _posterUrl != initialPoster && mounted) {
+        setState(() => _posterUrl = initialPoster);
+      }
+
+      LmsVideoCandidate? resolved;
 
       if (isDesktop && bab1Stem != null) {
         final localFile = _findLocalWorkspaceObjectFile(bab1Stem);
         if (localFile != null) {
-          resolved = (
-            localFile.resolveSymbolicLinksSync(),
-            'HD Object Storage',
+          resolved = LmsVideoCandidate(
+            url: localFile.resolveSymbolicLinksSync(),
+            badge: 'HD Object Storage',
           );
         }
       }
@@ -380,7 +427,9 @@ class _LmsCoursePlayerScreenState
       if (resolved == null) {
         String? rawUrl;
         try {
-          final info = await api.fetchLessonStream(widget.lesson.id);
+          final info = await api
+              .fetchLessonStream(widget.lesson.id)
+              .timeout(const Duration(seconds: 6));
           if (_isDisposed || !mounted) return;
           rawUrl = info['signed_hls_url']?.toString();
           final serverDur = (info['duration_sec'] as num?)?.toInt() ?? 0;
@@ -389,15 +438,29 @@ class _LmsCoursePlayerScreenState
           }
         } catch (_) {}
         if (_isDisposed || !mounted) return;
-        resolved = await _resolveBestPlayableSource(api: api, serverUrl: rawUrl);
+
+        final resolvedPoster = LmsVideoStreamResolver.posterUrlFor(
+          subchapterCode: widget.lesson.subchapterCode,
+          apiBaseUrl: activeBaseUrl,
+          serverUrl: rawUrl,
+        );
+        if (resolvedPoster != null && _posterUrl != resolvedPoster && mounted) {
+          setState(() => _posterUrl = resolvedPoster);
+        }
+
+        resolved = await _resolveBestPlayableSource(
+          apiBaseUrl: activeBaseUrl,
+          serverUrl: rawUrl,
+        );
       }
 
       if (_isDisposed || !mounted) return;
       if (resolved != null) {
-        final (playableSource, badge) = resolved;
+        _fallbackMp4Source = resolved.fallbackMp4Url;
+        _didFallbackToMp4 = false;
         final session = await LmsVideoSessionManager.instance.openMedia(
           token: token,
-          playableSource: playableSource,
+          playableSource: resolved.url,
         );
         if (_isDisposed || !mounted || session == null) return;
 
@@ -437,6 +500,13 @@ class _LmsCoursePlayerScreenState
               _isBufferingNotifier.value = buf;
             }
           }),
+          player.stream.error.listen((err) {
+            if (_isDisposed || err.trim().isEmpty) return;
+            debugPrint('⚠️ LMS Video player error ($err) — mencoba failover MP4...');
+            if (!_didFallbackToMp4 && _fallbackMp4Source != null) {
+              unawaited(_switchToFallbackMp4());
+            }
+          }),
         ]);
 
         if (_playbackSpeed != 1.0) {
@@ -451,7 +521,7 @@ class _LmsCoursePlayerScreenState
           _player = player;
           _videoController = vc;
           _usingNativeVideo = true;
-          _streamStatusText = 'Video Animasi HD Siap Diputar ($badge)';
+          _streamStatusText = 'Video Animasi HD Siap Diputar (${resolved!.badge})';
         });
 
         if (shouldAutoPlayNow) {
@@ -476,7 +546,7 @@ class _LmsCoursePlayerScreenState
     setState(() {
       _usingNativeVideo = false;
       _streamStatusText = widget.lesson.subchapterCode.startsWith('1.')
-          ? 'Video Bab 1 belum tersinkron di server cloud (404). Deploy backend atau aktifkan Cloudinary untuk streaming online.'
+          ? 'Koneksi streaming video terputus sementara. Periksa internet Anda lalu ketuk Muat Ulang.'
           : 'Interactive Stage & Storyboard (HLS Offline Sync Ready)';
     });
   }
@@ -1147,7 +1217,7 @@ class _LmsCoursePlayerScreenState
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // 1. Video Surface (atau Fallback Poster Stage)
+            // 1. Video Surface (atau Fallback Poster Stage HD)
             if (_usingNativeVideo && _videoController != null)
               RepaintBoundary(
                 key: _videoSurfaceKey,
@@ -1164,19 +1234,76 @@ class _LmsCoursePlayerScreenState
                 ),
               )
             else
-              Container(
-                color: const Color(0xFF1C130E),
-                alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  _streamStatusText ?? 'Coffee Labs Cinema Player Ready',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white60,
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
+              Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (_posterUrl != null && !_isHeadlessTest)
+                    CachedNetworkImage(
+                      imageUrl: _posterUrl!,
+                      fit: BoxFit.cover,
+                      errorWidget: (_, _, _) => const ColoredBox(
+                        color: Color(0xFF1C130E),
+                      ),
+                    )
+                  else
+                    const ColoredBox(color: Color(0xFF1C130E)),
+                  Container(
+                    color: Colors.black.withValues(alpha: 0.56),
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_isInitializingPlayer) ...[
+                          const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.4,
+                              color: AppTheme.accentGold,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        Text(
+                          _isInitializingPlayer
+                              ? 'Memuat Video Animasi HD...'
+                              : (_streamStatusText ?? 'Coffee Labs Cinema Player Ready'),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (!_isInitializingPlayer &&
+                            widget.lesson.subchapterCode.startsWith('1.')) ...[
+                          const SizedBox(height: 10),
+                          OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppTheme.accentGold,
+                              side: const BorderSide(color: AppTheme.accentGold),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 6,
+                              ),
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            onPressed: _retryInitStreamPlayer,
+                            icon: const Icon(Icons.refresh_rounded, size: 15),
+                            label: const Text(
+                              'Muat Ulang Video',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
 
             // 2. Area Ketuk / Klik Video untuk Menampilkan atau Menyembunyikan Timeline & Kontrol

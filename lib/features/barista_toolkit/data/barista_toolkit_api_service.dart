@@ -43,6 +43,17 @@ class BaristaToolkitApiService {
     return trimmed.startsWith('/') ? '$cleanBase$trimmed' : '$cleanBase/$trimmed';
   }
 
+  /// Mengonversi path relatif Object Storage memakai Base URL live aktif dari [BackendEndpointManager].
+  Future<String> resolveMediaUrlAsync(String rawUrl) async {
+    final trimmed = rawUrl.trim();
+    if (trimmed.isEmpty || trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    final activeBase = await AuthAndRefreshInterceptor.resolveActiveBaseUrl();
+    final cleanBase = AuthAndRefreshInterceptor.normalizeBaseUrl(activeBase);
+    return trimmed.startsWith('/') ? '$cleanBase$trimmed' : '$cleanBase/$trimmed';
+  }
+
   bool get _isTestEnv =>
       !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
 
