@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/network/rust_api_client.dart';
 import '../core/storage/user_scoped_storage.dart';
+import '../features/game_brew/data/game_brew_progress_service.dart';
 import '../features/gamification/services/gamification_service.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
@@ -72,6 +73,7 @@ class AuthRepositoryImpl implements AuthRepository {
     } catch (_) {}
     _cachedUser = user;
     GamificationService.instance.notifySessionSwitched();
+    GameBrewProgressService.notifySessionSwitched();
     ProfileService.notifySessionSwitched();
     ApiService.changeNotifier.value++;
     AuthService.changeNotifier.value++;
@@ -147,6 +149,7 @@ class AuthRepositoryImpl implements AuthRepository {
     ApiService.clearMemoryCache();
     _cachedUser = null;
     GamificationService.instance.notifySessionSwitched();
+    GameBrewProgressService.notifySessionSwitched();
     ProfileService.notifySessionSwitched();
     ApiService.changeNotifier.value++;
     AuthService.changeNotifier.value++;

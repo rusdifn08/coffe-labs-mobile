@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -22,6 +23,7 @@ import '../services/profile_service.dart';
 import '../services/language_service.dart';
 import '../services/trial_service.dart';
 import '../services/user_brew_usage_service.dart';
+import '../services/user_cloud_sync_service.dart';
 import '../features/brew_methods/models/brew_method_item.dart';
 import '../theme/app_theme.dart';
 import '../utils/barista_utils.dart';
@@ -53,6 +55,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     _loadProfileAndBaristas();
+    unawaited(UserCloudSyncService.syncCurrentUser());
     GamificationService.changeNotifier.addListener(_loadGamificationStats);
     ProfileService.changeNotifier.addListener(_loadProfileAndBaristas);
     AuthService.changeNotifier.addListener(_loadProfileAndBaristas);
@@ -94,6 +97,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _refreshAll() async {
+    await AuthService.syncProfile(force: true);
+    await UserCloudSyncService.syncCurrentUser(force: true);
     await ref.read(recipeListControllerProvider.notifier).refreshRecipes();
     ref.invalidate(brewHistoryControllerProvider);
     await _loadProfileAndBaristas();

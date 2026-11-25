@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/moderation/content_moderation_guard.dart';
 import '../core/network/backend_endpoint_manager.dart';
 import '../core/storage/user_scoped_storage.dart';
+import '../features/game_brew/data/game_brew_progress_service.dart';
 import '../features/gamification/services/gamification_service.dart';
 import 'api_service.dart';
 import 'profile_service.dart';
@@ -551,6 +552,7 @@ class AuthService {
           ).timeout(const Duration(seconds: 6));
         } catch (_) {}
         GamificationService.instance.notifySessionSwitched();
+        GameBrewProgressService.notifySessionSwitched();
         ProfileService.notifySessionSwitched();
         ApiService.changeNotifier.value++;
 
@@ -884,6 +886,7 @@ class AuthService {
     await TrialService.setTrialMode(false);
     updateCachedSessionState(isLoggedIn: false, isAdmin: false);
     GamificationService.instance.notifySessionSwitched();
+    GameBrewProgressService.notifySessionSwitched();
     ProfileService.notifySessionSwitched();
     ApiService.changeNotifier.value++;
     changeNotifier.value++;

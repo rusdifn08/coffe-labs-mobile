@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/storage/user_scoped_storage.dart';
+import '../features/game_brew/data/game_brew_progress_service.dart';
 import '../features/gamification/services/gamification_service.dart';
 import 'api_service.dart';
 import 'auth_service.dart';
@@ -32,18 +33,20 @@ class ProfileSyncResult {
 /// Mesin sinkronisasi lintas perangkat (Cross-Device Cloud Sync) Coffee Labs.
 ///
 /// Menjamin data Gamification (Level, EXP, Seduhan, Toolkit, Evaluasi, Streak),
-/// Riwayat Seduh, Jurnal Rasa, Favorit, Resep Custom, Nama, dan Foto Profil
-/// terisolasi per-user dan selalu identik di perangkat mana pun pengguna login.
+/// Progres Game Brew 3D, Riwayat Seduh, Jurnal Rasa, Favorit, Resep Custom,
+/// Nama, dan Foto Profil terisolasi per-user dan selalu identik di perangkat mana pun.
 class UserCloudSyncService {
   UserCloudSyncService._();
 
   static const String _dirtyFlagBaseKey = 'coffeehub_cloud_state_dirty_v1';
+  static const String _stateVersionBaseKey = 'coffeehub_cloud_state_version_v1';
   static final http.Client _httpClient = http.Client();
 
   static Timer? _pushDebounce;
   static bool _hooksRegistered = false;
   static bool _isHydrating = false;
   static bool _isPushing = false;
+  static bool _pendingFollowupPush = false;
   static String? _lastHydratedUserId;
   static DateTime? _lastHydratedAt;
 
@@ -88,6 +91,21 @@ class UserCloudSyncService {
     await prefs.setBool(key, false);
   }
 
+  static int _getKnownStateVersion(SharedPreferences prefs, String userId) {
+    final key = UserScopedStorage.scopedKey(_stateVersionBaseKey, userId: userId);
+    return prefs.getInt(key) ?? 0;
+  }
+
+  static Future<void> _setKnownStateVersion(
+    SharedPreferences prefs,
+    String userId,
+    int version,
+  ) async {
+    if (version <= 0) return;
+    final key = UserScopedStorage.scopedKey(_stateVersionBaseKey, userId: userId);
+    await prefs.setInt(key, version);
+  }
+
   /// Menjadwalkan sinkronisasi latar belakang (debounced) setelah mutasi lokal.
   static void schedulePushToCloud({Duration delay = const Duration(milliseconds: 900)}) {
     if (Platform.environment.containsKey('FLUTTER_TEST')) return;
@@ -97,7 +115,7 @@ class UserCloudSyncService {
     });
   }
 
-  /// Memaksa pengiriman mutasi yang belum tersinkron sebelum pengguna logout.
+  /// Memaksa pengiriman mutasi yang belum tersinkron (saat logout / app paused).
   static Future<void> flushPendingSync() async {
     _pushDebounce?.cancel();
     _pushDebounce = null;
@@ -107,8 +125,191 @@ class UserCloudSyncService {
     } catch (_) {}
   }
 
+  /// Sinkronisasi penuh untuk pengguna aktif (dipanggil saat boot, app resumed, pull-to-refresh).
+  static Future<bool> syncCurrentUser({bool force = false}) async {
+    ensureHooksRegistered();
+    final user = await AuthService.getCurrentUser();
+    if (!_isCloudEligibleUser(user)) return false;
+    return hydrateFromCloud(user: user!, force: force);
+  }
+
+  /// Menerapkan payload cloud state dari respon GET atau PUT secara seragam dan deterministik.
+  /// Mengembalikan `true` bila state lokal lebih maju daripada cloud dan perlu di-push.
+  @visibleForTesting
+  static Future<bool> applyCloudStatePayload({
+    required AuthUser user,
+    required Map<String, dynamic> data,
+    required bool isAuthoritativePutResponse,
+  }) async {
+    final uid = user.id.trim();
+    final prefs = await SharedPreferences.getInstance();
+    final isDirty = await _isUserDirty(prefs, uid);
+
+    final hasCloudRecord = data['has_cloud_record'] == true;
+    final cloudVersion = (data['state_version'] as num?)?.toInt() ?? 0;
+    final cloudExp = (data['total_exp'] as num?)?.toInt() ?? 0;
+    final cloudBrews = (data['brews_count'] as num?)?.toInt() ?? 0;
+    final cloudToolkit = (data['toolkit_count'] as num?)?.toInt() ?? 0;
+    final cloudCupping = (data['cupping_count'] as num?)?.toInt() ?? 0;
+    final cloudStreak = math.max(1, (data['streak_days'] as num?)?.toInt() ?? 1);
+    final cloudLastDate = data['last_activity_date']?.toString();
+
+    final cloudHistory = (data['brew_history'] as List<dynamic>?) ?? const [];
+    final cloudJournal = (data['brew_journal'] as List<dynamic>?) ?? const [];
+    final cloudCustom = (data['custom_recipes'] as List<dynamic>?) ?? const [];
+    final cloudFavs = ((data['favorite_recipe_ids'] as List<dynamic>?) ?? const [])
+        .map((e) => (e as num?)?.toInt() ?? -1)
+        .where((e) => e > 0)
+        .toList();
+    final cloudDeleted = ((data['deleted_default_ids'] as List<dynamic>?) ?? const [])
+        .map((e) => (e as num?)?.toInt() ?? -1)
+        .where((e) => e > 0)
+        .toList();
+    final cloudGameBrew = data['game_brew_progress'] is Map
+        ? Map<String, dynamic>.from(data['game_brew_progress'] as Map)
+        : const <String, dynamic>{};
+
+    final localRawG = await GamificationService.instance.exportRawState(userId: uid);
+    final localExp = (localRawG['total_exp'] as num?)?.toInt() ?? 0;
+    final localBrews = (localRawG['brews_count'] as num?)?.toInt() ?? 0;
+    final localToolkit = (localRawG['toolkit_count'] as num?)?.toInt() ?? 0;
+    final localCupping = (localRawG['cupping_count'] as num?)?.toInt() ?? 0;
+    final localStreak = math.max(1, (localRawG['streak_days'] as num?)?.toInt() ?? 1);
+    final localLastDate = localRawG['last_activity_date']?.toString();
+
+    final mergedExp = math.max(cloudExp, localExp);
+    final mergedBrews = math.max(cloudBrews, localBrews);
+    final mergedToolkit = math.max(cloudToolkit, localToolkit);
+    final mergedCupping = math.max(cloudCupping, localCupping);
+    final mergedStreak = math.max(cloudStreak, localStreak);
+    final mergedLastDate = _pickLatestDate(cloudLastDate, localLastDate);
+
+    final localCols = await ApiService.exportCloudCollections(userId: uid);
+    final localHistory = (localCols['brew_history'] as List<dynamic>?) ?? const [];
+    final localJournal = (localCols['brew_journal'] as List<dynamic>?) ?? const [];
+    final localCustom = (localCols['custom_recipes'] as List<dynamic>?) ?? const [];
+    final localFavs = (localCols['favorite_recipe_ids'] as List<int>?) ?? const <int>[];
+    final localDeleted = (localCols['deleted_default_ids'] as List<int>?) ?? const <int>[];
+
+    final List<dynamic> finalHistory;
+    final List<dynamic> finalJournal;
+    final List<dynamic> finalCustom;
+    final List<int> finalFavs;
+    final List<int> finalDeleted;
+
+    if (isAuthoritativePutResponse || (hasCloudRecord && !isDirty)) {
+      finalHistory = cloudHistory;
+      finalJournal = cloudJournal;
+      finalCustom = cloudCustom;
+      finalFavs = cloudFavs;
+      finalDeleted = cloudDeleted;
+    } else {
+      finalHistory = _mergeMapLists(
+        cloudHistory,
+        localHistory,
+        keyOf: (m) => '${m['id'] ?? ''}_${m['brewedAt'] ?? ''}',
+        maxItems: 50,
+      );
+      finalJournal = _mergeMapLists(
+        cloudJournal,
+        localJournal,
+        keyOf: (m) => '${m['id'] ?? m['createdAt'] ?? ''}',
+        maxItems: 100,
+      );
+      finalCustom = _mergeMapLists(
+        cloudCustom,
+        localCustom,
+        keyOf: (m) => '${m['id'] ?? ''}',
+        maxItems: 100,
+      );
+      finalFavs = <int>{...cloudFavs, ...localFavs}.toList();
+      finalDeleted = <int>{...cloudDeleted, ...localDeleted}.toList();
+    }
+
+    await GamificationService.instance.applyCloudSnapshot(
+      userId: uid,
+      totalExp: mergedExp,
+      brewsCount: mergedBrews,
+      toolkitCount: mergedToolkit,
+      cuppingCount: mergedCupping,
+      streakDays: mergedStreak,
+      lastActivityDate: mergedLastDate,
+    );
+
+    await ApiService.applyCloudCollections(
+      userId: uid,
+      brewHistory: finalHistory,
+      brewJournal: finalJournal,
+      favoriteRecipeIds: finalFavs,
+      customRecipes: finalCustom,
+      deletedDefaultIds: finalDeleted,
+    );
+
+    final gameBrewLocalAhead = await GameBrewProgressService.applyCloudProgress(
+      userId: uid,
+      cloudProgress: cloudGameBrew,
+    );
+
+    final cloudFullName = data['full_name']?.toString().trim();
+    final cloudAvatar = data['avatar_url']?.toString().trim();
+    await ProfileService.applyCloudProfile(
+      userId: uid,
+      fullName: cloudFullName,
+      avatarUrl: cloudAvatar,
+    );
+
+    if ((cloudFullName != null && cloudFullName.isNotEmpty && cloudFullName != user.fullName) ||
+        (cloudAvatar != null && cloudAvatar.isNotEmpty && cloudAvatar != user.avatarUrl)) {
+      final refreshed = AuthUser(
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        fullName: (cloudFullName != null && cloudFullName.isNotEmpty)
+            ? cloudFullName
+            : user.fullName,
+        role: user.role,
+        status: user.status,
+        tier: user.tier,
+        subscriptionPlanId: user.subscriptionPlanId,
+        avatarUrl: (cloudAvatar != null && cloudAvatar.isNotEmpty)
+            ? cloudAvatar
+            : user.avatarUrl,
+        createdAt: user.createdAt,
+        trialFullUntil: user.trialFullUntil,
+        trialPolicyOverride: user.trialPolicyOverride,
+      );
+      await AuthService.persistSessionMirrors(prefs, user: refreshed);
+      AuthService.changeNotifier.value++;
+    }
+
+    if (hasCloudRecord && cloudVersion > 0) {
+      await _setKnownStateVersion(prefs, uid, cloudVersion);
+    }
+
+    final localAhead = mergedExp > cloudExp ||
+        mergedBrews > cloudBrews ||
+        mergedToolkit > cloudToolkit ||
+        mergedCupping > cloudCupping ||
+        mergedStreak > cloudStreak ||
+        gameBrewLocalAhead ||
+        (!isAuthoritativePutResponse && isDirty) ||
+        (!hasCloudRecord &&
+            (mergedExp > 0 ||
+                mergedStreak > 1 ||
+                finalHistory.isNotEmpty ||
+                finalJournal.isNotEmpty ||
+                finalFavs.isNotEmpty ||
+                finalCustom.isNotEmpty));
+
+    if (!localAhead || isAuthoritativePutResponse) {
+      await _clearUserDirty(prefs, uid);
+    }
+
+    return localAhead;
+  }
+
   /// Mengunduh dan menghidrasi seluruh data personal pengguna dari cloud NeonDB
-  /// ke partisi lokal `u_<userId>_*`. Dipanggil saat login, boot app, dan pull-to-refresh.
+  /// ke partisi lokal `u_<userId>_*`. Dipanggil saat login, boot app, resume, dan pull-to-refresh.
   static Future<bool> hydrateFromCloud({
     required AuthUser user,
     bool force = false,
@@ -144,162 +345,31 @@ class UserCloudSyncService {
           )
           .timeout(const Duration(seconds: 10));
 
-      if (res.statusCode != 200) return false;
+      if (res.statusCode != 200) {
+        debugPrint('⚠️ hydrateFromCloud HTTP ${res.statusCode} ($baseUrl/api/v1/users/me/cloud-state)');
+        return false;
+      }
 
       final decoded = json.decode(res.body);
       if (decoded is! Map<String, dynamic>) return false;
       final data = decoded['data'];
       if (data is! Map<String, dynamic>) return false;
 
-      final prefs = await SharedPreferences.getInstance();
-      final isDirty = await _isUserDirty(prefs, uid);
-
-      final hasCloudRecord = data['has_cloud_record'] == true;
-      final cloudExp = (data['total_exp'] as num?)?.toInt() ?? 0;
-      final cloudBrews = (data['brews_count'] as num?)?.toInt() ?? 0;
-      final cloudToolkit = (data['toolkit_count'] as num?)?.toInt() ?? 0;
-      final cloudCupping = (data['cupping_count'] as num?)?.toInt() ?? 0;
-      final cloudStreak = math.max(1, (data['streak_days'] as num?)?.toInt() ?? 1);
-      final cloudLastDate = data['last_activity_date']?.toString();
-
-      final cloudHistory = (data['brew_history'] as List<dynamic>?) ?? const [];
-      final cloudJournal = (data['brew_journal'] as List<dynamic>?) ?? const [];
-      final cloudCustom = (data['custom_recipes'] as List<dynamic>?) ?? const [];
-      final cloudFavs = ((data['favorite_recipe_ids'] as List<dynamic>?) ?? const [])
-          .map((e) => (e as num?)?.toInt() ?? -1)
-          .where((e) => e > 0)
-          .toList();
-      final cloudDeleted = ((data['deleted_default_ids'] as List<dynamic>?) ?? const [])
-          .map((e) => (e as num?)?.toInt() ?? -1)
-          .where((e) => e > 0)
-          .toList();
-
-      final localRawG = await GamificationService.instance.exportRawState(userId: uid);
-      final localExp = (localRawG['total_exp'] as num?)?.toInt() ?? 0;
-      final localBrews = (localRawG['brews_count'] as num?)?.toInt() ?? 0;
-      final localToolkit = (localRawG['toolkit_count'] as num?)?.toInt() ?? 0;
-      final localCupping = (localRawG['cupping_count'] as num?)?.toInt() ?? 0;
-      final localStreak = math.max(1, (localRawG['streak_days'] as num?)?.toInt() ?? 1);
-      final localLastDate = localRawG['last_activity_date']?.toString();
-
-      final mergedExp = math.max(cloudExp, localExp);
-      final mergedBrews = math.max(cloudBrews, localBrews);
-      final mergedToolkit = math.max(cloudToolkit, localToolkit);
-      final mergedCupping = math.max(cloudCupping, localCupping);
-      final mergedStreak = math.max(cloudStreak, localStreak);
-      final mergedLastDate = _pickLatestDate(cloudLastDate, localLastDate);
-
-      final localCols = await ApiService.exportCloudCollections(userId: uid);
-      final localHistory = (localCols['brew_history'] as List<dynamic>?) ?? const [];
-      final localJournal = (localCols['brew_journal'] as List<dynamic>?) ?? const [];
-      final localCustom = (localCols['custom_recipes'] as List<dynamic>?) ?? const [];
-      final localFavs = (localCols['favorite_recipe_ids'] as List<int>?) ?? const <int>[];
-      final localDeleted = (localCols['deleted_default_ids'] as List<int>?) ?? const <int>[];
-
-      final List<dynamic> finalHistory;
-      final List<dynamic> finalJournal;
-      final List<dynamic> finalCustom;
-      final List<int> finalFavs;
-      final List<int> finalDeleted;
-
-      if (hasCloudRecord && !isDirty) {
-        finalHistory = cloudHistory;
-        finalJournal = cloudJournal;
-        finalCustom = cloudCustom;
-        finalFavs = cloudFavs;
-        finalDeleted = cloudDeleted;
-      } else {
-        finalHistory = _mergeMapLists(
-          cloudHistory,
-          localHistory,
-          keyOf: (m) => '${m['id'] ?? ''}_${m['brewedAt'] ?? ''}',
-          maxItems: 50,
-        );
-        finalJournal = _mergeMapLists(
-          cloudJournal,
-          localJournal,
-          keyOf: (m) => '${m['id'] ?? m['createdAt'] ?? ''}',
-          maxItems: 100,
-        );
-        finalCustom = _mergeMapLists(
-          cloudCustom,
-          localCustom,
-          keyOf: (m) => '${m['id'] ?? ''}',
-          maxItems: 100,
-        );
-        finalFavs = <int>{...cloudFavs, ...localFavs}.toList();
-        finalDeleted = <int>{...cloudDeleted, ...localDeleted}.toList();
-      }
-
-      await GamificationService.instance.applyCloudSnapshot(
-        userId: uid,
-        totalExp: mergedExp,
-        brewsCount: mergedBrews,
-        toolkitCount: mergedToolkit,
-        cuppingCount: mergedCupping,
-        streakDays: mergedStreak,
-        lastActivityDate: mergedLastDate,
+      final localAhead = await applyCloudStatePayload(
+        user: user,
+        data: data,
+        isAuthoritativePutResponse: false,
       );
-
-      await ApiService.applyCloudCollections(
-        userId: uid,
-        brewHistory: finalHistory,
-        brewJournal: finalJournal,
-        favoriteRecipeIds: finalFavs,
-        customRecipes: finalCustom,
-        deletedDefaultIds: finalDeleted,
-      );
-
-      final cloudFullName = data['full_name']?.toString().trim();
-      final cloudAvatar = data['avatar_url']?.toString().trim();
-      await ProfileService.applyCloudProfile(
-        userId: uid,
-        fullName: cloudFullName,
-        avatarUrl: cloudAvatar,
-      );
-
-      if ((cloudFullName != null && cloudFullName.isNotEmpty && cloudFullName != user.fullName) ||
-          (cloudAvatar != null && cloudAvatar.isNotEmpty && cloudAvatar != user.avatarUrl)) {
-        final refreshed = AuthUser(
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          fullName: (cloudFullName != null && cloudFullName.isNotEmpty)
-              ? cloudFullName
-              : user.fullName,
-          role: user.role,
-          status: user.status,
-          tier: user.tier,
-          subscriptionPlanId: user.subscriptionPlanId,
-          avatarUrl: (cloudAvatar != null && cloudAvatar.isNotEmpty)
-              ? cloudAvatar
-              : user.avatarUrl,
-          createdAt: user.createdAt,
-          trialFullUntil: user.trialFullUntil,
-          trialPolicyOverride: user.trialPolicyOverride,
-        );
-        await AuthService.persistSessionMirrors(prefs, user: refreshed);
-      }
 
       _lastHydratedUserId = uid;
       _lastHydratedAt = DateTime.now();
 
-      final localAhead = mergedExp > cloudExp ||
-          mergedBrews > cloudBrews ||
-          mergedToolkit > cloudToolkit ||
-          mergedCupping > cloudCupping ||
-          isDirty ||
-          (!hasCloudRecord &&
-              (mergedExp > 0 ||
-                  finalHistory.isNotEmpty ||
-                  finalJournal.isNotEmpty ||
-                  finalFavs.isNotEmpty ||
-                  finalCustom.isNotEmpty));
-
       if (localAhead) {
-        schedulePushToCloud(delay: const Duration(milliseconds: 300));
-      } else {
-        await _clearUserDirty(prefs, uid);
+        if (force) {
+          unawaited(pushCurrentUserStateToCloud());
+        } else {
+          schedulePushToCloud(delay: const Duration(milliseconds: 250));
+        }
       }
       return true;
     } catch (e) {
@@ -310,9 +380,13 @@ class UserCloudSyncService {
     }
   }
 
-  /// Mengirimkan snapshot state lokal milik pengguna aktif ke NeonDB Cloud.
+  /// Mengirimkan snapshot state lokal milik pengguna aktif ke NeonDB Cloud,
+  /// lalu langsung menerapkan respon merge otoritatif dari server (bidirectional sync).
   static Future<bool> pushCurrentUserStateToCloud() async {
-    if (_isPushing) return false;
+    if (_isPushing) {
+      _pendingFollowupPush = true;
+      return false;
+    }
     final user = await AuthService.getCurrentUser();
     if (!_isCloudEligibleUser(user)) return false;
 
@@ -323,8 +397,11 @@ class UserCloudSyncService {
     _isPushing = true;
 
     try {
+      final prefs = await SharedPreferences.getInstance();
       final gState = await GamificationService.instance.exportRawState(userId: uid);
       final cols = await ApiService.exportCloudCollections(userId: uid);
+      final gameBrew = await GameBrewProgressService.exportCloudProgress(userId: uid);
+      final knownVersion = _getKnownStateVersion(prefs, uid);
       final baseUrl = await AuthService.getBaseUrl();
 
       final payload = {
@@ -340,6 +417,8 @@ class UserCloudSyncService {
         'favorite_recipe_ids': cols['favorite_recipe_ids'] ?? const [],
         'custom_recipes': cols['custom_recipes'] ?? const [],
         'deleted_default_ids': cols['deleted_default_ids'] ?? const [],
+        'game_brew_progress': gameBrew,
+        'base_state_version': knownVersion,
       };
 
       final res = await _httpClient
@@ -354,16 +433,35 @@ class UserCloudSyncService {
           .timeout(const Duration(seconds: 12));
 
       if (res.statusCode == 200) {
-        final prefs = await SharedPreferences.getInstance();
-        await _clearUserDirty(prefs, uid);
+        try {
+          final decoded = json.decode(res.body);
+          if (decoded is Map<String, dynamic> && decoded['data'] is Map<String, dynamic>) {
+            await applyCloudStatePayload(
+              user: user,
+              data: decoded['data'] as Map<String, dynamic>,
+              isAuthoritativePutResponse: true,
+            );
+          } else {
+            await _clearUserDirty(prefs, uid);
+          }
+        } catch (_) {
+          await _clearUserDirty(prefs, uid);
+        }
+        _lastHydratedUserId = uid;
+        _lastHydratedAt = DateTime.now();
         return true;
       }
+      debugPrint('⚠️ pushCurrentUserStateToCloud HTTP ${res.statusCode}');
       return false;
     } catch (e) {
       debugPrint('⚠️ UserCloudSyncService.pushCurrentUserStateToCloud error: $e');
       return false;
     } finally {
       _isPushing = false;
+      if (_pendingFollowupPush) {
+        _pendingFollowupPush = false;
+        schedulePushToCloud(delay: const Duration(milliseconds: 350));
+      }
     }
   }
 

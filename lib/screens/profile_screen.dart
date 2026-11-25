@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../core/router/app_router.dart';
+import '../core/storage/user_scoped_storage.dart';
 import '../features/auth/controllers/auth_controller.dart';
 import '../features/gamification/services/gamification_service.dart';
 import '../features/profile/widgets/profile_admin_hub_cards.dart';
@@ -42,6 +43,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   GamificationStats? _gamificationStats;
   bool _isLoading = true;
   bool _isSyncing = false;
+  bool _reloadPending = false;
   DateTime? _lastAdminStatsFetch;
 
   @override
@@ -54,6 +56,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     FeedbackService.changeNotifier.addListener(_loadProfileData);
     SubscriptionService.changeNotifier.addListener(_loadProfileData);
     GamificationService.changeNotifier.addListener(_loadProfileData);
+    UserScopedStorage.activeUserIdNotifier.addListener(_loadProfileData);
   }
 
   @override
@@ -64,11 +67,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     FeedbackService.changeNotifier.removeListener(_loadProfileData);
     SubscriptionService.changeNotifier.removeListener(_loadProfileData);
     GamificationService.changeNotifier.removeListener(_loadProfileData);
+    UserScopedStorage.activeUserIdNotifier.removeListener(_loadProfileData);
     super.dispose();
   }
 
   Future<void> _loadProfileData() async {
-    if (_isSyncing) return;
+    if (_isSyncing) {
+      _reloadPending = true;
+      return;
+    }
     _isSyncing = true;
 
     try {
@@ -187,6 +194,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       });
     } finally {
       _isSyncing = false;
+      if (_reloadPending && mounted) {
+        _reloadPending = false;
+        Future.microtask(_loadProfileData);
+      }
     }
   }
 

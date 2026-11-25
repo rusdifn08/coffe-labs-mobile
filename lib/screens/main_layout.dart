@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,7 +10,9 @@ import 'profile_screen.dart';
 import '../features/gamification/services/gamification_service.dart';
 import '../services/audio_service.dart';
 import '../services/app_update_service.dart';
+import '../services/auth_service.dart';
 import '../services/main_navigation_service.dart';
+import '../services/user_cloud_sync_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/brew_dripper_glass_icon.dart';
 import '../widgets/notched_nav_bar_painter.dart';
@@ -21,24 +24,44 @@ class MainLayout extends StatefulWidget {
   State<MainLayout> createState() => _MainLayoutState();
 }
 
-class _MainLayoutState extends State<MainLayout> {
+class _MainLayoutState extends State<MainLayout> with WidgetsBindingObserver {
   int _currentIndex = 0;
   final Set<int> _visitedTabs = {0};
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _currentIndex = MainNavigationService.currentTabNotifier.value;
     _visitedTabs.add(_currentIndex);
-    GamificationService.instance.checkDailyStreak();
+    unawaited(_syncCloudThenCheckDailyStreak());
     MainNavigationService.currentTabNotifier.addListener(_onTabNavChange);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       AppUpdateService.checkForUpdate(context: context, isManual: false);
     });
   }
 
+  Future<void> _syncCloudThenCheckDailyStreak() async {
+    try {
+      await UserCloudSyncService.syncCurrentUser()
+          .timeout(const Duration(seconds: 5));
+    } catch (_) {}
+    await GamificationService.instance.checkDailyStreak();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      unawaited(UserCloudSyncService.flushPendingSync());
+    } else if (state == AppLifecycleState.resumed) {
+      unawaited(AuthService.syncProfile());
+      unawaited(UserCloudSyncService.syncCurrentUser(force: true));
+    }
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     MainNavigationService.currentTabNotifier.removeListener(_onTabNavChange);
     super.dispose();
   }
