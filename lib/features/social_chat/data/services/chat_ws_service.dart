@@ -42,6 +42,8 @@ class ChatWsService {
       StreamController<ServerSocialGraphEventFrame>.broadcast();
   final StreamController<ServerPushNotificationEventFrame> _notifEventsCtrl =
       StreamController<ServerPushNotificationEventFrame>.broadcast();
+  final StreamController<ServerNewMessageFrame> _incomingChatAlertCtrl =
+      StreamController<ServerNewMessageFrame>.broadcast();
 
   ChatWsService(this._db, this._api);
 
@@ -53,6 +55,8 @@ class ChatWsService {
       _graphEventsCtrl.stream;
   Stream<ServerPushNotificationEventFrame> get pushNotificationEvents =>
       _notifEventsCtrl.stream;
+  Stream<ServerNewMessageFrame> get incomingChatAlerts =>
+      _incomingChatAlertCtrl.stream;
 
   void _setState(WsConnectionState next) {
     if (_state == next) return;
@@ -277,6 +281,8 @@ class ChatWsService {
                 upToSeqId: dto.seqId,
               ),
             );
+          } else if (!_incomingChatAlertCtrl.isClosed) {
+            _incomingChatAlertCtrl.add(m);
           }
         }
       case ServerReceiptWatermarkUpdateFrame wm:
@@ -377,5 +383,6 @@ class ChatWsService {
     await _errorCtrl.close();
     await _graphEventsCtrl.close();
     await _notifEventsCtrl.close();
+    await _incomingChatAlertCtrl.close();
   }
 }

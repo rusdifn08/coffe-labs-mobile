@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../theme/app_theme.dart';
+import '../../data/services/device_token_lifecycle_service.dart';
+import '../../data/services/local_push_orchestrator.dart';
 import '../../domain/models/notification_models.dart';
 import '../controllers/notification_center_controller.dart';
 
@@ -29,7 +31,49 @@ class NotificationPreferencesSheet extends ConsumerStatefulWidget {
 class _NotificationPreferencesSheetState
     extends ConsumerState<NotificationPreferencesSheet> {
   NotificationPreferences? _draft;
+  PushNotificationDiagnostics? _diagnostics;
   bool _saving = false;
+  bool _testingPush = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDiagnostics();
+  }
+
+  Future<void> _loadDiagnostics() async {
+    final diag = await ref
+        .read(deviceTokenLifecycleServiceProvider)
+        .inspectDiagnostics();
+    if (mounted) setState(() => _diagnostics = diag);
+  }
+
+  Future<void> _enablePermissionsAndTest() async {
+    if (_testingPush) return;
+    setState(() => _testingPush = true);
+    try {
+      await ref
+          .read(deviceTokenLifecycleServiceProvider)
+          .initializeAndSyncToken(requestPermission: true);
+      await ref.read(localPushOrchestratorProvider).showForegroundNotification(
+            const PushDeepLinkPayload(
+              category: 'CHAT',
+              eventType: 'DIRECT_CHAT_MESSAGE_RECEIVED',
+              title: 'Coffee Labs Chat',
+              body: 'Pop-up notifikasi pesan ala WhatsApp berhasil aktif di HP Anda!',
+              deepLinkPath: '/social/chat',
+              collapseKey: 'CHAT_TEST_BANNER',
+              actionButtons: ['INLINE_REPLY', 'MARK_AS_READ'],
+            ),
+          );
+      try {
+        await ref.read(notificationApiServiceProvider).sendTestPushNotification();
+      } catch (_) {}
+      await _loadDiagnostics();
+    } finally {
+      if (mounted) setState(() => _testingPush = false);
+    }
+  }
 
   String _formatMinute(int? minuteOfDay, String fallback) {
     if (minuteOfDay == null) return fallback;
@@ -174,6 +218,102 @@ class _NotificationPreferencesSheetState
                     ],
                   ),
                   const SizedBox(height: 8),
+                  if (_diagnostics != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: _diagnostics!.osPermissionEnabled
+                            ? const Color(0xFFF0FDF4)
+                            : const Color(0xFFFFFBEB),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: _diagnostics!.osPermissionEnabled
+                              ? const Color(0xFFBBF7D0)
+                              : const Color(0xFFFDE68A),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                _diagnostics!.osPermissionEnabled
+                                    ? CupertinoIcons.bell_circle_fill
+                                    : CupertinoIcons.bell_slash_fill,
+                                size: 18,
+                                color: _diagnostics!.osPermissionEnabled
+                                    ? const Color(0xFF15803D)
+                                    : const Color(0xFFB45309),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _diagnostics!.osPermissionEnabled
+                                      ? 'Izin Pop-Up Notifikasi OS Aktif'
+                                      : 'Izin Notifikasi HP Belum Aktif',
+                                  style: const TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppTheme.textDark,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            _diagnostics!.statusNote,
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              color: AppTheme.textMuted,
+                              height: 1.35,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed:
+                                  _testingPush ? null : _enablePermissionsAndTest,
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppTheme.primaryBrown,
+                                side: const BorderSide(
+                                  color: AppTheme.primaryBrown,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              icon: _testingPush
+                                  ? const SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppTheme.primaryBrown,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      CupertinoIcons.paperplane_fill,
+                                      size: 14,
+                                    ),
+                              label: Text(
+                                _diagnostics!.osPermissionEnabled
+                                    ? 'Uji Pop-Up Notifikasi Sekarang'
+                                    : 'Aktifkan Izin & Uji Pop-Up',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   _SwitchTile(
                     title: 'Obrolan Social Coffee',
                     subtitle: 'Pesan langsung 1-on-1 dan grup barista.',

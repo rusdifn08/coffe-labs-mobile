@@ -2,12 +2,15 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'home_screen.dart';
 import 'recipe_feed_screen.dart';
 import 'brew_selection_screen.dart';
 import 'toolkit_screen.dart';
 import 'profile_screen.dart';
 import '../features/gamification/services/gamification_service.dart';
+import '../features/notifications/data/services/device_token_lifecycle_service.dart';
+import '../features/social_chat/presentation/controllers/chat_controllers.dart';
 import '../services/audio_service.dart';
 import '../services/app_update_service.dart';
 import '../services/auth_service.dart';
@@ -17,14 +20,14 @@ import '../theme/app_theme.dart';
 import '../widgets/brew_dripper_glass_icon.dart';
 import '../widgets/notched_nav_bar_painter.dart';
 
-class MainLayout extends StatefulWidget {
+class MainLayout extends ConsumerStatefulWidget {
   const MainLayout({super.key});
 
   @override
-  State<MainLayout> createState() => _MainLayoutState();
+  ConsumerState<MainLayout> createState() => _MainLayoutState();
 }
 
-class _MainLayoutState extends State<MainLayout> with WidgetsBindingObserver {
+class _MainLayoutState extends ConsumerState<MainLayout> with WidgetsBindingObserver {
   int _currentIndex = 0;
   final Set<int> _visitedTabs = {0};
 
@@ -56,6 +59,10 @@ class _MainLayoutState extends State<MainLayout> with WidgetsBindingObserver {
     } else if (state == AppLifecycleState.resumed) {
       unawaited(AuthService.syncProfile());
       unawaited(UserCloudSyncService.syncCurrentUser(force: true));
+      unawaited(ref.read(chatWsServiceProvider).connectIfAuthenticated());
+      unawaited(
+        ref.read(deviceTokenLifecycleServiceProvider).initializeAndSyncToken(),
+      );
     }
   }
 

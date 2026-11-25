@@ -11,6 +11,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../core/network/dio_client.dart';
 import '../../../../services/auth_service.dart';
+import 'local_push_orchestrator.dart';
 import 'notification_api_service.dart';
 
 final flutterSecureStorageProvider = Provider<FlutterSecureStorage>(
@@ -26,10 +27,25 @@ final deviceTokenLifecycleServiceProvider =
   final service = DeviceTokenLifecycleService(
     ref.watch(notificationApiServiceProvider),
     ref.watch(flutterSecureStorageProvider),
+    ref.watch(localPushOrchestratorProvider),
   );
   ref.onDispose(service.dispose);
   return service;
 });
+
+class PushNotificationDiagnostics {
+  final bool osPermissionEnabled;
+  final bool firebaseConfigured;
+  final bool fcmTokenRegistered;
+  final String statusNote;
+
+  const PushNotificationDiagnostics({
+    required this.osPermissionEnabled,
+    required this.firebaseConfigured,
+    required this.fcmTokenRegistered,
+    required this.statusNote,
+  });
+}
 
 class DeviceTokenLifecycleService {
   static const String _installationIdKey = 'coffeelabs_device_installation_id_v1';
@@ -37,16 +53,26 @@ class DeviceTokenLifecycleService {
 
   final NotificationApiService _api;
   final FlutterSecureStorage _secureStorage;
+  final LocalPushOrchestrator _orchestrator;
 
-  StreamSubscription<String>? _tokenRefreshSub;
+  StreamSubscription<String>? _registeredSub;
   String? _cachedInstallationId;
   String? _lastSyncedToken;
   bool _isKioskAodActive = false;
   bool _initialized = false;
+  bool _firebaseReady = false;
+  String? _lastFirebaseError;
 
-  DeviceTokenLifecycleService(this._api, this._secureStorage);
+  DeviceTokenLifecycleService(
+    this._api,
+    this._secureStorage,
+    this._orchestrator,
+  );
 
   bool get isKioskAodActive => _isKioskAodActive;
+  bool get isFirebaseReady => _firebaseReady;
+  bool get hasSyncedFcmToken =>
+      _lastSyncedToken != null && _lastSyncedToken!.isNotEmpty;
 
   bool get _isTestEnvironment =>
       !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
@@ -111,14 +137,52 @@ class DeviceTokenLifecycleService {
       if (Firebase.apps.isEmpty) {
         await Firebase.initializeApp();
       }
-      return Firebase.apps.isNotEmpty;
+      _firebaseReady = Firebase.apps.isNotEmpty;
+      if (_firebaseReady) _lastFirebaseError = null;
+      return _firebaseReady;
     } catch (e) {
+      _firebaseReady = false;
+      _lastFirebaseError = e.toString();
       debugPrint('Push Notification Firebase init dilewati (config belum ada): $e');
       return false;
     }
   }
 
+  Future<PushNotificationDiagnostics> inspectDiagnostics() async {
+    final osEnabled = await _orchestrator.areOsNotificationsEnabled();
+    final fbReady = _firebaseReady || await ensureFirebaseInitialized();
+    final String note;
+    if (!osEnabled) {
+      note =
+          'Izin notifikasi Android belum aktif. Ketuk "Aktifkan Izin Notifikasi" agar pop-up pesan bisa muncul.';
+    } else if (!fbReady) {
+      note =
+          'Pop-up real-time aktif saat aplikasi berjalan (WebSocket). Untuk push saat aplikasi ditutup total, build APK perlu menyertakan google-services.json dari Firebase Console.';
+    } else if (!hasSyncedFcmToken) {
+      note = 'Firebase aktif, sedang menyinkronkan token FCM perangkat ke server...';
+    } else {
+      note =
+          'Push Notification penuh (FCM Background + Real-Time WebSocket Heads-Up) aktif & siap menerima pesan.';
+    }
+    return PushNotificationDiagnostics(
+      osPermissionEnabled: osEnabled,
+      firebaseConfigured: fbReady,
+      fcmTokenRegistered: hasSyncedFcmToken,
+      statusNote: note,
+    );
+  }
+
   Future<void> initializeAndSyncToken({bool requestPermission = false}) async {
+    // 1. SELALU minta izin OS Android 13+ / iOS walaupun Firebase belum dikonfigurasi,
+    // agar notifikasi pop-up real-time via WebSocket & local notifications tidak diblokir OS!
+    if (requestPermission) {
+      try {
+        await _orchestrator.requestOsNotificationPermissions();
+      } catch (e) {
+        debugPrint('Request izin notifikasi OS error: $e');
+      }
+    }
+
     final jwt = await AuthService.getToken();
     if (jwt == null || jwt.trim().isEmpty) return;
 
@@ -143,7 +207,7 @@ class DeviceTokenLifecycleService {
 
       if (!_initialized) {
         _initialized = true;
-        _tokenRefreshSub ??= messaging.onRegistered.listen((newToken) {
+        _registeredSub ??= messaging.onRegistered.listen((newToken) {
           unawaited(_syncFcmTokenToBackend(newToken));
         });
       }
@@ -153,13 +217,26 @@ class DeviceTokenLifecycleService {
           defaultTargetPlatform == TargetPlatform.macOS) {
         apnsToken = await messaging.getAPNSToken();
       }
-      final nextTokenFuture = messaging.onRegistered.first.timeout(
-        const Duration(seconds: 6),
-        onTimeout: () => '',
-      );
-      await messaging.register();
-      final fcmToken = await nextTokenFuture;
-      if (fcmToken.trim().isNotEmpty) {
+
+      // Gunakan API v17 resmi register() + onRegistered dengan fallback getToken()
+      String? fcmToken;
+      try {
+        final nextTokenFuture = messaging.onRegistered.first.timeout(
+          const Duration(seconds: 6),
+          onTimeout: () => '',
+        );
+        await messaging.register();
+        fcmToken = await nextTokenFuture;
+      } catch (_) {}
+
+      if (fcmToken == null || fcmToken.trim().isEmpty) {
+        try {
+          // ignore: deprecated_member_use
+          fcmToken = await messaging.getToken().timeout(const Duration(seconds: 6));
+        } catch (_) {}
+      }
+
+      if (fcmToken != null && fcmToken.trim().isNotEmpty) {
         await _syncFcmTokenToBackend(fcmToken, apnsToken: apnsToken);
       }
     } catch (e) {
@@ -183,6 +260,7 @@ class DeviceTokenLifecycleService {
         platform: _platformWireValue,
         fcmToken: cleanToken,
         apnsToken: apnsToken,
+        appVersion: '2.5.4',
         isKioskAodActive: _isKioskAodActive,
       );
       _lastSyncedToken = cleanToken;
@@ -230,8 +308,10 @@ class DeviceTokenLifecycleService {
     }
   }
 
+  String? get lastFirebaseError => _lastFirebaseError;
+
   void dispose() {
-    _tokenRefreshSub?.cancel();
-    _tokenRefreshSub = null;
+    _registeredSub?.cancel();
+    _registeredSub = null;
   }
 }

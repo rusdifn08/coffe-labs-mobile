@@ -74,6 +74,16 @@ class NotificationApiService {
     );
   }
 
+  Future<Map<String, dynamic>> getPushDeviceStatus() async {
+    final res = await _dio.get<dynamic>('/api/v1/notifications/devices/status');
+    return _extractDataMap(res.data);
+  }
+
+  Future<Map<String, dynamic>> sendTestPushNotification() async {
+    final res = await _dio.post<dynamic>('/api/v1/notifications/test-push');
+    return _extractDataMap(res.data);
+  }
+
   Future<NotificationInboxPage> getInbox({
     String category = '',
     String? cursor,
