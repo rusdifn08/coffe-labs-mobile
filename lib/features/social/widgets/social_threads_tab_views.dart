@@ -45,6 +45,7 @@ class SocialThreadsSearchTab extends StatefulWidget {
   final TextEditingController searchController;
   final String searchQuery;
   final String currentUsername;
+  final String? currentUserId;
   final List<SocialPost> allPosts;
   final List<SocialPost> filteredPosts;
   final ValueChanged<String> onSearchChanged;
@@ -52,13 +53,19 @@ class SocialThreadsSearchTab extends StatefulWidget {
   final VoidCallback onOpenBasecamp;
   final ValueChanged<SocialPost> onToggleLike;
   final ValueChanged<SocialPost> onOpenComments;
-  final ValueChanged<SocialPost> onCopyRecipe;
+  final ValueChanged<SocialPost> onToggleRepost;
+  final ValueChanged<SocialPost> onToggleSave;
+  final ValueChanged<SocialPost> onBrewRecipe;
+  final ValueChanged<SocialPost>? onEditPost;
+  final ValueChanged<SocialPost>? onDeletePost;
+  final void Function(SocialPost post, String reason)? onReportPost;
 
   const SocialThreadsSearchTab({
     super.key,
     required this.searchController,
     required this.searchQuery,
     required this.currentUsername,
+    this.currentUserId,
     required this.allPosts,
     required this.filteredPosts,
     required this.onSearchChanged,
@@ -66,7 +73,12 @@ class SocialThreadsSearchTab extends StatefulWidget {
     required this.onOpenBasecamp,
     required this.onToggleLike,
     required this.onOpenComments,
-    required this.onCopyRecipe,
+    required this.onToggleRepost,
+    required this.onToggleSave,
+    required this.onBrewRecipe,
+    this.onEditPost,
+    this.onDeletePost,
+    this.onReportPost,
   });
 
   @override
@@ -277,11 +289,28 @@ class _SocialThreadsSearchTabState extends State<SocialThreadsSearchTab> {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final post = widget.filteredPosts[index];
+                    final isOwn = (widget.currentUserId != null &&
+                            widget.currentUserId!.isNotEmpty &&
+                            post.userId == widget.currentUserId) ||
+                        post.authorName.toLowerCase() ==
+                            widget.currentUsername.toLowerCase();
                     return SocialPostCard(
                       post: post,
+                      isOwnPost: isOwn,
                       onLike: () => widget.onToggleLike(post),
                       onComment: () => widget.onOpenComments(post),
-                      onCopyRecipe: () => widget.onCopyRecipe(post),
+                      onRepost: () => widget.onToggleRepost(post),
+                      onSave: () => widget.onToggleSave(post),
+                      onBrewRecipe: () => widget.onBrewRecipe(post),
+                      onEdit: widget.onEditPost != null
+                          ? () => widget.onEditPost!(post)
+                          : null,
+                      onDelete: widget.onDeletePost != null
+                          ? () => widget.onDeletePost!(post)
+                          : null,
+                      onReport: widget.onReportPost != null
+                          ? (reason) => widget.onReportPost!(post, reason)
+                          : null,
                     );
                   },
                   childCount: widget.filteredPosts.length,
@@ -745,23 +774,37 @@ class _ActivityFallbackEmpty extends StatelessWidget {
   }
 }
 
-/// Tab Profil Barista Saya bergaya datar ala Threads (tanpa card).
+/// Tab Profil Barista Saya bergaya datar ala Threads (Thread, Repost, Tersimpan, Disukai).
 class SocialThreadsProfileTab extends StatefulWidget {
   final String displayName;
+  final String? currentUserId;
   final String avatarPath;
   final List<SocialPost> allPosts;
+  final List<SocialPost> savedPosts;
   final ValueChanged<SocialPost> onToggleLike;
   final ValueChanged<SocialPost> onOpenComments;
-  final ValueChanged<SocialPost> onCopyRecipe;
+  final ValueChanged<SocialPost> onToggleRepost;
+  final ValueChanged<SocialPost> onToggleSave;
+  final ValueChanged<SocialPost> onBrewRecipe;
+  final ValueChanged<SocialPost>? onEditPost;
+  final ValueChanged<SocialPost>? onDeletePost;
+  final void Function(SocialPost post, String reason)? onReportPost;
 
   const SocialThreadsProfileTab({
     super.key,
     required this.displayName,
+    this.currentUserId,
     required this.avatarPath,
     required this.allPosts,
+    this.savedPosts = const [],
     required this.onToggleLike,
     required this.onOpenComments,
-    required this.onCopyRecipe,
+    required this.onToggleRepost,
+    required this.onToggleSave,
+    required this.onBrewRecipe,
+    this.onEditPost,
+    this.onDeletePost,
+    this.onReportPost,
   });
 
   @override
@@ -770,7 +813,16 @@ class SocialThreadsProfileTab extends StatefulWidget {
 }
 
 class _SocialThreadsProfileTabState extends State<SocialThreadsProfileTab> {
-  int _profileSubTab = 0; // 0: Thread Saya, 1: Disukai
+  int _profileSubTab = 0; // 0: Thread, 1: Repost, 2: Tersimpan, 3: Disukai
+
+  bool _isOwnPost(SocialPost post) {
+    if (widget.currentUserId != null &&
+        widget.currentUserId!.isNotEmpty &&
+        post.userId == widget.currentUserId) {
+      return true;
+    }
+    return post.authorName.toLowerCase() == widget.displayName.toLowerCase();
+  }
 
   ImageProvider _resolveAvatar() {
     if (widget.avatarPath.startsWith('http://') ||
@@ -786,13 +838,26 @@ class _SocialThreadsProfileTabState extends State<SocialThreadsProfileTab> {
   @override
   Widget build(BuildContext context) {
     final handle = widget.displayName.toLowerCase().replaceAll(' ', '');
-    final myPosts = widget.allPosts
-        .where((p) =>
-            p.authorName.toLowerCase() == widget.displayName.toLowerCase())
-        .toList();
+    final myPosts = widget.allPosts.where(_isOwnPost).toList();
+    final repostedPosts =
+        widget.allPosts.where((p) => p.isRepostedByMe).toList();
+    final savedMap = <String, SocialPost>{};
+    for (final p in widget.savedPosts) {
+      savedMap[p.id] = p;
+    }
+    for (final p in widget.allPosts.where((p) => p.isSavedByMe)) {
+      savedMap[p.id] = p;
+    }
+    final savedPosts = savedMap.values.toList();
     final likedPosts =
         widget.allPosts.where((p) => p.isLikedByMe).toList();
-    final visiblePosts = _profileSubTab == 0 ? myPosts : likedPosts;
+
+    final visiblePosts = switch (_profileSubTab) {
+      0 => myPosts,
+      1 => repostedPosts,
+      2 => savedPosts,
+      _ => likedPosts,
+    };
 
     return CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -958,9 +1023,19 @@ class _SocialThreadsProfileTabState extends State<SocialThreadsProfileTab> {
                     onTap: () => setState(() => _profileSubTab = 0),
                   ),
                   _UnderlineSubTab(
-                    label: 'Disukai (${likedPosts.length})',
+                    label: 'Repost (${repostedPosts.length})',
                     selected: _profileSubTab == 1,
                     onTap: () => setState(() => _profileSubTab = 1),
+                  ),
+                  _UnderlineSubTab(
+                    label: 'Simpan (${savedPosts.length})',
+                    selected: _profileSubTab == 2,
+                    onTap: () => setState(() => _profileSubTab = 2),
+                  ),
+                  _UnderlineSubTab(
+                    label: 'Suka (${likedPosts.length})',
+                    selected: _profileSubTab == 3,
+                    onTap: () => setState(() => _profileSubTab = 3),
                   ),
                 ],
               ),
@@ -975,9 +1050,13 @@ class _SocialThreadsProfileTabState extends State<SocialThreadsProfileTab> {
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Text(
-                  _profileSubTab == 0
-                      ? 'Anda belum menerbitkan thread diskusi kopi.'
-                      : 'Belum ada postingan yang Anda sukai.',
+                  switch (_profileSubTab) {
+                    0 => 'Anda belum menerbitkan thread diskusi kopi.',
+                    1 => 'Belum ada postingan yang Anda repost.',
+                    2 => 'Belum ada postingan atau resep yang Anda simpan.',
+                    _ => 'Belum ada postingan yang Anda sukai.',
+                  },
+                  textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 13.5,
                     color: AppTheme.textMuted,
@@ -995,9 +1074,21 @@ class _SocialThreadsProfileTabState extends State<SocialThreadsProfileTab> {
                   final post = visiblePosts[index];
                   return SocialPostCard(
                     post: post,
+                    isOwnPost: _isOwnPost(post),
                     onLike: () => widget.onToggleLike(post),
                     onComment: () => widget.onOpenComments(post),
-                    onCopyRecipe: () => widget.onCopyRecipe(post),
+                    onRepost: () => widget.onToggleRepost(post),
+                    onSave: () => widget.onToggleSave(post),
+                    onBrewRecipe: () => widget.onBrewRecipe(post),
+                    onEdit: widget.onEditPost != null
+                        ? () => widget.onEditPost!(post)
+                        : null,
+                    onDelete: widget.onDeletePost != null
+                        ? () => widget.onDeletePost!(post)
+                        : null,
+                    onReport: widget.onReportPost != null
+                        ? (reason) => widget.onReportPost!(post, reason)
+                        : null,
                   );
                 },
                 childCount: visiblePosts.length,
@@ -1029,13 +1120,13 @@ class _UnderlineSubTab extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 11),
+              padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 4),
               child: Text(
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 13.5,
+                  fontSize: 12.4,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   color: selected ? AppTheme.primaryBrown : AppTheme.textMuted,
                 ),
@@ -1044,7 +1135,7 @@ class _UnderlineSubTab extends StatelessWidget {
             AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               height: 2.2,
-              margin: const EdgeInsets.symmetric(horizontal: 24),
+              margin: const EdgeInsets.symmetric(horizontal: 10),
               decoration: BoxDecoration(
                 color: selected ? AppTheme.primaryBrown : Colors.transparent,
                 borderRadius: BorderRadius.circular(2),

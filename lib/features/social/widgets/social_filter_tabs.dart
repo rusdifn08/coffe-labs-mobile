@@ -2,23 +2,26 @@ import 'package:flutter/material.dart';
 
 import '../../../../theme/app_theme.dart';
 
-/// Tab filter feed minimalis bergaya garis bawah ala Threads (tanpa card pill).
+/// Tab filter feed minimalis bergaya garis bawah ala Threads (termasuk tab Tersimpan).
 class SocialFilterTabs extends StatelessWidget {
   final String activeTab;
+  final int savedCount;
   final ValueChanged<String> onTabChanged;
 
   const SocialFilterTabs({
     super.key,
     required this.activeTab,
+    this.savedCount = 0,
     required this.onTabChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    const tabs = [
+    final tabs = [
       (id: 'all', label: 'Semua'),
       (id: 'popular', label: 'Terpopuler'),
-      (id: 'recipes', label: 'Resep Kopi'),
+      (id: 'recipes', label: 'Resep'),
+      (id: 'saved', label: savedCount > 0 ? 'Tersimpan ($savedCount)' : 'Tersimpan'),
     ];
 
     return Column(
@@ -38,13 +41,16 @@ class SocialFilterTabs extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 4,
+                      ),
                       child: Text(
                         t.label,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 13.5,
+                          fontSize: 12.8,
                           fontWeight: active ? FontWeight.w700 : FontWeight.w500,
                           color: active
                               ? AppTheme.primaryBrown
@@ -55,7 +61,7 @@ class SocialFilterTabs extends StatelessWidget {
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 180),
                       height: 2.2,
-                      margin: const EdgeInsets.symmetric(horizontal: 20),
+                      margin: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
                         color: active
                             ? AppTheme.primaryBrown

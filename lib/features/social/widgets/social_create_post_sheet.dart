@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/moderation/content_moderation_guard.dart';
 import '../../../../core/moderation/moderation_alert_banner.dart';
+import '../../../../models/social_coffee.dart';
 import '../../../../services/api_service.dart';
 import '../../../../services/auth_service.dart';
 import '../../../../services/social_service.dart';
@@ -12,15 +13,31 @@ import 'social_recipe_picker_sheet.dart';
 
 class SocialCreatePostSheet extends StatefulWidget {
   final VoidCallback onPostCreated;
+  final SocialPost? editingPost;
+  final ValueChanged<SocialPost>? onPostUpdated;
 
-  const SocialCreatePostSheet({super.key, required this.onPostCreated});
+  const SocialCreatePostSheet({
+    super.key,
+    required this.onPostCreated,
+    this.editingPost,
+    this.onPostUpdated,
+  });
 
-  static Future<void> show(BuildContext context, {required VoidCallback onPostCreated}) {
+  static Future<void> show(
+    BuildContext context, {
+    required VoidCallback onPostCreated,
+    SocialPost? editingPost,
+    ValueChanged<SocialPost>? onPostUpdated,
+  }) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => SocialCreatePostSheet(onPostCreated: onPostCreated),
+      builder: (ctx) => SocialCreatePostSheet(
+        onPostCreated: onPostCreated,
+        editingPost: editingPost,
+        onPostUpdated: onPostUpdated,
+      ),
     );
   }
 
@@ -29,6 +46,8 @@ class SocialCreatePostSheet extends StatefulWidget {
 }
 
 class _SocialCreatePostSheetState extends State<SocialCreatePostSheet> {
+  static const int _maxLength = 4000;
+
   final TextEditingController _contentCtrl = TextEditingController();
   List<dynamic> _availableRecipes = [];
   Map<String, dynamic>? _selectedRecipe;
@@ -49,9 +68,19 @@ class _SocialCreatePostSheetState extends State<SocialCreatePostSheet> {
   ];
   final Set<String> _selectedTags = {};
 
+  bool get _isEditing => widget.editingPost != null;
+
   @override
   void initState() {
     super.initState();
+    final edit = widget.editingPost;
+    if (edit != null) {
+      _contentCtrl.text = edit.content;
+      _selectedTags.addAll(edit.tags.map((t) => t.replaceFirst('#', '')));
+      if (edit.recipeSnapshot != null) {
+        _selectedRecipe = Map<String, dynamic>.from(edit.recipeSnapshot!);
+      }
+    }
     _loadData();
   }
 
@@ -88,19 +117,30 @@ class _SocialCreatePostSheetState extends State<SocialCreatePostSheet> {
   Future<void> _submitPost() async {
     final content = _contentCtrl.text.trim();
     if (content.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tulis isi postingan terlebih dahulu')),
-      );
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Tulis isi postingan terlebih dahulu'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       return;
     }
 
-    final verdict = ContentModerationGuard.inspect(
-      content,
-      fieldLabel: 'Postingan',
-    );
+    // 1. Cek moderasi kata terlarang + status auto-ban 3x pelanggaran
+    final verdict = await ContentModerationGuard.inspectAndEnforce({
+      'Postingan': content,
+      if (_selectedTags.isNotEmpty) 'Tagar': _selectedTags.join(' '),
+    });
+    if (!mounted) return;
     if (!verdict.isAllowed) {
       setState(() => _moderationWarning = verdict.userMessage);
-      ModerationAlertFeedback.showBlockedSnackBar(context, verdict);
+      await ModerationAlertFeedback.showViolationDialog(
+        context,
+        verdict,
+        banStatus: verdict.banStatus,
+      );
       return;
     }
 
@@ -132,24 +172,50 @@ class _SocialCreatePostSheetState extends State<SocialCreatePostSheet> {
     }
 
     try {
-      final post = await SocialService.createPost(
-        content: content,
-        recipeSnapshot: snap,
-        tags: _selectedTags.toList(),
-      );
-
-      if (!mounted) return;
-      setState(() => _isSubmitting = false);
-
-      if (post != null) {
-        Navigator.pop(context);
-        widget.onPostCreated();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Postingan berhasil dibagikan ke Social Coffee!'),
-            behavior: SnackBarBehavior.floating,
-          ),
+      if (_isEditing) {
+        final updated = await SocialService.updatePost(
+          post: widget.editingPost!,
+          content: content,
+          recipeSnapshot: snap,
+          tags: _selectedTags.toList(),
         );
+        if (!mounted) return;
+        setState(() => _isSubmitting = false);
+        if (updated != null) {
+          Navigator.pop(context);
+          widget.onPostUpdated?.call(updated);
+          widget.onPostCreated();
+          ScaffoldMessenger.of(context)
+            ..clearSnackBars()
+            ..showSnackBar(
+              const SnackBar(
+                content: Text('Postingan berhasil diperbarui!'),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+        }
+      } else {
+        final post = await SocialService.createPost(
+          content: content,
+          recipeSnapshot: snap,
+          tags: _selectedTags.toList(),
+        );
+
+        if (!mounted) return;
+        setState(() => _isSubmitting = false);
+
+        if (post != null) {
+          Navigator.pop(context);
+          widget.onPostCreated();
+          ScaffoldMessenger.of(context)
+            ..clearSnackBars()
+            ..showSnackBar(
+              const SnackBar(
+                content: Text('Postingan berhasil dibagikan ke Social Coffee!'),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+        }
       }
     } on ContentModerationException catch (e) {
       if (!mounted) return;
@@ -157,7 +223,11 @@ class _SocialCreatePostSheetState extends State<SocialCreatePostSheet> {
         _isSubmitting = false;
         _moderationWarning = e.verdict.userMessage;
       });
-      ModerationAlertFeedback.showBlockedSnackBar(context, e.verdict);
+      await ModerationAlertFeedback.showViolationDialog(
+        context,
+        e.verdict,
+        banStatus: e.banStatus ?? e.verdict.banStatus,
+      );
     } catch (_) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
@@ -166,6 +236,8 @@ class _SocialCreatePostSheetState extends State<SocialCreatePostSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.88,
       decoration: const BoxDecoration(
@@ -188,12 +260,19 @@ class _SocialCreatePostSheetState extends State<SocialCreatePostSheet> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Buat Postingan Baru',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                Text(
+                  _isEditing ? 'Edit Postingan' : 'Buat Postingan Baru',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textDark,
+                  ),
                 ),
                 IconButton(
-                  icon: const Icon(CupertinoIcons.xmark_circle_fill, color: AppTheme.textMuted),
+                  icon: const Icon(
+                    CupertinoIcons.xmark_circle_fill,
+                    color: AppTheme.textMuted,
+                  ),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -214,24 +293,47 @@ class _SocialCreatePostSheetState extends State<SocialCreatePostSheet> {
                   decoration: BoxDecoration(
                     color: AppTheme.bgCream.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppTheme.primaryBrown.withValues(alpha: 0.1)),
-                  ),
-                  child: TextField(
-                    controller: _contentCtrl,
-                    onChanged: (_) {
-                      if (_moderationWarning != null) {
-                        setState(() => _moderationWarning = null);
-                      }
-                    },
-                    decoration: const InputDecoration(
-                      hintText: 'Bagikan pengalaman seduh, tips ekstraksi, racikan beans, atau diskusikan resep kopi Anda...',
-                      hintStyle: TextStyle(fontSize: 13, color: AppTheme.textMuted),
-                      border: InputBorder.none,
-                      isDense: true,
+                    border: Border.all(
+                      color: _moderationWarning != null
+                          ? const Color(0xFFDC2626)
+                          : AppTheme.primaryBrown.withValues(alpha: 0.14),
                     ),
-                    maxLines: 5,
-                    minLines: 3,
-                    style: const TextStyle(fontSize: 13.5, height: 1.35),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      TextField(
+                        controller: _contentCtrl,
+                        maxLength: _maxLength,
+                        onChanged: (_) {
+                          setState(() {
+                            if (_moderationWarning != null) {
+                              _moderationWarning = null;
+                            }
+                          });
+                        },
+                        decoration: const InputDecoration(
+                          hintText:
+                              'Bagikan pengalaman seduh, tips ekstraksi, racikan beans, atau diskusikan resep kopi Anda...',
+                          hintStyle:
+                              TextStyle(fontSize: 13, color: AppTheme.textMuted),
+                          border: InputBorder.none,
+                          counterText: '',
+                          isDense: true,
+                        ),
+                        maxLines: 6,
+                        minLines: 3,
+                        style: const TextStyle(fontSize: 13.5, height: 1.38),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${_contentCtrl.text.length}/$_maxLength',
+                        style: const TextStyle(
+                          fontSize: 10.5,
+                          color: AppTheme.textMuted,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 if (_moderationWarning != null)
@@ -243,7 +345,14 @@ class _SocialCreatePostSheetState extends State<SocialCreatePostSheet> {
                 const SizedBox(height: 20),
 
                 // Topic Tags
-                const Text('Pilih Tag Topik:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textDark)),
+                const Text(
+                  'Pilih Tag Topik:',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textDark,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 6,
@@ -251,7 +360,15 @@ class _SocialCreatePostSheetState extends State<SocialCreatePostSheet> {
                   children: _suggestedTags.map((tag) {
                     final selected = _selectedTags.contains(tag);
                     return ChoiceChip(
-                      label: Text('#$tag', style: TextStyle(fontSize: 11, fontWeight: selected ? FontWeight.bold : FontWeight.normal, color: selected ? Colors.white : AppTheme.textDark)),
+                      label: Text(
+                        '#$tag',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight:
+                              selected ? FontWeight.bold : FontWeight.normal,
+                          color: selected ? Colors.white : AppTheme.textDark,
+                        ),
+                      ),
                       selected: selected,
                       selectedColor: AppTheme.primaryBrown,
                       backgroundColor: AppTheme.bgCream,
@@ -267,13 +384,33 @@ class _SocialCreatePostSheetState extends State<SocialCreatePostSheet> {
                     );
                   }).toList(),
                 ),
+                const SizedBox(height: 14),
+                const Row(
+                  children: [
+                    Icon(
+                      CupertinoIcons.shield_fill,
+                      size: 13,
+                      color: AppTheme.textMuted,
+                    ),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Moderasi Bahasa Aktif: kata kasar, SARA, atau spam judi diblokir otomatis.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppTheme.textMuted,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
 
           // Submit Button
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.fromLTRB(16, 12, 16, 16 + bottomInset * 0.2),
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -282,17 +419,35 @@ class _SocialCreatePostSheetState extends State<SocialCreatePostSheet> {
                   backgroundColor: AppTheme.primaryBrown,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   elevation: 2,
                 ),
                 icon: _isSubmitting
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
-                    : const Icon(CupertinoIcons.paperplane_fill, size: 18),
-                label: const Text('Publikasikan ke Social Coffee', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    : Icon(
+                        _isEditing
+                            ? CupertinoIcons.checkmark_alt_circle_fill
+                            : CupertinoIcons.paperplane_fill,
+                        size: 18,
+                      ),
+                label: Text(
+                  _isEditing
+                      ? 'Simpan Perubahan'
+                      : 'Publikasikan ke Social Coffee',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
               ),
             ),
           ),
@@ -302,13 +457,15 @@ class _SocialCreatePostSheetState extends State<SocialCreatePostSheet> {
   }
 
   Widget _buildUserHeader() {
-    final username = _currentUser?.username ?? 'Barista';
+    final username =
+        _currentUser?.username ?? widget.editingPost?.authorName ?? 'Barista';
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           UserAvatarCircle(
-            avatarUrl: _currentUser?.avatarUrl,
+            avatarUrl:
+                _currentUser?.avatarUrl ?? widget.editingPost?.authorAvatar,
             displayName: username,
             radius: 18,
           ),
@@ -336,9 +493,11 @@ class _SocialCreatePostSheetState extends State<SocialCreatePostSheet> {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  const Text(
-                    'Membagikan ke Social Coffee',
-                    style: TextStyle(
+                  Text(
+                    _isEditing
+                        ? 'Mengedit postingan Social Coffee'
+                        : 'Membagikan ke Social Coffee',
+                    style: const TextStyle(
                       fontSize: 11,
                       color: AppTheme.textMuted,
                     ),
@@ -379,7 +538,11 @@ class _SocialCreatePostSheetState extends State<SocialCreatePostSheet> {
                       color: AppTheme.primaryBrown.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(CupertinoIcons.book_fill, color: AppTheme.primaryBrown, size: 20),
+                    child: const Icon(
+                      CupertinoIcons.book_fill,
+                      color: AppTheme.primaryBrown,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   const Expanded(
@@ -407,7 +570,8 @@ class _SocialCreatePostSheetState extends State<SocialCreatePostSheet> {
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                     decoration: BoxDecoration(
                       color: AppTheme.primaryBrown,
                       borderRadius: BorderRadius.circular(10),

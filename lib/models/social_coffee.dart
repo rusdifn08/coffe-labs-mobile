@@ -6,15 +6,20 @@ class SocialPost {
   final String authorName;
   final String authorAvatar;
   final String authorRole;
-  final String content;
+  String content;
   final int? recipeId;
-  final Map<String, dynamic>? recipeSnapshot;
+  Map<String, dynamic>? recipeSnapshot;
   int likesCount;
   int commentsCount;
   int copiesCount;
-  final List<String> tags;
+  int repostsCount;
+  List<String> tags;
   bool isLikedByMe;
+  bool isRepostedByMe;
+  bool isSavedByMe;
+  bool isEdited;
   final DateTime createdAt;
+  DateTime? updatedAt;
 
   SocialPost({
     required this.id,
@@ -28,9 +33,14 @@ class SocialPost {
     required this.likesCount,
     required this.commentsCount,
     required this.copiesCount,
+    this.repostsCount = 0,
     required this.tags,
     required this.isLikedByMe,
+    this.isRepostedByMe = false,
+    this.isSavedByMe = false,
+    this.isEdited = false,
     required this.createdAt,
+    this.updatedAt,
   });
 
   factory SocialPost.fromJson(Map<String, dynamic> json) {
@@ -57,6 +67,13 @@ class SocialPost {
       created = DateTime.now();
     }
 
+    DateTime? updated;
+    if (json['updated_at'] != null) {
+      try {
+        updated = DateTime.parse(json['updated_at'].toString());
+      } catch (_) {}
+    }
+
     return SocialPost(
       id: json['id']?.toString() ?? '',
       userId: json['user_id']?.toString(),
@@ -69,9 +86,14 @@ class SocialPost {
       likesCount: (json['likes_count'] as num?)?.toInt() ?? 0,
       commentsCount: (json['comments_count'] as num?)?.toInt() ?? 0,
       copiesCount: (json['copies_count'] as num?)?.toInt() ?? 0,
+      repostsCount: (json['reposts_count'] as num?)?.toInt() ?? 0,
       tags: tagsList,
       isLikedByMe: json['is_liked_by_me'] == true,
+      isRepostedByMe: json['is_reposted_by_me'] == true,
+      isSavedByMe: json['is_saved_by_me'] == true,
+      isEdited: json['is_edited'] == true,
       createdAt: created,
+      updatedAt: updated,
     );
   }
 
@@ -88,9 +110,14 @@ class SocialPost {
       'likes_count': likesCount,
       'comments_count': commentsCount,
       'copies_count': copiesCount,
+      'reposts_count': repostsCount,
       'tags': tags,
       'is_liked_by_me': isLikedByMe,
+      'is_reposted_by_me': isRepostedByMe,
+      'is_saved_by_me': isSavedByMe,
+      'is_edited': isEdited,
       'created_at': createdAt.toIso8601String(),
+      if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
     };
   }
 }

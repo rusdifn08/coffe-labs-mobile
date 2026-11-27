@@ -1,5 +1,119 @@
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../services/language_service.dart';
 import 'profanity_lexicon.dart';
+
+/// Status peringatan (strike) & pembatasan otomatis (auto-ban sementara) untuk moderasi bahasa.
+class ModerationBanStatus {
+  static const int maxStrikesBeforeBan = 3;
+
+  final int strikeCount;
+  final int banTier;
+  final DateTime? bannedUntil;
+
+  const ModerationBanStatus({
+    required this.strikeCount,
+    this.banTier = 0,
+    this.bannedUntil,
+  });
+
+  bool get isBanned =>
+      bannedUntil != null && bannedUntil!.isAfter(DateTime.now());
+
+  Duration get remaining {
+    if (!isBanned) return Duration.zero;
+    return bannedUntil!.difference(DateTime.now());
+  }
+
+  String get formattedRemaining {
+    final rem = remaining;
+    if (rem <= Duration.zero) return '0 detik';
+    if (rem.inHours >= 1) {
+      final mins = rem.inMinutes % 60;
+      return '${rem.inHours} jam ${mins > 0 ? '$mins menit' : ''}'.trim();
+    }
+    if (rem.inMinutes >= 1) {
+      final secs = rem.inSeconds % 60;
+      return '${rem.inMinutes} menit ${secs > 0 ? '$secs detik' : ''}'.trim();
+    }
+    return '${rem.inSeconds.clamp(1, 59)} detik';
+  }
+}
+
+/// Pelacak pelanggaran bahasa persisten: 3x pelanggaran otomatis membatasi posting/komentar sementara.
+class ModerationStrikeTracker {
+  ModerationStrikeTracker._();
+
+  static const String _kStrikeCount = 'cl_moderation_strike_count';
+  static const String _kBannedUntilMs = 'cl_moderation_banned_until_ms';
+  static const String _kBanTier = 'cl_moderation_ban_tier';
+
+  static Future<ModerationBanStatus> getStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final now = DateTime.now();
+    final bannedMs = prefs.getInt(_kBannedUntilMs);
+    var strikes = prefs.getInt(_kStrikeCount) ?? 0;
+    final tier = prefs.getInt(_kBanTier) ?? 0;
+
+    DateTime? bannedUntil;
+    if (bannedMs != null && bannedMs > 0) {
+      final dt = DateTime.fromMillisecondsSinceEpoch(bannedMs);
+      if (dt.isAfter(now)) {
+        bannedUntil = dt;
+      } else {
+        // Cooldown selesai -> reset strike menjadi 0 agar pengguna bisa mulai bersih lagi
+        await prefs.remove(_kBannedUntilMs);
+        await prefs.setInt(_kStrikeCount, 0);
+        strikes = 0;
+      }
+    }
+
+    return ModerationBanStatus(
+      strikeCount: strikes,
+      banTier: tier,
+      bannedUntil: bannedUntil,
+    );
+  }
+
+  static Future<ModerationBanStatus> recordViolation() async {
+    final prefs = await SharedPreferences.getInstance();
+    final current = await getStatus();
+    if (current.isBanned) return current;
+
+    final nextStrikes = current.strikeCount + 1;
+    if (nextStrikes >= ModerationBanStatus.maxStrikesBeforeBan) {
+      final nextTier = current.banTier + 1;
+      final duration = switch (nextTier) {
+        1 => const Duration(minutes: 15),
+        2 => const Duration(hours: 1),
+        _ => const Duration(hours: 24),
+      };
+      final until = DateTime.now().add(duration);
+      await prefs.setInt(_kStrikeCount, ModerationBanStatus.maxStrikesBeforeBan);
+      await prefs.setInt(_kBanTier, nextTier);
+      await prefs.setInt(_kBannedUntilMs, until.millisecondsSinceEpoch);
+      return ModerationBanStatus(
+        strikeCount: ModerationBanStatus.maxStrikesBeforeBan,
+        banTier: nextTier,
+        bannedUntil: until,
+      );
+    }
+
+    await prefs.setInt(_kStrikeCount, nextStrikes);
+    return ModerationBanStatus(
+      strikeCount: nextStrikes,
+      banTier: current.banTier,
+      bannedUntil: null,
+    );
+  }
+
+  static Future<void> resetAll() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_kStrikeCount);
+    await prefs.remove(_kBannedUntilMs);
+    await prefs.remove(_kBanTier);
+  }
+}
 
 /// Hasil inspeksi sistem moderasi konten multibahasa Coffee Labs.
 class ModerationVerdict {
@@ -7,12 +121,14 @@ class ModerationVerdict {
   final String? reasonCode;
   final String? category;
   final String? userMessage;
+  final ModerationBanStatus? banStatus;
 
   const ModerationVerdict._({
     required this.isAllowed,
     this.reasonCode,
     this.category,
     this.userMessage,
+    this.banStatus,
   });
 
   const ModerationVerdict.allowed() : this._(isAllowed: true);
@@ -21,18 +137,30 @@ class ModerationVerdict {
     required String reasonCode,
     required String category,
     required String userMessage,
+    ModerationBanStatus? banStatus,
   }) : this._(
           isAllowed: false,
           reasonCode: reasonCode,
           category: category,
           userMessage: userMessage,
+          banStatus: banStatus,
         );
+
+  ModerationVerdict withBanStatus(ModerationBanStatus status) =>
+      ModerationVerdict._(
+        isAllowed: isAllowed,
+        reasonCode: reasonCode,
+        category: category,
+        userMessage: userMessage,
+        banStatus: status,
+      );
 }
 
-/// Exception resmi saat layer service menolak konten karena melanggar moderasi kata kasar.
+/// Exception resmi saat layer service menolak konten karena melanggar moderasi kata kasar / temp-ban.
 class ContentModerationException implements Exception {
   final ModerationVerdict verdict;
-  const ContentModerationException(this.verdict);
+  final ModerationBanStatus? banStatus;
+  const ContentModerationException(this.verdict, {this.banStatus});
 
   @override
   String toString() =>
@@ -146,7 +274,7 @@ class ContentModerationGuard {
     // Lapisan 1: Skrip non-Latin (Hangul, Hanzi, Kana, Cyrillic, Arabic, Devanagari) & frasa multi-kata
     for (final term in ProfanityLexicon.nonAsciiOrMultiWordSevere) {
       if (clean.contains(term)) {
-        return _buildBlockedVerdict(fieldLabel);
+        return _buildBlockedVerdict(fieldLabel, matchedTerm: term);
       }
     }
 
@@ -173,12 +301,13 @@ class ContentModerationGuard {
       }
       if (ProfanityLexicon.exactTokenTerms.contains(decoded) ||
           _collapsedExactTokens.contains(collapsed)) {
-        return _buildBlockedVerdict(fieldLabel);
+        return _buildBlockedVerdict(fieldLabel, matchedTerm: decoded);
       }
       for (int i = 0; i < ProfanityLexicon.asciiSingleWordSevere.length; i++) {
-        if (decoded.contains(ProfanityLexicon.asciiSingleWordSevere[i]) ||
+        final rawTerm = ProfanityLexicon.asciiSingleWordSevere[i];
+        if (decoded.contains(rawTerm) ||
             collapsed.contains(_collapsedAsciiSevere[i])) {
-          return _buildBlockedVerdict(fieldLabel);
+          return _buildBlockedVerdict(fieldLabel, matchedTerm: rawTerm);
         }
       }
     }
@@ -195,9 +324,10 @@ class ContentModerationGuard {
           final joined = shortBuf.toString();
           final joinedCollapsed = collapseRepeats(joined);
           for (int i = 0; i < ProfanityLexicon.antiSpacingSevere.length; i++) {
-            if (joined.contains(ProfanityLexicon.antiSpacingSevere[i]) ||
+            final rawTerm = ProfanityLexicon.antiSpacingSevere[i];
+            if (joined.contains(rawTerm) ||
                 joinedCollapsed.contains(_collapsedAntiSpacing[i])) {
-              return _buildBlockedVerdict(fieldLabel);
+              return _buildBlockedVerdict(fieldLabel, matchedTerm: rawTerm);
             }
           }
         }
@@ -207,6 +337,29 @@ class ContentModerationGuard {
       }
     }
 
+    return const ModerationVerdict.allowed();
+  }
+
+  /// Inspeksi penuh + pencatatan strike & pembatasan otomatis (auto-ban 3x pelanggaran).
+  static Future<ModerationVerdict> inspectAndEnforce(
+    Map<String, String?> fields,
+  ) async {
+    final status = await ModerationStrikeTracker.getStatus();
+    if (status.isBanned) {
+      return ModerationVerdict.blocked(
+        reasonCode: 'ACCOUNT_TEMP_BANNED',
+        category: 'Pembatasan Sementara (Auto-Ban)',
+        userMessage:
+            'Akun Anda sedang dibatasi sementara selama ${status.formattedRemaining} akibat pelanggaran bahasa berulang.',
+        banStatus: status,
+      );
+    }
+
+    final verdict = inspectMultiple(fields);
+    if (!verdict.isAllowed) {
+      final updatedStatus = await ModerationStrikeTracker.recordViolation();
+      return verdict.withBanStatus(updatedStatus);
+    }
     return const ModerationVerdict.allowed();
   }
 
@@ -273,14 +426,24 @@ class ContentModerationGuard {
     return false;
   }
 
-  static ModerationVerdict _buildBlockedVerdict(String fieldLabel) {
+  static ModerationVerdict _buildBlockedVerdict(
+    String fieldLabel, {
+    String? matchedTerm,
+  }) {
     final isEn = LanguageService.isEnglish;
+    final isGamblingOrScam = matchedTerm != null &&
+        ProfanityLexicon.gamblingAndScamTerms.contains(matchedTerm);
+    final category = isGamblingOrScam
+        ? (isEn ? 'Gambling Spam & Scam' : 'Spam Judi Online & Penipuan')
+        : (isEn
+            ? 'Profanity & Abusive Language'
+            : 'Kata Kasar & Bahasa Tidak Pantas');
     return ModerationVerdict.blocked(
-      reasonCode: 'PROFANITY_DETECTED',
-      category: isEn ? 'Profanity & Abusive Language' : 'Kata Kasar & Bahasa Tidak Pantas',
+      reasonCode: isGamblingOrScam ? 'GAMBLING_SCAM_DETECTED' : 'PROFANITY_DETECTED',
+      category: category,
       userMessage: isEn
-          ? '$fieldLabel contains profane or abusive language and cannot be published. Please keep Coffee Labs respectful and friendly.'
-          : '$fieldLabel mengandung kata kasar atau tidak pantas sehingga diblokir otomatis. Mari jaga komunitas Coffee Labs tetap sopan dan nyaman.',
+          ? '$fieldLabel contains prohibited language ($category) and was NOT published. Please keep Coffee Labs respectful.'
+          : '$fieldLabel mengandung kata terlarang ($category) sehingga TIDAK dipublikasikan. Mari jaga komunitas Coffee Labs tetap sopan dan nyaman.',
     );
   }
 }

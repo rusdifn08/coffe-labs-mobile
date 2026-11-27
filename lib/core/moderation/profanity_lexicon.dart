@@ -81,9 +81,16 @@ class ProfanityLexicon {
     'orospu', 'siktir', 'amcik', 'yarrak', 'pezevenk', 'kurwa', 'pierdol', 'spierdalaj',
     'klootzak',
 
-    // 16. Anti-Spam Judi Online / Scam
+    // 16. Anti-Spam Judi Online / Scam / SARA
     'slot gacor', 'judi online', 'togel online', 'situs gacor', 'maxwin88', 'zeus88',
-    'slot88', 'jp maxwin', 'depo slot',
+    'slot88', 'jp maxwin', 'depo slot', 'judol', 'pinjol ilegal', 'scammer',
+    'penipu anjing', 'kafir laknat', 'bunuh diri',
+  };
+
+  /// Daftar istilah khusus judi online / spam / penipuan agar kategori pelanggaran tampil spesifik.
+  static const Set<String> gamblingAndScamTerms = {
+    'slot gacor', 'judi online', 'togel online', 'situs gacor', 'maxwin88', 'zeus88',
+    'slot88', 'jp maxwin', 'depo slot', 'judol', 'pinjol ilegal', 'scammer',
   };
 
   /// Kata pendek/ambigu yang HANYA diblokir bila muncul sebagai token/kata berdiri sendiri.

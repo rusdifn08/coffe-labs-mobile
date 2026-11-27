@@ -38,17 +38,20 @@ class _SocialCoffeeScreenState extends State<SocialCoffeeScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
 
   List<SocialPost> _posts = [];
+  List<SocialPost> _savedPosts = [];
   bool _isLoading = true;
-  String _activeFilterTab = 'all'; // 'all' | 'popular' | 'recipes'
+  String _activeFilterTab = 'all'; // 'all' | 'popular' | 'recipes' | 'saved'
   int _bottomNavIndex = 0; // 0: Home, 1: Search, 2: Activity, 3: Profile
   String _searchQuery = '';
   String _displayHandle = 'coffeelabs.app';
+  String? _currentUserId;
   String _avatarPath = 'assets/images/coffee_labs_emblem.png';
 
   @override
   void initState() {
     super.initState();
     _loadIdentity();
+    _loadSavedPosts();
     if (widget.initialPosts != null) {
       _posts = List<SocialPost>.from(widget.initialPosts!);
       _isLoading = false;
@@ -66,6 +69,15 @@ class _SocialCoffeeScreenState extends State<SocialCoffeeScreen> {
     super.dispose();
   }
 
+  bool _isOwnPost(SocialPost post) {
+    if (_currentUserId != null &&
+        _currentUserId!.isNotEmpty &&
+        post.userId == _currentUserId) {
+      return true;
+    }
+    return post.authorName.toLowerCase() == _displayHandle.toLowerCase();
+  }
+
   Future<void> _loadIdentity() async {
     try {
       final user = await AuthService.getCurrentUser();
@@ -80,8 +92,17 @@ class _SocialCoffeeScreenState extends State<SocialCoffeeScreen> {
           : localAvatar;
       setState(() {
         _displayHandle = resolvedName;
+        _currentUserId = user?.id;
         _avatarPath = resolvedAvatar;
       });
+    } catch (_) {}
+  }
+
+  Future<void> _loadSavedPosts() async {
+    try {
+      final saved = await SocialService.getSavedPosts();
+      if (!mounted) return;
+      setState(() => _savedPosts = saved);
     } catch (_) {}
   }
 
@@ -91,27 +112,51 @@ class _SocialCoffeeScreenState extends State<SocialCoffeeScreen> {
 
   Future<void> _loadFeed({bool force = false}) async {
     setState(() => _isLoading = true);
-    final list = await SocialService.getFeed(
-      sort: _activeFilterTab,
-      forceRefresh: force,
-    );
+    final results = await Future.wait([
+      SocialService.getFeed(
+        sort: _activeFilterTab == 'saved' ? 'all' : _activeFilterTab,
+        forceRefresh: force,
+      ),
+      SocialService.getSavedPosts(),
+    ]);
     if (!mounted) return;
     setState(() {
-      _posts = list;
+      _posts = results[0];
+      _savedPosts = results[1];
       _isLoading = false;
     });
   }
 
+  List<SocialPost> get _allSavedPosts {
+    final map = <String, SocialPost>{};
+    for (final p in _savedPosts) {
+      map[p.id] = p;
+    }
+    for (final p in _posts.where((p) => p.isSavedByMe)) {
+      map[p.id] = p;
+    }
+    return map.values.toList();
+  }
+
   List<SocialPost> get _filteredPosts {
-    Iterable<SocialPost> base = _posts;
-    if (_activeFilterTab == 'popular') {
-      final sorted = base.toList()
-        ..sort((a, b) =>
-            (b.likesCount * 2 + b.commentsCount * 3 + b.copiesCount * 4).compareTo(
-                a.likesCount * 2 + a.commentsCount * 3 + a.copiesCount * 4));
+    Iterable<SocialPost> base;
+    if (_activeFilterTab == 'saved') {
+      base = _allSavedPosts;
+    } else if (_activeFilterTab == 'popular') {
+      final sorted = _posts.toList()
+        ..sort((a, b) => (b.likesCount * 2 +
+                b.commentsCount * 3 +
+                b.repostsCount * 4 +
+                b.copiesCount * 2)
+            .compareTo(a.likesCount * 2 +
+                a.commentsCount * 3 +
+                a.repostsCount * 4 +
+                a.copiesCount * 2));
       base = sorted;
     } else if (_activeFilterTab == 'recipes') {
-      base = base.where((p) => p.recipeSnapshot != null);
+      base = _posts.where((p) => p.recipeSnapshot != null);
+    } else {
+      base = _posts;
     }
 
     if (_searchQuery.trim().isEmpty) return base.toList();
@@ -164,67 +209,139 @@ class _SocialCoffeeScreenState extends State<SocialCoffeeScreen> {
   void _showCreatePostDialog() {
     SocialCreatePostSheet.show(
       context,
-      onPostCreated: () => _loadFeed(force: true),
+      onPostCreated: () {
+        if (widget.initialPosts == null) {
+          _loadFeed(force: true);
+        }
+      },
     );
   }
 
-  Future<void> _handleCopyRecipe(SocialPost post) async {
-    HapticFeedback.mediumImpact();
-    final saved = await SocialService.copyRecipeToMyRecipes(post);
-    if (!mounted) return;
+  void _handleEditPost(SocialPost post) {
+    SocialCreatePostSheet.show(
+      context,
+      editingPost: post,
+      onPostCreated: () {},
+      onPostUpdated: (updated) {
+        if (!mounted) return;
+        setState(() {
+          final idx = _posts.indexWhere((p) => p.id == updated.id);
+          if (idx >= 0) _posts[idx] = updated;
+          final sIdx = _savedPosts.indexWhere((p) => p.id == updated.id);
+          if (sIdx >= 0) _savedPosts[sIdx] = updated;
+        });
+      },
+    );
+  }
 
-    if (saved != null) {
-      showCupertinoDialog(
-        context: context,
-        builder: (ctx) => CupertinoAlertDialog(
-          title: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                CupertinoIcons.check_mark_circled_solid,
-                color: Colors.green,
-                size: 24,
-              ),
-              SizedBox(width: 8),
-              Text('Resep Berhasil Disalin!'),
-            ],
-          ),
-          content: Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              'Resep "${saved['title']}" telah tersimpan di daftar resep pribadi Anda.\n\nAnda dapat langsung menyeduhnya atau mengubah parameter sesuka hati.',
-              style: const TextStyle(fontSize: 13),
-            ),
-          ),
-          actions: [
-            CupertinoDialogAction(
-              child: const Text('Nanti Saja'),
-              onPressed: () => Navigator.pop(ctx),
-            ),
-            CupertinoDialogAction(
-              isDefaultAction: true,
-              child: const Text('Mulai Brew Sekarang'),
-              onPressed: () {
-                Navigator.pop(ctx);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => BrewTimerScreen(recipeData: saved),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
+  Future<void> _handleDeletePost(SocialPost post) async {
+    HapticFeedback.mediumImpact();
+    await SocialService.deletePost(post);
+    if (!mounted) return;
+    setState(() {
+      _posts.removeWhere((p) => p.id == post.id);
+      _savedPosts.removeWhere((p) => p.id == post.id);
+    });
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
         const SnackBar(
-          content: Text('Gagal menyalin resep'),
+          content: Text('Postingan berhasil dihapus'),
           behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2),
         ),
       );
-    }
+  }
+
+  Future<void> _handleToggleRepost(SocialPost post) async {
+    final res = await SocialService.toggleRepost(post);
+    if (!mounted) return;
+    final reposted = res['is_reposted'] == true;
+    setState(() {});
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            reposted
+                ? 'Berhasil di-repost ke profil Anda!'
+                : 'Repost dibatalkan',
+          ),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+  }
+
+  Future<void> _handleToggleSave(SocialPost post) async {
+    final isSaved = await SocialService.toggleSave(post);
+    if (!mounted) return;
+    setState(() {
+      if (isSaved) {
+        _savedPosts.removeWhere((p) => p.id == post.id);
+        _savedPosts.insert(0, post);
+      } else {
+        _savedPosts.removeWhere((p) => p.id == post.id);
+      }
+    });
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            isSaved
+                ? 'Tersimpan! Buka tab Tersimpan untuk melihatnya.'
+                : 'Dihapus dari daftar Tersimpan',
+          ),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+          action: isSaved
+              ? SnackBarAction(
+                  label: 'Lihat',
+                  textColor: AppTheme.accentAmber,
+                  onPressed: () {
+                    if (!mounted) return;
+                    setState(() {
+                      _bottomNavIndex = 0;
+                      _activeFilterTab = 'saved';
+                    });
+                  },
+                )
+              : null,
+        ),
+      );
+  }
+
+  void _handleBrewRecipe(SocialPost post) {
+    final brewable = SocialService.buildBrewableRecipeFromPost(post);
+    if (brewable == null) return;
+    HapticFeedback.mediumImpact();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BrewTimerScreen(recipeData: brewable),
+      ),
+    );
+  }
+
+  Future<void> _handleReportPost(SocialPost post, String reason) async {
+    await SocialService.reportPost(post, reason);
+    if (!mounted) return;
+    setState(() {
+      _posts.removeWhere((p) => p.id == post.id);
+      _savedPosts.removeWhere((p) => p.id == post.id);
+    });
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Terima kasih. Postingan telah dilaporkan & disembunyikan dari feed Anda.',
+          ),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 3),
+        ),
+      );
   }
 
   bool _hasRiverpodScope() {
@@ -434,6 +551,7 @@ class _SocialCoffeeScreenState extends State<SocialCoffeeScreen> {
           searchController: _searchCtrl,
           searchQuery: _searchQuery,
           currentUsername: _displayHandle,
+          currentUserId: _currentUserId,
           allPosts: _posts,
           filteredPosts: _filteredPosts,
           onSearchChanged: (val) => setState(() => _searchQuery = val),
@@ -444,18 +562,30 @@ class _SocialCoffeeScreenState extends State<SocialCoffeeScreen> {
           onOpenBasecamp: () => _pushRouteSafe(AppRoutes.socialClubs),
           onToggleLike: (post) async => await SocialService.toggleLike(post),
           onOpenComments: _showCommentsSheet,
-          onCopyRecipe: _handleCopyRecipe,
+          onToggleRepost: _handleToggleRepost,
+          onToggleSave: _handleToggleSave,
+          onBrewRecipe: _handleBrewRecipe,
+          onEditPost: _handleEditPost,
+          onDeletePost: _handleDeletePost,
+          onReportPost: _handleReportPost,
         );
       case 2:
         return const SocialThreadsActivityTab();
       case 3:
         return SocialThreadsProfileTab(
           displayName: _displayHandle,
+          currentUserId: _currentUserId,
           avatarPath: _avatarPath,
           allPosts: _posts,
+          savedPosts: _allSavedPosts,
           onToggleLike: (post) async => await SocialService.toggleLike(post),
           onOpenComments: _showCommentsSheet,
-          onCopyRecipe: _handleCopyRecipe,
+          onToggleRepost: _handleToggleRepost,
+          onToggleSave: _handleToggleSave,
+          onBrewRecipe: _handleBrewRecipe,
+          onEditPost: _handleEditPost,
+          onDeletePost: _handleDeletePost,
+          onReportPost: _handleReportPost,
         );
       default:
         return _buildHomeFeedTab();
@@ -464,6 +594,7 @@ class _SocialCoffeeScreenState extends State<SocialCoffeeScreen> {
 
   Widget _buildHomeFeedTab() {
     final posts = _filteredPosts;
+    final savedCount = _allSavedPosts.length;
 
     return RefreshIndicator(
       color: AppTheme.primaryBrown,
@@ -486,10 +617,13 @@ class _SocialCoffeeScreenState extends State<SocialCoffeeScreen> {
           SliverToBoxAdapter(
             child: SocialFilterTabs(
               activeTab: _activeFilterTab,
+              savedCount: savedCount,
               onTabChanged: (tabId) {
                 setState(() => _activeFilterTab = tabId);
-                if (widget.initialPosts == null) {
+                if (widget.initialPosts == null && tabId != 'saved') {
                   _loadFeed();
+                } else if (tabId == 'saved') {
+                  _loadSavedPosts();
                 }
               },
             ),
@@ -511,9 +645,15 @@ class _SocialCoffeeScreenState extends State<SocialCoffeeScreen> {
                     final post = posts[index];
                     return SocialPostCard(
                       post: post,
+                      isOwnPost: _isOwnPost(post),
                       onLike: () async => await SocialService.toggleLike(post),
                       onComment: () => _showCommentsSheet(post),
-                      onCopyRecipe: () => _handleCopyRecipe(post),
+                      onRepost: () => _handleToggleRepost(post),
+                      onSave: () => _handleToggleSave(post),
+                      onBrewRecipe: () => _handleBrewRecipe(post),
+                      onEdit: () => _handleEditPost(post),
+                      onDelete: () => _handleDeletePost(post),
+                      onReport: (reason) => _handleReportPost(post, reason),
                     );
                   },
                   childCount: posts.length,
@@ -526,49 +666,70 @@ class _SocialCoffeeScreenState extends State<SocialCoffeeScreen> {
   }
 
   Widget _buildEmptyState() {
+    final isSavedTab = _activeFilterTab == 'saved';
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              CupertinoIcons.chat_bubble_2,
+            Icon(
+              isSavedTab
+                  ? CupertinoIcons.bookmark
+                  : CupertinoIcons.chat_bubble_2,
               size: 42,
               color: AppTheme.primaryBrown,
             ),
             const SizedBox(height: 14),
-            const Text(
-              'Belum Ada Postingan',
-              style: TextStyle(
+            Text(
+              isSavedTab
+                  ? 'Belum Ada Postingan Tersimpan'
+                  : 'Belum Ada Postingan',
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 15,
                 color: AppTheme.textDark,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'Jadilah yang pertama membagikan resep seduh favorit Anda atau menyapa sesama barista!',
+            Text(
+              isSavedTab
+                  ? 'Ketuk ikon simpan (bookmark) di bawah postingan atau resep mana pun agar mudah ditemukan kembali di sini.'
+                  : 'Jadilah yang pertama membagikan resep seduh favorit Anda atau menyapa sesama barista!',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 12.5,
                 color: AppTheme.textMuted,
                 height: 1.4,
               ),
             ),
             const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: _showCreatePostDialog,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.primaryBrown,
-                side: const BorderSide(color: AppTheme.borderWarm),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+            if (isSavedTab)
+              OutlinedButton.icon(
+                onPressed: () => setState(() => _activeFilterTab = 'all'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.primaryBrown,
+                  side: const BorderSide(color: AppTheme.borderWarm),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
+                icon: const Icon(CupertinoIcons.compass, size: 16),
+                label: const Text('Jelajahi Feed'),
+              )
+            else
+              OutlinedButton.icon(
+                onPressed: _showCreatePostDialog,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.primaryBrown,
+                  side: const BorderSide(color: AppTheme.borderWarm),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                icon: const Icon(CupertinoIcons.pencil, size: 16),
+                label: const Text('Tulis Postingan Pertama'),
               ),
-              icon: const Icon(CupertinoIcons.pencil, size: 16),
-              label: const Text('Tulis Postingan Pertama'),
-            ),
           ],
         ),
       ),

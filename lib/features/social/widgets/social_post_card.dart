@@ -10,19 +10,32 @@ import '../../../../widgets/user_avatar_circle.dart';
 import '../utils/social_time_formatter.dart';
 import 'social_embedded_recipe_card.dart';
 
-/// Postingan Social Coffee bergaya datar edge-to-edge ala Threads (tanpa card).
+/// Postingan Social Coffee bergaya datar edge-to-edge ala Threads.
+/// Mendukung Like, Komentar, Repost, Save/Bookmark, Share, Edit, Hapus, dan Laporkan.
 class SocialPostCard extends StatelessWidget {
   final SocialPost post;
+  final bool isOwnPost;
   final VoidCallback onLike;
   final VoidCallback onComment;
-  final VoidCallback onCopyRecipe;
+  final VoidCallback? onRepost;
+  final VoidCallback? onSave;
+  final VoidCallback? onBrewRecipe;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+  final ValueChanged<String>? onReport;
 
   const SocialPostCard({
     super.key,
     required this.post,
+    this.isOwnPost = false,
     required this.onLike,
     required this.onComment,
-    required this.onCopyRecipe,
+    this.onRepost,
+    this.onSave,
+    this.onBrewRecipe,
+    this.onEdit,
+    this.onDelete,
+    this.onReport,
   });
 
   void _openAuthorProfile(BuildContext context) {
@@ -39,11 +52,140 @@ class SocialPostCard extends StatelessWidget {
     final textToCopy =
         'Postingan dari ${post.authorName} di Coffee Labs:\n${post.content}';
     Clipboard.setData(ClipboardData(text: textToCopy));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Teks diskusi disalin ke clipboard!'),
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 2),
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('Teks postingan disalin ke clipboard!'),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2),
+        ),
+      );
+  }
+
+  Future<void> _confirmDelete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: AppTheme.surfaceWhite,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Hapus Postingan?',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+            color: AppTheme.textDark,
+          ),
+        ),
+        content: const Text(
+          'Postingan ini akan dihapus secara permanen dari Social Coffee dan tidak dapat dikembalikan.',
+          style: TextStyle(fontSize: 13.5, color: AppTheme.textMuted, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            child: const Text(
+              'Batal',
+              style: TextStyle(
+                color: AppTheme.textMuted,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text(
+              'Hapus',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      onDelete?.call();
+    }
+  }
+
+  void _showReportReasonSheet(BuildContext context) {
+    const reasons = [
+      'Kata kasar, pelecehan, atau SARA',
+      'Spam, iklan judi online, atau tautan mencurigakan',
+      'Penipuan atau informasi palsu',
+      'Konten tidak pantas di komunitas kopi',
+    ];
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppTheme.bgCream,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 10),
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.textMuted.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(18, 14, 18, 6),
+              child: Text(
+                'Laporkan Postingan',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.textDark,
+                ),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(18, 0, 18, 10),
+              child: Text(
+                'Pilih alasan pelaporan agar tim moderasi menindaklanjuti dan menyembunyikan postingan ini.',
+                style: TextStyle(fontSize: 12.5, color: AppTheme.textMuted),
+              ),
+            ),
+            const Divider(height: 1, color: AppTheme.dividerColor),
+            ...reasons.map(
+              (reason) => ListTile(
+                leading: const Icon(
+                  CupertinoIcons.flag_fill,
+                  size: 18,
+                  color: Color(0xFFDC2626),
+                ),
+                title: Text(
+                  reason,
+                  style: const TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textDark,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  onReport?.call(reason);
+                },
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
       ),
     );
   }
@@ -68,17 +210,69 @@ class SocialPostCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            ListTile(
-              leading: const Icon(
-                CupertinoIcons.person_crop_circle,
-                color: AppTheme.textDark,
+            if (isOwnPost && onEdit != null)
+              ListTile(
+                leading: const Icon(
+                  CupertinoIcons.pencil,
+                  color: AppTheme.primaryBrown,
+                ),
+                title: const Text(
+                  'Edit Postingan',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  onEdit?.call();
+                },
               ),
-              title: Text('Lihat profil ${post.authorName}'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _openAuthorProfile(context);
-              },
-            ),
+            if (isOwnPost && onDelete != null)
+              ListTile(
+                leading: const Icon(
+                  CupertinoIcons.trash,
+                  color: Color(0xFFDC2626),
+                ),
+                title: const Text(
+                  'Hapus Postingan',
+                  style: TextStyle(
+                    color: Color(0xFFDC2626),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _confirmDelete(context);
+                },
+              ),
+            if (onSave != null)
+              ListTile(
+                leading: Icon(
+                  post.isSavedByMe
+                      ? CupertinoIcons.bookmark_fill
+                      : CupertinoIcons.bookmark,
+                  color: AppTheme.primaryBrown,
+                ),
+                title: Text(
+                  post.isSavedByMe
+                      ? 'Hapus dari Tersimpan'
+                      : 'Simpan Postingan',
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  onSave?.call();
+                },
+              ),
+            if (!isOwnPost)
+              ListTile(
+                leading: const Icon(
+                  CupertinoIcons.person_crop_circle,
+                  color: AppTheme.textDark,
+                ),
+                title: Text('Lihat profil ${post.authorName}'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _openAuthorProfile(context);
+                },
+              ),
             ListTile(
               leading: const Icon(
                 CupertinoIcons.doc_on_doc,
@@ -90,16 +284,22 @@ class SocialPostCard extends StatelessWidget {
                 _copyDiscussionText(context);
               },
             ),
-            if (post.recipeSnapshot != null)
+            if (!isOwnPost && onReport != null)
               ListTile(
                 leading: const Icon(
-                  CupertinoIcons.arrow_down_doc,
-                  color: AppTheme.primaryBrown,
+                  CupertinoIcons.flag,
+                  color: Color(0xFFDC2626),
                 ),
-                title: const Text('Salin resep seduh ke koleksiku'),
+                title: const Text(
+                  'Laporkan Postingan',
+                  style: TextStyle(
+                    color: Color(0xFFDC2626),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 onTap: () {
                   Navigator.pop(ctx);
-                  onCopyRecipe();
+                  _showReportReasonSheet(context);
                 },
               ),
             const SizedBox(height: 8),
@@ -126,8 +326,35 @@ class SocialPostCard extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (post.isRepostedByMe)
+          const Padding(
+            padding: EdgeInsets.fromLTRB(54, 10, 16, 0),
+            child: Row(
+              children: [
+                Icon(
+                  CupertinoIcons.arrow_2_squarepath,
+                  size: 13.5,
+                  color: Color(0xFF15803D),
+                ),
+                SizedBox(width: 6),
+                Text(
+                  'Anda memposting ulang',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF15803D),
+                  ),
+                ),
+              ],
+            ),
+          ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            post.isRepostedByMe ? 6 : 14,
+            16,
+            12,
+          ),
           child: IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -147,27 +374,28 @@ class SocialPostCard extends StatelessWidget {
                               displayName: post.authorName,
                               radius: 19,
                             ),
-                            Positioned(
-                              right: -2,
-                              bottom: -2,
-                              child: Container(
-                                width: 17,
-                                height: 17,
-                                decoration: BoxDecoration(
-                                  color: AppTheme.primaryBrown,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: AppTheme.bgCream,
-                                    width: 1.8,
+                            if (!isOwnPost)
+                              Positioned(
+                                right: -2,
+                                bottom: -2,
+                                child: Container(
+                                  width: 17,
+                                  height: 17,
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryBrown,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: AppTheme.bgCream,
+                                      width: 1.8,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    CupertinoIcons.plus,
+                                    size: 10,
+                                    color: Colors.white,
                                   ),
                                 ),
-                                child: const Icon(
-                                  CupertinoIcons.plus,
-                                  size: 10,
-                                  color: Colors.white,
-                                ),
                               ),
-                            ),
                           ],
                         ),
                       ),
@@ -187,7 +415,7 @@ class SocialPostCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
 
-                // Kolom Kanan Threads: Header Nama, Role di bawah nama, Teks, Tags, Quoted Resep, Aksi
+                // Kolom Kanan Threads: Header Nama, Role, Teks, Tags, Quoted Resep, Baris Aksi Bawah
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -228,6 +456,17 @@ class SocialPostCard extends StatelessWidget {
                                     color: AppTheme.textMuted,
                                   ),
                                 ),
+                                if (post.isEdited) ...[
+                                  const SizedBox(width: 4),
+                                  const Text(
+                                    '• Diedit',
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontStyle: FontStyle.italic,
+                                      color: AppTheme.textMuted,
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -302,18 +541,18 @@ class SocialPostCard extends StatelessWidget {
                         ),
                       ],
 
-                      // Kutipan Resep Inline Gaya Threads Quote Box
+                      // Kutipan Resep Inline Gaya Threads Quote Box (tanpa tombol Salin)
                       if (post.recipeSnapshot != null) ...[
                         const SizedBox(height: 10),
                         SocialEmbeddedRecipeCard(
                           post: post,
-                          onCopyRecipe: onCopyRecipe,
+                          onBrewRecipe: onBrewRecipe ?? () {},
                         ),
                       ],
 
                       const SizedBox(height: 10),
 
-                      // Baris Ikon Interaksi Ala Threads
+                      // Baris Ikon Interaksi Bawah: Like · Komentar · Repost · Simpan · Bagikan
                       Row(
                         children: [
                           _ThreadsActionButton(
@@ -326,37 +565,60 @@ class SocialPostCard extends StatelessWidget {
                             label: post.likesCount > 0
                                 ? _formatCompactCount(post.likesCount)
                                 : null,
+                            tooltip: 'Suka',
                             onTap: () {
                               HapticFeedback.lightImpact();
                               onLike();
                             },
                           ),
-                          const SizedBox(width: 20),
+                          const SizedBox(width: 18),
                           _ThreadsActionButton(
                             icon: CupertinoIcons.chat_bubble,
                             color: AppTheme.textDark,
                             label: post.commentsCount > 0
                                 ? _formatCompactCount(post.commentsCount)
                                 : null,
+                            tooltip: 'Komentar',
                             onTap: onComment,
                           ),
-                          const SizedBox(width: 20),
+                          const SizedBox(width: 18),
                           _ThreadsActionButton(
                             icon: CupertinoIcons.arrow_2_squarepath,
-                            color: post.recipeSnapshot != null
+                            color: post.isRepostedByMe
+                                ? const Color(0xFF15803D)
+                                : AppTheme.textDark,
+                            label: post.repostsCount > 0
+                                ? _formatCompactCount(post.repostsCount)
+                                : null,
+                            tooltip: post.isRepostedByMe
+                                ? 'Batalkan Repost'
+                                : 'Repost',
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              onRepost?.call();
+                            },
+                          ),
+                          const SizedBox(width: 18),
+                          _ThreadsActionButton(
+                            icon: post.isSavedByMe
+                                ? CupertinoIcons.bookmark_fill
+                                : CupertinoIcons.bookmark,
+                            color: post.isSavedByMe
                                 ? AppTheme.primaryBrown
                                 : AppTheme.textDark,
-                            label: post.copiesCount > 0
-                                ? _formatCompactCount(post.copiesCount)
-                                : null,
-                            onTap: post.recipeSnapshot != null
-                                ? onCopyRecipe
-                                : () => _copyDiscussionText(context),
+                            tooltip: post.isSavedByMe
+                                ? 'Hapus dari Tersimpan'
+                                : 'Simpan Postingan',
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              onSave?.call();
+                            },
                           ),
-                          const SizedBox(width: 20),
+                          const Spacer(),
                           _ThreadsActionButton(
                             icon: CupertinoIcons.paperplane,
-                            color: AppTheme.textDark,
+                            color: AppTheme.textMuted,
+                            tooltip: 'Bagikan',
                             onTap: () => _copyDiscussionText(context),
                           ),
                         ],
@@ -393,6 +655,7 @@ class _ThreadsActionButton extends StatelessWidget {
   final IconData icon;
   final Color color;
   final String? label;
+  final String? tooltip;
   final VoidCallback onTap;
 
   const _ThreadsActionButton({
@@ -400,15 +663,16 @@ class _ThreadsActionButton extends StatelessWidget {
     required this.color,
     required this.onTap,
     this.label,
+    this.tooltip,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    final child = InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -420,9 +684,9 @@ class _ThreadsActionButton extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
-                  color: color == Colors.redAccent
-                      ? Colors.redAccent
-                      : AppTheme.textDark.withValues(alpha: 0.78),
+                  color: color == AppTheme.textDark
+                      ? AppTheme.textDark.withValues(alpha: 0.78)
+                      : color,
                 ),
               ),
             ],
@@ -430,5 +694,9 @@ class _ThreadsActionButton extends StatelessWidget {
         ),
       ),
     );
+    if (tooltip != null) {
+      return Tooltip(message: tooltip!, child: child);
+    }
+    return child;
   }
 }

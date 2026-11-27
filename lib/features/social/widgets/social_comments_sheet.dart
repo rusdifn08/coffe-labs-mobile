@@ -57,10 +57,17 @@ class _SocialCommentsSheetState extends State<SocialCommentsSheet> {
     final text = _commentCtrl.text.trim();
     if (text.isEmpty || _isSending) return;
 
-    final verdict = ContentModerationGuard.inspect(text, fieldLabel: 'Komentar');
+    final verdict = await ContentModerationGuard.inspectAndEnforce({
+      'Komentar': text,
+    });
+    if (!mounted) return;
     if (!verdict.isAllowed) {
       setState(() => _moderationWarning = verdict.userMessage);
-      ModerationAlertFeedback.showBlockedSnackBar(context, verdict);
+      await ModerationAlertFeedback.showViolationDialog(
+        context,
+        verdict,
+        banStatus: verdict.banStatus,
+      );
       return;
     }
 
@@ -88,7 +95,11 @@ class _SocialCommentsSheetState extends State<SocialCommentsSheet> {
         _isSending = false;
         _moderationWarning = e.verdict.userMessage;
       });
-      ModerationAlertFeedback.showBlockedSnackBar(context, e.verdict);
+      await ModerationAlertFeedback.showViolationDialog(
+        context,
+        e.verdict,
+        banStatus: e.banStatus ?? e.verdict.banStatus,
+      );
     } catch (_) {
       if (!mounted) return;
       setState(() => _isSending = false);
