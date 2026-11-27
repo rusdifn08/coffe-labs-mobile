@@ -462,7 +462,7 @@ class _EbookLibraryScreenState extends ConsumerState<EbookLibraryScreen> {
                         padding: const EdgeInsets.only(bottom: 12),
                         child: _EbookLibraryCard(
                           book: book,
-                          resolvedCoverUrl: api.resolveMediaUrl(book.coverImageUrl),
+                          resolvedCoverUrl: api.resolveEbookCoverUrl(book),
                           isDownloaded: _downloadedMap[book.bookCode] ?? false,
                           localBytes: _localBytesMap[book.bookCode] ?? 0,
                           downloadState: _downloadingMap[book.bookCode],

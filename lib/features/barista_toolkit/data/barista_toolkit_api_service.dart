@@ -32,6 +32,20 @@ class BaristaToolkitApiService {
     _lastCoursesFetchAt = null;
   }
 
+  static const String _ebookPrimaryCdnBase =
+      'https://cdn.jsdelivr.net/gh/rusdifn08/Coffe-Labs-Backend@main/storage/object_storage/coffeelabs/ebooks';
+  static const String _ebookSecondaryCdnBase =
+      'https://raw.githubusercontent.com/rusdifn08/Coffe-Labs-Backend/main/storage/object_storage/coffeelabs/ebooks';
+
+  /// URL Sampul E-Book HD berbasis Global Edge CDN (instan & selalu sinkron dengan edisi terbaru).
+  String resolveEbookCoverUrl(EbookCatalogItem book) {
+    final code = book.bookCode.trim();
+    if (code.isNotEmpty) {
+      return '$_ebookPrimaryCdnBase/$code/cover.webp';
+    }
+    return resolveMediaUrl(book.coverImageUrl);
+  }
+
   /// Mengonversi path relatif Object Storage backend (`/api/v1/...`) menjadi URL absolut lengkap.
   String resolveMediaUrl(String rawUrl) {
     final trimmed = rawUrl.trim();
@@ -212,22 +226,48 @@ class BaristaToolkitApiService {
   Future<List<EbookCatalogItem>> fetchEbooks() async {
     final (user, plan) = await _resolveCurrentSessionTier();
     final fullTrial = TrialService.isFullNonBusinessTrialActiveSync(user: user);
+
+    List<EbookCatalogItem> mapBooks(List<dynamic> list) {
+      return list.map((e) {
+        final model = EbookCatalogItem.fromJson(Map<String, dynamic>.from(e as Map));
+        final localAllowed = ToolkitTierAccess.isUnlockedFor(
+          requiredTier: model.requiredTier,
+          user: user,
+          localPlan: plan,
+          hasFullNonBusinessTrial: fullTrial,
+        );
+        return model.copyWith(isUnlocked: model.isUnlocked || localAllowed);
+      }).toList();
+    }
+
     try {
       final res = await _dio.get<Map<String, dynamic>>('/api/v1/toolkit/ebooks');
       final list = res.data?['data'] as List? ?? [];
       if (list.isNotEmpty) {
-        return list.map((e) {
-          final model = EbookCatalogItem.fromJson(Map<String, dynamic>.from(e as Map));
-          final localAllowed = ToolkitTierAccess.isUnlockedFor(
-            requiredTier: model.requiredTier,
-            user: user,
-            localPlan: plan,
-            hasFullNonBusinessTrial: fullTrial,
-          );
-          return model.copyWith(isUnlocked: model.isUnlocked || localAllowed);
-        }).toList();
+        return mapBooks(list);
       }
     } catch (_) {}
+
+    // Fallback Global Edge CDN catalog terbaru (anti-401 & anti-stale cache lokal)
+    if (!_isTestEnv) {
+      final cleanDio = _createCleanDownloadDio();
+      for (final catalogUrl in const [
+        'https://cdn.jsdelivr.net/gh/rusdifn08/Coffe-Labs-Backend@main/storage/ebooks_catalog_seed.json',
+        'https://raw.githubusercontent.com/rusdifn08/Coffe-Labs-Backend/main/storage/ebooks_catalog_seed.json',
+      ]) {
+        try {
+          final res = await cleanDio.get<dynamic>(catalogUrl);
+          final raw = res.data;
+          final list = raw is List
+              ? raw
+              : (raw is String ? jsonDecode(raw) as List<dynamic> : const []);
+          if (list.isNotEmpty) {
+            return mapBooks(list);
+          }
+        } catch (_) {}
+      }
+    }
+
     final offline = await BaristaToolkitFallbackSeed.offlineEbooks();
     return offline
         .map(
@@ -260,27 +300,34 @@ class BaristaToolkitApiService {
       }
     } catch (_) {}
 
-    // Fallback langsung ke Object Storage publik (`{code}_chapters.json`) agar bebas error 401
+    // Fallback langsung ke Global CDN & Object Storage publik (`{code}_chapters.json`) agar bebas error 401
     if (bookCode != null && bookCode.isNotEmpty) {
-      try {
-        final directUrl = await resolveMediaUrlAsync(
+      final chapterUrls = <String>[
+        '$_ebookPrimaryCdnBase/$bookCode/${bookCode}_chapters.json',
+        '$_ebookSecondaryCdnBase/$bookCode/${bookCode}_chapters.json',
+        await resolveMediaUrlAsync(
           '/api/v1/toolkit/object-storage/coffeelabs/ebooks/$bookCode/${bookCode}_chapters.json',
-        );
-        final res = await _createCleanDownloadDio().get<dynamic>(directUrl);
-        final raw = res.data;
-        final List<dynamic> list = raw is List
-            ? raw
-            : (raw is String
-                ? (jsonDecode(raw) as List<dynamic>)
-                : (raw is Map && raw['chapters'] is List
-                    ? raw['chapters'] as List<dynamic>
-                    : const []));
-        if (list.isNotEmpty) {
-          return list
-              .map((e) => EbookChapterAstModel.fromJson(Map<String, dynamic>.from(e as Map)))
-              .toList();
-        }
-      } catch (_) {}
+        ),
+      ];
+      final cleanDio = _createCleanDownloadDio();
+      for (final directUrl in chapterUrls) {
+        try {
+          final res = await cleanDio.get<dynamic>(directUrl);
+          final raw = res.data;
+          final List<dynamic> list = raw is List
+              ? raw
+              : (raw is String
+                  ? (jsonDecode(raw) as List<dynamic>)
+                  : (raw is Map && raw['chapters'] is List
+                      ? raw['chapters'] as List<dynamic>
+                      : const []));
+          if (list.isNotEmpty) {
+            return list
+                .map((e) => EbookChapterAstModel.fromJson(Map<String, dynamic>.from(e as Map)))
+                .toList();
+          }
+        } catch (_) {}
+      }
     }
     return const [];
   }
@@ -415,12 +462,16 @@ class BaristaToolkitApiService {
     final isTrialOrOpen = book.requiredTier.trim().toLowerCase() == 'trial' ||
         book.requiredTier.trim().toLowerCase() == 'free';
 
-    // 2. Unduh PDF Asli (prioritas utama) dengan failover otomatis:
-    //    Public Object Storage (anti-401) <-> Endpoint Backend Terotentikasi <-> Signed URL
+    // 2. Unduh PDF Asli (prioritas utama) dengan failover multi-tier:
+    //    Global Edge CDN (jsDelivr -> GitHub Raw, selalu edisi penuh terbaru & anti-401)
+    //    -> Railway Object Storage -> Endpoint Backend Terotentikasi
     final pdfCandidates = <String>[
       if (signedPdfUrl != null && signedPdfUrl.startsWith('https://')) signedPdfUrl,
-      if (isTrialOrOpen || book.isUnlocked)
+      if (isTrialOrOpen || book.isUnlocked) ...[
+        '$_ebookPrimaryCdnBase/$code/${code}_id.pdf',
+        '$_ebookSecondaryCdnBase/$code/${code}_id.pdf',
         '/api/v1/toolkit/object-storage/coffeelabs/ebooks/$code/${code}_id.pdf',
+      ],
       '/api/v1/toolkit/ebooks/${book.id}/asset?format=pdf',
     ];
 
@@ -482,8 +533,11 @@ class BaristaToolkitApiService {
     onProgress(0.64, 'Mengunduh EPUB3 Reflowable...');
     final epubCandidates = <String>[
       if (signedEpubUrl != null && signedEpubUrl.startsWith('https://')) signedEpubUrl,
-      if (isTrialOrOpen || book.isUnlocked)
+      if (isTrialOrOpen || book.isUnlocked) ...[
+        '$_ebookPrimaryCdnBase/$code/${code}_id.epub',
+        '$_ebookSecondaryCdnBase/$code/${code}_id.epub',
         '/api/v1/toolkit/object-storage/coffeelabs/ebooks/$code/${code}_id.epub',
+      ],
       '/api/v1/toolkit/ebooks/${book.id}/asset?format=epub',
     ];
     Uint8List? epubBytes;
