@@ -254,7 +254,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('BrewScaleLiveBadge renders cleanly when disconnected and connected at 360px', (tester) async {
+    testWidgets('BrewScaleLiveBadge stays hidden when disconnected and renders telemetry when connected at 360px', (tester) async {
       tester.view.physicalSize = const Size(360, 780);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -271,7 +271,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining('TIMEMORE Dot'), findsOneWidget);
+      // Disconnected banner button is intentionally removed (replaced by side Bluetooth icon)
+      expect(find.textContaining('Hubungkan Smart Scale'), findsNothing);
       expect(tester.takeException(), isNull);
 
       SmartScaleService.instance.debugAttachTestDevice(

@@ -20,6 +20,7 @@ import '../features/brew/timer/utils/brew_method_helper.dart';
 import '../features/brew/timer/widgets/brew_spec_header_bar.dart';
 import '../features/brew/timer/widgets/brew_iced_banner.dart';
 import '../features/brew/timer/widgets/brew_scale_live_badge.dart';
+import '../features/brew/timer/widgets/brew_timer_side_controls.dart';
 import '../features/brew/tts/brewing_tts_service.dart';
 import '../core/network/dio_client.dart';
 import '../features/gamification/controllers/gamification_reward_queue_controller.dart';
@@ -507,6 +508,10 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
     int runningWater = 0;
     int runningTime = 0;
 
+    final isBroadcasting = ref.watch(
+      baristaLiveTransmitterProvider.select((s) => s.isBroadcasting),
+    );
+
     return Scaffold(
       backgroundColor: AppTheme.bgCream,
       appBar: AppBar(
@@ -521,40 +526,97 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
               icon: Icon(_useBaristaCockpit ? CupertinoIcons.stopwatch : CupertinoIcons.square_list),
               onPressed: () => setState(() => _useBaristaCockpit = !_useBaristaCockpit),
             ),
-          IconButton(
-            tooltip: isEn ? 'Live Brew QR Stream' : 'Siarkan Live Brew QR',
-            icon: Icon(
-              Icons.qr_code_2_rounded,
-              size: 21,
-              color: ref.watch(
-                baristaLiveTransmitterProvider.select((s) => s.isBroadcasting),
-              )
-                  ? const Color(0xFFDC2626)
-                  : null,
+          PopupMenuButton<String>(
+            key: const Key('brew_appbar_menu_btn'),
+            tooltip: isEn ? 'Brew Menu' : 'Menu Seduh',
+            color: Colors.white,
+            elevation: 8,
+            offset: const Offset(0, 44),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: AppTheme.borderWarm),
             ),
-            onPressed: () => TableQrManagerModal.show(
-              context,
-              activeRecipe: _recipe,
-              weightSampler: () {
-                if (SmartScaleService.instance.isConnected) {
-                  return SmartScaleService.instance.currentWeight;
-                }
-                final frac = totalSeconds > 0
-                    ? (_elapsedSeconds / totalSeconds).clamp(0.0, 1.0)
-                    : 0.0;
-                return totalWaterGrams * frac;
-              },
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.menu_rounded, size: 24),
+                if (isBroadcasting)
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFDC2626),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
             ),
-          ),
-          IconButton(
-            tooltip: isEn ? 'Print Bluetooth Receipt' : 'Print Struk Resep Bluetooth',
-            icon: const Icon(CupertinoIcons.printer_fill, size: 20),
-            onPressed: () => ThermalReceiptSheet.show(context, _recipe),
-          ),
-          IconButton(
-            tooltip: isEn ? 'Brew Doctor (Flavor Correction)' : 'Brew Doctor (Saran Koreksi Rasa)',
-            icon: const Icon(CupertinoIcons.lightbulb, size: 20),
-            onPressed: _showDialInDoctorSheet,
+            onSelected: (value) {
+              switch (value) {
+                case 'live_brew':
+                  TableQrManagerModal.show(
+                    context,
+                    activeRecipe: _recipe,
+                    weightSampler: () {
+                      // Strictly real Bluetooth scale reading — never fake/estimated data
+                      return SmartScaleService.instance.isConnected
+                          ? SmartScaleService.instance.currentWeight
+                          : 0.0;
+                    },
+                  );
+                  break;
+                case 'print_receipt':
+                  ThermalReceiptSheet.show(context, _recipe);
+                  break;
+                case 'brew_doctor':
+                  _showDialInDoctorSheet();
+                  break;
+              }
+            },
+            itemBuilder: (ctx) => [
+              PopupMenuItem<String>(
+                value: 'live_brew',
+                child: _buildBrewMenuRow(
+                  icon: Icons.qr_code_2_rounded,
+                  iconColor: isBroadcasting
+                      ? const Color(0xFFDC2626)
+                      : AppTheme.primaryBrown,
+                  title: isEn ? 'Live Brew' : 'Live Brew',
+                  subtitle: isBroadcasting
+                      ? (isEn ? 'Broadcasting live' : 'Sedang menyiarkan')
+                      : (isEn ? 'Share live brew QR' : 'Siarkan Live Brew QR'),
+                  trailingBadge: isBroadcasting ? 'LIVE' : null,
+                ),
+              ),
+              const PopupMenuDivider(height: 1),
+              PopupMenuItem<String>(
+                value: 'print_receipt',
+                child: _buildBrewMenuRow(
+                  icon: CupertinoIcons.printer_fill,
+                  iconColor: AppTheme.primaryBrown,
+                  title: isEn ? 'Print Receipt' : 'Cetak Struk',
+                  subtitle: isEn
+                      ? 'Bluetooth thermal recipe slip'
+                      : 'Print struk resep Bluetooth',
+                ),
+              ),
+              const PopupMenuDivider(height: 1),
+              PopupMenuItem<String>(
+                value: 'brew_doctor',
+                child: _buildBrewMenuRow(
+                  icon: CupertinoIcons.lightbulb,
+                  iconColor: AppTheme.accentAmber,
+                  title: 'Brew Doctor',
+                  subtitle: isEn
+                      ? 'Flavor dial-in correction'
+                      : 'Saran koreksi rasa seduhan',
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -590,9 +652,10 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              _buildIsolatedCircularTimer(
+                              _buildCenteredTimerWithSideControls(
                                 family: family,
                                 activeTargetWater: activeTargetWater,
+                                isEn: isEn,
                               ),
                             ],
                           ),
@@ -684,21 +747,22 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
 
               const SizedBox(height: 6),
 
-              // Circular Timer Display (isolated via RepaintBoundary & ValueNotifier)
-              _buildIsolatedCircularTimer(
+              // Circular Timer Display (strictly centered) + 3 Side Icon Controls on the right
+              _buildCenteredTimerWithSideControls(
                 family: family,
                 activeTargetWater: activeTargetWater,
+                isEn: isEn,
               ),
 
-              const SizedBox(height: 10),
+              const SizedBox(height: 6),
 
-              // Live Smart Scale Badge
+              // Live Smart Scale Telemetry (shown ONLY when a real BLE scale is connected)
               BrewScaleLiveBadge(
                 isEn: isEn,
                 targetWaterGrams: activeTargetWater,
               ),
 
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
 
               // Scrollable Steps List
               Expanded(
@@ -754,6 +818,104 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildBrewMenuRow({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    String? trailingBadge,
+  }) {
+    return SizedBox(
+      width: 216,
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            alignment: Alignment.center,
+            child: Icon(icon, size: 18, color: iconColor),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textDark,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    color: AppTheme.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (trailingBadge != null) ...[
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDC2626),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                trailingBadge,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCenteredTimerWithSideControls({
+    required BrewMethodFamily family,
+    required int activeTargetWater,
+    required bool isEn,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          _buildIsolatedCircularTimer(
+            family: family,
+            activeTargetWater: activeTargetWater,
+          ),
+          Positioned(
+            right: 8,
+            child: BrewTimerSideControls(
+              isEn: isEn,
+              isBrewingRunning: _isRunning,
+            ),
+          ),
+        ],
       ),
     );
   }

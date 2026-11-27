@@ -15,6 +15,38 @@ class AudioService {
   static bool get isMuted => _isMuted;
   static final ValueNotifier<bool> isMutedNotifier = ValueNotifier<bool>(false);
 
+  /// Dedicated toggle for background brewing music (independent of Speaks / TTS).
+  static bool _isBgmEnabled = true;
+  static bool get isBgmEnabled => _isBgmEnabled;
+  static final ValueNotifier<bool> bgmEnabledNotifier = ValueNotifier<bool>(true);
+
+  static Future<void> toggleBgmEnabled({bool resumeIfBrewing = false}) async {
+    await setBgmEnabled(!_isBgmEnabled, resumeIfBrewing: resumeIfBrewing);
+  }
+
+  static Future<void> setBgmEnabled(
+    bool enabled, {
+    bool resumeIfBrewing = false,
+  }) async {
+    _isBgmEnabled = enabled;
+    bgmEnabledNotifier.value = enabled;
+    if (!enabled) {
+      try {
+        await _bgmStateSub?.cancel();
+        _bgmStateSub = null;
+        if (_bgmPlayer != null) {
+          await _bgmPlayer!.stop();
+          await _bgmPlayer!.dispose();
+          _bgmPlayer = null;
+        }
+      } catch (e) {
+        debugPrint('⚠️ AudioService.setBgmEnabled(false) error: $e');
+      }
+    } else if (!_isMuted && (resumeIfBrewing || _shouldBePlayingBgm)) {
+      await startBgm();
+    }
+  }
+
   static void toggleMute() {
     setMuted(!_isMuted);
   }
@@ -26,7 +58,7 @@ class AudioService {
       _bgmPlayer?.setVolume(0.0);
     } else {
       _bgmPlayer?.setVolume(0.55);
-      if (_shouldBePlayingBgm) {
+      if (_shouldBePlayingBgm && _isBgmEnabled) {
         if (_bgmPlayer == null) {
           startBgm();
         } else {
@@ -129,7 +161,7 @@ class AudioService {
   /// Memulai pemutaran musik santai 'Chill Coffee Lounge' saat menyeduh
   static Future<void> startBgm() async {
     _shouldBePlayingBgm = true;
-    if (_isMuted) return;
+    if (_isMuted || !_isBgmEnabled) return;
     try {
       await _initContext();
 
@@ -150,7 +182,10 @@ class AudioService {
 
       // Auto-resume jika OS Android mencoba menghentikan BGM saat transisi step atau countdown tick
       _bgmStateSub = player.onPlayerStateChanged.listen((state) {
-        if (_shouldBePlayingBgm && state == PlayerState.paused) {
+        if (_shouldBePlayingBgm &&
+            _isBgmEnabled &&
+            !_isMuted &&
+            state == PlayerState.paused) {
           debugPrint('☕ AudioService: Auto-resuming BGM after OS interrupt');
           player.resume();
         }
@@ -166,7 +201,7 @@ class AudioService {
 
   /// Memastikan BGM tetap aktif & berputar jika sempat di-pause oleh sistem
   static void ensureBgmPlaying() {
-    if (_isMuted) return;
+    if (_isMuted || !_isBgmEnabled) return;
     if (_shouldBePlayingBgm && _bgmPlayer != null) {
       if (_bgmPlayer!.state == PlayerState.paused) {
         _bgmPlayer!.resume();

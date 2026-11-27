@@ -1,4 +1,6 @@
+import 'dart:io' show Platform;
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../models/smart_scale_model.dart';
 import '../../../services/language_service.dart';
@@ -6,8 +8,7 @@ import '../../../services/smart_scale_service.dart';
 import '../../../theme/app_theme.dart';
 
 /// Coffee Labs bright-theme Bluetooth 5.2 Smart Scale scanner sheet.
-/// Scans exclusively for physical BLE coffee scales (TIMEMORE Black Mirror Dot,
-/// Coffee Labs Scale C3, Acaia, Felicita, Bookoo, BLE SIG 0x181D).
+/// Scans exclusively for real physical BLE coffee scales — ZERO fake devices.
 class ScaleDeviceSheet extends StatelessWidget {
   final SmartScaleService scaleService;
 
@@ -17,7 +18,9 @@ class ScaleDeviceSheet extends StatelessWidget {
   });
 
   static void show(BuildContext context, SmartScaleService service) {
-    service.startScan();
+    if (!service.isConnected) {
+      service.startScan();
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -29,9 +32,11 @@ class ScaleDeviceSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEn = LanguageService.isEnglish;
+    final canRequestTurnOn =
+        !kIsWeb && !Platform.environment.containsKey('FLUTTER_TEST') && Platform.isAndroid;
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.74,
+      height: MediaQuery.of(context).size.height * 0.78,
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
       decoration: const BoxDecoration(
         color: AppTheme.bgCream,
@@ -42,7 +47,10 @@ class ScaleDeviceSheet extends StatelessWidget {
         builder: (context, _) {
           final devices = scaleService.discoveredDevices;
           final isScanning = scaleService.isScanning;
+          final isConnected = scaleService.isConnected;
+          final activeDevice = scaleService.activeDevice;
           final statusNotice = scaleService.lastStatusMessage;
+          final isBtOff = scaleService.isBluetoothSupported && !scaleService.isBluetoothOn;
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,12 +71,19 @@ class ScaleDeviceSheet extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(9),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryBrown.withValues(alpha: 0.1),
+                      color: (isConnected
+                              ? const Color(0xFF16A34A)
+                              : AppTheme.primaryBrown)
+                          .withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
-                      CupertinoIcons.bluetooth,
-                      color: AppTheme.primaryBrown,
+                    child: Icon(
+                      isConnected
+                          ? Icons.bluetooth_connected_rounded
+                          : CupertinoIcons.bluetooth,
+                      color: isConnected
+                          ? const Color(0xFF16A34A)
+                          : AppTheme.primaryBrown,
                       size: 18,
                     ),
                   ),
@@ -80,7 +95,7 @@ class ScaleDeviceSheet extends StatelessWidget {
                         Text(
                           isEn
                               ? 'Bluetooth 5.2 Coffee Scales'
-                              : 'Pindai Timbangan Bluetooth 5.2',
+                              : 'Timbangan Bluetooth 5.2',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -90,16 +105,26 @@ class ScaleDeviceSheet extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          isScanning
+                          isConnected
                               ? (isEn
-                                  ? 'Scanning nearby BLE scales...'
-                                  : 'Memindai timbangan BLE di sekitar...')
-                              : (isEn
-                                  ? 'Turn on your scale and place it nearby'
-                                  : 'Nyalakan timbangan & dekatkan ke ponsel'),
-                          style: const TextStyle(
+                                  ? 'Connected to ${activeDevice!.name}'
+                                  : 'Terhubung ke ${activeDevice!.name}')
+                              : isScanning
+                                  ? (isEn
+                                      ? 'Scanning nearby real BLE scales...'
+                                      : 'Memindai timbangan BLE fisik di sekitar...')
+                                  : (isEn
+                                      ? 'Turn on your scale and place it nearby'
+                                      : 'Nyalakan timbangan & dekatkan ke ponsel'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
                             fontSize: 11,
-                            color: AppTheme.textMuted,
+                            fontWeight:
+                                isConnected ? FontWeight.w700 : FontWeight.w500,
+                            color: isConnected
+                                ? const Color(0xFF16A34A)
+                                : AppTheme.textMuted,
                           ),
                         ),
                       ],
@@ -137,7 +162,7 @@ class ScaleDeviceSheet extends StatelessWidget {
                           const SizedBox(width: 4),
                           Text(
                             isScanning
-                                ? (isEn ? 'Stop' : 'Stop')
+                                ? 'Stop'
                                 : (isEn ? 'Scan' : 'Pindai'),
                             style: const TextStyle(
                               fontSize: 11,
@@ -194,28 +219,110 @@ class ScaleDeviceSheet extends StatelessWidget {
                           ),
                         ),
                       ),
+                      if (isBtOff && canRequestTurnOn) ...[
+                        const SizedBox(width: 8),
+                        TextButton(
+                          onPressed: () async {
+                            final ok =
+                                await scaleService.requestTurnOnBluetooth();
+                            if (ok) {
+                              await scaleService.startScan();
+                            }
+                          },
+                          style: TextButton.styleFrom(
+                            backgroundColor: const Color(0xFFD97706),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            isEn ? 'Turn On' : 'Nyalakan',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
               ],
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               Expanded(
                 child: ListView(
                   children: [
-                    // 1. Discovered Physical Scales
-                    if (devices.isNotEmpty) ...[
-                      Text(
-                        isEn
-                            ? 'DISCOVERED DEVICES (${devices.length})'
-                            : 'PERANGKAT TERDETEKSI (${devices.length})',
-                        style: const TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.6,
-                          color: AppTheme.textMuted,
+                    // 0. Active Real Connected Scale Panel
+                    if (isConnected && activeDevice != null) ...[
+                      _buildActiveConnectedCard(context, activeDevice, isEn),
+                      const SizedBox(height: 14),
+                    ],
+
+                    // 1. Scan Filter Toggle (All real BLE devices vs Smart Scale filter)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            isEn
+                                ? 'DISCOVERED DEVICES (${devices.length})'
+                                : 'PERANGKAT TERDETEKSI (${devices.length})',
+                            style: const TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.6,
+                              color: AppTheme.textMuted,
+                            ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
+                        InkWell(
+                          onTap: () {
+                            final next = !scaleService.includeAllBleDevices;
+                            scaleService.setIncludeAllBleDevices(next);
+                            scaleService.startScan(includeAllDevices: next);
+                          },
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: scaleService.includeAllBleDevices
+                                  ? AppTheme.primaryBrown.withValues(alpha: 0.12)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: scaleService.includeAllBleDevices
+                                    ? AppTheme.primaryBrown
+                                    : AppTheme.borderWarm,
+                              ),
+                            ),
+                            child: Text(
+                              scaleService.includeAllBleDevices
+                                  ? (isEn ? 'All BLE: ON' : 'Semua BLE: ON')
+                                  : (isEn ? 'Scale Only' : 'Filter Timbangan'),
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: scaleService.includeAllBleDevices
+                                    ? AppTheme.primaryBrown
+                                    : AppTheme.textMuted,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    if (devices.isNotEmpty) ...[
                       ...devices.map((d) => _buildDiscoveredTile(context, d, isEn)),
                       const SizedBox(height: 16),
                     ] else ...[
@@ -249,12 +356,171 @@ class ScaleDeviceSheet extends StatelessWidget {
     );
   }
 
+  Widget _buildActiveConnectedCard(
+    BuildContext context,
+    SmartScaleDevice device,
+    bool isEn,
+  ) {
+    final weight = scaleService.currentWeight;
+    final flow = scaleService.flowRate;
+    final battery = scaleService.batteryLevel;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0FDF4),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF16A34A).withValues(alpha: 0.5),
+          width: 1.4,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF16A34A),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.bluetooth_connected_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      device.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.textDark,
+                      ),
+                    ),
+                    Text(
+                      '${device.shortBrand} • ${isEn ? 'REAL BLE LIVE' : 'TERHUBUNG REAL BLE'}${battery != null ? ' • $battery%' : ''}',
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF15803D),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${weight.toStringAsFixed(1)} g',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: AppTheme.textDark,
+                          fontFeatures: [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                      Text(
+                        '${flow.toStringAsFixed(1)} g/s',
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF15803D),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () => scaleService.tare(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryBrown,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 11,
+                    vertical: 9,
+                  ),
+                  minimumSize: const Size(0, 36),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  isEn ? 'TARE' : 'NOL',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              OutlinedButton(
+                onPressed: () async {
+                  await scaleService.disconnect();
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFB91C1C),
+                  side: const BorderSide(color: Color(0xFFFCA5A5)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 9,
+                  ),
+                  minimumSize: const Size(0, 36),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  isEn ? 'Disconnect' : 'Putus',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDiscoveredTile(
     BuildContext context,
     SmartScaleDevice device,
     bool isEn,
   ) {
-    final isCurrent = scaleService.activeDevice?.id == device.id;
+    final isCurrent =
+        scaleService.isConnected && scaleService.activeDevice?.id == device.id;
+    final isConnectingThis = scaleService.connectingDeviceId == device.id;
     final isC3 = device.brand == ScaleBrand.coffeeLabsC3;
 
     return Container(
@@ -265,7 +531,7 @@ class ScaleDeviceSheet extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isCurrent
-              ? const Color(0xFF0F766E)
+              ? const Color(0xFF16A34A)
               : AppTheme.borderWarm,
           width: isCurrent ? 1.5 : 1,
         ),
@@ -276,7 +542,7 @@ class ScaleDeviceSheet extends StatelessWidget {
             padding: const EdgeInsets.all(9),
             decoration: BoxDecoration(
               color: (isCurrent
-                      ? const Color(0xFF0F766E)
+                      ? const Color(0xFF16A34A)
                       : (isC3 ? AppTheme.primaryBrown : const Color(0xFF0369A1)))
                   .withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(11),
@@ -286,7 +552,7 @@ class ScaleDeviceSheet extends StatelessWidget {
                   ? CupertinoIcons.checkmark_circle_fill
                   : CupertinoIcons.bluetooth,
               color: isCurrent
-                  ? const Color(0xFF0F766E)
+                  ? const Color(0xFF16A34A)
                   : (isC3 ? AppTheme.primaryBrown : const Color(0xFF0369A1)),
               size: 18,
             ),
@@ -321,14 +587,18 @@ class ScaleDeviceSheet extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           ElevatedButton(
-            onPressed: () async {
-              if (isCurrent) {
-                await scaleService.disconnect();
-              } else {
-                await scaleService.connect(device);
-              }
-              if (context.mounted) Navigator.pop(context);
-            },
+            onPressed: scaleService.isConnecting
+                ? null
+                : () async {
+                    if (isCurrent) {
+                      await scaleService.disconnect();
+                    } else {
+                      final ok = await scaleService.connect(device);
+                      if (ok && context.mounted) {
+                        Navigator.pop(context);
+                      }
+                    }
+                  },
             style: ElevatedButton.styleFrom(
               backgroundColor:
                   isCurrent ? const Color(0xFFB91C1C) : AppTheme.primaryBrown,
@@ -340,12 +610,24 @@ class ScaleDeviceSheet extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            child: Text(
-              isCurrent
-                  ? (isEn ? 'Disconnect' : 'Putus')
-                  : (isEn ? 'Connect' : 'Hubungkan'),
-              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
-            ),
+            child: isConnectingThis
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text(
+                    isCurrent
+                        ? (isEn ? 'Disconnect' : 'Putus')
+                        : (isEn ? 'Connect' : 'Hubungkan'),
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
           ),
         ],
       ),
@@ -367,7 +649,7 @@ class ScaleDeviceSheet extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppTheme.bgCream,
               shape: BoxShape.circle,
             ),
@@ -396,8 +678,8 @@ class ScaleDeviceSheet extends StatelessWidget {
           const SizedBox(height: 5),
           Text(
             isEn
-                ? 'Smart Scale works exclusively with real Bluetooth coffee scales. Ensure your TIMEMORE Dot or Coffee Labs Scale C3 is powered on and disconnected from other apps.'
-                : 'Smart Scale bekerja langsung dengan timbangan kopi Bluetooth fisik. Pastikan TIMEMORE Black Mirror Dot atau Coffee Labs Scale C3 menyala dan tidak terhubung ke aplikasi lain.',
+                ? 'Smart Scale works exclusively with real Bluetooth coffee scales. Ensure your TIMEMORE Dot, Acaia, Felicita, or Bookoo scale is powered on and disconnected from other apps.'
+                : 'Smart Scale bekerja 100% langsung dengan timbangan kopi Bluetooth fisik. Pastikan timbangan menyala dan tidak terhubung ke aplikasi lain.',
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 11,

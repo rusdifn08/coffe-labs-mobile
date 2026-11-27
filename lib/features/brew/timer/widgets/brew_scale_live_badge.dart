@@ -2,12 +2,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../../services/smart_scale_service.dart';
 import '../../../../theme/app_theme.dart';
-import '../../../smart_scale/widgets/scale_device_sheet.dart';
 
 /// Live Bluetooth 5.2 Smart Scale telemetry bar displayed inside Brewing Time
-/// (`BrewTimerScreen`). Shows real-time weight (0.1g), flow rate (g/s),
-/// target step water progress, and 1-tap TARE when connected — or a compact
-/// Bluetooth pairing button when disconnected.
+/// (`BrewTimerScreen`) ONLY when a real physical BLE coffee scale is connected.
+/// Shows real-time weight (0.1g), flow rate (g/s), target step water progress,
+/// and 1-tap TARE. Renders nothing when disconnected because pairing is now
+/// handled via the side Bluetooth icon button beside the timer.
 class BrewScaleLiveBadge extends StatelessWidget {
   final bool isEn;
   final int? targetWaterGrams;
@@ -27,55 +27,7 @@ class BrewScaleLiveBadge extends StatelessWidget {
           final scale = SmartScaleService.instance;
 
           if (!scale.isConnected) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
-              child: InkWell(
-                onTap: () => ScaleDeviceSheet.show(context, scale),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 7,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppTheme.borderWarm),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        CupertinoIcons.bluetooth,
-                        size: 14,
-                        color: AppTheme.primaryBrown,
-                      ),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          isEn
-                              ? 'Connect Smart Scale (TIMEMORE Dot / C3)'
-                              : 'Hubungkan Smart Scale (TIMEMORE Dot / C3)',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 11.2,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.primaryBrown,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(
-                        CupertinoIcons.chevron_right,
-                        size: 13,
-                        color: AppTheme.textMuted,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
+            return const SizedBox.shrink();
           }
 
           final weight = scale.currentWeight;
@@ -85,17 +37,17 @@ class BrewScaleLiveBadge extends StatelessWidget {
               target > 0 ? (weight / target).clamp(0.0, 1.0) : null;
 
           return Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+            margin: const EdgeInsets.fromLTRB(20, 4, 20, 4),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: const Color(0xFF0F766E).withValues(alpha: 0.35),
+                color: const Color(0xFF16A34A).withValues(alpha: 0.45),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primaryBrown.withValues(alpha: 0.05),
+                  color: const Color(0xFF16A34A).withValues(alpha: 0.08),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -109,7 +61,7 @@ class BrewScaleLiveBadge extends StatelessWidget {
                     const Icon(
                       CupertinoIcons.gauge,
                       size: 15,
-                      color: AppTheme.primaryBrown,
+                      color: Color(0xFF16A34A),
                     ),
                     const SizedBox(width: 6),
                     Expanded(
@@ -155,7 +107,7 @@ class BrewScaleLiveBadge extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800,
-                                color: Color(0xFF0F766E),
+                                color: Color(0xFF15803D),
                               ),
                             ),
                           ),
@@ -197,7 +149,7 @@ class BrewScaleLiveBadge extends StatelessWidget {
                       backgroundColor: AppTheme.bgCream,
                       valueColor: AlwaysStoppedAnimation<Color>(
                         progress >= 0.98
-                            ? const Color(0xFF0F766E)
+                            ? const Color(0xFF16A34A)
                             : AppTheme.primaryBrown,
                       ),
                     ),

@@ -7,12 +7,13 @@ import '../models/smart_scale_model.dart';
 
 /// Bluetooth 5.2 Smart Scale Driver for Coffee Labs.
 ///
-/// Works strictly with real Bluetooth LE coffee scales:
+/// Works strictly with real Bluetooth LE coffee scales — ZERO simulated/fake data:
 /// - TIMEMORE Black Mirror Dot / Nano / Basic / 2
-/// - Coffee Labs Scale C3 (Native BLE 5.2 protocol, hardware coming soon)
-/// - Acaia Pearl / Lunar / Pyxis
-/// - Felicita Arc / Incline & Bookoo Themis
-/// - Generic BLE SIG Weight Scale (`0x181D` / `0xFFE0`)
+/// - Coffee Labs Scale C3 (Native BLE 5.2 protocol)
+/// - Acaia Pearl / Lunar / Pyxis / Cinco / Orion
+/// - Felicita Arc / Incline / Parallel
+/// - Bookoo Themis Mini
+/// - Decent / Hiroia / Skale / Eureka / DiFluid / MHW-3Bomber / Generic BLE SIG
 class SmartScaleService extends ChangeNotifier {
   static final SmartScaleService instance = SmartScaleService._internal();
 
@@ -20,16 +21,27 @@ class SmartScaleService extends ChangeNotifier {
     _initBluetooth();
   }
 
-  // Bluetooth State
+  // Real Bluetooth Adapter & Connection State
   bool _isBluetoothSupported = true;
-  bool _isBluetoothOn = true;
+  bool _isBluetoothOn = false;
   bool _isScanning = false;
+  bool _isConnecting = false;
+  bool _isConnectionVerified = false;
+  bool _includeAllBleDevices = false;
+  String? _connectingDeviceId;
   String? _lastStatusMessage;
+  DateTime? _lastPacketAt;
+  int _packetCount = 0;
+
   BluetoothDevice? _connectedDevice;
   BluetoothCharacteristic? _commandCharacteristic;
-  StreamSubscription? _scanSub;
-  StreamSubscription? _notifySub;
-  StreamSubscription? _connectionSub;
+  StreamSubscription<BluetoothAdapterState>? _adapterSub;
+  StreamSubscription<List<ScanResult>>? _scanSub;
+  StreamSubscription<bool>? _isScanningSub;
+  StreamSubscription<List<int>>? _notifySub;
+  StreamSubscription<BluetoothConnectionState>? _connectionSub;
+  Timer? _scanTimeoutTimer;
+  Timer? _heartbeatTimer;
 
   // Active Device Info
   SmartScaleDevice? _activeScaleDevice;
@@ -39,7 +51,7 @@ class SmartScaleService extends ChangeNotifier {
   ScaleBrewMode _brewMode = ScaleBrewMode.pourOver;
   Map<String, dynamic>? _activeRecipe;
 
-  // Tare & Readings
+  // Tare & Readings (strictly from real BLE notify payloads)
   double _rawWeight = 0.0;
   double _tareOffset = 0.0;
   double _currentWeight = 0.0;
@@ -60,24 +72,44 @@ class SmartScaleService extends ChangeNotifier {
   bool get isBluetoothSupported => _isBluetoothSupported;
   bool get isBluetoothOn => _isBluetoothOn;
   bool get isScanning => _isScanning;
-  bool get isConnected => _activeScaleDevice != null;
+  bool get isConnecting => _isConnecting;
+  String? get connectingDeviceId => _connectingDeviceId;
+  bool get includeAllBleDevices => _includeAllBleDevices;
+
+  /// Strictly true ONLY when a physical BLE device has an active verified GATT connection.
+  bool get isConnected => _isConnectionVerified && _activeScaleDevice != null;
+
+  bool get hasLiveTelemetry => isConnected && _packetCount > 0;
+  DateTime? get lastPacketAt => _lastPacketAt;
+  int get packetCount => _packetCount;
   String? get lastStatusMessage => _lastStatusMessage;
-  SmartScaleDevice? get activeDevice => _activeScaleDevice;
+  SmartScaleDevice? get activeDevice => isConnected ? _activeScaleDevice : null;
   List<SmartScaleDevice> get discoveredDevices =>
       List.unmodifiable(_discoveredDevices);
 
   ScaleBrewMode get brewMode => _brewMode;
   Map<String, dynamic>? get activeRecipe => _activeRecipe;
 
-  double get currentWeight => _currentWeight;
-  double get flowRate => _flowRate;
+  double get currentWeight => isConnected ? _currentWeight : 0.0;
+  double get flowRate => isConnected ? _flowRate : 0.0;
   bool get isStable => _isStable;
-  int? get batteryLevel => _batteryLevel;
-  int? get scaleTimerSeconds => _scaleTimerSeconds;
+  int? get batteryLevel => isConnected ? _batteryLevel : null;
+  int? get scaleTimerSeconds => isConnected ? _scaleTimerSeconds : null;
   bool get autoStartTimerOnPour => _autoStartTimerOnPour;
+
+  bool get _isRuntimeBlePlatform =>
+      !kIsWeb &&
+      (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) &&
+      !Platform.environment.containsKey('FLUTTER_TEST');
 
   void setAutoStartTimerOnPour(bool value) {
     _autoStartTimerOnPour = value;
+    notifyListeners();
+  }
+
+  void setIncludeAllBleDevices(bool value) {
+    if (_includeAllBleDevices == value) return;
+    _includeAllBleDevices = value;
     notifyListeners();
   }
 
@@ -102,22 +134,34 @@ class SmartScaleService extends ChangeNotifier {
   }
 
   void _initBluetooth() {
-    if (kIsWeb ||
-        (!Platform.isAndroid && !Platform.isIOS && !Platform.isMacOS) ||
-        Platform.environment.containsKey('FLUTTER_TEST')) {
+    if (!_isRuntimeBlePlatform) {
       _isBluetoothSupported = false;
       _isBluetoothOn = false;
       return;
     }
 
     try {
-      FlutterBluePlus.adapterState.listen(
+      _adapterSub?.cancel();
+      _adapterSub = FlutterBluePlus.adapterState.listen(
         (state) {
-          _isBluetoothOn = state == BluetoothAdapterState.on;
-          if (!_isBluetoothOn && _connectedDevice != null) {
-            disconnect();
+          if (state == BluetoothAdapterState.unknown) return;
+          final nowOn = state == BluetoothAdapterState.on;
+          final changed = _isBluetoothOn != nowOn;
+          _isBluetoothOn = nowOn;
+
+          if (!nowOn) {
+            if (_isScanning) {
+              _isScanning = false;
+              _scanTimeoutTimer?.cancel();
+            }
+            if (_connectedDevice != null || _activeScaleDevice != null) {
+              unawaited(disconnect(
+                reason: 'Bluetooth dimatikan. Koneksi timbangan terputus.',
+              ));
+              return;
+            }
           }
-          notifyListeners();
+          if (changed) notifyListeners();
         },
         onError: (Object e) {
           debugPrint('Bluetooth stream notice: $e');
@@ -126,6 +170,14 @@ class SmartScaleService extends ChangeNotifier {
           notifyListeners();
         },
       );
+
+      _isScanningSub?.cancel();
+      _isScanningSub = FlutterBluePlus.isScanning.listen((scanning) {
+        if (_isScanning != scanning) {
+          _isScanning = scanning;
+          notifyListeners();
+        }
+      });
     } catch (e) {
       debugPrint('Bluetooth initialization notice: $e');
       _isBluetoothSupported = false;
@@ -133,19 +185,63 @@ class SmartScaleService extends ChangeNotifier {
     }
   }
 
+  /// Requests Android OS to turn on Bluetooth adapter (no-op on iOS where OS settings control it).
+  Future<bool> requestTurnOnBluetooth() async {
+    if (!_isRuntimeBlePlatform) return false;
+    try {
+      if (Platform.isAndroid) {
+        await FlutterBluePlus.turnOn();
+        final state = await _resolveAdapterState();
+        _isBluetoothOn = state == BluetoothAdapterState.on;
+        if (_isBluetoothOn) {
+          _lastStatusMessage = null;
+        }
+        notifyListeners();
+        return _isBluetoothOn;
+      }
+    } catch (e) {
+      debugPrint('Bluetooth turnOn notice: $e');
+      _lastStatusMessage =
+          'Tidak dapat menyalakan Bluetooth otomatis. Silakan aktifkan Bluetooth dari pengaturan ponsel.';
+      notifyListeners();
+    }
+    return false;
+  }
+
+  Future<BluetoothAdapterState> _resolveAdapterState() async {
+    try {
+      return await FlutterBluePlus.adapterState
+          .where((s) => s != BluetoothAdapterState.unknown)
+          .first
+          .timeout(
+            const Duration(seconds: 3),
+            onTimeout: () => FlutterBluePlus.adapterStateNow,
+          );
+    } catch (_) {
+      return BluetoothAdapterState.unknown;
+    }
+  }
+
   // ==========================================
   // SCANNING FOR REAL BLUETOOTH 5.2 SCALES
   // ==========================================
-  Future<void> startScan({Duration timeout = const Duration(seconds: 10)}) async {
-    if (_isScanning) return;
+  Future<void> startScan({
+    Duration timeout = const Duration(seconds: 12),
+    bool? includeAllDevices,
+  }) async {
+    if (includeAllDevices != null) {
+      _includeAllBleDevices = includeAllDevices;
+    }
+    if (_isScanning) {
+      await stopScan();
+    }
 
     _discoveredDevices.clear();
     _lastStatusMessage = null;
 
-    if (kIsWeb ||
-        (!Platform.isAndroid && !Platform.isIOS && !Platform.isMacOS) ||
-        Platform.environment.containsKey('FLUTTER_TEST')) {
+    if (!_isRuntimeBlePlatform) {
       _isBluetoothSupported = false;
+      _isBluetoothOn = false;
       _isScanning = false;
       _lastStatusMessage =
           'Bluetooth LE hanya aktif di perangkat Android / iOS.';
@@ -160,33 +256,50 @@ class SmartScaleService extends ChangeNotifier {
       final isSupported = await FlutterBluePlus.isSupported;
       if (!isSupported) {
         _isBluetoothSupported = false;
+        _isBluetoothOn = false;
         _isScanning = false;
         _lastStatusMessage = 'Perangkat ini tidak mendukung Bluetooth LE.';
         notifyListeners();
         return;
       }
+      _isBluetoothSupported = true;
 
-      final adapterState = await FlutterBluePlus.adapterState.first.timeout(
-        const Duration(seconds: 2),
-        onTimeout: () => BluetoothAdapterState.unknown,
-      );
+      final adapterState = await _resolveAdapterState();
       if (adapterState != BluetoothAdapterState.on) {
         _isBluetoothOn = false;
         _isScanning = false;
         _lastStatusMessage =
-            'Aktifkan Bluetooth di ponsel Anda untuk memindai TIMEMORE Dot atau Coffee Labs Scale C3.';
+            'Bluetooth ponsel nonaktif. Aktifkan Bluetooth terlebih dahulu untuk memindai timbangan kopi.';
         notifyListeners();
         return;
       }
       _isBluetoothOn = true;
 
-      await FlutterBluePlus.startScan(
-        timeout: timeout,
-        androidUsesFineLocation: true,
-      );
+      // Include any already-connected real BLE coffee scale reported by the OS
+      for (final connected in FlutterBluePlus.connectedDevices) {
+        final name = connected.platformName;
+        if (name.isEmpty) continue;
+        final brand = detectBrand(name, const []);
+        if (_includeAllBleDevices ||
+            brand != ScaleBrand.generic ||
+            isLikelyScale(name, const [])) {
+          _upsertDiscoveredDevice(
+            SmartScaleDevice(
+              id: connected.remoteId.str,
+              name: name,
+              rssi: -50,
+              brand: brand,
+              isConnected: _activeScaleDevice?.id == connected.remoteId.str &&
+                  _isConnectionVerified,
+            ),
+          );
+        }
+      }
 
-      _scanSub?.cancel();
+      // Listen BEFORE starting scan so no early advertisement packets are missed
+      await _scanSub?.cancel();
       _scanSub = FlutterBluePlus.scanResults.listen((results) {
+        bool mutated = false;
         for (final r in results) {
           final name = r.device.platformName.isNotEmpty
               ? r.device.platformName
@@ -194,52 +307,89 @@ class SmartScaleService extends ChangeNotifier {
           final uuids = r.advertisementData.serviceUuids;
           final brand = detectBrand(name, uuids);
 
-          if (brand != ScaleBrand.generic || isLikelyScale(name, uuids)) {
-            final deviceId = r.device.remoteId.str;
-            final existingIndex =
-                _discoveredDevices.indexWhere((d) => d.id == deviceId);
-            final shortId = deviceId.length >= 5
-                ? deviceId.substring(deviceId.length - 5)
-                : deviceId;
-            final device = SmartScaleDevice(
-              id: deviceId,
-              name: name.isNotEmpty ? name : 'BLE Smart Scale ($shortId)',
-              rssi: r.rssi,
-              brand: brand,
-            );
+          final shouldInclude = brand != ScaleBrand.generic ||
+              isLikelyScale(name, uuids) ||
+              (_includeAllBleDevices && name.trim().isNotEmpty);
 
-            if (existingIndex >= 0) {
-              _discoveredDevices[existingIndex] = device;
-            } else {
-              _discoveredDevices.add(device);
-            }
-            // Sort strongest RSSI first
-            _discoveredDevices.sort((a, b) => b.rssi.compareTo(a.rssi));
-            notifyListeners();
-          }
+          if (!shouldInclude) continue;
+
+          final deviceId = r.device.remoteId.str;
+          final shortId = deviceId.length >= 5
+              ? deviceId.substring(deviceId.length - 5)
+              : deviceId;
+          final device = SmartScaleDevice(
+            id: deviceId,
+            name: name.isNotEmpty ? name : 'BLE Smart Scale ($shortId)',
+            rssi: r.rssi,
+            brand: brand,
+            isConnected:
+                _activeScaleDevice?.id == deviceId && _isConnectionVerified,
+          );
+          _upsertDiscoveredDevice(device);
+          mutated = true;
+        }
+        if (mutated) {
+          notifyListeners();
         }
       });
 
-      Future.delayed(timeout, () {
-        stopScan();
+      // Match AndroidManifest BLUETOOTH_SCAN neverForLocation flag so Android 12+
+      // scans reliably without requiring GPS/Location services.
+      await FlutterBluePlus.startScan(
+        timeout: timeout,
+        androidUsesFineLocation: false,
+      );
+
+      _scanTimeoutTimer?.cancel();
+      _scanTimeoutTimer = Timer(timeout + const Duration(milliseconds: 300), () {
+        if (_isScanning) {
+          unawaited(stopScan());
+        }
       });
     } catch (e) {
       debugPrint('Error starting Bluetooth scan: $e');
       _isScanning = false;
-      _lastStatusMessage =
-          'Gagal memindai Bluetooth. Pastikan izin Bluetooth & Lokasi aktif.';
+      final err = e.toString().toLowerCase();
+      if (err.contains('permission') || err.contains('security')) {
+        _lastStatusMessage =
+            'Izin Bluetooth (Perangkat Terdekat) belum diberikan. Izinkan akses Bluetooth di Pengaturan Aplikasi.';
+      } else if (err.contains('adapter') || err.contains('turned off')) {
+        _isBluetoothOn = false;
+        _lastStatusMessage =
+            'Bluetooth ponsel belum menyala. Nyalakan Bluetooth lalu pindai ulang.';
+      } else {
+        _lastStatusMessage =
+            'Gagal memindai Bluetooth. Pastikan Bluetooth aktif dan izin perangkat terdekat diizinkan.';
+      }
       notifyListeners();
     }
   }
 
+  void _upsertDiscoveredDevice(SmartScaleDevice device) {
+    final existingIndex =
+        _discoveredDevices.indexWhere((d) => d.id == device.id);
+    if (existingIndex >= 0) {
+      _discoveredDevices[existingIndex] = device;
+    } else {
+      _discoveredDevices.add(device);
+    }
+    _discoveredDevices.sort((a, b) => b.rssi.compareTo(a.rssi));
+  }
+
   Future<void> stopScan() async {
-    if (!_isScanning) return;
-    try {
-      await FlutterBluePlus.stopScan();
-    } catch (_) {}
-    _scanSub?.cancel();
-    _isScanning = false;
-    notifyListeners();
+    _scanTimeoutTimer?.cancel();
+    _scanTimeoutTimer = null;
+    if (_isRuntimeBlePlatform) {
+      try {
+        await FlutterBluePlus.stopScan();
+      } catch (_) {}
+    }
+    await _scanSub?.cancel();
+    _scanSub = null;
+    if (_isScanning) {
+      _isScanning = false;
+      notifyListeners();
+    }
   }
 
   @visibleForTesting
@@ -256,6 +406,21 @@ class SmartScaleService extends ChangeNotifier {
         lower.contains('nano') ||
         lower.contains('themis') ||
         lower.contains('bookoo') ||
+        lower.contains('decent') ||
+        lower.contains('hiroia') ||
+        lower.contains('jimmy') ||
+        lower.contains('skale') ||
+        lower.contains('eureka') ||
+        lower.contains('precisa') ||
+        lower.contains('difluid') ||
+        lower.contains('microbalance') ||
+        lower.contains('varia') ||
+        lower.contains('aku') ||
+        lower.contains('mhw') ||
+        lower.contains('bomber') ||
+        lower.contains('searchpean') ||
+        lower.contains('tiny2') ||
+        lower.contains('kc200') ||
         lower.contains('c3')) {
       return true;
     }
@@ -263,8 +428,11 @@ class SmartScaleService extends ChangeNotifier {
       final str = uuid.str.toLowerCase();
       if (str.contains('181d') ||
           str.contains('ffe0') ||
+          str.contains('fff0') ||
+          str.contains('ffb0') ||
           str.contains('1820') ||
           str.contains('ff00') ||
+          str.contains('0e80') ||
           str.contains('c0ffee')) {
         return true;
       }
@@ -298,6 +466,7 @@ class SmartScaleService extends ChangeNotifier {
         lower.contains('lunar') ||
         lower.contains('pearl') ||
         lower.contains('cinco') ||
+        lower.contains('orion') ||
         lower.contains('pyxis')) {
       return ScaleBrand.acaia;
     }
@@ -314,86 +483,227 @@ class SmartScaleService extends ChangeNotifier {
   }
 
   // ==========================================
-  // CONNECTION MANAGEMENT
+  // REAL BLE CONNECTION MANAGEMENT
   // ==========================================
   Future<bool> connect(SmartScaleDevice device) async {
+    if (_isConnecting) return false;
     await stopScan();
     _lastStatusMessage = null;
 
+    if (!_isRuntimeBlePlatform) {
+      _lastStatusMessage =
+          'Koneksi Bluetooth LE hanya tersedia pada perangkat Android / iOS.';
+      notifyListeners();
+      return false;
+    }
+
+    final adapterState = await _resolveAdapterState();
+    if (adapterState != BluetoothAdapterState.on) {
+      _isBluetoothOn = false;
+      _lastStatusMessage =
+          'Bluetooth belum aktif. Nyalakan Bluetooth sebelum menghubungkan ${device.name}.';
+      notifyListeners();
+      return false;
+    }
+    _isBluetoothOn = true;
+
+    // Cleanly close any previous connection first
+    if (_connectedDevice != null && _connectedDevice!.remoteId.str != device.id) {
+      await disconnect();
+    }
+
+    _isConnecting = true;
+    _connectingDeviceId = device.id;
+    notifyListeners();
+
+    BluetoothDevice? bluetoothDevice;
     try {
-      final bluetoothDevice = BluetoothDevice.fromId(device.id);
+      bluetoothDevice = BluetoothDevice.fromId(device.id);
       await bluetoothDevice.connect(
         license: License.nonprofit,
-        timeout: const Duration(seconds: 10),
+        timeout: const Duration(seconds: 12),
       );
+
+      // Verify real physical connection state before proceeding
+      final currentConnState = await bluetoothDevice.connectionState.first
+          .timeout(
+            const Duration(seconds: 3),
+            onTimeout: () => BluetoothConnectionState.disconnected,
+          );
+      if (currentConnState != BluetoothConnectionState.connected) {
+        throw StateError('BLE device did not reach connected state');
+      }
+
       _connectedDevice = bluetoothDevice;
 
-      _connectionSub?.cancel();
+      await _connectionSub?.cancel();
       _connectionSub = bluetoothDevice.connectionState.listen((state) {
-        if (state == BluetoothConnectionState.disconnected &&
-            _activeScaleDevice?.id == device.id) {
-          _clearActiveConnectionState();
-          _lastStatusMessage = 'Koneksi ke ${device.name} terputus.';
-          notifyListeners();
+        if (state == BluetoothConnectionState.disconnected) {
+          final wasActive = _activeScaleDevice?.id == device.id ||
+              _connectedDevice?.remoteId.str == device.id;
+          if (wasActive) {
+            _heartbeatTimer?.cancel();
+            _heartbeatTimer = null;
+            _notifySub?.cancel();
+            _notifySub = null;
+            _connectedDevice = null;
+            _clearActiveConnectionState();
+            _lastStatusMessage = 'Koneksi ke ${device.name} terputus.';
+            notifyListeners();
+          }
         }
       });
 
       final services = await bluetoothDevice.discoverServices();
       BluetoothCharacteristic? notifyChar;
       BluetoothCharacteristic? writeChar;
+      int bestNotifyScore = -1;
+      int bestWriteScore = -1;
 
       for (final service in services) {
         final sUuid = service.uuid.str.toLowerCase();
-        final isPriorityService = sUuid.contains('181d') ||
-            sUuid.contains('ffe0') ||
-            sUuid.contains('ff00') ||
-            sUuid.contains('1820') ||
-            sUuid.contains('c0ffee');
+        // Skip standard GAP/GATT/Device Info services so we never subscribe to generic metadata
+        if (sUuid.endsWith('1800') ||
+            sUuid.endsWith('1801') ||
+            sUuid.endsWith('180a')) {
+          continue;
+        }
+        final servicePriority = _scoreServiceUuid(sUuid, device.brand);
+
         for (final char in service.characteristics) {
+          final cUuid = char.uuid.str.toLowerCase();
+          final charBonus = _scoreCharacteristicUuid(cUuid);
+          final score = servicePriority + charBonus;
+
           if ((char.properties.notify || char.properties.indicate) &&
-              (notifyChar == null || isPriorityService)) {
+              score > bestNotifyScore) {
+            bestNotifyScore = score;
             notifyChar = char;
           }
           if ((char.properties.write ||
                   char.properties.writeWithoutResponse) &&
-              (writeChar == null || isPriorityService)) {
+              score > bestWriteScore) {
+            bestWriteScore = score;
             writeChar = char;
           }
         }
       }
 
-      if (notifyChar != null) {
-        _commandCharacteristic = writeChar;
-        await notifyChar.setNotifyValue(true);
-        _notifySub?.cancel();
-        _notifySub = notifyChar.lastValueStream.listen((data) {
-          _processScaleBytes(data, device.brand);
-        });
-
-        _activeScaleDevice = device.copyWith(isConnected: true);
-        _hasTriggeredAutoStart = false;
-        notifyListeners();
-        return true;
-      } else {
+      if (notifyChar == null) {
         await bluetoothDevice.disconnect();
+        _connectedDevice = null;
+        _clearActiveConnectionState();
         _lastStatusMessage =
-            'Karakteristik berat BLE tidak ditemukan pada ${device.name}.';
-        notifyListeners();
+            'Karakteristik berat BLE tidak ditemukan pada ${device.name}. Pastikan perangkat adalah timbangan BLE yang kompatibel.';
         return false;
       }
+
+      _commandCharacteristic = writeChar;
+      await notifyChar.setNotifyValue(true);
+      await _notifySub?.cancel();
+      _notifySub = notifyChar.onValueReceived.listen((data) {
+        _processScaleBytes(data, device.brand);
+      });
+
+      _activeScaleDevice = device.copyWith(isConnected: true);
+      _isConnectionVerified = true;
+      _hasTriggeredAutoStart = false;
+      _lastPacketAt = null;
+      _packetCount = 0;
+
+      // Update discovered list badge
+      _upsertDiscoveredDevice(_activeScaleDevice!);
+
+      // Perform protocol-specific real BLE handshake when needed (e.g., Acaia)
+      await _startScaleHandshakeIfNeeded(device.brand);
+
+      return true;
     } catch (e) {
       debugPrint('Failed to connect to scale: $e');
+      try {
+        await bluetoothDevice?.disconnect();
+      } catch (_) {}
+      _connectedDevice = null;
+      _clearActiveConnectionState();
       _lastStatusMessage =
           'Gagal terhubung ke ${device.name}. Pastikan timbangan menyala & tidak terhubung ke aplikasi lain.';
-      notifyListeners();
       return false;
+    } finally {
+      _isConnecting = false;
+      _connectingDeviceId = null;
+      notifyListeners();
     }
   }
 
-  Future<void> disconnect() async {
-    _notifySub?.cancel();
+  int _scoreServiceUuid(String sUuid, ScaleBrand brand) {
+    if (brand == ScaleBrand.coffeeLabsC3 && sUuid.contains('c0ffee')) return 100;
+    if (sUuid.contains('181d')) return 90; // BLE SIG Weight Scale Service
+    if (sUuid.contains('ffe0') || sUuid.contains('fff0')) return 85; // Timemore / Felicita / Decent / Generic UART
+    if (sUuid.contains('1820') || sUuid.contains('0e80')) return 85; // Acaia / Bookoo
+    if (sUuid.contains('ffb0') || sUuid.contains('ff00')) return 80;
+    if (sUuid.contains('c0ffee')) return 80;
+    return 10;
+  }
+
+  int _scoreCharacteristicUuid(String cUuid) {
+    if (cUuid.contains('2a9d')) return 30; // BLE SIG Weight Measurement
+    if (cUuid.contains('ffe1') ||
+        cUuid.contains('fff4') ||
+        cUuid.contains('fff1') ||
+        cUuid.contains('ff11') ||
+        cUuid.contains('ff12') ||
+        cUuid.contains('2a80')) {
+      return 25;
+    }
+    return 5;
+  }
+
+  Future<void> _startScaleHandshakeIfNeeded(ScaleBrand brand) async {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+    final cmd = _commandCharacteristic;
+    if (cmd == null) return;
+
+    if (brand == ScaleBrand.acaia) {
+      try {
+        // Acaia Identify + Notification Request so scale streams real weight frames
+        const identPayload = [
+          0xEF, 0xDD, 0x0B, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36,
+          0x37, 0x38, 0x39, 0x30, 0x31, 0x32, 0x33, 0x34, 0x9A, 0x6D,
+        ];
+        const notifyConfig = [
+          0xEF, 0xDD, 0x0C, 0x09, 0x00, 0x01, 0x01, 0x02, 0x02, 0x05,
+          0x03, 0x04, 0x15, 0x06,
+        ];
+        const heartbeat = [0xEF, 0xDD, 0x00, 0x02, 0x00, 0x02, 0x00];
+        final withoutResp = cmd.properties.writeWithoutResponse;
+        await cmd.write(identPayload, withoutResponse: withoutResp);
+        await Future.delayed(const Duration(milliseconds: 120));
+        await cmd.write(notifyConfig, withoutResponse: withoutResp);
+
+        _heartbeatTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+          if (!isConnected || _commandCharacteristic == null) {
+            _heartbeatTimer?.cancel();
+            return;
+          }
+          unawaited(
+            _commandCharacteristic!
+                .write(heartbeat, withoutResponse: withoutResp)
+                .catchError((_) {}),
+          );
+        });
+      } catch (e) {
+        debugPrint('Acaia handshake notice: $e');
+      }
+    }
+  }
+
+  Future<void> disconnect({String? reason}) async {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+    await _notifySub?.cancel();
     _notifySub = null;
-    _connectionSub?.cancel();
+    await _connectionSub?.cancel();
     _connectionSub = null;
 
     if (_connectedDevice != null) {
@@ -404,10 +714,20 @@ class SmartScaleService extends ChangeNotifier {
     }
 
     _clearActiveConnectionState();
+    if (reason != null) {
+      _lastStatusMessage = reason;
+    }
+    // Clear connected flag in discovered list
+    for (int i = 0; i < _discoveredDevices.length; i++) {
+      if (_discoveredDevices[i].isConnected) {
+        _discoveredDevices[i] = _discoveredDevices[i].copyWith(isConnected: false);
+      }
+    }
     notifyListeners();
   }
 
   void _clearActiveConnectionState() {
+    _isConnectionVerified = false;
     _commandCharacteristic = null;
     _activeScaleDevice = null;
     _currentWeight = 0.0;
@@ -417,12 +737,14 @@ class SmartScaleService extends ChangeNotifier {
     _isStable = true;
     _batteryLevel = null;
     _scaleTimerSeconds = null;
+    _lastPacketAt = null;
+    _packetCount = 0;
     _weightHistory.clear();
     _hasTriggeredAutoStart = false;
   }
 
   /// Legacy no-op retained so `SmartScaleRepository` stays source-compatible
-  /// without injecting any fake virtual device into user scans.
+  /// without injecting any fake virtual device or fake weight into user sessions.
   void setSimulatedFlowRate(double gramsPerSec) {}
 
   // ==========================================
@@ -461,11 +783,21 @@ class SmartScaleService extends ChangeNotifier {
     // 3. Acaia Protocol (Header 0xEF 0xDD)
     if ((brand == ScaleBrand.acaia ||
             (bytes.length >= 6 && bytes[0] == 0xEF && bytes[1] == 0xDD)) &&
-        bytes.length >= 7 &&
-        bytes[2] == 0x08) {
-      final rawVal = (bytes[4] << 8) | bytes[5];
-      final unit = bytes[6];
-      return rawVal / (unit == 1 ? 10.0 : 100.0);
+        bytes.length >= 7) {
+      if (bytes[2] == 0x08) {
+        final rawVal = (bytes[4] << 8) | bytes[5];
+        final unit = bytes[6];
+        return rawVal / (unit == 1 ? 10.0 : 100.0);
+      }
+      // Acaia Event Weight Message (0x0C, payload event type 0x05)
+      if (bytes[2] == 0x0C && bytes.length >= 10 && bytes[4] == 0x05) {
+        final rawVal =
+            bytes[5] | (bytes[6] << 8) | (bytes[7] << 16) | (bytes[8] << 24);
+        final unit = bytes[9];
+        final isNeg = bytes.length > 10 && (bytes[10] & 0x02) != 0;
+        final divisor = unit == 1 ? 10.0 : (unit == 2 ? 100.0 : 1.0);
+        return (isNeg ? -1.0 : 1.0) * (rawVal / divisor);
+      }
     }
 
     // 4. Bookoo Themis Mini Protocol (Header 0x03 0x0B, 20 bytes)
@@ -485,7 +817,29 @@ class SmartScaleService extends ChangeNotifier {
       if (parsed != null) return sign * (parsed / 100.0);
     }
 
-    // 6. Generic Bluetooth SIG Weight Measurement (0x2A9D)
+    // 6. Decent / DiFluid / Generic 7-byte (Header 0x03 0xCE)
+    if (bytes.length >= 6 && bytes[0] == 0x03 && bytes[1] == 0xCE) {
+      int signedVal = (bytes[2] << 8) | bytes[3];
+      if (signedVal >= 0x8000) signedVal -= 0x10000;
+      return signedVal / 10.0;
+    }
+
+    // 7. Generic ASCII UART scale payloads (e.g. "+0045.2g" or "123.4")
+    if (brand == ScaleBrand.generic && bytes.length >= 4) {
+      final isPrintableAscii = bytes.every(
+        (b) => (b >= 0x20 && b <= 0x7E) || b == 0x0A || b == 0x0D,
+      );
+      if (isPrintableAscii) {
+        final text = String.fromCharCodes(bytes).trim();
+        final match = RegExp(r'([+-]?\d+(?:\.\d+)?)').firstMatch(text);
+        if (match != null) {
+          final parsed = double.tryParse(match.group(1)!);
+          if (parsed != null) return parsed;
+        }
+      }
+    }
+
+    // 8. Generic Bluetooth SIG Weight Measurement (0x2A9D)
     if (bytes.length >= 3) {
       final rawVal = (bytes[1] << 8) | bytes[2];
       return rawVal / 10.0;
@@ -495,7 +849,7 @@ class SmartScaleService extends ChangeNotifier {
   }
 
   void _processScaleBytes(List<int> bytes, ScaleBrand brand) {
-    if (bytes.isEmpty) return;
+    if (bytes.isEmpty || !isConnected) return;
 
     try {
       // Optional battery & timer extraction for Coffee Labs Scale C3
@@ -509,6 +863,8 @@ class SmartScaleService extends ChangeNotifier {
 
       final weight = parseRawWeightBytes(bytes, brand);
       if (weight != null && weight >= -500.0 && weight <= 5000.0) {
+        _packetCount++;
+        _lastPacketAt = DateTime.now();
         _rawWeight = weight;
         _updateCalculatedWeight(_rawWeight);
       }
@@ -563,37 +919,38 @@ class SmartScaleService extends ChangeNotifier {
   // HARDWARE COMMANDS (Tare, Timer Start/Stop/Reset)
   // ==========================================
   Future<void> tare() async {
+    if (!isConnected) return;
+
     _tareOffset = _rawWeight;
     _currentWeight = 0.0;
     _flowRate = 0.0;
     _weightHistory.clear();
     _hasTriggeredAutoStart = false;
 
-    if (_commandCharacteristic != null) {
+    final cmd = _commandCharacteristic;
+    if (cmd != null) {
       try {
+        final withoutResp = cmd.properties.writeWithoutResponse;
         switch (_activeScaleDevice?.brand) {
           case ScaleBrand.coffeeLabsC3:
-            await _commandCharacteristic!
-                .write([0xC3, 0x02, 0x01, 0x00], withoutResponse: true);
+            await cmd.write([0xC3, 0x02, 0x01, 0x00], withoutResponse: withoutResp);
             break;
           case ScaleBrand.timemore:
-            await _commandCharacteristic!
-                .write([0x02, 0x01, 0x00, 0x00, 0x03], withoutResponse: true);
+            await cmd.write([0x02, 0x01, 0x00, 0x00, 0x03], withoutResponse: withoutResp);
             break;
           case ScaleBrand.acaia:
-            await _commandCharacteristic!.write(
+            await cmd.write(
               [0xEF, 0xDD, 0x04, 0x00, 0x00, 0x00],
-              withoutResponse: true,
+              withoutResponse: withoutResp,
             );
             break;
           case ScaleBrand.felicita:
-            await _commandCharacteristic!
-                .write([0x54], withoutResponse: true); // 'T'
+            await cmd.write([0x54], withoutResponse: withoutResp); // 'T'
             break;
           case ScaleBrand.bookoo:
-            await _commandCharacteristic!.write(
+            await cmd.write(
               [0x03, 0x0A, 0x01, 0x00, 0x00, 0x08],
-              withoutResponse: true,
+              withoutResponse: withoutResp,
             );
             break;
           default:
@@ -608,21 +965,21 @@ class SmartScaleService extends ChangeNotifier {
   }
 
   Future<void> sendStartTimerCommand() async {
-    if (_commandCharacteristic == null) return;
+    final cmd = _commandCharacteristic;
+    if (!isConnected || cmd == null) return;
     try {
+      final withoutResp = cmd.properties.writeWithoutResponse;
       switch (_activeScaleDevice?.brand) {
         case ScaleBrand.coffeeLabsC3:
-          await _commandCharacteristic!
-              .write([0xC3, 0x02, 0x02, 0x01], withoutResponse: true);
+          await cmd.write([0xC3, 0x02, 0x02, 0x01], withoutResponse: withoutResp);
           break;
         case ScaleBrand.timemore:
-          await _commandCharacteristic!
-              .write([0x02, 0x02, 0x01, 0x00, 0x03], withoutResponse: true);
+          await cmd.write([0x02, 0x02, 0x01, 0x00, 0x03], withoutResponse: withoutResp);
           break;
         case ScaleBrand.bookoo:
-          await _commandCharacteristic!.write(
+          await cmd.write(
             [0x03, 0x0A, 0x04, 0x00, 0x00, 0x0D],
-            withoutResponse: true,
+            withoutResponse: withoutResp,
           );
           break;
         default:
@@ -634,16 +991,16 @@ class SmartScaleService extends ChangeNotifier {
   }
 
   Future<void> sendStopTimerCommand() async {
-    if (_commandCharacteristic == null) return;
+    final cmd = _commandCharacteristic;
+    if (!isConnected || cmd == null) return;
     try {
+      final withoutResp = cmd.properties.writeWithoutResponse;
       switch (_activeScaleDevice?.brand) {
         case ScaleBrand.coffeeLabsC3:
-          await _commandCharacteristic!
-              .write([0xC3, 0x02, 0x02, 0x00], withoutResponse: true);
+          await cmd.write([0xC3, 0x02, 0x02, 0x00], withoutResponse: withoutResp);
           break;
         case ScaleBrand.timemore:
-          await _commandCharacteristic!
-              .write([0x02, 0x02, 0x00, 0x00, 0x03], withoutResponse: true);
+          await cmd.write([0x02, 0x02, 0x00, 0x00, 0x03], withoutResponse: withoutResp);
           break;
         default:
           break;
@@ -663,13 +1020,22 @@ class SmartScaleService extends ChangeNotifier {
   @visibleForTesting
   void debugAttachTestDevice(SmartScaleDevice device, {int? batteryPercent}) {
     _activeScaleDevice = device.copyWith(isConnected: true);
+    _isConnectionVerified = true;
     _batteryLevel = batteryPercent;
     _hasTriggeredAutoStart = false;
     notifyListeners();
   }
 
   @visibleForTesting
+  void debugSimulateHardwareDisconnect({String? reason}) {
+    _clearActiveConnectionState();
+    _lastStatusMessage = reason ?? 'Koneksi timbangan terputus.';
+    notifyListeners();
+  }
+
+  @visibleForTesting
   void debugFeedRawBytes(List<int> bytes, {DateTime? sampleTime}) {
+    if (!isConnected) return;
     final brand = _activeScaleDevice?.brand ?? ScaleBrand.timemore;
     final parsed = parseRawWeightBytes(bytes, brand);
     if (brand == ScaleBrand.coffeeLabsC3 &&
@@ -680,6 +1046,8 @@ class SmartScaleService extends ChangeNotifier {
       _scaleTimerSeconds = (bytes[7] << 8) | bytes[8];
     }
     if (parsed != null) {
+      _packetCount++;
+      _lastPacketAt = sampleTime ?? DateTime.now();
       _rawWeight = parsed;
       _updateCalculatedWeight(_rawWeight, sampleTime: sampleTime);
     }
@@ -687,6 +1055,14 @@ class SmartScaleService extends ChangeNotifier {
 
   @visibleForTesting
   void debugResetForTest() {
+    _scanTimeoutTimer?.cancel();
+    _scanTimeoutTimer = null;
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+    _isScanning = false;
+    _isConnecting = false;
+    _connectingDeviceId = null;
+    _includeAllBleDevices = false;
     _discoveredDevices.clear();
     _activeRecipe = null;
     _brewMode = ScaleBrewMode.pourOver;

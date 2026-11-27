@@ -5,15 +5,17 @@ import '../../../../services/language_service.dart';
 import '../../../../theme/app_theme.dart';
 
 /// Specification header bar displayed beneath the AppBar in BrewTimerScreen.
-/// Displays bean name, ratio, water temperature, grind size, and speaker sound toggle.
+/// Displays bean name, ratio, water temperature, and grind size.
 class BrewSpecHeaderBar extends StatelessWidget {
   final Map<String, dynamic> recipe;
   final VoidCallback? onMuteToggled;
+  final bool showMuteButton;
 
   const BrewSpecHeaderBar({
     super.key,
     required this.recipe,
     this.onMuteToggled,
+    this.showMuteButton = false,
   });
 
   static String _formatBeanName(Map<String, dynamic> recipe) {
@@ -129,61 +131,63 @@ class BrewSpecHeaderBar extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              if (showMuteButton) ...[
+                const SizedBox(width: 8),
 
-              // Speaker Mute / Unmute Button on the far right
-              Tooltip(
-                message: isMuted
-                    ? (isEn ? 'Unmute Sound' : 'Aktifkan Suara')
-                    : (isEn ? 'Mute Sound' : 'Mute Suara'),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(20),
-                    onTap: () {
-                      AudioService.toggleMute();
-                      onMuteToggled?.call();
-                      ScaffoldMessenger.of(context).clearSnackBars();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            AudioService.isMuted
-                                ? (isEn ? 'Brew audio muted 🔇' : 'Suara seduhan dimatikan 🔇')
-                                : (isEn ? 'Brew audio enabled 🔊' : 'Suara seduhan diaktifkan 🔊'),
+                // Speaker Mute / Unmute Button on the far right (optional legacy toggle)
+                Tooltip(
+                  message: isMuted
+                      ? (isEn ? 'Unmute Sound' : 'Aktifkan Suara')
+                      : (isEn ? 'Mute Sound' : 'Mute Suara'),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () {
+                        AudioService.toggleMute();
+                        onMuteToggled?.call();
+                        ScaffoldMessenger.of(context).clearSnackBars();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              AudioService.isMuted
+                                  ? (isEn ? 'Brew audio muted 🔇' : 'Suara seduhan dimatikan 🔇')
+                                  : (isEn ? 'Brew audio enabled 🔊' : 'Suara seduhan diaktifkan 🔊'),
+                            ),
+                            duration: const Duration(milliseconds: 900),
+                            behavior: SnackBarBehavior.floating,
                           ),
-                          duration: const Duration(milliseconds: 900),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: isMuted
-                            ? Colors.grey.shade100
-                            : AppTheme.accentGold.withValues(alpha: 0.18),
-                        shape: BoxShape.circle,
-                        border: Border.all(
+                        );
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
                           color: isMuted
-                              ? Colors.grey.shade300
-                              : AppTheme.accentGold.withValues(alpha: 0.4),
-                          width: 1,
+                              ? Colors.grey.shade100
+                              : AppTheme.accentGold.withValues(alpha: 0.18),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isMuted
+                                ? Colors.grey.shade300
+                                : AppTheme.accentGold.withValues(alpha: 0.4),
+                            width: 1,
+                          ),
                         ),
-                      ),
-                      alignment: Alignment.center,
-                      child: Icon(
-                        isMuted
-                            ? CupertinoIcons.speaker_slash_fill
-                            : CupertinoIcons.speaker_2_fill,
-                        size: 16,
-                        color: isMuted ? Colors.grey : AppTheme.primaryBrown,
+                        alignment: Alignment.center,
+                        child: Icon(
+                          isMuted
+                              ? CupertinoIcons.speaker_slash_fill
+                              : CupertinoIcons.speaker_2_fill,
+                          size: 16,
+                          color: isMuted ? Colors.grey : AppTheme.primaryBrown,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         );

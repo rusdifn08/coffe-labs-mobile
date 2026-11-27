@@ -38,12 +38,20 @@ class BrewingTTSService {
   BrewingTTSService._internal();
 
   final FlutterTts _flutterTts = FlutterTts();
-  final AudioPlayer _fallbackPlayer = AudioPlayer(playerId: 'coffee_barista_tts_fallback');
+  AudioPlayer? _fallbackPlayer;
+
+  AudioPlayer _ensureFallbackPlayer() {
+    return _fallbackPlayer ??=
+        AudioPlayer(playerId: 'coffee_barista_tts_fallback');
+  }
 
   bool _isInitialized = false;
   bool _isSpeaking = false;
   bool _isMuted = false;
   bool _hasNativeIndonesianFemaleVoice = false;
+
+  /// Reactive toggle state for Text-To-Speech ("Speaks") button in BrewTimerScreen.
+  final ValueNotifier<bool> isEnabledNotifier = ValueNotifier<bool>(true);
 
   final Queue<VoicePromptTask> _queue = Queue<VoicePromptTask>();
   final Map<String, String> _mp3FileCache = {};
@@ -76,6 +84,7 @@ class BrewingTTSService {
   }
 
   bool get isSpeaking => _isSpeaking;
+  bool get isEnabled => !_isMuted;
   bool get isMuted => _isMuted || AudioService.isMuted;
   String get voiceName => _selectedVoiceName ?? 'Barista Gadis (id-ID Female)';
 
@@ -84,8 +93,6 @@ class BrewingTTSService {
     if (_isInitialized) return;
 
     try {
-      await _fallbackPlayer.setReleaseMode(ReleaseMode.stop);
-
       if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
         try {
           final dynamic engines = await _flutterTts.getEngines;
@@ -229,12 +236,23 @@ class BrewingTTSService {
     }
   }
 
+  /// Enables or disables TTS prompts (Speaks toggle).
+  void setEnabled(bool enabled) {
+    _isMuted = !enabled;
+    isEnabledNotifier.value = enabled;
+    if (!enabled) {
+      unawaited(stop());
+    }
+  }
+
+  /// Toggles TTS voice guidance ON / OFF.
+  void toggleEnabled() {
+    setEnabled(!isEnabled);
+  }
+
   /// Sets mute state for TTS prompts.
   void setMuted(bool muted) {
-    _isMuted = muted;
-    if (_isMuted) {
-      stop();
-    }
+    setEnabled(!muted);
   }
 
   /// Speaks step title, target water, temperature, and full description in fluent Indonesian.
@@ -411,21 +429,23 @@ class BrewingTTSService {
     if (generation != _abortGeneration || isMuted) return;
 
     try {
+      final player = _ensureFallbackPlayer();
+      await player.setReleaseMode(ReleaseMode.stop);
       final completer = Completer<void>();
       StreamSubscription<void>? sub;
 
-      sub = _fallbackPlayer.onPlayerComplete.listen((_) {
+      sub = player.onPlayerComplete.listen((_) {
         sub?.cancel();
         if (!completer.isCompleted) completer.complete();
       });
 
-      await _fallbackPlayer.stop();
+      await player.stop();
       if (generation != _abortGeneration || isMuted) {
         await sub.cancel();
         return;
       }
 
-      await _fallbackPlayer.setPlaybackRate(0.90);
+      await player.setPlaybackRate(0.90);
 
       if (!kIsWeb) {
         final localPath = await _prefetchChunkMp3(chunk);
@@ -434,16 +454,16 @@ class BrewingTTSService {
           return;
         }
         if (localPath != null) {
-          await _fallbackPlayer.play(DeviceFileSource(localPath), volume: 1.0);
+          await player.play(DeviceFileSource(localPath), volume: 1.0);
         } else {
           final encoded = Uri.encodeComponent(chunk);
           final url = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=id&client=tw-ob&q=$encoded';
-          await _fallbackPlayer.play(UrlSource(url), volume: 1.0);
+          await player.play(UrlSource(url), volume: 1.0);
         }
       } else {
         final encoded = Uri.encodeComponent(chunk);
         final url = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=id&client=tw-ob&q=$encoded';
-        await _fallbackPlayer.play(UrlSource(url), volume: 1.0);
+        await player.play(UrlSource(url), volume: 1.0);
       }
 
       final estSecs = VoiceTextNormalizer.estimateSpeechSeconds(chunk) + 3;
@@ -476,7 +496,7 @@ class BrewingTTSService {
       }
     } catch (_) {}
     try {
-      await _fallbackPlayer.stop();
+      await _fallbackPlayer?.stop();
     } catch (_) {}
   }
 }
