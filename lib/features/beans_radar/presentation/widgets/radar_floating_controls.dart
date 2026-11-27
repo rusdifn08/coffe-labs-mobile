@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../theme/app_theme.dart';
+import '../../domain/models/radar_filter_state.dart';
 import '../../models/beans_radar_models.dart';
 import '../controllers/radar_gps_controller.dart';
 
@@ -14,6 +15,7 @@ class RadarFloatingControls extends StatelessWidget {
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<RadarAppMode> onRadarModeChanged;
   final ValueChanged<CoffeePlaceCategory> onCategoryChanged;
+  final ValueChanged<StrictRadarCategory>? onStrictCategoryChanged;
   final VoidCallback onToggleOpenNow;
   final VoidCallback onToggleMinRating;
   final ValueChanged<double> onRadiusChanged;
@@ -29,6 +31,7 @@ class RadarFloatingControls extends StatelessWidget {
     required this.onSearchChanged,
     required this.onRadarModeChanged,
     required this.onCategoryChanged,
+    this.onStrictCategoryChanged,
     required this.onToggleOpenNow,
     required this.onToggleMinRating,
     required this.onRadiusChanged,
@@ -184,56 +187,36 @@ class RadarFloatingControls extends StatelessWidget {
             ),
           ),
 
-          // Horizontal Filter Chips Row
+          // Scope-Synced Strict Filter Chips Row (0% conflicting category pills!)
           SizedBox(
             height: 34,
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               children: [
-                _FilterPill(
-                  label: 'Semua',
-                  selected: state.selectedCategory == CoffeePlaceCategory.all,
-                  onTap: () => onCategoryChanged(CoffeePlaceCategory.all),
-                ),
-                _FilterPill(
-                  label: 'Roastery',
-                  icon: CupertinoIcons.flame_fill,
-                  selected:
-                      state.selectedCategory == CoffeePlaceCategory.roastery,
-                  onTap: () => onCategoryChanged(CoffeePlaceCategory.roastery),
-                ),
-                _FilterPill(
-                  label: 'Cafe',
-                  icon: Icons.coffee_rounded,
-                  selected:
-                      state.selectedCategory == CoffeePlaceCategory.coffeeShop,
-                  onTap: () =>
-                      onCategoryChanged(CoffeePlaceCategory.coffeeShop),
-                ),
-                _FilterPill(
-                  label: 'Resto Kopi',
-                  icon: Icons.restaurant_rounded,
-                  selected:
-                      state.selectedCategory == CoffeePlaceCategory.cafeResto,
-                  onTap: () => onCategoryChanged(CoffeePlaceCategory.cafeResto),
-                ),
-                _FilterPill(
-                  label: 'Specialty',
-                  icon: Icons.coffee_maker_rounded,
-                  selected: state.selectedCategory ==
-                      CoffeePlaceCategory.specialtyCafe,
-                  onTap: () =>
-                      onCategoryChanged(CoffeePlaceCategory.specialtyCafe),
-                ),
-                _FilterPill(
-                  label: 'Jual Biji',
-                  icon: CupertinoIcons.bag_fill,
-                  selected:
-                      state.selectedCategory == CoffeePlaceCategory.beanSeller,
-                  onTap: () =>
-                      onCategoryChanged(CoffeePlaceCategory.beanSeller),
-                ),
+                ...RadarFilterState(
+                  radarScope: state.radarMode,
+                  strictCategory: state.strictCategory,
+                  openNowOnly: state.openNowOnly,
+                  minRating: state.minRating,
+                  searchQuery: state.searchQuery,
+                  radiusKm: state.selectedRadiusKm,
+                ).availableCategories.map((strictCat) {
+                  return _FilterPill(
+                    label: strictCat.chipLabelForScope(state.radarMode),
+                    icon: strictCat == StrictRadarCategory.all
+                        ? null
+                        : strictCat.iconData,
+                    selected: state.strictCategory == strictCat,
+                    onTap: () {
+                      if (onStrictCategoryChanged != null) {
+                        onStrictCategoryChanged!(strictCat);
+                      } else {
+                        onCategoryChanged(strictCat.toLegacyCategory());
+                      }
+                    },
+                  );
+                }),
                 _FilterPill(
                   label: 'Buka',
                   dotColor: const Color(0xFF16A34A),

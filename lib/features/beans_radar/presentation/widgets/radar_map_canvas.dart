@@ -8,6 +8,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../theme/app_theme.dart';
+import '../../domain/models/multimodal_route_models.dart';
+import '../../domain/models/radar_filter_state.dart';
 import '../../models/beans_radar_models.dart';
 import '../controllers/radar_gps_controller.dart';
 
@@ -79,8 +81,15 @@ class RadarMapCanvas extends StatefulWidget {
   final bool hasUserLocation;
   final double? compassHeadingDeg;
   final List<RadarPlaceCard> places;
+  final String filterSignature;
   final String? selectedPlaceId;
   final RadarRouteResult? activeRoute;
+  final List<RadarRouteAlternative> alternativeRoutes;
+  final int selectedAlternativeIndex;
+  final ValueChanged<int>? onSelectAlternativeRoute;
+  final LatLng? liveSnappedPosition;
+  final double? liveBearingDeg;
+  final bool isLiveNavActive;
   final int routeFocusRevision;
   final bool isRouteHudActive;
   final VoidCallback? onRecenterGps;
@@ -98,8 +107,15 @@ class RadarMapCanvas extends StatefulWidget {
     this.hasUserLocation = true,
     required this.compassHeadingDeg,
     required this.places,
+    this.filterSignature = 'default',
     required this.selectedPlaceId,
     this.activeRoute,
+    this.alternativeRoutes = const [],
+    this.selectedAlternativeIndex = 0,
+    this.onSelectAlternativeRoute,
+    this.liveSnappedPosition,
+    this.liveBearingDeg,
+    this.isLiveNavActive = false,
     this.routeFocusRevision = 0,
     this.isRouteHudActive = false,
     this.onRecenterGps,
@@ -138,6 +154,23 @@ class _RadarMapCanvasState extends State<RadarMapCanvas> {
     if (routeChanged && widget.activeRoute!.points.length >= 2) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _fitCameraToRoute(widget.activeRoute!);
+      });
+      return;
+    }
+
+    final centerUpdated = !widget.isRouteHudActive &&
+        widget.hasUserLocation &&
+        (!oldWidget.hasUserLocation ||
+            (widget.centerLat - oldWidget.centerLat).abs() > 0.0005 ||
+            (widget.centerLng - oldWidget.centerLng).abs() > 0.0005);
+    if (centerUpdated) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try {
+          widget.mapController.move(
+            LatLng(widget.centerLat, widget.centerLng),
+            13.6,
+          );
+        } catch (_) {}
       });
     }
   }
@@ -417,12 +450,12 @@ class _RadarMapCanvasState extends State<RadarMapCanvas> {
             final isSelected = place.id == widget.selectedPlaceId ||
                 place.id == route?.destination.id;
             return Marker(
-              key: ValueKey('pin_${place.id}'),
               point: LatLng(place.latitude, place.longitude),
               width: isSelected ? 84 : 68,
               height: isSelected ? 40 : 34,
               alignment: Alignment.topCenter,
               child: GestureDetector(
+                key: ValueKey('pin_${place.id}'),
                 onTap: () => widget.onPlaceTapped(place),
                 child: _CoffeePinPill(place: place, isSelected: isSelected),
               ),
@@ -473,33 +506,50 @@ class _RadarMapCanvasState extends State<RadarMapCanvas> {
                   maxNativeZoom: 19,
                 ),
 
-              // IN-APP ROAD POLYLINE LAYER (Jalur Rute Jalan Nyata di Dalam Peta)
-              if (route != null && route.points.length >= 2)
+              // ALTERNATIVE ROUTES LAYER (Slate clickable polylines underneath active route)
+              if (route != null && widget.alternativeRoutes.length > 1)
                 PolylineLayer(
                   polylines: [
-                    Polyline(
-                      points: route.points,
-                      strokeWidth: 7.5,
-                      color: const Color(0xFF1E3A8A).withValues(alpha: 0.78),
-                    ),
-                    Polyline(
-                      points: route.points,
-                      strokeWidth: 4.2,
-                      color: const Color(0xFF3B82F6),
-                    ),
+                    for (var i = 0; i < widget.alternativeRoutes.length; i++)
+                      if (i != widget.selectedAlternativeIndex &&
+                          widget.alternativeRoutes[i].points.length >= 2)
+                        Polyline(
+                          points: widget.alternativeRoutes[i].points,
+                          strokeWidth: 5.0,
+                          color: const Color(0xFF94A3B8).withValues(alpha: 0.72),
+                          borderColor: Colors.white.withValues(alpha: 0.65),
+                          borderStrokeWidth: 1.5,
+                        ),
                   ],
+                ),
+
+              // PRIMARY MULTI-MODAL ROAD POLYLINE LAYER (Walk Dotted Teal / Motor Gold / Car Blue)
+              if (route != null && route.points.length >= 2)
+                PolylineLayer(
+                  polylines: _buildPrimaryPolylines(route),
                 ),
 
               if (widget.hasUserLocation || route != null)
                 MarkerLayer(
                   markers: [
+                    // Clickable "+X mnt" pill badges on alternative routes
+                    if (route != null && widget.alternativeRoutes.length > 1)
+                      ..._buildAlternativeCalloutMarkers(widget.alternativeRoutes),
+                    // Subtle route direction arrows along primary route
+                    if (route != null && route.points.length >= 4)
+                      ..._buildDirectionChevronMarkers(route),
                     if (widget.hasUserLocation)
                       Marker(
-                        point: LatLng(widget.userLat, widget.userLng),
+                        point: widget.isLiveNavActive &&
+                                widget.liveSnappedPosition != null
+                            ? widget.liveSnappedPosition!
+                            : LatLng(widget.userLat, widget.userLng),
                         width: 68,
                         height: 68,
                         child: _UserGpsBeacon(
-                          headingDeg: widget.compassHeadingDeg,
+                          headingDeg: widget.isLiveNavActive
+                              ? (widget.liveBearingDeg ?? widget.compassHeadingDeg)
+                              : widget.compassHeadingDeg,
                         ),
                       ),
                     if (route != null)
@@ -523,7 +573,7 @@ class _RadarMapCanvasState extends State<RadarMapCanvas> {
               if (markers.isNotEmpty)
                 SuperclusterLayer.immutable(
                   key: ValueKey(
-                    'cluster_${markers.length}_${widget.selectedPlaceId ?? 'none'}',
+                    'radar_pins_${widget.filterSignature}',
                   ),
                   initialMarkers: markers,
                   indexBuilder: IndexBuilders.rootIsolate,
@@ -647,6 +697,125 @@ class _RadarMapCanvasState extends State<RadarMapCanvas> {
       ),
     );
   }
+
+  List<Polyline> _buildPrimaryPolylines(RadarRouteResult route) {
+    switch (route.mode) {
+      case RadarTravelMode.walk:
+        return [
+          Polyline(
+            points: route.points,
+            strokeWidth: 5.5,
+            isDotted: true,
+            color: const Color(0xFF0D9488),
+            borderColor: Colors.white,
+            borderStrokeWidth: 2.0,
+          ),
+        ];
+      case RadarTravelMode.motorcycle:
+        return [
+          Polyline(
+            points: route.points,
+            strokeWidth: 7.5,
+            color: const Color(0xFF78350F).withValues(alpha: 0.85),
+          ),
+          Polyline(
+            points: route.points,
+            strokeWidth: 4.5,
+            color: const Color(0xFFF59E0B),
+          ),
+        ];
+      case RadarTravelMode.drive:
+        return [
+          Polyline(
+            points: route.points,
+            strokeWidth: 7.5,
+            color: const Color(0xFF1E3A8A).withValues(alpha: 0.8),
+          ),
+          Polyline(
+            points: route.points,
+            strokeWidth: 4.4,
+            color: const Color(0xFF3B82F6),
+          ),
+        ];
+    }
+  }
+
+  List<Marker> _buildAlternativeCalloutMarkers(List<RadarRouteAlternative> alts) {
+    final out = <Marker>[];
+    final fastest = alts.first;
+    for (var i = 0; i < alts.length; i++) {
+      if (i == widget.selectedAlternativeIndex || alts[i].points.length < 2) {
+        continue;
+      }
+      final mid = alts[i].points[alts[i].points.length ~/ 2];
+      out.add(
+        Marker(
+          point: mid,
+          width: 72,
+          height: 26,
+          child: GestureDetector(
+            onTap: widget.onSelectAlternativeRoute != null
+                ? () => widget.onSelectAlternativeRoute!(i)
+                : null,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.95),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF64748B)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.16),
+                    blurRadius: 5,
+                  ),
+                ],
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                alts[i].deltaMinutesLabel(fastest),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF334155),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return out;
+  }
+
+  List<Marker> _buildDirectionChevronMarkers(RadarRouteResult route) {
+    final pts = route.points;
+    if (pts.length < 4) return const [];
+    final out = <Marker>[];
+    final step = math.max(2, pts.length ~/ 4);
+    for (var i = step; i < pts.length - 1; i += step) {
+      final deg = computeBearingDegrees(pts[i - 1], pts[i + 1]);
+      out.add(
+        Marker(
+          point: pts[i],
+          width: 18,
+          height: 18,
+          child: IgnorePointer(
+            child: Transform.rotate(
+              angle: (deg * math.pi) / 180.0,
+              child: const Icon(
+                Icons.navigation_rounded,
+                size: 13,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return out;
+  }
 }
 
 class _RouteDestinationPin extends StatelessWidget {
@@ -767,17 +936,59 @@ class _CoffeePinPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = isSelected
-        ? AppTheme.primaryBrown
-        : (place.category == CoffeePlaceCategory.roastery ||
-                place.radarKind == 'ROASTERY_AND_CAFE'
-            ? const Color(0xFF4A2E1A)
-            : Colors.white);
-    final fgColor = isSelected ||
-            place.category == CoffeePlaceCategory.roastery ||
-            place.radarKind == 'ROASTERY_AND_CAFE'
-        ? Colors.white
-        : AppTheme.textDark;
+    final flags = RadarCategoryBitmask.computeForPlace(place);
+    final isRoastery = (flags & RadarCategoryBitmask.flagRoastery) != 0;
+    final isBeanSeller =
+        (flags & RadarCategoryBitmask.flagBeanSeller) != 0 && !isRoastery;
+    final isResto = (flags & RadarCategoryBitmask.flagCafeResto) != 0;
+    final isSlowBar =
+        (flags & RadarCategoryBitmask.flagSlowBarV60) != 0 && !isRoastery && !isResto;
+    final isSpecialty = (flags & RadarCategoryBitmask.flagSpecialtyCafe) != 0 &&
+        !isRoastery &&
+        !isResto &&
+        !isSlowBar;
+
+    final Color bgColor;
+    final Color fgColor;
+    final Color iconColor;
+    final IconData pinIcon;
+
+    if (isSelected) {
+      bgColor = AppTheme.primaryBrown;
+      fgColor = Colors.white;
+      iconColor = AppTheme.accentGold;
+      pinIcon = place.category.iconData;
+    } else if (isRoastery) {
+      bgColor = const Color(0xFF5C3A21);
+      fgColor = Colors.white;
+      iconColor = AppTheme.accentGold;
+      pinIcon = CupertinoIcons.flame_fill;
+    } else if (isBeanSeller) {
+      bgColor = const Color(0xFFB45309);
+      fgColor = Colors.white;
+      iconColor = const Color(0xFFFDE68A);
+      pinIcon = CupertinoIcons.bag_fill;
+    } else if (isResto) {
+      bgColor = const Color(0xFFC2410C);
+      fgColor = Colors.white;
+      iconColor = Colors.white;
+      pinIcon = Icons.restaurant_rounded;
+    } else if (isSlowBar) {
+      bgColor = const Color(0xFF047857);
+      fgColor = Colors.white;
+      iconColor = const Color(0xFFA7F3D0);
+      pinIcon = CupertinoIcons.drop_fill;
+    } else if (isSpecialty) {
+      bgColor = const Color(0xFF8B5A2B);
+      fgColor = Colors.white;
+      iconColor = const Color(0xFFFDE68A);
+      pinIcon = Icons.coffee_maker_rounded;
+    } else {
+      bgColor = Colors.white;
+      fgColor = AppTheme.textDark;
+      iconColor = AppTheme.primaryBrown;
+      pinIcon = Icons.coffee_rounded;
+    }
 
     return AnimatedScale(
       scale: isSelected ? 1.12 : 1.0,
@@ -805,13 +1016,9 @@ class _CoffeePinPill extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              place.category.iconData,
+              pinIcon,
               size: 12,
-              color: isSelected
-                  ? AppTheme.accentGold
-                  : (fgColor == Colors.white
-                      ? AppTheme.accentGold
-                      : AppTheme.primaryBrown),
+              color: iconColor,
             ),
             const SizedBox(width: 3),
             Text(

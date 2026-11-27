@@ -7,10 +7,14 @@ import 'package:latlong2/latlong.dart';
 
 import '../core/performance/transition_aware_deferred_builder.dart';
 import '../features/beans_radar/data/beans_radar_repository.dart';
+import '../features/beans_radar/domain/models/multimodal_route_models.dart';
 import '../features/beans_radar/models/beans_radar_models.dart';
+import '../features/beans_radar/presentation/controllers/live_navigation_controller.dart';
 import '../features/beans_radar/presentation/controllers/radar_gps_controller.dart';
+import '../features/beans_radar/presentation/controllers/strict_radar_filter_controller.dart';
 import '../features/beans_radar/presentation/widgets/beans_radar_bottom_sheet.dart';
 import '../features/beans_radar/presentation/widgets/coffee_place_detail_sheet.dart';
+import '../features/beans_radar/presentation/widgets/live_turn_by_turn_banner.dart';
 import '../features/beans_radar/presentation/widgets/radar_active_route_bar.dart';
 import '../features/beans_radar/presentation/widgets/radar_floating_controls.dart';
 import '../features/beans_radar/presentation/widgets/radar_map_canvas.dart';
@@ -107,6 +111,7 @@ class _BeanRadarScreenState extends ConsumerState<BeanRadarScreen> {
   }
 
   void _closeActiveRoute() {
+    ref.read(liveNavigationProvider.notifier).stopNavigation();
     ref.read(beansRadarGpsProvider.notifier).clearActiveRoute();
     _restoreSheetAfterRoute();
   }
@@ -231,6 +236,11 @@ class _BeanRadarScreenState extends ConsumerState<BeanRadarScreen> {
   Widget build(BuildContext context) {
     final radarState = ref.watch(beansRadarGpsProvider);
     final radarCtrl = ref.read(beansRadarGpsProvider.notifier);
+    final strictPlaces = ref.watch(strictFilteredRadarPlacesProvider);
+    final pinSignature = ref.watch(strictRadarPinSignatureProvider);
+    final liveNavState = ref.watch(liveNavigationProvider);
+    final liveNavCtrl = ref.read(liveNavigationProvider.notifier);
+    final syncedState = radarState.copyWith(places: strictPlaces);
 
     ref.listen<RadarGpsState>(beansRadarGpsProvider, (prev, next) {
       if (prev != null &&
@@ -253,6 +263,13 @@ class _BeanRadarScreenState extends ConsumerState<BeanRadarScreen> {
 
     final hasRouteHud =
         radarState.activeRoute != null || radarState.isLoadingRoute;
+    final altRoutes = (radarState.routeComparison
+                ?.bundleFor(radarState.routeMode)
+                .allRoutes ??
+            radarState.activeRoute?.alternatives ??
+            const [])
+        .whereType<RadarRouteAlternative>()
+        .toList();
 
     return Scaffold(
       backgroundColor: AppTheme.bgCream,
@@ -271,9 +288,16 @@ class _BeanRadarScreenState extends ConsumerState<BeanRadarScreen> {
                 userLng: radarState.userLng,
                 hasUserLocation: radarState.hasUsableLocation,
                 compassHeadingDeg: radarState.compassHeadingDeg,
-                places: radarState.places,
+                places: strictPlaces,
+                filterSignature: pinSignature,
                 selectedPlaceId: radarState.selectedPlaceId,
                 activeRoute: radarState.activeRoute,
+                alternativeRoutes: altRoutes,
+                selectedAlternativeIndex: radarState.selectedAlternativeIndex,
+                onSelectAlternativeRoute: radarCtrl.selectAlternativeRoute,
+                liveSnappedPosition: liveNavState.snappedPosition,
+                liveBearingDeg: liveNavState.currentBearingDeg,
+                isLiveNavActive: liveNavState.isActive,
                 routeFocusRevision: radarState.routeFocusRevision,
                 isRouteHudActive: hasRouteHud,
                 onRecenterGps: () => _recenterGps(radarCtrl, radarState),
@@ -290,57 +314,87 @@ class _BeanRadarScreenState extends ConsumerState<BeanRadarScreen> {
                 duration: const Duration(milliseconds: 220),
                 switchInCurve: Curves.easeOutCubic,
                 switchOutCurve: Curves.easeInCubic,
-                child: hasRouteHud
+                child: liveNavState.isActive && radarState.activeRoute != null
                     ? SafeArea(
-                        key: const ValueKey('radar_route_focus_hud'),
+                        key: const ValueKey('radar_live_nav_banner'),
                         bottom: false,
                         child: Padding(
                           padding: const EdgeInsets.only(top: 8),
-                          child: RadarActiveRouteBar(
-                            route: radarState.activeRoute,
-                            isLoading: radarState.isLoadingRoute,
-                            selectedMode: radarState.routeMode,
-                            onModeChanged: radarCtrl.changeRouteMode,
-                            onCloseRoute: _closeActiveRoute,
-                            onTapDestination: radarState.activeRoute != null
-                                ? () => _openPlaceDetail(
-                                      radarState.activeRoute!.destination,
-                                      radarState,
-                                    )
-                                : null,
-                            onLaunchExternalNavigation:
-                                radarState.activeRoute != null
-                                    ? () =>
-                                        CoffeePlaceDetailSheet.launchDirections(
-                                          radarState.activeRoute!.destination,
-                                        )
-                                    : null,
+                          child: LiveTurnByTurnBanner(
+                            navState: liveNavState,
+                            destination: radarState.activeRoute!.destination,
+                            travelMode: radarState.routeMode,
+                            onToggleMute: liveNavCtrl.toggleVoiceMute,
+                            onStopNavigation: liveNavCtrl.stopNavigation,
                           ),
                         ),
                       )
-                    : RadarFloatingControls(
-                        key: const ValueKey('radar_explore_controls'),
-                        searchController: _searchController,
-                        state: radarState,
-                        onBack: () => Navigator.maybePop(context),
-                        onRecenterGps: () =>
-                            _recenterGps(radarCtrl, radarState),
-                        onOpenCityPicker: () =>
-                            _openCityPicker(radarCtrl, radarState),
-                        onSearchChanged: radarCtrl.onSearchChanged,
-                        onRadarModeChanged: (m) => radarCtrl.setRadarMode(m),
-                        onCategoryChanged: radarCtrl.setCategory,
-                        onToggleOpenNow: radarCtrl.toggleOpenNow,
-                        onToggleMinRating: radarCtrl.toggleMinRating45,
-                        onRadiusChanged: radarCtrl.setRadiusKm,
-                        onSearchThisArea: radarCtrl.searchPendingMapArea,
-                      ),
+                    : hasRouteHud
+                        ? SafeArea(
+                            key: const ValueKey('radar_route_focus_hud'),
+                            bottom: false,
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: RadarActiveRouteBar(
+                                route: radarState.activeRoute,
+                                comparison: radarState.routeComparison,
+                                selectedAlternativeIndex:
+                                    radarState.selectedAlternativeIndex,
+                                avoidTolls: radarState.avoidTolls,
+                                isLoading: radarState.isLoadingRoute,
+                                selectedMode: radarState.routeMode,
+                                onModeChanged: radarCtrl.changeRouteMode,
+                                onSelectAlternative:
+                                    radarCtrl.selectAlternativeRoute,
+                                onToggleAvoidTolls: radarCtrl.toggleAvoidTolls,
+                                onStartLiveNavigation:
+                                    radarState.activeRoute != null
+                                        ? () => liveNavCtrl.startNavigation(
+                                              radarState.activeRoute!,
+                                            )
+                                        : null,
+                                onCloseRoute: _closeActiveRoute,
+                                onTapDestination: radarState.activeRoute != null
+                                    ? () => _openPlaceDetail(
+                                          radarState.activeRoute!.destination,
+                                          radarState,
+                                        )
+                                    : null,
+                                onLaunchExternalNavigation:
+                                    radarState.activeRoute != null
+                                        ? () => CoffeePlaceDetailSheet
+                                            .launchDirections(
+                                              radarState.activeRoute!.destination,
+                                              mode: radarState.routeMode,
+                                            )
+                                        : null,
+                              ),
+                            ),
+                          )
+                        : RadarFloatingControls(
+                            key: const ValueKey('radar_explore_controls'),
+                            searchController: _searchController,
+                            state: syncedState,
+                            onBack: () => Navigator.maybePop(context),
+                            onRecenterGps: () =>
+                                _recenterGps(radarCtrl, radarState),
+                            onOpenCityPicker: () =>
+                                _openCityPicker(radarCtrl, radarState),
+                            onSearchChanged: radarCtrl.onSearchChanged,
+                            onRadarModeChanged: (m) => radarCtrl.setRadarMode(m),
+                            onCategoryChanged: radarCtrl.setCategory,
+                            onStrictCategoryChanged: radarCtrl.setStrictCategory,
+                            onToggleOpenNow: radarCtrl.toggleOpenNow,
+                            onToggleMinRating: radarCtrl.toggleMinRating45,
+                            onRadiusChanged: radarCtrl.setRadiusKm,
+                            onSearchThisArea: radarCtrl.searchPendingMapArea,
+                          ),
               ),
             ),
             Positioned.fill(
               child: BeansRadarBottomSheet(
                 controller: _sheetController,
-                state: radarState,
+                state: syncedState,
                 onSortChanged: radarCtrl.setSortMode,
                 onSelectPlaceCard: (p) => _openPlaceDetail(p, radarState),
                 // "Lihat Rute" langsung menurunkan bottom sheet ke bawah & fokus ke peta rute ala Google Maps!

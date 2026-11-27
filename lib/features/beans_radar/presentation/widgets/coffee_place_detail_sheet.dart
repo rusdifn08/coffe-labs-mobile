@@ -35,10 +35,13 @@ class CoffeePlaceDetailSheet {
     );
   }
 
-  /// Navigasi suara opsional via aplikasi Google Maps (Deep Link gratis tanpa API Key).
-  static Future<void> launchDirections(RadarPlaceCard place) async {
+  /// Navigasi suara opsional via aplikasi Google Maps (Deep Link gratis dengan travelmode tepat).
+  static Future<void> launchDirections(
+    RadarPlaceCard place, {
+    RadarTravelMode mode = RadarTravelMode.motorcycle,
+  }) async {
     final uri = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}&travelmode=driving',
+      'https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}&travelmode=${mode.googleMapsTravelMode}',
     );
     await launchExternalUri(uri);
   }

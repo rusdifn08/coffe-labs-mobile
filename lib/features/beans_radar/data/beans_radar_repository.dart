@@ -5,6 +5,7 @@ import '../../../core/assets/cloud_dataset_service.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/network/rust_api_client.dart';
 import '../../../data/roastery_catalog.dart';
+import '../domain/models/radar_filter_state.dart';
 import '../models/beans_radar_models.dart';
 
 class BeansRadarRepository {
@@ -40,6 +41,66 @@ class BeansRadarRepository {
     return _bundledPlacesCache!;
   }
 
+  /// Wrapper strict filter yang kompatibel dengan mock/subclass override `fetchNearby`.
+  Future<RadarNearbyResult> fetchNearbyStrict({
+    required double lat,
+    required double lng,
+    double radiusKm = 10.0,
+    RadarAppMode radarMode = RadarAppMode.all,
+    StrictRadarCategory strictCategory = StrictRadarCategory.all,
+    bool openNowOnly = false,
+    double minRating = 0.0,
+    bool sellsBeansOnly = false,
+    RadarSortMode sort = RadarSortMode.nearest,
+    String search = '',
+    int limit = 80,
+  }) async {
+    if (runtimeType == BeansRadarRepository) {
+      return _fetchNearbyInternal(
+        lat: lat,
+        lng: lng,
+        radiusKm: radiusKm,
+        radarMode: radarMode,
+        category: strictCategory.toLegacyCategory(),
+        strictCategory: strictCategory,
+        openNowOnly: openNowOnly,
+        minRating: minRating,
+        sellsBeansOnly: sellsBeansOnly,
+        sort: sort,
+        search: search,
+        limit: limit,
+      );
+    }
+    final res = await fetchNearby(
+      lat: lat,
+      lng: lng,
+      radiusKm: radiusKm,
+      radarMode: radarMode,
+      category: strictCategory.toLegacyCategory(),
+      openNowOnly: openNowOnly,
+      minRating: minRating,
+      sellsBeansOnly: sellsBeansOnly,
+      sort: sort,
+      search: search,
+      limit: limit,
+    );
+    final filter = RadarFilterState(
+      radarScope: radarMode,
+      strictCategory: strictCategory,
+      openNowOnly: openNowOnly,
+      minRating: minRating,
+      searchQuery: search,
+      radiusKm: radiusKm,
+    );
+    final filtered = res.items.where(filter.matchesPlace).toList();
+    return RadarNearbyResult(
+      meta: res.meta,
+      items: filtered,
+      isOfflineFallback: res.isOfflineFallback,
+    );
+  }
+
+  /// Dipertahankan kompatibel 100% dengan signature asli `fetchNearby` untuk mock/test.
   Future<RadarNearbyResult> fetchNearby({
     required double lat,
     required double lng,
@@ -52,9 +113,48 @@ class BeansRadarRepository {
     RadarSortMode sort = RadarSortMode.nearest,
     String search = '',
     int limit = 80,
+  }) {
+    return _fetchNearbyInternal(
+      lat: lat,
+      lng: lng,
+      radiusKm: radiusKm,
+      radarMode: radarMode,
+      category: category,
+      strictCategory: StrictRadarCategoryX.fromLegacyCategory(category),
+      openNowOnly: openNowOnly,
+      minRating: minRating,
+      sellsBeansOnly: sellsBeansOnly,
+      sort: sort,
+      search: search,
+      limit: limit,
+    );
+  }
+
+  Future<RadarNearbyResult> _fetchNearbyInternal({
+    required double lat,
+    required double lng,
+    required double radiusKm,
+    required RadarAppMode radarMode,
+    required CoffeePlaceCategory category,
+    required StrictRadarCategory strictCategory,
+    required bool openNowOnly,
+    required double minRating,
+    required bool sellsBeansOnly,
+    required RadarSortMode sort,
+    required String search,
+    required int limit,
   }) async {
+    final filterState = RadarFilterState(
+      radarScope: radarMode,
+      strictCategory: strictCategory,
+      openNowOnly: openNowOnly,
+      minRating: minRating,
+      searchQuery: search,
+      radiusKm: radiusKm,
+    );
+
     if (_api != null) {
-      // 1. Utamakan Endpoint PostGIS Unified 10.000+ (`/api/v1/radar/nearby`)
+      // 1. Utamakan Endpoint PostGIS Unified (`/api/v1/radar/nearby`) dengan Strict Category Filter
       try {
         final raw = await _api.get(
           '/api/v1/radar/nearby',
@@ -63,6 +163,9 @@ class BeansRadarRepository {
             'lng': lng,
             'radius_km': radiusKm,
             'mode': radarMode.apiValue,
+            if (strictCategory != StrictRadarCategory.all)
+              'strict_category': strictCategory.apiValue,
+            if (minRating > 0) 'min_rating': minRating,
             if (search.trim().isNotEmpty) 'search': search.trim(),
             'limit': limit,
           },
@@ -71,13 +174,8 @@ class BeansRadarRepository {
           final items = (raw['data'] as List)
               .whereType<Map>()
               .map((e) => RadarPlaceCard.fromJson(e.cast<String, dynamic>()))
-              .where((c) => _matchesClientFilters(
-                    c,
-                    radarMode: radarMode,
-                    category: category,
-                    minRating: minRating,
-                    sellsBeansOnly: sellsBeansOnly,
-                  ))
+              .where(filterState.matchesPlace)
+              .where((c) => !sellsBeansOnly || c.sellsRoastBeans)
               .toList();
           _sortCards(items, sort);
           if (items.isNotEmpty) {
@@ -88,7 +186,7 @@ class BeansRadarRepository {
                 radiusKm: radiusKm,
                 queryH3Res7: 'POSTGIS',
                 engineLatencyUs: 900,
-                cacheTier: 'POSTGIS_GIST_10K',
+                cacheTier: 'POSTGIS_GIST_STRICT',
                 totalIndexedPlaces: _bundledTotalIndexed,
                 totalMatched: items.length,
               ),
@@ -98,7 +196,7 @@ class BeansRadarRepository {
         }
       } catch (_) {}
 
-      // 2. Fallback ke Endpoint Beans Radar 2.0 (`/api/v1/beans-radar/nearby`)
+      // 2. Fallback ke Endpoint Beans Radar R*-Tree Bitmask (`/api/v1/beans-radar/nearby`)
       try {
         final raw = await _api.get(
           '/api/v1/beans-radar/nearby',
@@ -106,6 +204,8 @@ class BeansRadarRepository {
             'lat': lat,
             'lng': lng,
             'radius_km': radiusKm,
+            'radar_scope': radarMode.apiValue,
+            'strict_category': strictCategory.apiValue,
             'category': category.apiValue,
             if (openNowOnly) 'open_now': true,
             if (minRating > 0) 'min_rating': minRating,
@@ -122,7 +222,7 @@ class BeansRadarRepository {
           final items = (data['items'] as List? ?? const [])
               .whereType<Map>()
               .map((e) => RadarPlaceCard.fromJson(e.cast<String, dynamic>()))
-              .where((c) => c.matchesRadarMode(radarMode))
+              .where(filterState.matchesPlace)
               .toList();
           if (items.isNotEmpty || meta.totalIndexedPlaces > 0) {
             return RadarNearbyResult(meta: meta, items: items);
@@ -135,12 +235,9 @@ class BeansRadarRepository {
       lat: lat,
       lng: lng,
       radiusKm: radiusKm,
-      radarMode: radarMode,
-      category: category,
-      minRating: minRating,
+      filterState: filterState,
       sellsBeansOnly: sellsBeansOnly,
       sort: sort,
-      search: search,
       limit: limit,
     );
   }
@@ -152,6 +249,7 @@ class BeansRadarRepository {
     required double west,
     RadarAppMode radarMode = RadarAppMode.all,
     CoffeePlaceCategory category = CoffeePlaceCategory.all,
+    StrictRadarCategory? strictCategory,
     bool openNowOnly = false,
     double minRating = 0.0,
     bool sellsBeansOnly = false,
@@ -159,6 +257,16 @@ class BeansRadarRepository {
   }) async {
     final centerLat = (north + south) * 0.5;
     final centerLng = (east + west) * 0.5;
+    final effectiveStrictCat = strictCategory ??
+        StrictRadarCategoryX.fromLegacyCategory(category);
+    final filterState = RadarFilterState(
+      radarScope: radarMode,
+      strictCategory: effectiveStrictCat,
+      openNowOnly: openNowOnly,
+      minRating: minRating,
+      searchQuery: '',
+      radiusKm: 50.0,
+    );
 
     if (_api != null) {
       try {
@@ -170,6 +278,9 @@ class BeansRadarRepository {
             'east': east,
             'west': west,
             'mode': radarMode.apiValue,
+            if (effectiveStrictCat != StrictRadarCategory.all)
+              'strict_category': effectiveStrictCat.apiValue,
+            if (minRating > 0) 'min_rating': minRating,
             'limit': limit,
           },
         );
@@ -177,13 +288,8 @@ class BeansRadarRepository {
           final items = (raw['data'] as List)
               .whereType<Map>()
               .map((e) => RadarPlaceCard.fromJson(e.cast<String, dynamic>()))
-              .where((c) => _matchesClientFilters(
-                    c,
-                    radarMode: radarMode,
-                    category: category,
-                    minRating: minRating,
-                    sellsBeansOnly: sellsBeansOnly,
-                  ))
+              .where(filterState.matchesPlace)
+              .where((c) => !sellsBeansOnly || c.sellsRoastBeans)
               .toList();
           if (items.isNotEmpty) {
             return RadarNearbyResult(
@@ -193,7 +299,7 @@ class BeansRadarRepository {
                 radiusKm: 25.0,
                 queryH3Res7: 'POSTGIS_VIEWPORT',
                 engineLatencyUs: 1200,
-                cacheTier: 'POSTGIS_GIST_10K',
+                cacheTier: 'POSTGIS_GIST_STRICT',
                 totalIndexedPlaces: _bundledTotalIndexed,
                 totalMatched: items.length,
               ),
@@ -208,12 +314,9 @@ class BeansRadarRepository {
       lat: centerLat,
       lng: centerLng,
       radiusKm: 50.0,
-      radarMode: radarMode,
-      category: category,
-      minRating: minRating,
+      filterState: filterState,
       sellsBeansOnly: sellsBeansOnly,
       sort: RadarSortMode.nearest,
-      search: '',
       limit: limit,
     );
   }
@@ -250,22 +353,6 @@ class BeansRadarRepository {
     return null;
   }
 
-  bool _matchesClientFilters(
-    RadarPlaceCard c, {
-    required RadarAppMode radarMode,
-    required CoffeePlaceCategory category,
-    required double minRating,
-    required bool sellsBeansOnly,
-  }) {
-    if (!c.matchesRadarMode(radarMode)) return false;
-    if (category != CoffeePlaceCategory.all && c.category != category) {
-      return false;
-    }
-    if (c.rating < minRating) return false;
-    if (sellsBeansOnly && !c.sellsRoastBeans) return false;
-    return true;
-  }
-
   void _sortCards(List<RadarPlaceCard> cards, RadarSortMode sort) {
     if (sort == RadarSortMode.rating) {
       cards.sort((a, b) => b.bayesianScore.compareTo(a.bayesianScore));
@@ -278,15 +365,11 @@ class BeansRadarRepository {
     required double lat,
     required double lng,
     required double radiusKm,
-    required RadarAppMode radarMode,
-    required CoffeePlaceCategory category,
-    required double minRating,
+    required RadarFilterState filterState,
     required bool sellsBeansOnly,
     required RadarSortMode sort,
-    required String search,
     required int limit,
   }) async {
-    final needle = search.trim().toLowerCase();
     final bundledRaw = await _loadBundledPlaces();
     final merged = <RadarPlaceCard>[];
     final seenNames = <String>{};
@@ -315,21 +398,8 @@ class BeansRadarRepository {
 
     final filtered = merged
         .where((c) => c.distanceMeters <= radiusKm * 1000.0)
-        .where((c) => _matchesClientFilters(
-              c,
-              radarMode: radarMode,
-              category: category,
-              minRating: minRating,
-              sellsBeansOnly: sellsBeansOnly,
-            ))
-        .where(
-          (c) =>
-              needle.isEmpty ||
-              c.name.toLowerCase().contains(needle) ||
-              c.fullAddress.toLowerCase().contains(needle) ||
-              c.cityKabupaten.toLowerCase().contains(needle) ||
-              c.province.toLowerCase().contains(needle),
-        )
+        .where(filterState.matchesPlace)
+        .where((c) => !sellsBeansOnly || c.sellsRoastBeans)
         .toList();
 
     _sortCards(filtered, sort);

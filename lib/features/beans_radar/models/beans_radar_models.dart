@@ -65,6 +65,39 @@ extension RadarTravelModeX on RadarTravelMode {
 
   String get osrmProfile => this == RadarTravelMode.walk ? 'foot' : 'driving';
 
+  String get googleMapsTravelMode {
+    switch (this) {
+      case RadarTravelMode.walk:
+        return 'walking';
+      case RadarTravelMode.motorcycle:
+        return 'two-wheeler';
+      case RadarTravelMode.drive:
+        return 'driving';
+    }
+  }
+
+  String get osrmFossgisBaseUrl {
+    switch (this) {
+      case RadarTravelMode.walk:
+        return 'https://routing.openstreetmap.de/routed-foot/route/v1/foot';
+      case RadarTravelMode.motorcycle:
+        return 'https://routing.openstreetmap.de/routed-bike/route/v1/driving';
+      case RadarTravelMode.drive:
+        return 'https://routing.openstreetmap.de/routed-car/route/v1/driving';
+    }
+  }
+
+  String get backendEnumValue {
+    switch (this) {
+      case RadarTravelMode.walk:
+        return 'FOOT';
+      case RadarTravelMode.motorcycle:
+        return 'MOTORCYCLE';
+      case RadarTravelMode.drive:
+        return 'CAR';
+    }
+  }
+
   String get label {
     switch (this) {
       case RadarTravelMode.motorcycle:
@@ -92,11 +125,19 @@ class RadarRouteStep {
   final String instruction;
   final double distanceMeters;
   final double durationSeconds;
+  final String maneuverType;
+  final String streetName;
+  final double? lat;
+  final double? lng;
 
   const RadarRouteStep({
     required this.instruction,
     required this.distanceMeters,
     required this.durationSeconds,
+    this.maneuverType = 'continue',
+    this.streetName = '',
+    this.lat,
+    this.lng,
   });
 
   factory RadarRouteStep.fromJson(Map<String, dynamic> json) {
@@ -104,6 +145,10 @@ class RadarRouteStep {
       instruction: (json['instruction'] ?? 'Ikuti jalur utama').toString(),
       distanceMeters: ((json['distance_meters'] as num?) ?? 0).toDouble(),
       durationSeconds: ((json['duration_seconds'] as num?) ?? 0).toDouble(),
+      maneuverType: (json['maneuver_type'] ?? 'continue').toString(),
+      streetName: (json['street_name'] ?? '').toString(),
+      lat: (json['lat'] as num?)?.toDouble(),
+      lng: (json['lng'] as num?)?.toDouble(),
     );
   }
 }
@@ -118,6 +163,12 @@ class RadarRouteResult {
   final LatLng origin;
   final List<LatLng> points;
   final List<RadarRouteStep> steps;
+  final List<dynamic> alternatives;
+  final int selectedAlternativeIndex;
+  final bool hasToll;
+  final bool usesAlleys;
+  final String modeBadge;
+  final double trafficMultiplier;
 
   const RadarRouteResult({
     required this.destination,
@@ -129,6 +180,12 @@ class RadarRouteResult {
     required this.origin,
     required this.points,
     required this.steps,
+    this.alternatives = const [],
+    this.selectedAlternativeIndex = 0,
+    this.hasToll = false,
+    this.usesAlleys = false,
+    this.modeBadge = '',
+    this.trafficMultiplier = 1.0,
   });
 
   String get distanceLabel => RadarPlaceCard.formatDistance(distanceMeters);
@@ -359,9 +416,14 @@ class RadarPlaceCard {
       case RadarAppMode.all:
         return true;
       case RadarAppMode.cafe:
+        if (category == CoffeePlaceCategory.beanSeller && !servesCafe) {
+          return false;
+        }
         return servesCafe || radarKind == 'CAFE' || radarKind == 'ROASTERY_AND_CAFE';
       case RadarAppMode.beans:
         return sellsRoastBeans ||
+            category == CoffeePlaceCategory.roastery ||
+            category == CoffeePlaceCategory.beanSeller ||
             radarKind == 'BEAN_SELLER' ||
             radarKind == 'ROASTERY_AND_CAFE';
     }

@@ -8,6 +8,8 @@ import 'package:geolocator/geolocator.dart';
 
 import '../../data/beans_radar_repository.dart';
 import '../../data/radar_routing_service.dart';
+import '../../domain/models/multimodal_route_models.dart';
+import '../../domain/models/radar_filter_state.dart';
 import '../../models/beans_radar_models.dart';
 
 class RadarMapBounds {
@@ -43,6 +45,7 @@ class RadarGpsState {
   final double? compassHeadingDeg;
   final RadarAppMode radarMode;
   final CoffeePlaceCategory selectedCategory;
+  final StrictRadarCategory strictCategory;
   final double selectedRadiusKm;
   final RadarSortMode sortMode;
   final bool openNowOnly;
@@ -58,8 +61,11 @@ class RadarGpsState {
   final bool isOfflineFallback;
   final String? statusBanner;
 
-  // In-App Road Polyline Routing State
+  // In-App Multi-Modal Road Polyline Routing State
   final RadarRouteResult? activeRoute;
+  final MultiModalRouteComparison? routeComparison;
+  final int selectedAlternativeIndex;
+  final bool avoidTolls;
   final bool isLoadingRoute;
   final RadarTravelMode routeMode;
   final String? routeError;
@@ -82,6 +88,7 @@ class RadarGpsState {
     this.compassHeadingDeg,
     this.radarMode = RadarAppMode.all,
     this.selectedCategory = CoffeePlaceCategory.all,
+    this.strictCategory = StrictRadarCategory.all,
     this.selectedRadiusKm = 15.0,
     this.sortMode = RadarSortMode.nearest,
     this.openNowOnly = false,
@@ -97,6 +104,9 @@ class RadarGpsState {
     this.isOfflineFallback = false,
     this.statusBanner,
     this.activeRoute,
+    this.routeComparison,
+    this.selectedAlternativeIndex = 0,
+    this.avoidTolls = false,
     this.isLoadingRoute = false,
     this.routeMode = RadarTravelMode.motorcycle,
     this.routeError,
@@ -124,6 +134,7 @@ class RadarGpsState {
     double? compassHeadingDeg,
     RadarAppMode? radarMode,
     CoffeePlaceCategory? selectedCategory,
+    StrictRadarCategory? strictCategory,
     double? selectedRadiusKm,
     RadarSortMode? sortMode,
     bool? openNowOnly,
@@ -142,6 +153,10 @@ class RadarGpsState {
     bool clearStatusBanner = false,
     RadarRouteResult? activeRoute,
     bool clearActiveRoute = false,
+    MultiModalRouteComparison? routeComparison,
+    bool clearRouteComparison = false,
+    int? selectedAlternativeIndex,
+    bool? avoidTolls,
     bool? isLoadingRoute,
     RadarTravelMode? routeMode,
     String? routeError,
@@ -165,6 +180,7 @@ class RadarGpsState {
       compassHeadingDeg: compassHeadingDeg ?? this.compassHeadingDeg,
       radarMode: radarMode ?? this.radarMode,
       selectedCategory: selectedCategory ?? this.selectedCategory,
+      strictCategory: strictCategory ?? this.strictCategory,
       selectedRadiusKm: selectedRadiusKm ?? this.selectedRadiusKm,
       sortMode: sortMode ?? this.sortMode,
       openNowOnly: openNowOnly ?? this.openNowOnly,
@@ -183,6 +199,12 @@ class RadarGpsState {
           clearStatusBanner ? null : (statusBanner ?? this.statusBanner),
       activeRoute:
           clearActiveRoute ? null : (activeRoute ?? this.activeRoute),
+      routeComparison: clearRouteComparison
+          ? null
+          : (routeComparison ?? this.routeComparison),
+      selectedAlternativeIndex:
+          selectedAlternativeIndex ?? this.selectedAlternativeIndex,
+      avoidTolls: avoidTolls ?? this.avoidTolls,
       isLoadingRoute: isLoadingRoute ?? this.isLoadingRoute,
       routeMode: routeMode ?? this.routeMode,
       routeError: clearRouteError ? null : (routeError ?? this.routeError),
@@ -241,7 +263,10 @@ class RadarGpsController extends Notifier<RadarGpsState> {
     state = state.copyWith(
       radarMode: mode,
       selectedCategory: CoffeePlaceCategory.all,
+      strictCategory: StrictRadarCategory.all,
+      sellsBeansOnly: mode == RadarAppMode.beans,
       clearActiveRoute: true,
+      clearRouteComparison: true,
     );
     if (reload && state.hasUsableLocation) {
       await _loadNearbyForCurrentQuery();
@@ -259,6 +284,7 @@ class RadarGpsController extends Notifier<RadarGpsState> {
         locationLabel: 'Bandung',
         locationSource: RadarLocationSource.manualCity,
         isLocating: false,
+        cameraRevision: state.cameraRevision + 1,
       );
       await _loadNearbyForCurrentQuery();
       return;
@@ -433,11 +459,16 @@ class RadarGpsController extends Notifier<RadarGpsState> {
     );
     final shouldRecenter =
         forceReload || !state.hasRealGpsFix || movedMeters > 80;
+    final movedFarFromOldLabel =
+        !state.hasRealGpsFix || movedMeters > 500;
     state = state.copyWith(
       userLat: pos.latitude,
       userLng: pos.longitude,
       queryLat: shouldRecenter ? pos.latitude : state.queryLat,
       queryLng: shouldRecenter ? pos.longitude : state.queryLng,
+      locationLabel: movedFarFromOldLabel
+          ? 'Memuat Kecamatan...'
+          : state.locationLabel,
       locationSource: RadarLocationSource.realGps,
       hasRealGpsFix: true,
       permissionDenied: false,
@@ -449,33 +480,67 @@ class RadarGpsController extends Notifier<RadarGpsState> {
           shouldRecenter ? state.cameraRevision + 1 : state.cameraRevision,
     );
     if (shouldRecenter) {
-      unawaited(_reverseGeocode(pos.latitude, pos.longitude));
       await _loadNearbyForCurrentQuery();
+      await resolveReverseGeocodeLabel(pos.latitude, pos.longitude);
     }
   }
 
-  Future<void> _reverseGeocode(double lat, double lng) async {
+  /// Menghapus label kota lama & menyelesaikan Kecamatan/Kota aktual dari GPS (OS Geocoding -> Server R*-Tree -> Nearest Loaded Place).
+  Future<void> resolveReverseGeocodeLabel(double lat, double lng) async {
     try {
-      if (!kIsWeb && Platform.isWindows) {
-        final net = await _routing.detectRealNetworkLocation();
-        if (net != null) {
-          state = state.copyWith(locationLabel: net.cityLabel);
-          return;
-        }
-      }
-      final marks = await Geocoding().placemarkFromCoordinates(lat, lng);
-      if (marks.isNotEmpty) {
-        final p = marks.first;
-        final parts = <String>[
-          if ((p.subLocality ?? '').trim().isNotEmpty) p.subLocality!.trim(),
-          if ((p.subAdministrativeArea ?? p.locality ?? '').trim().isNotEmpty)
-            (p.subAdministrativeArea ?? p.locality)!.trim(),
-        ];
-        if (parts.isNotEmpty) {
-          state = state.copyWith(locationLabel: parts.join(', '));
+      if (!kIsWeb && !Platform.isWindows && !_isTestEnv) {
+        final marks = await Geocoding().placemarkFromCoordinates(lat, lng);
+        if (marks.isNotEmpty) {
+          final p = marks.first;
+          final parts = <String>[
+            if ((p.subLocality ?? '').trim().isNotEmpty) p.subLocality!.trim(),
+            if ((p.subAdministrativeArea ?? p.locality ?? '').trim().isNotEmpty)
+              (p.subAdministrativeArea ?? p.locality)!.trim(),
+          ];
+          if (parts.isNotEmpty) {
+            state = state.copyWith(locationLabel: parts.join(', '));
+            return;
+          }
         }
       }
     } catch (_) {}
+
+    final serverLabel = await _routing.reverseGeocodeServer(lat, lng);
+    if (serverLabel != null && serverLabel.isNotEmpty) {
+      state = state.copyWith(locationLabel: serverLabel);
+      return;
+    }
+
+    // Fallback berbasis tempat kopi terdekat (< 5 km) agar tidak pernah menyisakan nama kota lain (e.g. Palembang saat di Bandung)
+    RadarPlaceCard? nearestWithCity;
+    var bestDist = 5000.0;
+    for (final p in state.places) {
+      if (p.cityKabupaten.trim().isEmpty) continue;
+      final d = RadarPlaceCard.haversineMeters(lat, lng, p.latitude, p.longitude);
+      if (d <= bestDist) {
+        bestDist = d;
+        nearestWithCity = p;
+      }
+    }
+    if (nearestWithCity != null) {
+      final parts = [
+        nearestWithCity.districtKecamatan.trim(),
+        nearestWithCity.cityKabupaten.trim(),
+      ].where((s) => s.isNotEmpty).join(', ');
+      if (parts.isNotEmpty) {
+        state = state.copyWith(locationLabel: parts);
+        return;
+      }
+    }
+
+    if (Platform.isWindows && !state.hasRealGpsFix) {
+      final net = await _routing.detectRealNetworkLocation();
+      if (net != null) {
+        state = state.copyWith(locationLabel: net.cityLabel);
+        return;
+      }
+    }
+    state = state.copyWith(locationLabel: 'Area Sekitar Anda');
   }
 
   Future<void> selectCityPreset(String name, double lat, double lng) async {
@@ -495,7 +560,7 @@ class RadarGpsController extends Notifier<RadarGpsState> {
     await _loadNearbyForCurrentQuery();
   }
 
-  /// Hitung & gambar garis rute jalan (Polyline) LANGSUNG di dalam peta aplikasi!
+  /// Hitung & bandingkan 3 moda (Jalan Kaki, Motor Indonesia, Mobil) + rute alternatif sekaligus!
   Future<void> requestInAppRoute(
     RadarPlaceCard place, {
     RadarTravelMode? mode,
@@ -505,19 +570,27 @@ class RadarGpsController extends Notifier<RadarGpsState> {
       selectedPlaceId: place.id,
       isLoadingRoute: true,
       routeMode: targetMode,
+      selectedAlternativeIndex: 0,
       routeFocusRevision: state.routeFocusRevision + 1,
       clearRouteError: true,
     );
     try {
-      final route = await _routing.fetchInAppRoadRoute(
+      final comparison = await _routing.compareAllModes(
         originLat: state.userLat,
         originLng: state.userLng,
         destination: place,
+        avoidTolls: state.avoidTolls,
+      );
+      final active = comparison.toActiveRouteResult(
         mode: targetMode,
+        selectedAltIndex: 0,
       );
       state = state.copyWith(
-        activeRoute: route,
+        routeComparison: comparison,
+        activeRoute: active,
+        selectedAlternativeIndex: 0,
         isLoadingRoute: false,
+        routeFocusRevision: state.routeFocusRevision + 1,
         clearRouteError: true,
       );
     } catch (e) {
@@ -529,6 +602,17 @@ class RadarGpsController extends Notifier<RadarGpsState> {
   }
 
   Future<void> changeRouteMode(RadarTravelMode mode) async {
+    final cmp = state.routeComparison;
+    if (cmp != null) {
+      final switched = cmp.toActiveRouteResult(mode: mode, selectedAltIndex: 0);
+      state = state.copyWith(
+        routeMode: mode,
+        selectedAlternativeIndex: 0,
+        activeRoute: switched,
+        routeFocusRevision: state.routeFocusRevision + 1,
+      );
+      return;
+    }
     final cur = state.activeRoute;
     if (cur == null) {
       state = state.copyWith(routeMode: mode);
@@ -537,8 +621,44 @@ class RadarGpsController extends Notifier<RadarGpsState> {
     await requestInAppRoute(cur.destination, mode: mode);
   }
 
+  void selectAlternativeRoute(int altIndex) {
+    final cmp = state.routeComparison;
+    if (cmp == null) return;
+    final switched = cmp.toActiveRouteResult(
+      mode: state.routeMode,
+      selectedAltIndex: altIndex,
+    );
+    state = state.copyWith(
+      selectedAlternativeIndex: altIndex,
+      activeRoute: switched,
+      routeFocusRevision: state.routeFocusRevision + 1,
+    );
+  }
+
+  Future<void> toggleAvoidTolls() async {
+    final nextAvoid = !state.avoidTolls;
+    state = state.copyWith(avoidTolls: nextAvoid);
+    final dest = state.activeRoute?.destination ?? state.routeComparison?.destination;
+    if (dest != null) {
+      await requestInAppRoute(dest, mode: state.routeMode);
+    }
+  }
+
+  void applyReroutedPath(RadarRouteResult updated) {
+    state = state.copyWith(
+      activeRoute: updated,
+      selectedAlternativeIndex: 0,
+      routeFocusRevision: state.routeFocusRevision + 1,
+    );
+  }
+
   void clearActiveRoute() {
-    state = state.copyWith(clearActiveRoute: true, clearRouteError: true);
+    state = state.copyWith(
+      clearActiveRoute: true,
+      clearRouteComparison: true,
+      selectedAlternativeIndex: 0,
+      clearRouteError: true,
+    );
   }
 
   void onMapBoundsMoved(RadarMapBounds bounds) {
@@ -561,7 +681,7 @@ class RadarGpsController extends Notifier<RadarGpsState> {
       isLoadingPlaces: true,
       queryLat: b.centerLat,
       queryLng: b.centerLng,
-      locationLabel: 'Area Peta Dipilih',
+      locationLabel: 'Memuat Area Peta...',
       showSearchAreaButton: false,
     );
     final res = await _repo.fetchViewport(
@@ -571,6 +691,7 @@ class RadarGpsController extends Notifier<RadarGpsState> {
       west: b.west,
       radarMode: state.radarMode,
       category: state.selectedCategory,
+      strictCategory: state.strictCategory,
       openNowOnly: state.openNowOnly,
       minRating: state.minRating,
       sellsBeansOnly: state.sellsBeansOnly,
@@ -581,6 +702,7 @@ class RadarGpsController extends Notifier<RadarGpsState> {
       isLoadingPlaces: false,
       isOfflineFallback: res.isOfflineFallback,
     );
+    await resolveReverseGeocodeLabel(b.centerLat, b.centerLng);
   }
 
   void selectPlace(String? placeId) {
@@ -591,7 +713,19 @@ class RadarGpsController extends Notifier<RadarGpsState> {
   }
 
   Future<void> setCategory(CoffeePlaceCategory cat) async {
-    state = state.copyWith(selectedCategory: cat);
+    final strict = StrictRadarCategoryX.fromLegacyCategory(cat);
+    state = state.copyWith(
+      selectedCategory: cat,
+      strictCategory: strict,
+    );
+    await _loadNearbyForCurrentQuery();
+  }
+
+  Future<void> setStrictCategory(StrictRadarCategory strict) async {
+    state = state.copyWith(
+      strictCategory: strict,
+      selectedCategory: strict.toLegacyCategory(),
+    );
     await _loadNearbyForCurrentQuery();
   }
 
@@ -627,12 +761,12 @@ class RadarGpsController extends Notifier<RadarGpsState> {
 
   Future<void> _loadNearbyForCurrentQuery() async {
     state = state.copyWith(isLoadingPlaces: true);
-    final res = await _repo.fetchNearby(
+    final res = await _repo.fetchNearbyStrict(
       lat: state.queryLat,
       lng: state.queryLng,
       radiusKm: state.selectedRadiusKm,
       radarMode: state.radarMode,
-      category: state.selectedCategory,
+      strictCategory: state.strictCategory,
       openNowOnly: state.openNowOnly,
       minRating: state.minRating,
       sellsBeansOnly: state.sellsBeansOnly,
