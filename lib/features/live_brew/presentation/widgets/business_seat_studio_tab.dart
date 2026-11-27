@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/utils/external_url_launcher.dart';
 import '../../../../theme/app_theme.dart';
@@ -11,6 +10,7 @@ import '../../data/live_brew_v2_api_service.dart';
 import '../../domain/live_brew_mirror_models.dart';
 import '../controllers/live_brew_mirror_controller.dart';
 import '../services/cafe_seat_qr_print_service.dart';
+import '../services/live_brew_qr_card_exporter.dart';
 
 class BusinessSeatStudioTab extends ConsumerStatefulWidget {
   final ValueChanged<CafeSeatModel>? onStartBrewForSeat;
@@ -939,13 +939,13 @@ class _BusinessSeatStudioTabState extends ConsumerState<BusinessSeatStudioTab> {
                             onTap: () => launchExternalUri(Uri.parse(seatUrl)),
                           ),
                           _SeatActionChip(
-                            icon: CupertinoIcons.share,
-                            label: 'Share',
-                            onTap: () => SharePlus.instance.share(
-                              ShareParams(
-                                text:
-                                    'Lacak seduhan kopi ${seat.seatLabel} secara live di $seatUrl',
-                              ),
+                            icon: Icons.qr_code_2_rounded,
+                            label: 'Kirim QR',
+                            onTap: () => LiveBrewQrCardExporter.shareQrCardWithCaption(
+                              liveUrl: seatUrl,
+                              title: branding.cafeDisplayName,
+                              subtitle: seat.zoneArea,
+                              seatLabel: seat.seatLabel,
                             ),
                           ),
                           _SeatActionChip(

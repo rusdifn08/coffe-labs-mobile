@@ -11,6 +11,8 @@ import 'package:coffee_hub_mobile/features/live_brew/presentation/controllers/li
 import 'package:coffee_hub_mobile/features/live_brew/presentation/screens/customer_live_brew_tracker_screen.dart';
 import 'package:coffee_hub_mobile/features/live_brew/presentation/screens/live_brew_viewer_mirror_screen.dart';
 import 'package:coffee_hub_mobile/features/live_brew/presentation/services/cafe_seat_qr_print_service.dart';
+import 'package:coffee_hub_mobile/features/live_brew/presentation/services/live_brew_qr_card_exporter.dart';
+import 'package:coffee_hub_mobile/features/live_brew/presentation/widgets/live_brew_reaction_overlay.dart';
 import 'package:coffee_hub_mobile/features/live_brew/presentation/widgets/table_qr_manager_modal.dart';
 import 'package:coffee_hub_mobile/theme/app_theme.dart';
 import 'package:dio/dio.dart';
@@ -389,6 +391,48 @@ void main() {
       expect(find.text('Live Brew & Bagikan QR'), findsOneWidget);
       expect(find.text('Mulai Siaran Live & Buat QR'), findsOneWidget);
       expect(find.textContaining('V60 Gesha Sweet'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('LiveBrewQrCardExporter renders valid PNG bytes and LiveBrewReactionOverlay animates incoming reactions', (tester) async {
+      final pngBytes = await tester.runAsync(
+        () => LiveBrewQrCardExporter.buildQrCardPngBytes(
+          liveUrl: 'https://brewingcoffee.vercel.app/livebrew/3456789012345',
+          title: 'V60 Gesha Sweet',
+          subtitle: 'V60',
+          baristaName: 'risaha15',
+          specLine: '20g : 300ml · 92°C',
+        ),
+      );
+      expect(pngBytes, isNotNull);
+      expect(pngBytes!.length, greaterThan(1000));
+      // Verify PNG magic signature (89 50 4E 47)
+      expect(pngBytes.sublist(0, 4), [0x89, 0x50, 0x4E, 0x47]);
+
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: Scaffold(
+              body: Stack(
+                children: [
+                  Center(child: Text('Brew Canvas')),
+                  Positioned.fill(child: LiveBrewReactionOverlay()),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      container.read(liveBrewMirrorProvider.notifier).debugInjectReaction('coffee');
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(find.text('☕'), findsOneWidget);
+      // Let animation complete cleanly so no pending timers remain
+      await tester.pump(const Duration(milliseconds: 2000));
       expect(tester.takeException(), isNull);
     });
   });

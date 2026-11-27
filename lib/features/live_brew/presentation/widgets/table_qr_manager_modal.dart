@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/utils/external_url_launcher.dart';
 import '../../../../theme/app_theme.dart';
 import '../../data/live_brew_v2_api_service.dart';
 import '../controllers/live_brew_mirror_controller.dart';
 import '../screens/customer_live_brew_tracker_screen.dart';
+import '../services/live_brew_qr_card_exporter.dart';
 
 /// Bright Coffee Labs Live Brew 2.0 Quick Broadcast & QR Modal launched
 /// directly from `BrewTimerScreen` (Menu ☰ -> Live Brew).
@@ -66,6 +66,7 @@ class TableQrManagerModal extends ConsumerStatefulWidget {
 class _TableQrManagerModalState extends ConsumerState<TableQrManagerModal> {
   final TextEditingController _customerCtrl =
       TextEditingController(text: 'Tamu Slow Bar');
+  bool _sharingQrImage = false;
 
   @override
   void initState() {
@@ -400,16 +401,39 @@ class _TableQrManagerModalState extends ConsumerState<TableQrManagerModal> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: () {
-                              SharePlus.instance.share(
-                                ShareParams(
-                                  text:
-                                      'Pantau seduhan kopi Anda secara langsung di Coffee Labs Live Brew: $activeUrl',
-                                ),
-                              );
-                            },
+                            onPressed: _sharingQrImage
+                                ? null
+                                : () async {
+                                    setState(() => _sharingQrImage = true);
+                                    final rec = widget.activeRecipe ??
+                                        session?.recipeSnapshot;
+                                    final dose = rec?['coffeeWeightGrams'];
+                                    final water = rec?['totalWaterWeightGrams'];
+                                    final temp = rec?['waterTempCelsius'] ??
+                                        widget.waterTempCelsius;
+                                    final specLine = (dose != null && water != null)
+                                        ? '${dose}g : ${water}ml · $temp°C'
+                                        : null;
+                                    await LiveBrewQrCardExporter
+                                        .shareQrCardWithCaption(
+                                      liveUrl: activeUrl,
+                                      title: recipeTitle.isNotEmpty
+                                          ? recipeTitle
+                                          : (session?.selectedRecipeTitle ??
+                                              'Coffee Labs Live Brew'),
+                                      subtitle: recipeMethod.isNotEmpty
+                                          ? recipeMethod
+                                          : session?.selectedMethodName,
+                                      baristaName: session?.brewerDisplayName,
+                                      specLine: specLine,
+                                      seatLabel: selectedSeat?.seatLabel,
+                                    );
+                                    if (mounted) {
+                                      setState(() => _sharingQrImage = false);
+                                    }
+                                  },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryBrown,
+                              backgroundColor: const Color(0xFF16A34A),
                               foregroundColor: Colors.white,
                               elevation: 0,
                               padding: const EdgeInsets.symmetric(vertical: 10),
@@ -417,10 +441,22 @@ class _TableQrManagerModalState extends ConsumerState<TableQrManagerModal> {
                                 borderRadius: BorderRadius.circular(11),
                               ),
                             ),
-                            icon: const Icon(CupertinoIcons.share, size: 15),
+                            icon: _sharingQrImage
+                                ? const SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(Icons.qr_code_2_rounded, size: 16),
                             label: const Text(
-                              'Bagikan',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                              'Kirim QR (WA)',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
                         ),

@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform;
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -12,6 +13,32 @@ import '../../../../services/subscription_service.dart';
 import '../../data/live_brew_v2_api_service.dart';
 import '../../domain/live_brew_mirror_models.dart';
 import '../../domain/services/ntp_synced_timer_engine.dart';
+
+class IncomingLiveReaction {
+  final int id;
+  final String kind;
+  final DateTime receivedAt;
+
+  const IncomingLiveReaction({
+    required this.id,
+    required this.kind,
+    required this.receivedAt,
+  });
+
+  String get emoji {
+    switch (kind.toLowerCase().trim()) {
+      case 'coffee':
+        return '☕';
+      case 'fire':
+        return '🔥';
+      case 'heart':
+        return '❤️';
+      case 'clap':
+      default:
+        return '👏';
+    }
+  }
+}
 
 class LiveBrewMirrorState {
   final LiveSessionMirrorSnapshot? activeSession;
@@ -27,6 +54,7 @@ class LiveBrewMirrorState {
   final bool isGeneratingSeats;
   final bool isWsConnected;
   final int clockOffsetMs;
+  final List<IncomingLiveReaction> recentReactions;
 
   /// Scoped error messages so Studio Meja errors never pollute the Siarkan tab.
   final String? broadcastError;
@@ -46,6 +74,7 @@ class LiveBrewMirrorState {
     this.isGeneratingSeats = false,
     this.isWsConnected = false,
     this.clockOffsetMs = 0,
+    this.recentReactions = const [],
     this.broadcastError,
     this.studioError,
   });
@@ -69,6 +98,7 @@ class LiveBrewMirrorState {
     bool? isGeneratingSeats,
     bool? isWsConnected,
     int? clockOffsetMs,
+    List<IncomingLiveReaction>? recentReactions,
     String? broadcastError,
     bool clearBroadcastError = false,
     String? studioError,
@@ -89,6 +119,9 @@ class LiveBrewMirrorState {
       isGeneratingSeats: isGeneratingSeats ?? this.isGeneratingSeats,
       isWsConnected: isWsConnected ?? this.isWsConnected,
       clockOffsetMs: clockOffsetMs ?? this.clockOffsetMs,
+      recentReactions: clearSession
+          ? const []
+          : (recentReactions ?? this.recentReactions),
       broadcastError: (clearBroadcastError || clearAllErrors)
           ? null
           : (broadcastError ?? this.broadcastError),
@@ -108,7 +141,10 @@ class LiveBrewMirrorController extends Notifier<LiveBrewMirrorState> {
   final NtpSyncedTimerEngine timerEngine = NtpSyncedTimerEngine();
   WebSocketChannel? _ws;
   StreamSubscription? _wsSub;
+  Timer? _wsReconnectTimer;
+  Timer? _wsKeepAliveTimer;
   DateTime? _lastTelemetryPushAt;
+  int _reactionSeq = 0;
 
   bool get _isTestEnv => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
 
@@ -322,6 +358,40 @@ class LiveBrewMirrorController extends Notifier<LiveBrewMirrorState> {
     }
   }
 
+  void _recordIncomingReaction(String kind, {int? totalCheers}) {
+    final cur = state.activeSession;
+    if (cur == null) return;
+    final nextReaction = IncomingLiveReaction(
+      id: ++_reactionSeq,
+      kind: kind,
+      receivedAt: DateTime.now(),
+    );
+    final updatedList = [...state.recentReactions, nextReaction];
+    final trimmedList = updatedList.length > 14
+        ? updatedList.sublist(updatedList.length - 14)
+        : updatedList;
+    HapticFeedback.lightImpact();
+    state = state.copyWith(
+      activeSession: _cloneSessionWith(
+        cur,
+        cheersCount: totalCheers ?? (cur.cheersCount + 1),
+      ),
+      recentReactions: trimmedList,
+    );
+  }
+
+  @visibleForTesting
+  void debugInjectReaction(String kind) {
+    final nextReaction = IncomingLiveReaction(
+      id: ++_reactionSeq,
+      kind: kind,
+      receivedAt: DateTime.now(),
+    );
+    state = state.copyWith(
+      recentReactions: [...state.recentReactions, nextReaction],
+    );
+  }
+
   Future<void> _connectBrewerWs(String sessionId) async {
     if (_isTestEnv) return;
     await _closeSocket();
@@ -356,13 +426,11 @@ class LiveBrewMirrorController extends Notifier<LiveBrewMirrorState> {
                 state = state.copyWith(activeSession: snap);
               }
             } else if (eventType == 'cheer_burst' && state.activeSession != null) {
-              final total = ((ev['total_cheers'] as num?) ?? state.activeSession!.cheersCount).toInt();
-              state = state.copyWith(
-                activeSession: _cloneSessionWith(
-                  state.activeSession!,
-                  cheersCount: total,
-                ),
-              );
+              final kind = (ev['cheer_kind'] ?? 'clap').toString();
+              final total = ((ev['total_cheers'] as num?) ??
+                      (state.activeSession!.cheersCount + 1))
+                  .toInt();
+              _recordIncomingReaction(kind, totalCheers: total);
             } else if (eventType == 'viewer_count_updated' && state.activeSession != null) {
               final count = ((ev['active_viewers'] as num?) ?? 0).toInt();
               state = state.copyWith(
@@ -374,8 +442,8 @@ class LiveBrewMirrorController extends Notifier<LiveBrewMirrorState> {
             }
           } catch (_) {}
         },
-        onError: (_) => state = state.copyWith(isWsConnected: false),
-        onDone: () => state = state.copyWith(isWsConnected: false),
+        onError: (_) => _scheduleWsReconnect(sessionId),
+        onDone: () => _scheduleWsReconnect(sessionId),
       );
       _ws!.sink.add(
         jsonEncode({
@@ -383,9 +451,52 @@ class LiveBrewMirrorController extends Notifier<LiveBrewMirrorState> {
           'client_send_ms': DateTime.now().millisecondsSinceEpoch,
         }),
       );
+
+      // Keepalive ping every 22s + safety reaction sync if WS briefly lags
+      _wsKeepAliveTimer?.cancel();
+      _wsKeepAliveTimer = Timer.periodic(const Duration(seconds: 22), (_) {
+        if (state.activeSession?.sessionId != sessionId) {
+          _wsKeepAliveTimer?.cancel();
+          return;
+        }
+        try {
+          _ws?.sink.add(
+            jsonEncode({
+              'cmd': 'NTP_PING',
+              'client_send_ms': DateTime.now().millisecondsSinceEpoch,
+            }),
+          );
+        } catch (_) {
+          _scheduleWsReconnect(sessionId);
+        }
+      });
     } catch (_) {
-      state = state.copyWith(isWsConnected: false);
+      _scheduleWsReconnect(sessionId);
     }
+  }
+
+  void _scheduleWsReconnect(String sessionId) {
+    if (_isTestEnv) return;
+    if (state.activeSession?.sessionId != sessionId) return;
+    state = state.copyWith(isWsConnected: false);
+    _wsReconnectTimer?.cancel();
+    _wsReconnectTimer = Timer(const Duration(seconds: 3), () async {
+      final active = state.activeSession;
+      if (active == null || active.sessionId != sessionId) return;
+      // Check REST snapshot while reconnecting so no reactions were lost during blip
+      try {
+        final res = await _api.resolveTarget(
+          ParsedLiveBrewTarget(shareCode: active.shareCode),
+        );
+        final remoteCheers = res.activeBrewSession?.cheersCount ?? active.cheersCount;
+        if (remoteCheers > active.cheersCount) {
+          _recordIncomingReaction('clap', totalCheers: remoteCheers);
+        }
+      } catch (_) {}
+      if (state.activeSession?.sessionId == sessionId) {
+        await _connectBrewerWs(sessionId);
+      }
+    });
   }
 
   LiveSessionMirrorSnapshot _cloneSessionWith(
@@ -733,6 +844,10 @@ class LiveBrewMirrorController extends Notifier<LiveBrewMirrorState> {
   }
 
   Future<void> _closeSocket() async {
+    _wsReconnectTimer?.cancel();
+    _wsReconnectTimer = null;
+    _wsKeepAliveTimer?.cancel();
+    _wsKeepAliveTimer = null;
     await _wsSub?.cancel();
     _wsSub = null;
     await _ws?.sink.close();

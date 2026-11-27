@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/utils/external_url_launcher.dart';
 import '../../../../data/roastery_catalog.dart';
@@ -12,6 +11,8 @@ import '../../../../theme/app_theme.dart';
 import '../../data/live_brew_v2_api_service.dart';
 import '../../domain/live_brew_mirror_models.dart';
 import '../controllers/live_brew_mirror_controller.dart';
+import '../services/live_brew_qr_card_exporter.dart';
+import 'live_brew_reaction_overlay.dart';
 import 'mirrored_circular_timer_card.dart';
 
 class BrewerLiveStudioTab extends ConsumerStatefulWidget {
@@ -50,7 +51,12 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
       return _buildStartStudioView(state, ctrl);
     }
 
-    return _buildActiveBroadcastView(state, ctrl, session);
+    return Stack(
+      children: [
+        _buildActiveBroadcastView(state, ctrl, session),
+        const Positioned.fill(child: LiveBrewReactionOverlay()),
+      ],
+    );
   }
 
   Widget _buildStartStudioView(
@@ -375,12 +381,15 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
                           },
                         ),
                         _MiniBtn(
-                          label: 'Bagikan',
-                          icon: CupertinoIcons.share,
-                          onTap: () => SharePlus.instance.share(
-                            ShareParams(
-                              text: 'Pantau seduhan kopi Live Brew 1:1 di $liveUrl',
-                            ),
+                          label: 'Kirim QR (WA)',
+                          icon: Icons.qr_code_2_rounded,
+                          onTap: () => LiveBrewQrCardExporter.shareQrCardWithCaption(
+                            liveUrl: liveUrl,
+                            title: session.selectedRecipeTitle ?? 'Coffee Labs Live Brew',
+                            subtitle: session.selectedMethodName,
+                            baristaName: session.brewerDisplayName,
+                            specLine:
+                                '${session.targetDoseG.toStringAsFixed(0)}g : ${session.targetWaterMl.toStringAsFixed(0)}ml · ${session.currentTempC.toStringAsFixed(0)}°C',
                           ),
                         ),
                         _MiniBtn(

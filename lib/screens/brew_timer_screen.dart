@@ -31,6 +31,7 @@ import '../features/brew/timer/widgets/barista_espresso_cockpit.dart';
 import '../features/live_brew/domain/live_brew_models.dart';
 import '../features/live_brew/presentation/controllers/barista_live_transmitter_controller.dart';
 import '../features/live_brew/presentation/controllers/live_brew_mirror_controller.dart';
+import '../features/live_brew/presentation/widgets/live_brew_reaction_overlay.dart';
 import '../features/live_brew/presentation/widgets/table_qr_manager_modal.dart';
 
 class BrewTimerScreen extends ConsumerStatefulWidget {
@@ -561,10 +562,10 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
                     right: -2,
                     top: -2,
                     child: Container(
-                      width: 8,
-                      height: 8,
+                      width: 8.5,
+                      height: 8.5,
                       decoration: const BoxDecoration(
-                        color: Color(0xFFDC2626),
+                        color: Color(0xFF16A34A),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -640,16 +641,18 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
           ),
         ],
       ),
-      body: (family == BrewMethodFamily.espresso && _useBaristaCockpit)
-          ? BaristaEspressoCockpit(
-              recipe: _recipe,
-              steps: steps,
-              onFinishBrew: _promptJournal,
-              onPrintReceipt: () => ThermalReceiptSheet.show(context, _recipe),
-              onShowDoctor: _showDialInDoctorSheet,
-              isEn: isEn,
-            )
-          : LayoutBuilder(
+      body: Stack(
+        children: [
+          (family == BrewMethodFamily.espresso && _useBaristaCockpit)
+              ? BaristaEspressoCockpit(
+                  recipe: _recipe,
+                  steps: steps,
+                  onFinishBrew: _promptJournal,
+                  onPrintReceipt: () => ThermalReceiptSheet.show(context, _recipe),
+                  onShowDoctor: _showDialInDoctorSheet,
+                  isEn: isEn,
+                )
+              : LayoutBuilder(
         builder: (context, constraints) {
           final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
 
@@ -752,8 +755,23 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
           // Mode Portrait Standar (100% Utuh Seperti Semula)
           return Column(
             children: [
-              // Brew Specification Bar (Bean, Ratio, Temp, Grind, Speaker Mute)
+              // Brew Specification Bar (Bean, Ratio, Temp, Grind)
               BrewSpecHeaderBar(recipe: _recipe),
+
+              // Compact Pulsing Green Live Brew Pill (shown ONLY while broadcasting)
+              LiveBrewActiveStatusPill(
+                onTap: () => TableQrManagerModal.show(
+                  context,
+                  activeRecipe: _recipe,
+                  isTimerRunning: _isRunning,
+                  elapsedSeconds: _elapsedSeconds,
+                  activeStepIndex: activeIndex,
+                  waterTempCelsius: waterTempCelsius,
+                  weightSampler: () => SmartScaleService.instance.isConnected
+                      ? SmartScaleService.instance.currentWeight
+                      : 0.0,
+                ),
+              ),
 
               // Japanese Iced Preparation Guide
               BrewIcedBanner(
@@ -838,6 +856,12 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
             ],
           );
         },
+      ),
+          // Real-Time Audience Reaction Overlay from Live Brew Web/Mobile Viewers
+          const Positioned.fill(
+            child: LiveBrewReactionOverlay(),
+          ),
+        ],
       ),
     );
   }
