@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../theme/app_theme.dart';
 import '../../data/live_brew_v2_api_service.dart';
 import '../../domain/live_brew_mirror_models.dart';
 import '../controllers/live_brew_mirror_controller.dart';
@@ -10,13 +11,13 @@ import '../widgets/business_seat_studio_tab.dart';
 import '../widgets/live_brew_qr_scanner_modal.dart';
 import 'live_brew_viewer_mirror_screen.dart';
 
-/// Alias resmi LiveBrewHubScreen (Live Brewing 2.0 — Zero Simulation).
+/// Alias resmi LiveBrewHubScreen (Live Brewing 2.0 — Bright Specialty UI).
 typedef LiveBrewHubScreen = CustomerLiveBrewTrackerScreen;
 
-/// Hub Terpadu Live Brewing 2.0 (100% Real-Time, Zero Simulation):
+/// Hub Terpadu Live Brewing 2.0 (100% Real-Time, Bright Coffee Labs UI):
 /// - Tab 1 (`Siarkan`): Studio Barista / Home Brewer 1:1 Mirror + NTP Timer Sync
-/// - Tab 2 (`Pindai`): Pindai QR Kamera / Input Kode 13-Digit atau `{cafe}/{meja}` -> Mirror 1:1 Viewer
-/// - Tab 3 (`Studio Meja`): Kustomisasi Branding Kafe + Cetak Massal QR Meja/Kursi + POS Sync
+/// - Tab 2 (`Pindai / Lacak`): Pindai QR Kamera / Input Kode 13-Digit atau `{cafe}/{meja}`
+/// - Tab 3 (`Studio Meja`): Kustomisasi Branding Kafe + Tambah/Generate Massal QR Meja & Cetak
 class CustomerLiveBrewTrackerScreen extends ConsumerStatefulWidget {
   final String? addressCode;
   final String? cafeSlug;
@@ -90,7 +91,7 @@ class _CustomerLiveBrewTrackerScreenState
     if (!parsed.isValid) {
       setState(() {
         _inputError =
-            'Masukkan kode 13 digit, slug kafe (mis. kopi-senja/meja-04), atau tempel link Live Brew.';
+            'Masukkan kode 13 digit, slug kafe (mis. kopi-senja/meja-01), atau tempel link Live Brew.';
       });
       return;
     }
@@ -115,39 +116,46 @@ class _CustomerLiveBrewTrackerScreenState
     final isLive = mirrorState.activeSession != null;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF12100E),
+      backgroundColor: AppTheme.bgCream,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF12100E),
-        foregroundColor: const Color(0xFFF9F5EE),
+        backgroundColor: AppTheme.bgCream,
+        foregroundColor: AppTheme.textDark,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFFF9F5EE)),
+        iconTheme: const IconThemeData(color: AppTheme.textDark),
         leading: Navigator.canPop(context)
             ? IconButton(
                 tooltip: 'Kembali',
                 onPressed: () => Navigator.of(context).maybePop(),
                 icon: const Icon(
                   Icons.arrow_back_ios_new_rounded,
-                  color: Color(0xFFF9F5EE),
+                  color: AppTheme.textDark,
                   size: 20,
                 ),
               )
             : null,
         title: Row(
           children: [
-            const Icon(
-              Icons.qr_code_2_rounded,
-              color: Color(0xFFD4A373),
-              size: 21,
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryBrown.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: const Icon(
+                Icons.qr_code_2_rounded,
+                color: AppTheme.primaryBrown,
+                size: 18,
+              ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 9),
             const Flexible(
               child: Text(
                 'Live Brewing 2.0',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: Color(0xFFF9F5EE),
+                  color: AppTheme.textDark,
                   fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                 ),
@@ -174,27 +182,32 @@ class _CustomerLiveBrewTrackerScreenState
           ],
         ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
+          preferredSize: const Size.fromHeight(50),
           child: Container(
-            margin: const EdgeInsets.fromLTRB(14, 0, 14, 8),
-            padding: const EdgeInsets.all(3),
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: const Color(0xFF1C1714),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: const Color(0xFFD4A373).withValues(alpha: 0.3),
-              ),
+              border: Border.all(color: AppTheme.borderWarm),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryBrown.withValues(alpha: 0.04),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: TabBar(
               controller: _tabController,
               dividerColor: Colors.transparent,
               indicatorSize: TabBarIndicatorSize.tab,
               indicator: BoxDecoration(
-                color: const Color(0xFFD4A373),
-                borderRadius: BorderRadius.circular(11),
+                color: AppTheme.primaryBrown,
+                borderRadius: BorderRadius.circular(10),
               ),
-              labelColor: const Color(0xFF12100E),
-              unselectedLabelColor: const Color(0xFFF9F5EE),
+              labelColor: Colors.white,
+              unselectedLabelColor: AppTheme.textMuted,
               labelStyle: const TextStyle(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w800,
@@ -225,6 +238,7 @@ class _CustomerLiveBrewTrackerScreenState
               _tabController.animateTo(0);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
+                  behavior: SnackBarBehavior.floating,
                   content: Text(
                     'Meja ${seat.seatLabel} dipilih — siap mulai siaran Live Brew!',
                   ),
@@ -252,11 +266,16 @@ class _CustomerLiveBrewTrackerScreenState
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: const Color(0xFF1C1714),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: const Color(0xFFD4A373).withValues(alpha: 0.4),
-            ),
+            border: Border.all(color: AppTheme.borderWarm),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryBrown.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -266,12 +285,12 @@ class _CustomerLiveBrewTrackerScreenState
                   Container(
                     padding: const EdgeInsets.all(11),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFD4A373).withValues(alpha: 0.16),
+                      color: AppTheme.primaryBrown.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Icon(
                       Icons.qr_code_scanner_rounded,
-                      color: Color(0xFFD4A373),
+                      color: AppTheme.primaryBrown,
                       size: 24,
                     ),
                   ),
@@ -283,16 +302,16 @@ class _CustomerLiveBrewTrackerScreenState
                         Text(
                           'Lacak Seduhan Barista 1:1',
                           style: TextStyle(
-                            color: Color(0xFFF9F5EE),
+                            color: AppTheme.textDark,
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
                         SizedBox(height: 2),
                         Text(
-                          'Pindai QR meja/kursi kafe atau masukkan kode siaran nyata dari barista.',
+                          'Pindai QR meja/kursi kafe atau masukkan kode siaran langsung dari barista.',
                           style: TextStyle(
-                            color: Color(0xFFCBBFB2),
+                            color: AppTheme.textMuted,
                             fontSize: 11.5,
                           ),
                         ),
@@ -307,8 +326,9 @@ class _CustomerLiveBrewTrackerScreenState
                 height: 48,
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD4A373),
-                    foregroundColor: const Color(0xFF12100E),
+                    backgroundColor: AppTheme.primaryBrown,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -319,7 +339,7 @@ class _CustomerLiveBrewTrackerScreenState
                     'Pindai QR dengan Kamera',
                     style: TextStyle(
                       fontSize: 13.5,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ),
@@ -328,7 +348,7 @@ class _CustomerLiveBrewTrackerScreenState
               const Text(
                 'Atau Masukkan Kode / Link Live Brew',
                 style: TextStyle(
-                  color: Color(0xFFF9F5EE),
+                  color: AppTheme.textDark,
                   fontSize: 12.5,
                   fontWeight: FontWeight.w800,
                 ),
@@ -336,30 +356,28 @@ class _CustomerLiveBrewTrackerScreenState
               const SizedBox(height: 8),
               TextField(
                 controller: _inputCtrl,
-                style: const TextStyle(color: Color(0xFFF9F5EE), fontSize: 13),
+                style: const TextStyle(color: AppTheme.textDark, fontSize: 13),
                 onSubmitted: _openTargetFromRaw,
                 decoration: InputDecoration(
-                  hintText: 'Contoh: 7123456789012 atau kopi-senja/meja-04',
+                  hintText: 'Contoh: 3123456789012 atau kopi-senja/meja-01',
                   hintStyle: const TextStyle(
-                    color: Color(0xFF9C8F82),
+                    color: AppTheme.textMuted,
                     fontSize: 12,
                   ),
                   filled: true,
-                  fillColor: const Color(0xFF12100E),
+                  fillColor: AppTheme.bgCream,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 14,
                     vertical: 12,
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(13),
-                    borderSide: BorderSide(
-                      color: const Color(0xFFD4A373).withValues(alpha: 0.35),
-                    ),
+                    borderSide: const BorderSide(color: AppTheme.borderWarm),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(13),
                     borderSide: const BorderSide(
-                      color: Color(0xFFD4A373),
+                      color: AppTheme.primaryBrown,
                       width: 1.5,
                     ),
                   ),
@@ -372,8 +390,8 @@ class _CustomerLiveBrewTrackerScreenState
                 height: 44,
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFFF9F5EE),
-                    side: const BorderSide(color: Color(0xFFD4A373)),
+                    foregroundColor: AppTheme.primaryBrown,
+                    side: const BorderSide(color: AppTheme.primaryBrown),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(13),
                     ),
@@ -393,11 +411,9 @@ class _CustomerLiveBrewTrackerScreenState
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF1C1714),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.08),
-            ),
+            border: Border.all(color: AppTheme.borderWarm),
           ),
           child: const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,20 +421,20 @@ class _CustomerLiveBrewTrackerScreenState
               Text(
                 'Format Alamat yang Didukung (100% Real-Time)',
                 style: TextStyle(
-                  color: Color(0xFFD4A373),
+                  color: AppTheme.primaryBrown,
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                 ),
               ),
               SizedBox(height: 8),
               Text(
-                '• Link Kafe Bisnis: https://coffeelabs.com/livebrew/{kafe}/{meja}\n'
-                '• Slug Cepat: kopi-senja/meja-04 atau kopi-senja/kursi-bar-02\n'
-                '• Kode 13 Digit Sesi Personal / Meja: 7xxxxxxxxxxxx / 8xxxxxxxxxxxx',
+                '• Link Web Live: https://brewingcoffee.vercel.app/livebrew/{kode}\n'
+                '• Link Kafe Bisnis: https://brewingcoffee.vercel.app/livebrew/{kafe}/{meja}\n'
+                '• Slug Cepat: kopi-senja/meja-01 atau kopi-senja/kursi-bar-02',
                 style: TextStyle(
-                  color: Color(0xFFCBBFB2),
+                  color: AppTheme.textMuted,
                   fontSize: 11.5,
-                  height: 1.5,
+                  height: 1.55,
                 ),
               ),
             ],

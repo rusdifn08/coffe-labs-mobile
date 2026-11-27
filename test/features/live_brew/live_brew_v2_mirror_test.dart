@@ -7,9 +7,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:coffee_hub_mobile/features/live_brew/data/live_brew_v2_api_service.dart';
 import 'package:coffee_hub_mobile/features/live_brew/domain/live_brew_mirror_models.dart';
 import 'package:coffee_hub_mobile/features/live_brew/domain/services/ntp_synced_timer_engine.dart';
+import 'package:coffee_hub_mobile/features/live_brew/presentation/controllers/live_brew_mirror_controller.dart';
 import 'package:coffee_hub_mobile/features/live_brew/presentation/screens/customer_live_brew_tracker_screen.dart';
 import 'package:coffee_hub_mobile/features/live_brew/presentation/screens/live_brew_viewer_mirror_screen.dart';
 import 'package:coffee_hub_mobile/features/live_brew/presentation/services/cafe_seat_qr_print_service.dart';
+import 'package:coffee_hub_mobile/features/live_brew/presentation/widgets/table_qr_manager_modal.dart';
+import 'package:coffee_hub_mobile/theme/app_theme.dart';
+import 'package:dio/dio.dart';
 
 LiveSessionMirrorSnapshot _sampleSnapshot({
   int stateVersion = 4,
@@ -158,6 +162,38 @@ void main() {
       expect(t4.isBrandedSeat, isTrue);
       expect(t4.cafeSlug, 'kopi-senja');
       expect(t4.seatSlug, 'meja-01');
+
+      final t5 = LiveBrewV2ApiService.parseUserInputOrUrl(
+        'https://brewingcoffee.vercel.app/livebrew/3456789012345',
+      );
+      expect(t5.isValid, isTrue);
+      expect(t5.isBrandedSeat, isFalse);
+      expect(t5.shareCode, '3456789012345');
+
+      expect(
+        LiveBrewV2ApiService.normalizePublicShareUrl(
+          'https://coffeelabs.com/livebrew/kopi-senja/meja-01',
+        ),
+        'https://brewingcoffee.vercel.app/livebrew/kopi-senja/meja-01',
+      );
+    });
+
+    test('LiveBrewMirrorController.mapFriendlyError never exposes raw DioException text on 401/403', () {
+      final err401 = DioException(
+        requestOptions: RequestOptions(path: '/api/v1/livebrew/business/seats/batch'),
+        response: Response(
+          requestOptions: RequestOptions(path: '/api/v1/livebrew/business/seats/batch'),
+          statusCode: 401,
+        ),
+        type: DioExceptionType.badResponse,
+      );
+      final mapped401 = LiveBrewMirrorController.mapFriendlyError(
+        err401,
+        fallback: 'Fallback',
+      );
+      expect(mapped401.isAuthExpired, isTrue);
+      expect(mapped401.message, isNot(contains('DioException')));
+      expect(mapped401.message, contains('login'));
     });
 
     test('CafeSeatQrPrintService generates valid %PDF- bytes for all 3 vector layouts', () async {
@@ -225,10 +261,10 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 120));
 
-      // Verify High-Contrast Obsidian AppBar (#12100E) with Alabaster Cream (#F9F5EE) foreground
+      // Verify Bright Coffee Labs AppBar (AppTheme.bgCream with AppTheme.textDark foreground)
       final appBar = tester.widget<AppBar>(find.byType(AppBar));
-      expect(appBar.backgroundColor, const Color(0xFF12100E));
-      expect(appBar.foregroundColor, const Color(0xFFF9F5EE));
+      expect(appBar.backgroundColor, AppTheme.bgCream);
+      expect(appBar.foregroundColor, AppTheme.textDark);
 
       // Verify ZERO simulation UI anywhere
       expect(find.textContaining('Jalankan Simulasi'), findsNothing);
@@ -321,6 +357,38 @@ void main() {
       await tester.pump(const Duration(milliseconds: 120));
       expect(find.text('V60 Kasuya 4:6 Sweet'), findsOneWidget);
       expect(find.text('Flores Manggarai Washed'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('TableQrManagerModal renders bright Coffee Labs broadcast modal cleanly at 360x780', (tester) async {
+      tester.view.physicalSize = const Size(360, 780);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: TableQrManagerModal(
+                activeRecipe: {
+                  'title': 'V60 Gesha Sweet',
+                  'method': 'V60',
+                  'beanName': 'Gesha Anaerobic',
+                },
+                isTimerRunning: true,
+                elapsedSeconds: 42,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Live Brew & Bagikan QR'), findsOneWidget);
+      expect(find.text('Mulai Siaran Live & Buat QR'), findsOneWidget);
+      expect(find.textContaining('V60 Gesha Sweet'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

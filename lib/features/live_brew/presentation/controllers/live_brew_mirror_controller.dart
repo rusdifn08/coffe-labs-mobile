@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform;
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../../../../core/network/dio_client.dart';
 import '../../../../services/auth_service.dart';
 import '../../../../services/subscription_service.dart';
 import '../../data/live_brew_v2_api_service.dart';
@@ -17,11 +19,18 @@ class LiveBrewMirrorState {
   final List<CafeSeatModel> seats;
   final String? selectedSeatId;
   final bool isBusinessUser;
+  final bool isAuthenticated;
+  final bool requiresAuthRelogin;
   final bool isStartingSession;
   final bool isLoadingBusiness;
+  final bool isSavingBranding;
+  final bool isGeneratingSeats;
   final bool isWsConnected;
   final int clockOffsetMs;
-  final String? errorMessage;
+
+  /// Scoped error messages so Studio Meja errors never pollute the Siarkan tab.
+  final String? broadcastError;
+  final String? studioError;
 
   const LiveBrewMirrorState({
     this.activeSession,
@@ -29,12 +38,20 @@ class LiveBrewMirrorState {
     this.seats = const [],
     this.selectedSeatId,
     this.isBusinessUser = false,
+    this.isAuthenticated = true,
+    this.requiresAuthRelogin = false,
     this.isStartingSession = false,
     this.isLoadingBusiness = false,
+    this.isSavingBranding = false,
+    this.isGeneratingSeats = false,
     this.isWsConnected = false,
     this.clockOffsetMs = 0,
-    this.errorMessage,
+    this.broadcastError,
+    this.studioError,
   });
+
+  /// Backwards-compatible getter.
+  String? get errorMessage => broadcastError ?? studioError;
 
   LiveBrewMirrorState copyWith({
     LiveSessionMirrorSnapshot? activeSession,
@@ -44,12 +61,19 @@ class LiveBrewMirrorState {
     String? selectedSeatId,
     bool clearSelectedSeat = false,
     bool? isBusinessUser,
+    bool? isAuthenticated,
+    bool? requiresAuthRelogin,
     bool? isStartingSession,
     bool? isLoadingBusiness,
+    bool? isSavingBranding,
+    bool? isGeneratingSeats,
     bool? isWsConnected,
     int? clockOffsetMs,
-    String? errorMessage,
-    bool clearError = false,
+    String? broadcastError,
+    bool clearBroadcastError = false,
+    String? studioError,
+    bool clearStudioError = false,
+    bool clearAllErrors = false,
   }) {
     return LiveBrewMirrorState(
       activeSession: clearSession ? null : (activeSession ?? this.activeSession),
@@ -57,11 +81,20 @@ class LiveBrewMirrorState {
       seats: seats ?? this.seats,
       selectedSeatId: clearSelectedSeat ? null : (selectedSeatId ?? this.selectedSeatId),
       isBusinessUser: isBusinessUser ?? this.isBusinessUser,
+      isAuthenticated: isAuthenticated ?? this.isAuthenticated,
+      requiresAuthRelogin: requiresAuthRelogin ?? this.requiresAuthRelogin,
       isStartingSession: isStartingSession ?? this.isStartingSession,
       isLoadingBusiness: isLoadingBusiness ?? this.isLoadingBusiness,
+      isSavingBranding: isSavingBranding ?? this.isSavingBranding,
+      isGeneratingSeats: isGeneratingSeats ?? this.isGeneratingSeats,
       isWsConnected: isWsConnected ?? this.isWsConnected,
       clockOffsetMs: clockOffsetMs ?? this.clockOffsetMs,
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      broadcastError: (clearBroadcastError || clearAllErrors)
+          ? null
+          : (broadcastError ?? this.broadcastError),
+      studioError: (clearStudioError || clearAllErrors)
+          ? null
+          : (studioError ?? this.studioError),
     );
   }
 }
@@ -75,6 +108,7 @@ class LiveBrewMirrorController extends Notifier<LiveBrewMirrorState> {
   final NtpSyncedTimerEngine timerEngine = NtpSyncedTimerEngine();
   WebSocketChannel? _ws;
   StreamSubscription? _wsSub;
+  DateTime? _lastTelemetryPushAt;
 
   bool get _isTestEnv => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
 
@@ -90,27 +124,103 @@ class LiveBrewMirrorController extends Notifier<LiveBrewMirrorState> {
 
   LiveBrewV2ApiService get _api => ref.read(liveBrewV2ApiProvider);
 
+  /// Maps raw Dio/network exceptions into clean, actionable Indonesian user copy.
+  static ({String message, bool isAuthExpired}) mapFriendlyError(
+    Object error, {
+    required String fallback,
+  }) {
+    if (error is DioException) {
+      final status = error.response?.statusCode;
+      final mapped = GlobalErrorAndLoggingInterceptor.mapDioException(error);
+      if (status == 401) {
+        return (
+          message:
+              'Sesi login Anda belum aktif atau sudah berakhir. Silakan login ulang di menu Profil agar Live Brew & QR meja dapat tersimpan ke server.',
+          isAuthExpired: true,
+        );
+      }
+      if (status == 403) {
+        return (
+          message:
+              'Fitur Studio Meja & QR Kafe memerlukan akun Coffee Labs Business atau Admin.',
+          isAuthExpired: false,
+        );
+      }
+      if (status == 409) {
+        return (
+          message:
+              'Slug URL kafe tersebut sudah digunakan kafe lain. Gunakan nama slug yang berbeda.',
+          isAuthExpired: false,
+        );
+      }
+      if (status == 400 || status == 422) {
+        return (message: mapped.message, isAuthExpired: false);
+      }
+      if (error.type == DioExceptionType.connectionError ||
+          error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout) {
+        return (
+          message:
+              'Tidak dapat terhubung ke server Coffee Labs. Periksa koneksi internet Anda lalu coba lagi.',
+          isAuthExpired: false,
+        );
+      }
+      return (message: mapped.message, isAuthExpired: false);
+    }
+    return (message: fallback, isAuthExpired: false);
+  }
+
   Future<void> loadBusinessStudio() async {
-    state = state.copyWith(isLoadingBusiness: true, clearError: true);
+    state = state.copyWith(isLoadingBusiness: true, clearStudioError: true);
     try {
+      final token = await AuthService.getToken();
       final user = await AuthService.getCurrentUser();
+      final hasToken = token != null && token.trim().isNotEmpty;
       final isBiz = user != null
           ? (user.isAdmin || user.isBusiness || user.username.toLowerCase() == 'bisnis123')
           : await SubscriptionService.isBusiness();
-      if (!isBiz) {
-        state = state.copyWith(isBusinessUser: false, isLoadingBusiness: false);
+
+      if (!hasToken) {
+        state = state.copyWith(
+          isAuthenticated: false,
+          requiresAuthRelogin: true,
+          isBusinessUser: isBiz,
+          isLoadingBusiness: false,
+        );
         return;
       }
+
+      if (!isBiz) {
+        state = state.copyWith(
+          isAuthenticated: true,
+          requiresAuthRelogin: false,
+          isBusinessUser: false,
+          isLoadingBusiness: false,
+        );
+        return;
+      }
+
       final branding = await _api.getMyBranding();
       final seats = await _api.listMySeats();
       state = state.copyWith(
+        isAuthenticated: true,
+        requiresAuthRelogin: false,
         isBusinessUser: true,
         branding: branding,
         seats: seats,
         isLoadingBusiness: false,
       );
-    } catch (_) {
-      state = state.copyWith(isLoadingBusiness: false);
+    } catch (e) {
+      final mapped = mapFriendlyError(
+        e,
+        fallback: 'Gagal memuat konfigurasi Studio Meja.',
+      );
+      state = state.copyWith(
+        isLoadingBusiness: false,
+        requiresAuthRelogin: mapped.isAuthExpired,
+        isAuthenticated: !mapped.isAuthExpired,
+        studioError: mapped.isAuthExpired ? mapped.message : null,
+      );
     }
   }
 
@@ -121,34 +231,77 @@ class LiveBrewMirrorController extends Notifier<LiveBrewMirrorState> {
     );
   }
 
+  void clearErrors() {
+    state = state.copyWith(clearAllErrors: true);
+  }
+
   Future<bool> startRealSession({
     String? seatId,
     String? posOrderId,
     String? posOrderNumber,
     String? customerName,
+    String? methodId,
+    String? methodName,
+    String? recipeTitle,
+    Map<String, dynamic>? recipeSnapshot,
+    Map<String, dynamic>? beanSnapshot,
+    bool? initialTimerRunning,
+    int? initialElapsedMs,
+    int? initialStepIndex,
+    double? initialTempC,
+    double? initialWeightG,
   }) async {
-    state = state.copyWith(isStartingSession: true, clearError: true);
+    state = state.copyWith(isStartingSession: true, clearBroadcastError: true);
     try {
+      final token = await AuthService.getToken();
+      if (token == null || token.trim().isEmpty) {
+        state = state.copyWith(
+          isStartingSession: false,
+          isAuthenticated: false,
+          requiresAuthRelogin: true,
+          broadcastError:
+              'Anda belum login. Silakan login di menu Profil terlebih dahulu untuk membuat QR & link Live Brew.',
+        );
+        return false;
+      }
+
       await _calibrateNtpViaRest();
       final snap = await _api.createRealMirrorSession(
         seatId: seatId ?? state.selectedSeatId,
         posOrderId: posOrderId,
         posOrderNumber: posOrderNumber,
         customerName: customerName,
+        methodId: methodId,
+        methodName: methodName,
+        recipeTitle: recipeTitle,
+        recipeSnapshot: recipeSnapshot,
+        beanSnapshot: beanSnapshot,
+        initialTimerRunning: initialTimerRunning,
+        initialElapsedMs: initialElapsedMs,
+        initialStepIndex: initialStepIndex,
+        initialTempC: initialTempC,
+        initialWeightG: initialWeightG,
       );
       timerEngine.applyAuthoritativeSnapshot(snap, forceReset: true);
       state = state.copyWith(
         activeSession: snap,
+        isAuthenticated: true,
+        requiresAuthRelogin: false,
         isStartingSession: false,
         clockOffsetMs: timerEngine.clockOffsetMs,
       );
       await _connectBrewerWs(snap.sessionId);
       return true;
     } catch (e) {
+      final mapped = mapFriendlyError(
+        e,
+        fallback: 'Gagal memulai sesi Live Brew. Periksa koneksi internet Anda lalu coba lagi.',
+      );
       state = state.copyWith(
         isStartingSession: false,
-        errorMessage:
-            'Gagal memulai sesi Live Brew nyata. Pastikan Anda sudah login dan terhubung ke server.',
+        requiresAuthRelogin: mapped.isAuthExpired,
+        isAuthenticated: !mapped.isAuthExpired,
+        broadcastError: mapped.message,
       );
       return false;
     }
@@ -156,7 +309,7 @@ class LiveBrewMirrorController extends Notifier<LiveBrewMirrorState> {
 
   Future<void> _calibrateNtpViaRest() async {
     if (_isTestEnv) return;
-    for (var i = 0; i < 3; i++) {
+    for (var i = 0; i < 2; i++) {
       final t1 = DateTime.now().millisecondsSinceEpoch;
       final res = await _api.pingNtp(t1);
       if (res != null) {
@@ -194,46 +347,29 @@ class LiveBrewMirrorController extends Notifier<LiveBrewMirrorState> {
               );
               state = state.copyWith(clockOffsetMs: timerEngine.clockOffsetMs);
             } else if (eventType == 'mirror_snapshot') {
+              if (ev['share_url'] is String) {
+                ev['share_url'] =
+                    LiveBrewV2ApiService.normalizePublicShareUrl(ev['share_url'] as String);
+              }
               final snap = LiveSessionMirrorSnapshot.fromJson(ev);
               if (timerEngine.applyAuthoritativeSnapshot(snap)) {
                 state = state.copyWith(activeSession: snap);
               }
+            } else if (eventType == 'cheer_burst' && state.activeSession != null) {
+              final total = ((ev['total_cheers'] as num?) ?? state.activeSession!.cheersCount).toInt();
+              state = state.copyWith(
+                activeSession: _cloneSessionWith(
+                  state.activeSession!,
+                  cheersCount: total,
+                ),
+              );
             } else if (eventType == 'viewer_count_updated' && state.activeSession != null) {
               final count = ((ev['active_viewers'] as num?) ?? 0).toInt();
-              final cur = state.activeSession!;
               state = state.copyWith(
-                activeSession: LiveSessionMirrorSnapshot.fromJson({
-                  'session_id': cur.sessionId,
-                  'share_code': cur.shareCode,
-                  'share_url': cur.shareUrl,
-                  'deep_link_url': cur.deepLinkUrl,
-                  'is_business_session': cur.isBusinessSession,
-                  'store_id': cur.storeId,
-                  'seat_id': cur.seatId,
-                  'pos_order_id': cur.posOrderId,
-                  'pos_order_number': cur.posOrderNumber,
-                  'pos_order_status': cur.posOrderStatus,
-                  'brewer_display_name': cur.brewerDisplayName,
-                  'customer_name': cur.customerName,
-                  'phase': cur.phase.apiValue,
-                  'phase_label_id': cur.phaseLabelId,
-                  'state_version': cur.stateVersion,
-                  'selected_method_id': cur.selectedMethodId,
-                  'selected_method_name': cur.selectedMethodName,
-                  'selected_recipe_title': cur.selectedRecipeTitle,
-                  'recipe_snapshot_json': cur.recipeSnapshot,
-                  'bean_snapshot_json': cur.beanSnapshot,
-                  'timer_status': cur.timerStatus.apiValue,
-                  'timer_accumulated_ms': cur.timerAccumulatedMs,
-                  'timer_anchor_server_ms': cur.timerAnchorServerMs,
-                  'current_step_index': cur.currentStepIndex,
-                  'current_weight_g': cur.currentWeightG,
-                  'current_flow_rate_ml_s': cur.currentFlowRateMlS,
-                  'current_temp_c': cur.currentTempC,
-                  'cheers_count': cur.cheersCount,
-                  'active_viewers_count': count,
-                  'server_epoch_ms': cur.serverEpochMs,
-                }),
+                activeSession: _cloneSessionWith(
+                  state.activeSession!,
+                  activeViewersCount: count,
+                ),
               );
             }
           } catch (_) {}
@@ -252,16 +388,55 @@ class LiveBrewMirrorController extends Notifier<LiveBrewMirrorState> {
     }
   }
 
+  LiveSessionMirrorSnapshot _cloneSessionWith(
+    LiveSessionMirrorSnapshot cur, {
+    int? activeViewersCount,
+    int? cheersCount,
+  }) {
+    return LiveSessionMirrorSnapshot.fromJson({
+      'session_id': cur.sessionId,
+      'share_code': cur.shareCode,
+      'share_url': cur.shareUrl,
+      'deep_link_url': cur.deepLinkUrl,
+      'is_business_session': cur.isBusinessSession,
+      'store_id': cur.storeId,
+      'seat_id': cur.seatId,
+      'pos_order_id': cur.posOrderId,
+      'pos_order_number': cur.posOrderNumber,
+      'pos_order_status': cur.posOrderStatus,
+      'brewer_display_name': cur.brewerDisplayName,
+      'customer_name': cur.customerName,
+      'phase': cur.phase.apiValue,
+      'phase_label_id': cur.phaseLabelId,
+      'state_version': cur.stateVersion,
+      'selected_method_id': cur.selectedMethodId,
+      'selected_method_name': cur.selectedMethodName,
+      'selected_recipe_title': cur.selectedRecipeTitle,
+      'recipe_snapshot_json': cur.recipeSnapshot,
+      'bean_snapshot_json': cur.beanSnapshot,
+      'timer_status': cur.timerStatus.apiValue,
+      'timer_accumulated_ms': cur.timerAccumulatedMs,
+      'timer_anchor_server_ms': cur.timerAnchorServerMs,
+      'current_step_index': cur.currentStepIndex,
+      'current_weight_g': cur.currentWeightG,
+      'current_flow_rate_ml_s': cur.currentFlowRateMlS,
+      'current_temp_c': cur.currentTempC,
+      'cheers_count': cheersCount ?? cur.cheersCount,
+      'active_viewers_count': activeViewersCount ?? cur.activeViewersCount,
+      'server_epoch_ms': cur.serverEpochMs,
+    });
+  }
+
   Future<void> dispatchCommand(Map<String, dynamic> cmd) async {
     final session = state.activeSession;
     if (session == null) return;
     try {
       final updated = await _api.sendCommandRest(session.sessionId, cmd);
       if (timerEngine.applyAuthoritativeSnapshot(updated)) {
-        state = state.copyWith(activeSession: updated, clearError: true);
+        state = state.copyWith(activeSession: updated, clearBroadcastError: true);
       }
     } catch (_) {
-      // Kirim via WS jika REST sementara gagal
+      // Fallback to WS if REST temporarily fails
       try {
         _ws?.sink.add(jsonEncode(cmd));
       } catch (_) {}
@@ -305,7 +480,16 @@ class LiveBrewMirrorController extends Notifier<LiveBrewMirrorState> {
     required double weightG,
     required double flowRateMlS,
     required double tempC,
+    bool throttle = false,
   }) {
+    if (throttle) {
+      final now = DateTime.now();
+      if (_lastTelemetryPushAt != null &&
+          now.difference(_lastTelemetryPushAt!).inMilliseconds < 1800) {
+        return Future.value();
+      }
+      _lastTelemetryPushAt = now;
+    }
     return dispatchCommand({
       'cmd': 'ADVANCE_STEP_OR_TELEMETRY',
       'current_step_index': stepIndex,
@@ -327,9 +511,23 @@ class LiveBrewMirrorController extends Notifier<LiveBrewMirrorState> {
   }
 
   Future<void> stopBroadcast() async {
+    final sessionId = state.activeSession?.sessionId;
     await _closeSocket();
     timerEngine.reset();
     state = state.copyWith(clearSession: true, isWsConnected: false);
+    if (sessionId != null && !_isTestEnv) {
+      unawaited(_api.endRealMirrorSession(sessionId));
+    }
+    if (state.isBusinessUser && state.isAuthenticated) {
+      unawaited(_refreshSeatsSilently());
+    }
+  }
+
+  Future<void> _refreshSeatsSilently() async {
+    try {
+      final seats = await _api.listMySeats();
+      state = state.copyWith(seats: seats);
+    } catch (_) {}
   }
 
   Future<BusinessBrandingModel?> saveCafeBranding({
@@ -343,6 +541,20 @@ class LiveBrewMirrorController extends Notifier<LiveBrewMirrorState> {
     String? instagramHandle,
     bool showPosQueuePosition = true,
   }) async {
+    if (cafeDisplayName.trim().length < 2) {
+      state = state.copyWith(
+        studioError: 'Nama kafe minimal 2 karakter.',
+      );
+      return null;
+    }
+    if (cafeSlug.trim().length < 2) {
+      state = state.copyWith(
+        studioError: 'Slug URL kafe minimal 2 karakter (contoh: kopi-senja).',
+      );
+      return null;
+    }
+
+    state = state.copyWith(isSavingBranding: true, clearStudioError: true);
     try {
       final saved = await _api.saveBranding(
         cafeSlug: cafeSlug,
@@ -356,10 +568,70 @@ class LiveBrewMirrorController extends Notifier<LiveBrewMirrorState> {
         showPosQueuePosition: showPosQueuePosition,
       );
       final seats = await _api.listMySeats();
-      state = state.copyWith(branding: saved, seats: seats, clearError: true);
+      state = state.copyWith(
+        branding: saved,
+        seats: seats,
+        isSavingBranding: false,
+        requiresAuthRelogin: false,
+        isAuthenticated: true,
+        clearStudioError: true,
+      );
       return saved;
     } catch (e) {
-      state = state.copyWith(errorMessage: 'Gagal menyimpan branding kafe: $e');
+      final mapped = mapFriendlyError(
+        e,
+        fallback: 'Gagal menyimpan branding kafe. Coba lagi sesaat lagi.',
+      );
+      state = state.copyWith(
+        isSavingBranding: false,
+        requiresAuthRelogin: mapped.isAuthExpired,
+        isAuthenticated: !mapped.isAuthExpired,
+        studioError: mapped.message,
+      );
+      return null;
+    }
+  }
+
+  Future<CafeSeatModel?> createSingleSeat({
+    required String seatLabel,
+    required CafeSeatKind kind,
+    required String zoneArea,
+    int capacityPersons = 2,
+  }) async {
+    if (seatLabel.trim().isEmpty) {
+      state = state.copyWith(studioError: 'Nama meja / kursi tidak boleh kosong.');
+      return null;
+    }
+    state = state.copyWith(isGeneratingSeats: true, clearStudioError: true);
+    try {
+      final seat = await _api.createSeat(
+        seatLabel: seatLabel.trim(),
+        seatKind: kind,
+        zoneArea: zoneArea.trim().isEmpty ? 'Main Area' : zoneArea.trim(),
+        capacityPersons: capacityPersons,
+      );
+      final all = await _api.listMySeats();
+      final branding = await _api.getMyBranding();
+      state = state.copyWith(
+        branding: branding ?? state.branding,
+        seats: all,
+        isGeneratingSeats: false,
+        requiresAuthRelogin: false,
+        isAuthenticated: true,
+        clearStudioError: true,
+      );
+      return seat;
+    } catch (e) {
+      final mapped = mapFriendlyError(
+        e,
+        fallback: 'Gagal menambahkan meja/kursi baru.',
+      );
+      state = state.copyWith(
+        isGeneratingSeats: false,
+        requiresAuthRelogin: mapped.isAuthExpired,
+        isAuthenticated: !mapped.isAuthExpired,
+        studioError: mapped.message,
+      );
       return null;
     }
   }
@@ -372,6 +644,13 @@ class LiveBrewMirrorController extends Notifier<LiveBrewMirrorState> {
     required String zoneArea,
     required int capacityPersons,
   }) async {
+    if (endNumber < startNumber || startNumber < 1) {
+      state = state.copyWith(
+        studioError: 'Rentang nomor meja tidak valid (contoh: Dari 1 Sampai 6).',
+      );
+      return const [];
+    }
+    state = state.copyWith(isGeneratingSeats: true, clearStudioError: true);
     try {
       final created = await _api.createSeatBatch(
         prefix: prefix,
@@ -382,11 +661,51 @@ class LiveBrewMirrorController extends Notifier<LiveBrewMirrorState> {
         capacityPersons: capacityPersons,
       );
       final all = await _api.listMySeats();
-      state = state.copyWith(seats: all, clearError: true);
+      final branding = await _api.getMyBranding();
+      state = state.copyWith(
+        branding: branding ?? state.branding,
+        seats: all,
+        isGeneratingSeats: false,
+        requiresAuthRelogin: false,
+        isAuthenticated: true,
+        clearStudioError: true,
+      );
       return created;
     } catch (e) {
-      state = state.copyWith(errorMessage: 'Gagal membuat batch meja/kursi: $e');
+      final mapped = mapFriendlyError(
+        e,
+        fallback: 'Gagal membuat barcode meja/kursi. Coba lagi sesaat lagi.',
+      );
+      state = state.copyWith(
+        isGeneratingSeats: false,
+        requiresAuthRelogin: mapped.isAuthExpired,
+        isAuthenticated: !mapped.isAuthExpired,
+        studioError: mapped.message,
+      );
       return const [];
+    }
+  }
+
+  Future<bool> deleteSeat(String seatId) async {
+    state = state.copyWith(clearStudioError: true);
+    try {
+      await _api.deleteSeat(seatId);
+      final updated = state.seats.where((s) => s.id != seatId).toList();
+      state = state.copyWith(
+        seats: updated,
+        clearSelectedSeat: state.selectedSeatId == seatId,
+      );
+      return true;
+    } catch (e) {
+      final mapped = mapFriendlyError(
+        e,
+        fallback: 'Gagal menghapus barcode meja/kursi.',
+      );
+      state = state.copyWith(
+        requiresAuthRelogin: mapped.isAuthExpired,
+        studioError: mapped.message,
+      );
+      return false;
     }
   }
 
@@ -406,7 +725,7 @@ class LiveBrewMirrorController extends Notifier<LiveBrewMirrorState> {
         itemsSummary: itemsSummary,
       );
       final all = await _api.listMySeats();
-      state = state.copyWith(seats: all, clearError: true);
+      state = state.copyWith(seats: all, clearStudioError: true);
       return true;
     } catch (_) {
       return false;

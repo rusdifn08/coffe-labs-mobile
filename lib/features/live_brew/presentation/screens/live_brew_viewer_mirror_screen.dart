@@ -8,13 +8,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../../../../theme/app_theme.dart';
 import '../../data/live_brew_v2_api_service.dart';
 import '../../domain/live_brew_mirror_models.dart';
 import '../../domain/services/ntp_synced_timer_engine.dart';
 import '../widgets/mirrored_circular_timer_card.dart';
 
-/// Layar Mirror 1:1 Penonton / Pelanggan untuk Live Brewing 2.0 (Zero Simulation).
-/// Mendukung resolusi 13-digit Share Code maupun Branded Cafe Seat Slug (`/{cafe}/{seat}`).
+/// Layar Mirror 1:1 Penonton / Pelanggan untuk Live Brewing 2.0 (Bright Specialty UI).
 class LiveBrewViewerMirrorScreen extends ConsumerStatefulWidget {
   final ParsedLiveBrewTarget target;
   final BrandedSeatResolution? initialResolution;
@@ -108,19 +108,23 @@ class _LiveBrewViewerMirrorScreenState
 
   void _applyResolution(BrandedSeatResolution res) {
     _resolution = res;
-    if (res.activeBrewSession != null) {
+    if (res.activeBrewSession != null &&
+        res.activeBrewSession!.phase != LiveBrewMirrorPhase.archived) {
       _snapshot = res.activeBrewSession;
       _localCheers = res.activeBrewSession!.cheersCount;
       _timerEngine.applyAuthoritativeSnapshot(
         res.activeBrewSession!,
         forceReset: true,
       );
+    } else {
+      _snapshot = null;
+      _timerEngine.reset();
     }
   }
 
   Future<void> _calibrateNtp(LiveBrewV2ApiService api) async {
     if (_isTestEnv) return;
-    for (var i = 0; i < 3; i++) {
+    for (var i = 0; i < 2; i++) {
       final t1 = DateTime.now().millisecondsSinceEpoch;
       final pong = await api.pingNtp(t1);
       if (pong != null) {
@@ -176,12 +180,22 @@ class _LiveBrewViewerMirrorScreenState
         setState(() {});
       } else if (type == 'mirror_snapshot') {
         final snap = LiveSessionMirrorSnapshot.fromJson(ev);
-        if (_timerEngine.applyAuthoritativeSnapshot(snap)) {
+        final isNewSession =
+            _snapshot != null && _snapshot!.sessionId != snap.sessionId;
+        if (_timerEngine.applyAuthoritativeSnapshot(
+          snap,
+          forceReset: isNewSession,
+        )) {
           setState(() {
-            _snapshot = snap;
+            _snapshot = snap.phase == LiveBrewMirrorPhase.archived ? null : snap;
             _localCheers = snap.cheersCount;
           });
         }
+      } else if (type == 'seat_pos_update') {
+        final updated = BrandedSeatResolution.fromJson(ev);
+        setState(() {
+          _applyResolution(updated);
+        });
       } else if (type == 'cheer_burst') {
         final total = ((ev['total_cheers'] as num?) ?? _localCheers).toInt();
         setState(() => _localCheers = total);
@@ -250,22 +264,22 @@ class _LiveBrewViewerMirrorScreenState
     final branding = _resolution?.branding;
     final seat = _resolution?.seat;
     final posOrder = _resolution?.posOrderProgress;
-    final accentColor = branding?.accentColor ?? const Color(0xFFD4A373);
+    const accentColor = AppTheme.primaryBrown;
 
     if (_loading) {
-      return Center(
+      return const Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(color: accentColor),
-              const SizedBox(height: 14),
-              const Text(
+              CircularProgressIndicator(color: AppTheme.primaryBrown),
+              SizedBox(height: 14),
+              Text(
                 'Menghubungkan ke Studio Barista & Kalibrasi NTP...',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Color(0xFFF9F5EE),
+                  color: AppTheme.textDark,
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),
@@ -283,18 +297,16 @@ class _LiveBrewViewerMirrorScreenState
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFF1C1714),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: const Color(0xFFD4A373).withValues(alpha: 0.35),
-              ),
+              border: Border.all(color: AppTheme.borderWarm),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(
                   Icons.wifi_off_rounded,
-                  color: Color(0xFFD4A373),
+                  color: AppTheme.primaryBrown,
                   size: 38,
                 ),
                 const SizedBox(height: 12),
@@ -302,7 +314,7 @@ class _LiveBrewViewerMirrorScreenState
                   _errorMessage!,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    color: Color(0xFFF9F5EE),
+                    color: AppTheme.textDark,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
@@ -315,8 +327,9 @@ class _LiveBrewViewerMirrorScreenState
                   children: [
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFD4A373),
-                        foregroundColor: const Color(0xFF12100E),
+                        backgroundColor: AppTheme.primaryBrown,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
                       ),
                       onPressed: _resolveAndConnect,
                       icon: const Icon(Icons.refresh_rounded, size: 16),
@@ -328,8 +341,8 @@ class _LiveBrewViewerMirrorScreenState
                     if (widget.onClose != null)
                       OutlinedButton(
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFFF9F5EE),
-                          side: const BorderSide(color: Color(0xFFD4A373)),
+                          foregroundColor: AppTheme.primaryBrown,
+                          side: const BorderSide(color: AppTheme.borderWarm),
                         ),
                         onPressed: widget.onClose,
                         child: const Text('Ganti Kode / Meja'),
@@ -344,27 +357,23 @@ class _LiveBrewViewerMirrorScreenState
     }
 
     return RefreshIndicator(
-      color: accentColor,
-      backgroundColor: const Color(0xFF1C1714),
+      color: AppTheme.primaryBrown,
+      backgroundColor: Colors.white,
       onRefresh: _resolveAndConnect,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [
-          // 1. Connection & Cafe Branding Header
           _buildBrandingHeader(branding, seat, accentColor),
           const SizedBox(height: 12),
 
-          // 2. POS Order Progress Stepper (jika terhubung ke POS Bisnis)
           if (posOrder != null || _snapshot?.posOrderNumber != null) ...[
             _buildPosProgressCard(posOrder, _snapshot, branding, accentColor),
             const SizedBox(height: 12),
           ],
 
-          // 3. Real-Time Brew State (Idle vs Active 1:1 Mirror)
           if (_snapshot == null)
             _buildBrandedIdleWaitingCard(branding, seat, accentColor)
           else ...[
-            // 1:1 NTP Circular Timer Card
             MirroredCircularTimerCard(
               snapshot: _snapshot!,
               timerEngine: _timerEngine,
@@ -372,24 +381,16 @@ class _LiveBrewViewerMirrorScreenState
               clockOffsetMs: _timerEngine.clockOffsetMs,
             ),
             const SizedBox(height: 12),
-
-            // Live Recipe Preview (terlihat sejak brewer baru memilih resep!)
             _buildLiveRecipeCard(_snapshot!, accentColor),
             const SizedBox(height: 12),
-
-            // Live Bean Passport Preview (terlihat saat brewer memilih biji)
             if (branding?.showLiveBeanDetails != false) ...[
               _buildLiveBeanCard(_snapshot!, accentColor),
               const SizedBox(height: 12),
             ],
-
-            // Interactive Cheer Bar
             _buildCheerBar(_snapshot!, accentColor),
             const SizedBox(height: 12),
-
-            // Digital Cup Passport saat SERVING_READY_PASSPORT
             if (_snapshot!.phase == LiveBrewMirrorPhase.servingReadyPassport)
-              _buildDigitalCupPassportCard(_snapshot!, accentColor),
+              _buildDigitalCupPassportCard(_snapshot!),
           ],
         ],
       ),
@@ -409,9 +410,9 @@ class _LiveBrewViewerMirrorScreenState
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1C1714),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: accentColor.withValues(alpha: 0.4)),
+        border: Border.all(color: AppTheme.borderWarm),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -422,9 +423,8 @@ class _LiveBrewViewerMirrorScreenState
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.16),
+                  color: accentColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(13),
-                  border: Border.all(color: accentColor.withValues(alpha: 0.5)),
                 ),
                 child: Icon(
                   Icons.local_cafe_rounded,
@@ -442,7 +442,7 @@ class _LiveBrewViewerMirrorScreenState
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Color(0xFFF9F5EE),
+                        color: AppTheme.textDark,
                         fontSize: 15.5,
                         fontWeight: FontWeight.w800,
                       ),
@@ -464,15 +464,15 @@ class _LiveBrewViewerMirrorScreenState
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(
                   color: _wsConnected
-                      ? const Color(0xFF16A34A).withValues(alpha: 0.18)
-                      : const Color(0xFFD97706).withValues(alpha: 0.18),
+                      ? const Color(0xFFF0FDF4)
+                      : const Color(0xFFFFFBEB),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: _wsConnected
-                        ? const Color(0xFF22C55E)
+                        ? const Color(0xFF16A34A)
                         : const Color(0xFFF59E0B),
                   ),
                 ),
@@ -485,15 +485,17 @@ class _LiveBrewViewerMirrorScreenState
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: _wsConnected
-                            ? const Color(0xFF22C55E)
+                            ? const Color(0xFF16A34A)
                             : const Color(0xFFF59E0B),
                       ),
                     ),
                     const SizedBox(width: 5),
                     Text(
                       _wsConnected ? 'LIVE' : 'SYNC',
-                      style: const TextStyle(
-                        color: Color(0xFFF9F5EE),
+                      style: TextStyle(
+                        color: _wsConnected
+                            ? const Color(0xFF15803D)
+                            : const Color(0xFFB45309),
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
                       ),
@@ -508,7 +510,7 @@ class _LiveBrewViewerMirrorScreenState
             Text(
               branding.welcomeMessage,
               style: const TextStyle(
-                color: Color(0xFFCBBFB2),
+                color: AppTheme.textMuted,
                 fontSize: 12,
                 height: 1.4,
               ),
@@ -525,6 +527,7 @@ class _LiveBrewViewerMirrorScreenState
                   Clipboard.setData(ClipboardData(text: pass));
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
+                      behavior: SnackBarBehavior.floating,
                       content: Text(
                         'Password Wi-Fi "${branding.wifiSsid}" disalin!',
                       ),
@@ -536,11 +539,9 @@ class _LiveBrewViewerMirrorScreenState
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF12100E),
+                  color: AppTheme.bgCream,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: accentColor.withValues(alpha: 0.35),
-                  ),
+                  border: Border.all(color: AppTheme.borderWarm),
                 ),
                 child: Row(
                   children: [
@@ -552,7 +553,7 @@ class _LiveBrewViewerMirrorScreenState
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: Color(0xFFF9F5EE),
+                          color: AppTheme.textDark,
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
                         ),
@@ -609,9 +610,9 @@ class _LiveBrewViewerMirrorScreenState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1C1714),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: accentColor.withValues(alpha: 0.35)),
+        border: Border.all(color: AppTheme.borderWarm),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -626,7 +627,7 @@ class _LiveBrewViewerMirrorScreenState
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Color(0xFFF9F5EE),
+                    color: AppTheme.textDark,
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
                   ),
@@ -639,13 +640,13 @@ class _LiveBrewViewerMirrorScreenState
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.2),
+                    color: const Color(0xFFFEF3C7),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     'Antrean #${posOrder.queuePositionAhead}',
-                    style: TextStyle(
-                      color: accentColor,
+                    style: const TextStyle(
+                      color: Color(0xFF92400E),
                       fontSize: 10.5,
                       fontWeight: FontWeight.w800,
                     ),
@@ -660,7 +661,7 @@ class _LiveBrewViewerMirrorScreenState
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                color: Color(0xFFCBBFB2),
+                color: AppTheme.textMuted,
                 fontSize: 11.5,
               ),
             ),
@@ -678,9 +679,7 @@ class _LiveBrewViewerMirrorScreenState
                           Expanded(
                             child: Container(
                               height: 2,
-                              color: active
-                                  ? accentColor
-                                  : Colors.white.withValues(alpha: 0.14),
+                              color: active ? accentColor : AppTheme.borderWarm,
                             ),
                           ),
                         Container(
@@ -688,21 +687,15 @@ class _LiveBrewViewerMirrorScreenState
                           height: 20,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: active
-                                ? accentColor
-                                : const Color(0xFF12100E),
+                            color: active ? accentColor : AppTheme.bgCream,
                             border: Border.all(
-                              color: active
-                                  ? accentColor
-                                  : Colors.white.withValues(alpha: 0.25),
+                              color: active ? accentColor : AppTheme.borderWarm,
                             ),
                           ),
                           child: Icon(
                             active ? Icons.check_rounded : Icons.circle,
                             size: active ? 13 : 6,
-                            color: active
-                                ? const Color(0xFF12100E)
-                                : Colors.white38,
+                            color: active ? Colors.white : AppTheme.textMuted,
                           ),
                         ),
                         if (i < labels.length - 1)
@@ -711,7 +704,7 @@ class _LiveBrewViewerMirrorScreenState
                               height: 2,
                               color: i < stepIdx
                                   ? accentColor
-                                  : Colors.white.withValues(alpha: 0.14),
+                                  : AppTheme.borderWarm,
                             ),
                           ),
                       ],
@@ -723,9 +716,7 @@ class _LiveBrewViewerMirrorScreenState
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: active
-                            ? const Color(0xFFF9F5EE)
-                            : const Color(0xFF9C8F82),
+                        color: active ? AppTheme.textDark : AppTheme.textMuted,
                         fontSize: 10,
                         fontWeight: active ? FontWeight.w800 : FontWeight.w600,
                       ),
@@ -765,11 +756,11 @@ class _LiveBrewViewerMirrorScreenState
     Color accentColor,
   ) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: const Color(0xFF1C1714),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: accentColor.withValues(alpha: 0.32)),
+        border: Border.all(color: AppTheme.borderWarm),
       ),
       child: Column(
         children: [
@@ -778,8 +769,8 @@ class _LiveBrewViewerMirrorScreenState
             height: 58,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: accentColor.withValues(alpha: 0.15),
-              border: Border.all(color: accentColor.withValues(alpha: 0.5)),
+              color: AppTheme.bgCream,
+              border: Border.all(color: AppTheme.borderWarm),
             ),
             child: Icon(
               Icons.coffee_maker_rounded,
@@ -794,17 +785,17 @@ class _LiveBrewViewerMirrorScreenState
                 : 'Menunggu Barista Memulai Seduhan',
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: Color(0xFFF9F5EE),
+              color: AppTheme.textDark,
               fontSize: 16,
               fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 6),
           const Text(
-            'Halaman ini tersinkronisasi otomatis secara real-time. Begitu barista mulai memilih resep, menimbang biji kopi, dan menyalakan timer seduh, seluruh proses langsung tampil 1:1 di layar Anda.',
+            'Halaman ini tersinkronisasi otomatis secara real-time. Begitu barista mulai menyeduh, seluruh proses langsung tampil 1:1 di layar Anda.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Color(0xFFCBBFB2),
+              color: AppTheme.textMuted,
               fontSize: 12,
               height: 1.45,
             ),
@@ -824,9 +815,9 @@ class _LiveBrewViewerMirrorScreenState
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1C1714),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: accentColor.withValues(alpha: 0.3)),
+        border: Border.all(color: AppTheme.borderWarm),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -839,7 +830,7 @@ class _LiveBrewViewerMirrorScreenState
                 child: Text(
                   'Resep & Tahapan Seduh Barista',
                   style: TextStyle(
-                    color: Color(0xFFF9F5EE),
+                    color: AppTheme.textDark,
                     fontSize: 13.5,
                     fontWeight: FontWeight.w800,
                   ),
@@ -851,13 +842,13 @@ class _LiveBrewViewerMirrorScreenState
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.18),
+                    color: const Color(0xFFFEF3C7),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     snap.selectedMethodName!,
-                    style: TextStyle(
-                      color: accentColor,
+                    style: const TextStyle(
+                      color: Color(0xFF92400E),
                       fontSize: 10.5,
                       fontWeight: FontWeight.w800,
                     ),
@@ -869,13 +860,13 @@ class _LiveBrewViewerMirrorScreenState
           if (!hasRecipe)
             const Text(
               'Barista sedang meninjau metode dan memilih resep yang paling cocok...',
-              style: TextStyle(color: Color(0xFFCBBFB2), fontSize: 12),
+              style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
             )
           else ...[
             Text(
               snap.selectedRecipeTitle!,
               style: const TextStyle(
-                color: Color(0xFFF9F5EE),
+                color: AppTheme.textDark,
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
               ),
@@ -885,12 +876,11 @@ class _LiveBrewViewerMirrorScreenState
               spacing: 8,
               runSpacing: 6,
               children: [
-                _specChip('Dosis ${snap.targetDoseG.toStringAsFixed(0)}g', accentColor),
-                _specChip('Air ${snap.targetWaterMl.toStringAsFixed(0)}ml', accentColor),
-                _specChip('Suhu ${snap.currentTempC.toStringAsFixed(0)}°C', accentColor),
+                _specChip('Dosis ${snap.targetDoseG.toStringAsFixed(0)}g'),
+                _specChip('Air ${snap.targetWaterMl.toStringAsFixed(0)}ml'),
+                _specChip('Suhu ${snap.currentTempC.toStringAsFixed(0)}°C'),
                 _specChip(
                   'Target ${NtpSyncedTimerEngine.formatMmSs(snap.targetDurationSeconds * 1000)}',
-                  accentColor,
                 ),
               ],
             ),
@@ -905,7 +895,10 @@ class _LiveBrewViewerMirrorScreenState
                     snap.phase == LiveBrewMirrorPhase.servingReadyPassport;
                 final title = (st['title'] ?? st['name'] ?? 'Tahap ${idx + 1}')
                     .toString();
-                final dur = ((st['durationSeconds'] ?? st['duration'] ?? 30) as num)
+                final dur = ((st['durationSeconds'] ??
+                        st['timeSeconds'] ??
+                        st['duration'] ??
+                        30) as num)
                     .toInt();
                 return Container(
                   margin: const EdgeInsets.only(bottom: 6),
@@ -913,13 +906,15 @@ class _LiveBrewViewerMirrorScreenState
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? accentColor.withValues(alpha: 0.16)
-                        : const Color(0xFF12100E),
+                        ? const Color(0xFFFEF3C7)
+                        : (isDone ? const Color(0xFFF0FDF4) : AppTheme.bgCream),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isActive
-                          ? accentColor
-                          : Colors.white.withValues(alpha: 0.08),
+                          ? const Color(0xFFF59E0B)
+                          : (isDone
+                              ? const Color(0xFFBBF7D0)
+                              : AppTheme.borderWarm),
                     ),
                   ),
                   child: Row(
@@ -932,8 +927,8 @@ class _LiveBrewViewerMirrorScreenState
                                 : Icons.radio_button_unchecked_rounded),
                         size: 16,
                         color: isDone
-                            ? const Color(0xFF22C55E)
-                            : (isActive ? accentColor : Colors.white38),
+                            ? const Color(0xFF16A34A)
+                            : (isActive ? accentColor : AppTheme.textMuted),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -943,8 +938,8 @@ class _LiveBrewViewerMirrorScreenState
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: isActive
-                                ? const Color(0xFFF9F5EE)
-                                : const Color(0xFFCBBFB2),
+                                ? AppTheme.textDark
+                                : AppTheme.textMuted,
                             fontSize: 12,
                             fontWeight:
                                 isActive ? FontWeight.w800 : FontWeight.w600,
@@ -979,7 +974,8 @@ class _LiveBrewViewerMirrorScreenState
     final roastery = (bean['roastery'] ?? bean['roaster'] ?? '').toString();
     final origin = (bean['origin'] ?? '').toString();
     final process = (bean['process'] ?? '').toString();
-    final roastLevel = (bean['roast_level'] ?? bean['roastLevel'] ?? '').toString();
+    final roastLevel =
+        (bean['roast_level'] ?? bean['roastLevel'] ?? '').toString();
     final notesRaw = bean['tasting_notes'] ?? bean['notes'];
     final notes = notesRaw is List
         ? notesRaw.map((e) => e.toString()).where((e) => e.isNotEmpty).toList()
@@ -990,9 +986,9 @@ class _LiveBrewViewerMirrorScreenState
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1C1714),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: accentColor.withValues(alpha: 0.3)),
+        border: Border.all(color: AppTheme.borderWarm),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1005,7 +1001,7 @@ class _LiveBrewViewerMirrorScreenState
                 child: Text(
                   'Profil Biji Kopi (Live Bean Passport)',
                   style: TextStyle(
-                    color: Color(0xFFF9F5EE),
+                    color: AppTheme.textDark,
                     fontSize: 13.5,
                     fontWeight: FontWeight.w800,
                   ),
@@ -1017,13 +1013,13 @@ class _LiveBrewViewerMirrorScreenState
           if (beanName.isEmpty)
             const Text(
               'Menunggu barista memilih biji kopi untuk cangkir Anda...',
-              style: TextStyle(color: Color(0xFFCBBFB2), fontSize: 12),
+              style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
             )
           else ...[
             Text(
               beanName,
               style: const TextStyle(
-                color: Color(0xFFF9F5EE),
+                color: AppTheme.textDark,
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
               ),
@@ -1045,8 +1041,8 @@ class _LiveBrewViewerMirrorScreenState
                 spacing: 8,
                 runSpacing: 6,
                 children: [
-                  if (process.isNotEmpty) _specChip('Proses: $process', accentColor),
-                  if (roastLevel.isNotEmpty) _specChip('Sangrai: $roastLevel', accentColor),
+                  if (process.isNotEmpty) _specChip('Proses: $process'),
+                  if (roastLevel.isNotEmpty) _specChip('Sangrai: $roastLevel'),
                 ],
               ),
             ],
@@ -1064,13 +1060,14 @@ class _LiveBrewViewerMirrorScreenState
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: accentColor.withValues(alpha: 0.14),
+                          color: AppTheme.bgCream,
                           borderRadius: BorderRadius.circular(99),
+                          border: Border.all(color: AppTheme.borderWarm),
                         ),
                         child: Text(
                           n,
                           style: const TextStyle(
-                            color: Color(0xFFF9F5EE),
+                            color: AppTheme.primaryBrown,
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                           ),
@@ -1090,9 +1087,9 @@ class _LiveBrewViewerMirrorScreenState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1C1714),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: accentColor.withValues(alpha: 0.3)),
+        border: Border.all(color: AppTheme.borderWarm),
       ),
       child: Row(
         children: [
@@ -1105,7 +1102,7 @@ class _LiveBrewViewerMirrorScreenState
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Color(0xFFF9F5EE),
+                    color: AppTheme.textDark,
                     fontSize: 12.5,
                     fontWeight: FontWeight.w800,
                   ),
@@ -1114,7 +1111,7 @@ class _LiveBrewViewerMirrorScreenState
                 Text(
                   '${snap.activeViewersCount} penonton • $_localCheers apresiasi',
                   style: const TextStyle(
-                    color: Color(0xFFCBBFB2),
+                    color: AppTheme.textMuted,
                     fontSize: 11,
                   ),
                 ),
@@ -1125,7 +1122,8 @@ class _LiveBrewViewerMirrorScreenState
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: accentColor,
-              foregroundColor: const Color(0xFF12100E),
+              foregroundColor: Colors.white,
+              elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -1135,7 +1133,7 @@ class _LiveBrewViewerMirrorScreenState
             icon: const Icon(Icons.favorite_rounded, size: 15),
             label: const Text(
               'Semangat!',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
             ),
           ),
         ],
@@ -1143,37 +1141,27 @@ class _LiveBrewViewerMirrorScreenState
     );
   }
 
-  Widget _buildDigitalCupPassportCard(
-    LiveSessionMirrorSnapshot snap,
-    Color accentColor,
-  ) {
+  Widget _buildDigitalCupPassportCard(LiveSessionMirrorSnapshot snap) {
     final finalTime = NtpSyncedTimerEngine.formatMmSs(snap.timerAccumulatedMs);
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF1F2B1D),
-            const Color(0xFF1C1714),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: const Color(0xFFF0FDF4),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFF22C55E).withValues(alpha: 0.6)),
+        border: Border.all(color: const Color(0xFF86EFAC)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Row(
             children: [
-              Icon(Icons.verified_rounded, color: Color(0xFF22C55E), size: 22),
+              Icon(Icons.verified_rounded, color: Color(0xFF16A34A), size: 22),
               SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Digital Cup Passport — Kopi Siap Dinikmati!',
                   style: TextStyle(
-                    color: Color(0xFFF9F5EE),
+                    color: Color(0xFF14532D),
                     fontSize: 14.5,
                     fontWeight: FontWeight.w800,
                   ),
@@ -1185,7 +1173,7 @@ class _LiveBrewViewerMirrorScreenState
           Text(
             'Seduhan selesai dalam $finalTime dengan berat akhir ${snap.currentWeightG.toStringAsFixed(1)} g oleh ${snap.brewerDisplayName}.',
             style: const TextStyle(
-              color: Color(0xFFCBBFB2),
+              color: Color(0xFF166534),
               fontSize: 12,
               height: 1.4,
             ),
@@ -1195,8 +1183,9 @@ class _LiveBrewViewerMirrorScreenState
             width: double.infinity,
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF22C55E),
-                foregroundColor: const Color(0xFF0A140B),
+                backgroundColor: const Color(0xFF16A34A),
+                foregroundColor: Colors.white,
+                elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -1207,8 +1196,9 @@ class _LiveBrewViewerMirrorScreenState
                 Clipboard.setData(ClipboardData(text: summary));
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
+                    behavior: SnackBarBehavior.floating,
                     content: Text(
-                      'Resep & Digital Cup Passport berhasil disalin ke catatan Anda!',
+                      'Resep & Digital Cup Passport berhasil disalin!',
                     ),
                   ),
                 );
@@ -1225,18 +1215,18 @@ class _LiveBrewViewerMirrorScreenState
     );
   }
 
-  Widget _specChip(String label, Color accentColor) {
+  Widget _specChip(String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF12100E),
+        color: AppTheme.bgCream,
         borderRadius: BorderRadius.circular(9),
-        border: Border.all(color: accentColor.withValues(alpha: 0.35)),
+        border: Border.all(color: AppTheme.borderWarm),
       ),
       child: Text(
         label,
         style: const TextStyle(
-          color: Color(0xFFF9F5EE),
+          color: AppTheme.primaryBrown,
           fontSize: 11,
           fontWeight: FontWeight.w700,
         ),

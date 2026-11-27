@@ -255,6 +255,19 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
 
         if (_elapsedSeconds % 2 == 0) {
           AudioService.ensureBgmPlaying();
+          if (ref.read(liveBrewMirrorProvider).activeSession != null) {
+            ref.read(liveBrewMirrorProvider.notifier).advanceStepOrTelemetry(
+                  stepIndex: nextActive,
+                  weightG: SmartScaleService.instance.isConnected
+                      ? SmartScaleService.instance.currentWeight
+                      : 0.0,
+                  flowRateMlS: SmartScaleService.instance.isConnected
+                      ? SmartScaleService.instance.flowRate
+                      : 0.0,
+                  tempC: waterTempCelsius.toDouble(),
+                  throttle: true,
+                );
+          }
         }
 
         int accumulated = 0;
@@ -509,8 +522,11 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
     int runningTime = 0;
 
     final isBroadcasting = ref.watch(
-      baristaLiveTransmitterProvider.select((s) => s.isBroadcasting),
-    );
+          liveBrewMirrorProvider.select((s) => s.activeSession != null),
+        ) ||
+        ref.watch(
+          baristaLiveTransmitterProvider.select((s) => s.isBroadcasting),
+        );
 
     return Scaffold(
       backgroundColor: AppTheme.bgCream,
@@ -561,6 +577,10 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen> {
                   TableQrManagerModal.show(
                     context,
                     activeRecipe: _recipe,
+                    isTimerRunning: _isRunning,
+                    elapsedSeconds: _elapsedSeconds,
+                    activeStepIndex: activeIndex,
+                    waterTempCelsius: waterTempCelsius,
                     weightSampler: () {
                       // Strictly real Bluetooth scale reading — never fake/estimated data
                       return SmartScaleService.instance.isConnected

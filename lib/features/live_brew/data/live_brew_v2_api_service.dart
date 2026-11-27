@@ -29,20 +29,38 @@ class ParsedLiveBrewTarget {
 }
 
 class LiveBrewV2ApiService {
+  static const String publicWebBaseUrl = 'https://brewingcoffee.vercel.app';
+
   final Dio _dio;
   LiveBrewV2ApiService(this._dio);
+
+  /// Normalizes any legacy/unhosted domain (`coffeelabs.com`, `coffeelabs.app`)
+  /// returned by cached sessions to the live public web viewer URL.
+  static String normalizePublicShareUrl(String rawUrl) {
+    final trimmed = rawUrl.trim();
+    if (trimmed.isEmpty) return '$publicWebBaseUrl/livebrew';
+    return trimmed
+        .replaceFirst('https://coffeelabs.com', publicWebBaseUrl)
+        .replaceFirst('http://coffeelabs.com', publicWebBaseUrl)
+        .replaceFirst('https://coffeelabs.app', publicWebBaseUrl)
+        .replaceFirst('http://coffeelabs.app', publicWebBaseUrl);
+  }
 
   static ParsedLiveBrewTarget parseUserInputOrUrl(String raw) {
     final trimmed = raw.trim();
     if (trimmed.isEmpty) return const ParsedLiveBrewTarget();
 
-    // URL lengkap https://coffeelabs.com/livebrew/{cafe}/{seat} atau /livebrew/{code}
+    // Support HTTPS URLs (brewingcoffee.vercel.app, coffeelabs.app, coffeelabs.com) and coffeelabs:// deep links
     final uri = Uri.tryParse(trimmed);
-    if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https' || uri.scheme == 'coffeelabs')) {
+    if (uri != null &&
+        (uri.scheme == 'http' || uri.scheme == 'https' || uri.scheme == 'coffeelabs')) {
       final segs = uri.pathSegments.where((s) => s.isNotEmpty).toList();
       if (uri.scheme == 'coffeelabs' && uri.host == 'livebrew') {
         if (segs.length >= 2) {
-          return ParsedLiveBrewTarget(cafeSlug: segs[0].toLowerCase(), seatSlug: segs[1].toLowerCase());
+          return ParsedLiveBrewTarget(
+            cafeSlug: segs[0].toLowerCase(),
+            seatSlug: segs[1].toLowerCase(),
+          );
         }
         if (segs.length == 1) {
           return ParsedLiveBrewTarget(shareCode: segs.first);
@@ -52,17 +70,28 @@ class LiveBrewV2ApiService {
       if (idx != -1) {
         final rest = segs.sublist(idx + 1);
         if (rest.length >= 2) {
-          return ParsedLiveBrewTarget(cafeSlug: rest[0].toLowerCase(), seatSlug: rest[1].toLowerCase());
+          return ParsedLiveBrewTarget(
+            cafeSlug: rest[0].toLowerCase(),
+            seatSlug: rest[1].toLowerCase(),
+          );
         }
         if (rest.length == 1) {
           return ParsedLiveBrewTarget(shareCode: rest.first);
         }
       }
+      final qCode = uri.queryParameters['code']?.trim();
+      if (qCode != null && qCode.isNotEmpty) {
+        return parseUserInputOrUrl(qCode);
+      }
     }
 
-    // Input singkat "kopi-senja/meja-04"
+    // Short slug input "kopi-senja/meja-04"
     if (trimmed.contains('/')) {
-      final parts = trimmed.split('/').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      final parts = trimmed
+          .split('/')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
       if (parts.length >= 2) {
         return ParsedLiveBrewTarget(
           cafeSlug: parts[parts.length - 2].toLowerCase(),
@@ -106,6 +135,22 @@ class LiveBrewV2ApiService {
     }
   }
 
+  Map<String, dynamic> _normalizeSnapshotJson(Map<String, dynamic> raw) {
+    final copy = Map<String, dynamic>.from(raw);
+    if (copy['share_url'] is String) {
+      copy['share_url'] = normalizePublicShareUrl(copy['share_url'] as String);
+    }
+    return copy;
+  }
+
+  Map<String, dynamic> _normalizeSeatJson(Map<String, dynamic> raw) {
+    final copy = Map<String, dynamic>.from(raw);
+    if (copy['branded_url'] is String) {
+      copy['branded_url'] = normalizePublicShareUrl(copy['branded_url'] as String);
+    }
+    return copy;
+  }
+
   Future<LiveSessionMirrorSnapshot> createRealMirrorSession({
     String? seatId,
     String? posOrderId,
@@ -116,6 +161,11 @@ class LiveBrewV2ApiService {
     String? recipeTitle,
     Map<String, dynamic>? recipeSnapshot,
     Map<String, dynamic>? beanSnapshot,
+    bool? initialTimerRunning,
+    int? initialElapsedMs,
+    int? initialStepIndex,
+    double? initialTempC,
+    double? initialWeightG,
   }) async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/api/v1/livebrew/v2/sessions',
@@ -129,10 +179,15 @@ class LiveBrewV2ApiService {
         'selected_recipe_title': ?recipeTitle,
         'recipe_snapshot_json': ?recipeSnapshot,
         'bean_snapshot_json': ?beanSnapshot,
+        'initial_timer_running': ?initialTimerRunning,
+        'initial_elapsed_ms': ?initialElapsedMs,
+        'initial_step_index': ?initialStepIndex,
+        'initial_temp_c': ?initialTempC,
+        'initial_weight_g': ?initialWeightG,
       },
     );
     final data = (res.data?['data'] as Map?)?.cast<String, dynamic>() ?? const {};
-    return LiveSessionMirrorSnapshot.fromJson(data);
+    return LiveSessionMirrorSnapshot.fromJson(_normalizeSnapshotJson(data));
   }
 
   Future<LiveSessionMirrorSnapshot> sendCommandRest(
@@ -144,7 +199,15 @@ class LiveBrewV2ApiService {
       data: cmdPayload,
     );
     final data = (res.data?['data'] as Map?)?.cast<String, dynamic>() ?? const {};
-    return LiveSessionMirrorSnapshot.fromJson(data);
+    return LiveSessionMirrorSnapshot.fromJson(_normalizeSnapshotJson(data));
+  }
+
+  Future<void> endRealMirrorSession(String sessionId) async {
+    try {
+      await _dio.post<Map<String, dynamic>>(
+        '/api/v1/livebrew/v2/sessions/$sessionId/end',
+      );
+    } catch (_) {}
   }
 
   Future<BrandedSeatResolution> resolveTarget(ParsedLiveBrewTarget target) async {
@@ -152,7 +215,17 @@ class LiveBrewV2ApiService {
         ? '/api/v1/livebrew/resolve/cafe/${target.cafeSlug}/${target.seatSlug}'
         : '/api/v1/livebrew/resolve/code/${target.shareCode}';
     final res = await _dio.get<Map<String, dynamic>>(endpoint);
-    final data = (res.data?['data'] as Map?)?.cast<String, dynamic>() ?? const {};
+    final data = Map<String, dynamic>.from(
+      (res.data?['data'] as Map?)?.cast<String, dynamic>() ?? const {},
+    );
+    if (data['seat'] is Map) {
+      data['seat'] = _normalizeSeatJson((data['seat'] as Map).cast<String, dynamic>());
+    }
+    if (data['active_brew_session'] is Map) {
+      data['active_brew_session'] = _normalizeSnapshotJson(
+        (data['active_brew_session'] as Map).cast<String, dynamic>(),
+      );
+    }
     return BrandedSeatResolution.fromJson(data);
   }
 
@@ -165,24 +238,20 @@ class LiveBrewV2ApiService {
   }
 
   Future<BusinessBrandingModel?> getMyBranding() async {
-    try {
-      final res = await _dio.get<Map<String, dynamic>>('/api/v1/livebrew/business/branding');
-      final raw = res.data?['data'];
-      if (raw is Map) {
-        return BusinessBrandingModel.fromJson(raw.cast<String, dynamic>());
-      }
-      return null;
-    } catch (_) {
-      return null;
+    final res = await _dio.get<Map<String, dynamic>>('/api/v1/livebrew/business/branding');
+    final raw = res.data?['data'];
+    if (raw is Map) {
+      return BusinessBrandingModel.fromJson(raw.cast<String, dynamic>());
     }
+    return null;
   }
 
   Future<BusinessBrandingModel> saveBranding({
     required String cafeSlug,
     required String cafeDisplayName,
     String? logoCloudinaryUrl,
-    String primaryColorHex = '#12100E',
-    String accentColorHex = '#D4A373',
+    String primaryColorHex = '#5D3A1A',
+    String accentColorHex = '#B45309',
     String? welcomeMessage,
     String? wifiSsid,
     String? wifiPassword,
@@ -211,16 +280,12 @@ class LiveBrewV2ApiService {
   }
 
   Future<List<CafeSeatModel>> listMySeats() async {
-    try {
-      final res = await _dio.get<Map<String, dynamic>>('/api/v1/livebrew/business/seats');
-      final list = res.data?['data'] as List? ?? const [];
-      return list
-          .whereType<Map>()
-          .map((e) => CafeSeatModel.fromJson(e.cast<String, dynamic>()))
-          .toList();
-    } catch (_) {
-      return const [];
-    }
+    final res = await _dio.get<Map<String, dynamic>>('/api/v1/livebrew/business/seats');
+    final list = res.data?['data'] as List? ?? const [];
+    return list
+        .whereType<Map>()
+        .map((e) => CafeSeatModel.fromJson(_normalizeSeatJson(e.cast<String, dynamic>())))
+        .toList();
   }
 
   Future<CafeSeatModel> createSeat({
@@ -239,7 +304,7 @@ class LiveBrewV2ApiService {
       },
     );
     final data = (res.data?['data'] as Map?)?.cast<String, dynamic>() ?? const {};
-    return CafeSeatModel.fromJson(data);
+    return CafeSeatModel.fromJson(_normalizeSeatJson(data));
   }
 
   Future<List<CafeSeatModel>> createSeatBatch({
@@ -264,8 +329,15 @@ class LiveBrewV2ApiService {
     final list = res.data?['data'] as List? ?? const [];
     return list
         .whereType<Map>()
-        .map((e) => CafeSeatModel.fromJson(e.cast<String, dynamic>()))
+        .map((e) => CafeSeatModel.fromJson(_normalizeSeatJson(e.cast<String, dynamic>())))
         .toList();
+  }
+
+  Future<bool> deleteSeat(String seatId) async {
+    await _dio.delete<Map<String, dynamic>>(
+      '/api/v1/livebrew/business/seats/$seatId',
+    );
+    return true;
   }
 
   Future<BrandedSeatResolution> bindPosOrderToSeat({

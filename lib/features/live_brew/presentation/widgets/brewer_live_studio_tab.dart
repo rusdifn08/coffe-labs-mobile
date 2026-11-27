@@ -5,8 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../../core/utils/external_url_launcher.dart';
 import '../../../../data/roastery_catalog.dart';
 import '../../../../services/seed_data.dart';
+import '../../../../theme/app_theme.dart';
+import '../../data/live_brew_v2_api_service.dart';
 import '../../domain/live_brew_mirror_models.dart';
 import '../controllers/live_brew_mirror_controller.dart';
 import 'mirrored_circular_timer_card.dart';
@@ -19,7 +22,8 @@ class BrewerLiveStudioTab extends ConsumerStatefulWidget {
 }
 
 class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
-  final TextEditingController _customerCtrl = TextEditingController(text: 'Tamu Slow Bar');
+  final TextEditingController _customerCtrl =
+      TextEditingController(text: 'Tamu Slow Bar');
   final TextEditingController _posOrderCtrl = TextEditingController();
   late final List<Map<String, dynamic>> _sampleRecipes;
 
@@ -59,11 +63,16 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: const Color(0xFF1C1714),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: const Color(0xFFD4A373).withValues(alpha: 0.4),
-            ),
+            border: Border.all(color: AppTheme.borderWarm),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryBrown.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -73,12 +82,12 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFD4A373).withValues(alpha: 0.16),
+                      color: AppTheme.primaryBrown.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Icon(
                       CupertinoIcons.dot_radiowaves_left_right,
-                      color: Color(0xFFD4A373),
+                      color: AppTheme.primaryBrown,
                       size: 22,
                     ),
                   ),
@@ -90,17 +99,18 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
                         Text(
                           'Siaran Live Brew 1:1 Real-Time',
                           style: TextStyle(
-                            color: Color(0xFFF9F5EE),
+                            color: AppTheme.textDark,
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
                         SizedBox(height: 2),
                         Text(
-                          'Penonton menyaksikan pemilihan resep, biji kopi, & timer NTP sinkron (< 25ms) sejak detik pertama.',
+                          'Penonton menyaksikan pemilihan resep, biji kopi, & timer NTP sinkron (< 25ms) langsung di browser.',
                           style: TextStyle(
-                            color: Color(0xFFCBBFB2),
+                            color: AppTheme.textMuted,
                             fontSize: 11.5,
+                            height: 1.35,
                           ),
                         ),
                       ],
@@ -111,16 +121,16 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
               const SizedBox(height: 16),
               TextField(
                 controller: _customerCtrl,
-                style: const TextStyle(color: Color(0xFFF9F5EE), fontSize: 13),
-                decoration: _darkInputDecoration('Nama Pelanggan / Penonton'),
+                style: const TextStyle(color: AppTheme.textDark, fontSize: 13),
+                decoration: _brightInputDecoration('Nama Pelanggan / Penonton'),
               ),
               if (state.isBusinessUser && state.seats.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String?>(
                   initialValue: state.selectedSeatId,
-                  dropdownColor: const Color(0xFF1C1714),
-                  style: const TextStyle(color: Color(0xFFF9F5EE), fontSize: 13),
-                  decoration: _darkInputDecoration('Ikat ke Meja / Kursi Kafe (Opsional)'),
+                  dropdownColor: Colors.white,
+                  style: const TextStyle(color: AppTheme.textDark, fontSize: 13),
+                  decoration: _brightInputDecoration('Ikat ke Meja / Kursi Kafe (Opsional)'),
                   items: [
                     const DropdownMenuItem<String?>(
                       value: null,
@@ -138,20 +148,49 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: _posOrderCtrl,
-                  style: const TextStyle(color: Color(0xFFF9F5EE), fontSize: 13),
-                  decoration: _darkInputDecoration('Nomor Pesanan POS (contoh: ORD-042)'),
+                  style: const TextStyle(color: AppTheme.textDark, fontSize: 13),
+                  decoration:
+                      _brightInputDecoration('Nomor Pesanan POS (contoh: ORD-042)'),
                 ),
               ],
-              if (state.errorMessage != null) ...[
-                const SizedBox(height: 10),
-                Text(
-                  state.errorMessage!,
-                  style: const TextStyle(color: Color(0xFFF87171), fontSize: 12),
+              if (state.broadcastError != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFECACA)),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        size: 17,
+                        color: Color(0xFFDC2626),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          state.broadcastError!,
+                          style: const TextStyle(
+                            color: Color(0xFF991B1B),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            height: 1.35,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
+                height: 48,
                 child: ElevatedButton.icon(
                   onPressed: state.isStartingSession
                       ? null
@@ -167,25 +206,52 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
                         },
                   icon: state.isStartingSession
                       ? const SizedBox(
-                          width: 16,
-                          height: 16,
+                          width: 17,
+                          height: 17,
                           child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Color(0xFF12100E),
+                            strokeWidth: 2.2,
+                            color: Colors.white,
                           ),
                         )
-                      : const Icon(CupertinoIcons.play_circle_fill, size: 18),
+                      : const Icon(CupertinoIcons.play_circle_fill, size: 19),
                   label: const Text(
                     'Mulai Siarkan Live Brew Real-Time',
                     style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD4A373),
-                    foregroundColor: const Color(0xFF12100E),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    backgroundColor: AppTheme.primaryBrown,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        Container(
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppTheme.borderWarm),
+          ),
+          child: const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.tips_and_updates_rounded,
+                  color: AppTheme.accentAmber, size: 18),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Tip: Anda juga bisa langsung mengaktifkan Live Brew & membagikan QR saat sedang menyeduh lewat tombol garis tiga (☰) di layar Brew Timer.',
+                  style: TextStyle(
+                    color: AppTheme.textMuted,
+                    fontSize: 11.5,
+                    height: 1.45,
                   ),
                 ),
               ),
@@ -203,31 +269,41 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
   ) {
     final beansList = RoasteryCatalog.list.take(10).toList();
     final isRunning = session.timerStatus == LiveTimerStatus.running;
+    final liveUrl = LiveBrewV2ApiService.normalizePublicShareUrl(session.shareUrl);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
       children: [
-        // Floating Share QR & Live Viewers Pill
+        // Floating Share QR & Live Viewers Card
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFF1C1714),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: const Color(0xFFDC2626).withValues(alpha: 0.45),
+              color: const Color(0xFF16A34A).withValues(alpha: 0.45),
+              width: 1.3,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF16A34A).withValues(alpha: 0.08),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(5),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.borderWarm),
                 ),
                 child: QrImageView(
-                  data: session.shareUrl,
-                  size: 62,
+                  data: liveUrl,
+                  size: 70,
                   backgroundColor: Colors.white,
                 ),
               ),
@@ -239,6 +315,7 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
                     Wrap(
                       spacing: 6,
                       runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -261,46 +338,55 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
                         Text(
                           '${session.activeViewersCount} Menonton • ${session.cheersCount} Cheers',
                           style: const TextStyle(
-                            color: Color(0xFFD4A373),
+                            color: Color(0xFF15803D),
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 5),
                     Text(
-                      session.shareUrl.replaceFirst('https://', ''),
+                      liveUrl.replaceFirst('https://', ''),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Color(0xFFF9F5EE),
+                        color: AppTheme.primaryBrown,
                         fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Row(
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
                       children: [
                         _MiniBtn(
-                          label: 'Salin Link',
+                          label: 'Salin',
                           icon: Icons.copy_rounded,
                           onTap: () {
-                            Clipboard.setData(ClipboardData(text: session.shareUrl));
+                            Clipboard.setData(ClipboardData(text: liveUrl));
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Tautan Live Brew disalin.')),
+                              const SnackBar(
+                                behavior: SnackBarBehavior.floating,
+                                content: Text('Tautan Live Brew disalin.'),
+                              ),
                             );
                           },
                         ),
-                        const SizedBox(width: 6),
                         _MiniBtn(
                           label: 'Bagikan',
                           icon: CupertinoIcons.share,
                           onTap: () => SharePlus.instance.share(
                             ShareParams(
-                              text: 'Pantau seduhan kopi Live Brew 1:1 di ${session.shareUrl}',
+                              text: 'Pantau seduhan kopi Live Brew 1:1 di $liveUrl',
                             ),
                           ),
+                        ),
+                        _MiniBtn(
+                          label: 'Buka Web',
+                          icon: Icons.open_in_browser_rounded,
+                          onTap: () => launchExternalUri(Uri.parse(liveUrl)),
                         ),
                       ],
                     ),
@@ -310,13 +396,13 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
             ],
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 16),
 
-        // Step 1: Pilih Metode & Resep (Siaran Real-Time)
+        // Step 1: Pilih Metode & Resep (Disiarkan Live)
         const _SectionLabel(title: '1. Pilih Metode & Resep (Disiarkan Live)'),
         const SizedBox(height: 8),
         SizedBox(
-          height: 76,
+          height: 80,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: _sampleRecipes.length,
@@ -335,17 +421,16 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
                 ),
                 borderRadius: BorderRadius.circular(14),
                 child: Container(
-                  width: 168,
-                  padding: const EdgeInsets.all(10),
+                  width: 170,
+                  padding: const EdgeInsets.all(11),
                   decoration: BoxDecoration(
                     color: selected
-                        ? const Color(0xFFD4A373).withValues(alpha: 0.2)
-                        : const Color(0xFF1C1714),
+                        ? AppTheme.primaryBrown.withValues(alpha: 0.1)
+                        : Colors.white,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: selected
-                          ? const Color(0xFFD4A373)
-                          : Colors.white.withValues(alpha: 0.12),
+                      color: selected ? AppTheme.primaryBrown : AppTheme.borderWarm,
+                      width: selected ? 1.5 : 1,
                     ),
                   ),
                   child: Column(
@@ -357,7 +442,7 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: Color(0xFFD4A373),
+                          color: AppTheme.primaryBrown,
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
                         ),
@@ -368,7 +453,7 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: Color(0xFFF9F5EE),
+                          color: AppTheme.textDark,
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
                         ),
@@ -380,20 +465,21 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
             },
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 16),
 
         // Step 2: Pilih Biji Kopi (Disiarkan Live)
         const _SectionLabel(title: '2. Pilih Biji Kopi Roastery (Disiarkan Live)'),
         const SizedBox(height: 8),
         SizedBox(
-          height: 76,
+          height: 80,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: beansList.length,
             separatorBuilder: (_, _) => const SizedBox(width: 8),
             itemBuilder: (_, idx) {
               final roastery = beansList[idx];
-              final bean = roastery.lineups.isNotEmpty ? roastery.lineups.first : null;
+              final bean =
+                  roastery.lineups.isNotEmpty ? roastery.lineups.first : null;
               final beanName = bean?.name ?? roastery.specialties;
               final selected = session.beanSnapshot['name'] == beanName;
               return InkWell(
@@ -403,21 +489,21 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
                   'origin': bean?.origin ?? roastery.location,
                   'process': bean?.process ?? 'Washed / Natural',
                   'roast_profile': bean?.roastProfile ?? 'Light to Medium',
-                  'tasting_notes': bean?.tastingNotes ?? 'Floral, Sweet Berry, Cocoa',
+                  'tasting_notes':
+                      bean?.tastingNotes ?? 'Floral, Sweet Berry, Cocoa',
                 }),
                 borderRadius: BorderRadius.circular(14),
                 child: Container(
                   width: 175,
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(11),
                   decoration: BoxDecoration(
                     color: selected
-                        ? const Color(0xFFD4A373).withValues(alpha: 0.2)
-                        : const Color(0xFF1C1714),
+                        ? AppTheme.primaryBrown.withValues(alpha: 0.1)
+                        : Colors.white,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: selected
-                          ? const Color(0xFFD4A373)
-                          : Colors.white.withValues(alpha: 0.12),
+                      color: selected ? AppTheme.primaryBrown : AppTheme.borderWarm,
+                      width: selected ? 1.5 : 1,
                     ),
                   ),
                   child: Column(
@@ -429,7 +515,7 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: Color(0xFFD4A373),
+                          color: AppTheme.primaryBrown,
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
                         ),
@@ -440,7 +526,7 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: Color(0xFFF9F5EE),
+                          color: AppTheme.textDark,
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
                         ),
@@ -477,9 +563,10 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
                   style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD4A373),
-                  foregroundColor: const Color(0xFF12100E),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  backgroundColor: AppTheme.primaryBrown,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 13),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(13),
                   ),
@@ -490,9 +577,10 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
             OutlinedButton(
               onPressed: ctrl.timerReset,
               style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFFF9F5EE),
-                side: BorderSide(color: Colors.white.withValues(alpha: 0.25)),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                foregroundColor: AppTheme.primaryBrown,
+                side: const BorderSide(color: AppTheme.borderWarm),
+                backgroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(13),
                 ),
@@ -512,7 +600,8 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF16A34A),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(13),
                 ),
@@ -525,30 +614,35 @@ class _BrewerLiveStudioTabState extends ConsumerState<BrewerLiveStudioTab> {
           onPressed: ctrl.stopBroadcast,
           child: const Text(
             'Akhiri & Tutup Sesi Siaran',
-            style: TextStyle(color: Color(0xFFF87171), fontSize: 12),
+            style: TextStyle(
+              color: Color(0xFFDC2626),
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ],
     );
   }
 
-  InputDecoration _darkInputDecoration(String label) {
+  InputDecoration _brightInputDecoration(String label) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Color(0xFFCBBFB2), fontSize: 12),
+      labelStyle: const TextStyle(color: AppTheme.textMuted, fontSize: 12.5),
       filled: true,
-      fillColor: Colors.white.withValues(alpha: 0.06),
+      fillColor: AppTheme.bgCream,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
+        borderRadius: BorderRadius.circular(13),
+        borderSide: const BorderSide(color: AppTheme.borderWarm),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
+        borderRadius: BorderRadius.circular(13),
+        borderSide: const BorderSide(color: AppTheme.borderWarm),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFD4A373)),
+        borderRadius: BorderRadius.circular(13),
+        borderSide: const BorderSide(color: AppTheme.primaryBrown, width: 1.5),
       ),
     );
   }
@@ -563,7 +657,7 @@ class _SectionLabel extends StatelessWidget {
     return Text(
       title,
       style: const TextStyle(
-        color: Color(0xFFF9F5EE),
+        color: AppTheme.textDark,
         fontSize: 13,
         fontWeight: FontWeight.w800,
       ),
@@ -590,18 +684,19 @@ class _MiniBtn extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
+          color: AppTheme.bgCream,
           borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppTheme.borderWarm),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 12, color: const Color(0xFFD4A373)),
+            Icon(icon, size: 12, color: AppTheme.primaryBrown),
             const SizedBox(width: 4),
             Text(
               label,
               style: const TextStyle(
-                color: Color(0xFFF9F5EE),
+                color: AppTheme.textDark,
                 fontSize: 10.5,
                 fontWeight: FontWeight.w700,
               ),

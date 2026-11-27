@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../theme/app_theme.dart';
 import '../../domain/live_brew_mirror_models.dart';
 import '../../domain/services/ntp_synced_timer_engine.dart';
 
@@ -15,7 +16,7 @@ class MirroredCircularTimerCard extends StatelessWidget {
     super.key,
     required this.snapshot,
     required this.timerEngine,
-    this.accentColor = const Color(0xFFD4A373),
+    this.accentColor = AppTheme.primaryBrown,
     this.clockOffsetMs = 0,
   });
 
@@ -30,15 +31,22 @@ class MirroredCircularTimerCard extends StatelessWidget {
         ? const Color(0xFF16A34A)
         : (isRunning
             ? const Color(0xFFDC2626)
-            : (isPaused ? const Color(0xFFD97706) : accentColor));
+            : (isPaused ? const Color(0xFFD97706) : AppTheme.primaryBrown));
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1C1714),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: accentColor.withValues(alpha: 0.35)),
+        border: Border.all(color: AppTheme.borderWarm),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryBrown.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -46,11 +54,11 @@ class MirroredCircularTimerCard extends StatelessWidget {
             children: [
               Flexible(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: badgeColor.withValues(alpha: 0.18),
+                    color: badgeColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: badgeColor.withValues(alpha: 0.55)),
+                    border: Border.all(color: badgeColor.withValues(alpha: 0.35)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -69,10 +77,10 @@ class MirroredCircularTimerCard extends StatelessWidget {
                           snapshot.phaseLabelId,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Color(0xFFF9F5EE),
+                          style: TextStyle(
+                            color: badgeColor,
                             fontSize: 10.5,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ),
@@ -83,8 +91,8 @@ class MirroredCircularTimerCard extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'v${snapshot.stateVersion} • NTP ${clockOffsetMs >= 0 ? '+$clockOffsetMs' : '$clockOffsetMs'}ms',
-                style: TextStyle(
-                  color: const Color(0xFFF9F5EE).withValues(alpha: 0.6),
+                style: const TextStyle(
+                  color: AppTheme.textMuted,
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
                 ),
@@ -109,8 +117,10 @@ class MirroredCircularTimerCard extends StatelessWidget {
                         size: const Size(176, 176),
                         painter: _CircularBrewArcPainter(
                           progress: progress,
-                          trackColor: Colors.white.withValues(alpha: 0.1),
-                          progressColor: isDone ? const Color(0xFF22C55E) : accentColor,
+                          trackColor: AppTheme.borderWarm.withValues(alpha: 0.7),
+                          progressColor: isDone
+                              ? const Color(0xFF16A34A)
+                              : AppTheme.primaryBrown,
                         ),
                       ),
                       Padding(
@@ -128,7 +138,7 @@ class MirroredCircularTimerCard extends StatelessWidget {
                                   Text(
                                     NtpSyncedTimerEngine.formatMmSs(elapsedMs),
                                     style: const TextStyle(
-                                      color: Color(0xFFF9F5EE),
+                                      color: AppTheme.textDark,
                                       fontSize: 34,
                                       fontWeight: FontWeight.w900,
                                       fontFeatures: [FontFeature.tabularFigures()],
@@ -136,11 +146,11 @@ class MirroredCircularTimerCard extends StatelessWidget {
                                   ),
                                   Text(
                                     NtpSyncedTimerEngine.formatTenths(elapsedMs),
-                                    style: TextStyle(
-                                      color: accentColor,
+                                    style: const TextStyle(
+                                      color: AppTheme.primaryBrown,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w800,
-                                      fontFeatures: const [FontFeature.tabularFigures()],
+                                      fontFeatures: [FontFeature.tabularFigures()],
                                     ),
                                   ),
                                 ],
@@ -148,8 +158,8 @@ class MirroredCircularTimerCard extends StatelessWidget {
                               const SizedBox(height: 2),
                               Text(
                                 'Target ${NtpSyncedTimerEngine.formatMmSs(targetMs)}',
-                                style: TextStyle(
-                                  color: const Color(0xFFF9F5EE).withValues(alpha: 0.65),
+                                style: const TextStyle(
+                                  color: AppTheme.textMuted,
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -173,7 +183,6 @@ class MirroredCircularTimerCard extends StatelessWidget {
                   icon: CupertinoIcons.drop_fill,
                   label: 'Berat Air',
                   value: '${snapshot.currentWeightG.toStringAsFixed(1)} g',
-                  accent: accentColor,
                 ),
               ),
               const SizedBox(width: 8),
@@ -182,7 +191,6 @@ class MirroredCircularTimerCard extends StatelessWidget {
                   icon: CupertinoIcons.speedometer,
                   label: 'Laju Tuang',
                   value: '${snapshot.currentFlowRateMlS.toStringAsFixed(1)} ml/s',
-                  accent: accentColor,
                 ),
               ),
               const SizedBox(width: 8),
@@ -191,7 +199,6 @@ class MirroredCircularTimerCard extends StatelessWidget {
                   icon: CupertinoIcons.thermometer,
                   label: 'Suhu',
                   value: '${snapshot.currentTempC.toStringAsFixed(0)}°C',
-                  accent: accentColor,
                 ),
               ),
             ],
@@ -206,33 +213,32 @@ class _MetricTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  final Color accent;
 
   const _MetricTile({
     required this.icon,
     required this.label,
     required this.value,
-    required this.accent,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: AppTheme.bgCream,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.borderWarm),
       ),
       child: Column(
         children: [
-          Icon(icon, size: 14, color: accent),
+          Icon(icon, size: 14, color: AppTheme.primaryBrown),
           const SizedBox(height: 3),
           Text(
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              color: Color(0xFFF9F5EE),
+              color: AppTheme.textDark,
               fontSize: 12.5,
               fontWeight: FontWeight.w800,
             ),
@@ -241,9 +247,10 @@ class _MetricTile extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: const Color(0xFFF9F5EE).withValues(alpha: 0.58),
+            style: const TextStyle(
+              color: AppTheme.textMuted,
               fontSize: 9.5,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
