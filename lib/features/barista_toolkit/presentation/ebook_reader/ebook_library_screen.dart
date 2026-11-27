@@ -158,19 +158,33 @@ class _EbookLibraryScreenState extends ConsumerState<EbookLibraryScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          backgroundColor: const Color(0xFF2E7D32),
+          backgroundColor: const Color(0xFF16A34A),
+          behavior: SnackBarBehavior.floating,
           content: Text(
-            '${book.bookCode} siap dibaca 100% offline (AST + EPUB3 + PDF DRM).',
+            '${book.title} berhasil disimpan ke perangkat & siap dibaca offline!',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          action: SnackBarAction(
+            label: 'Baca',
+            textColor: Colors.white,
+            onPressed: () => _openBookOrPromptDownload(book),
           ),
         ),
       );
     } catch (e) {
       if (!mounted) return;
+      final friendlyMsg = BaristaToolkitApiService.formatFriendlyDownloadError(e);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: const Color(0xFFB71C1C),
-          content: Text(
-            'Gagal mengunduh dari Object Storage. Pastikan internet & backend aktif. ($e)',
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 5),
+          content: Text(friendlyMsg),
+          action: SnackBarAction(
+            label: 'Coba Lagi',
+            textColor: Colors.white,
+            onPressed: () => _downloadBook(book),
           ),
         ),
       );
@@ -343,11 +357,11 @@ class _EbookLibraryScreenState extends ConsumerState<EbookLibraryScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Pustaka E-Book DRM',
+              'Pustaka E-Book Kopi',
               style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
             ),
             Text(
-              'Object Storage • $downloadedCount/${_books.length} Tersimpan Offline',
+              'Cloud Storage • $downloadedCount/${_books.length} Tersimpan di Perangkat',
               style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
             ),
           ],
@@ -497,7 +511,7 @@ class _EbookLibraryScreenState extends ConsumerState<EbookLibraryScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'On-Demand Object Storage • APK Ringan',
+                  'Perpustakaan Cloud • Baca 100% Offline',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
@@ -506,11 +520,11 @@ class _EbookLibraryScreenState extends ConsumerState<EbookLibraryScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'E-Book (.clbook + EPUB3 + AST) tidak dibundel ke dalam APK. Unduh buku pilihan Anda lalu baca 100% offline dengan kunci AES-256-GCM.',
+                  'Unduh E-Book edisi penuh (PDF Asli + EPUB3 + Ringkasan) langsung dari Cloud Storage ke penyimpanan perangkat Anda agar nyaman dibaca kapan saja tanpa internet.',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.85),
+                    color: Colors.white.withValues(alpha: 0.88),
                     fontSize: 11.5,
-                    height: 1.35,
+                    height: 1.38,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -518,11 +532,11 @@ class _EbookLibraryScreenState extends ConsumerState<EbookLibraryScreen> {
                   spacing: 8,
                   runSpacing: 6,
                   children: [
-                    _bannerPill('$downloadedCount/${_books.length} Offline Ready'),
+                    _bannerPill('$downloadedCount/${_books.length} Siap Offline'),
                     _bannerPill(
                       totalCachedBytes > 0
-                          ? 'Vault: ${_formatBytes(totalCachedBytes)}'
-                          : 'Vault Kosong (0 MB)',
+                          ? 'Penyimpanan: ${_formatBytes(totalCachedBytes)}'
+                          : 'Belum Ada Unduhan',
                     ),
                   ],
                 ),
@@ -792,21 +806,27 @@ class _EbookLibraryCard extends StatelessWidget {
                           ? FilledButton.icon(
                               style: FilledButton.styleFrom(
                                 backgroundColor: AppTheme.primaryBrown,
-                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                padding: const EdgeInsets.symmetric(vertical: 10.5),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
                               onPressed: onTapCard,
-                              icon: const Icon(Icons.chrome_reader_mode_rounded,
-                                  size: 17),
+                              icon: const Icon(Icons.auto_stories_rounded, size: 17),
                               label: const Text(
-                                'Baca Offline (AST / EPUB / PDF)',
+                                'Baca Sekarang (PDF / EPUB3)',
                                 overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontWeight: FontWeight.w700),
                               ),
                             )
                           : OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppTheme.primaryBrown,
                                 side: const BorderSide(color: AppTheme.primaryBrown),
-                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                padding: const EdgeInsets.symmetric(vertical: 10.5),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
                               onPressed: onDownloadPressed,
                               icon: Icon(
@@ -817,9 +837,10 @@ class _EbookLibraryCard extends StatelessWidget {
                               ),
                               label: Text(
                                 book.isUnlocked
-                                    ? 'Unduh Offline ($sizeLabel)'
+                                    ? 'Unduh ke Perangkat ($sizeLabel)'
                                     : 'Terkunci (${book.requiredTier})',
                                 overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontWeight: FontWeight.w700),
                               ),
                             ),
                     ),
@@ -889,15 +910,29 @@ class _EbookLibraryCard extends StatelessWidget {
       return fallback();
     }
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: CachedNetworkImage(
-        imageUrl: resolvedCoverUrl,
-        width: 64,
-        height: 90,
-        fit: BoxFit.cover,
-        placeholder: (_, _) => fallback(),
-        errorWidget: (_, _, _) => fallback(),
+    return Container(
+      width: 72,
+      height: 104,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.14),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: CachedNetworkImage(
+          imageUrl: resolvedCoverUrl,
+          width: 72,
+          height: 104,
+          fit: BoxFit.cover,
+          placeholder: (_, _) => fallback(),
+          errorWidget: (_, _, _) => fallback(),
+        ),
       ),
     );
   }

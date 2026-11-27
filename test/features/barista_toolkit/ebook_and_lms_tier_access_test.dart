@@ -128,14 +128,14 @@ void main() {
     });
     await tester.pumpAndSettle();
 
-    // Filter to CL-BOOK-03 (The Physics of Filter Coffee - Tier Pro)
-    await tester.enterText(find.byType(TextField), 'Jonathan');
+    // Filter to CL-BOOK-03 (The Physics of Coffee Percolation & Extraction Kinetics)
+    await tester.enterText(find.byType(TextField), 'Moroney');
     await tester.pumpAndSettle();
 
     expect(find.text('CL-BOOK-03'), findsOneWidget);
-    expect(find.textContaining('The Physics of Filter Coffee'), findsOneWidget);
+    expect(find.textContaining('The Physics of Coffee Percolation'), findsOneWidget);
     // Must NOT be locked for Pro user risaha15!
     expect(find.text('Terkunci (Pro)'), findsNothing);
-    expect(find.textContaining('Unduh Offline'), findsWidgets);
+    expect(find.textContaining('Unduh ke Perangkat'), findsWidgets);
   });
 }

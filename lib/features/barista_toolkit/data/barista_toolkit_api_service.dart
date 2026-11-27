@@ -243,19 +243,46 @@ class BaristaToolkitApiService {
         .toList();
   }
 
-  Future<List<EbookChapterAstModel>> fetchEbookChaptersAst(String ebookId) async {
+  Future<List<EbookChapterAstModel>> fetchEbookChaptersAst(
+    String ebookId, {
+    String? bookCode,
+  }) async {
     try {
       final res = await _dio.get<Map<String, dynamic>>(
         '/api/v1/toolkit/ebooks/$ebookId/chapters',
       );
       final data = res.data?['data'] as Map?;
       final list = data?['chapters'] as List? ?? [];
-      return list
-          .map((e) => EbookChapterAstModel.fromJson(Map<String, dynamic>.from(e as Map)))
-          .toList();
-    } catch (_) {
-      return const [];
+      if (list.isNotEmpty) {
+        return list
+            .map((e) => EbookChapterAstModel.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList();
+      }
+    } catch (_) {}
+
+    // Fallback langsung ke Object Storage publik (`{code}_chapters.json`) agar bebas error 401
+    if (bookCode != null && bookCode.isNotEmpty) {
+      try {
+        final directUrl = await resolveMediaUrlAsync(
+          '/api/v1/toolkit/object-storage/coffeelabs/ebooks/$bookCode/${bookCode}_chapters.json',
+        );
+        final res = await _createCleanDownloadDio().get<dynamic>(directUrl);
+        final raw = res.data;
+        final List<dynamic> list = raw is List
+            ? raw
+            : (raw is String
+                ? (jsonDecode(raw) as List<dynamic>)
+                : (raw is Map && raw['chapters'] is List
+                    ? raw['chapters'] as List<dynamic>
+                    : const []));
+        if (list.isNotEmpty) {
+          return list
+              .map((e) => EbookChapterAstModel.fromJson(Map<String, dynamic>.from(e as Map)))
+              .toList();
+        }
+      } catch (_) {}
     }
+    return const [];
   }
 
   Future<List<CoffeeDictionaryEntryModel>> fetchCoffeeDictionary({
@@ -303,91 +330,258 @@ class BaristaToolkitApiService {
     return (res.data?['data'] as Map?)?.cast<String, dynamic>() ?? const {};
   }
 
-  /// Mengunduh paket E-Book lengkap (.clbook + .epub + Bab AST) dari Object Storage ke vault privat offline.
+  static Dio _createCleanDownloadDio() => Dio(
+        BaseOptions(
+          connectTimeout: const Duration(seconds: 20),
+          receiveTimeout: const Duration(seconds: 120),
+          sendTimeout: const Duration(seconds: 20),
+          followRedirects: true,
+        ),
+      );
+
+  static String _formatDownloadProgressMb(int received, int total) {
+    final recMb = (received / (1024 * 1024)).toStringAsFixed(1);
+    if (total > 0) {
+      final totMb = (total / (1024 * 1024)).toStringAsFixed(1);
+      return '$recMb / $totMb MB';
+    }
+    return '$recMb MB';
+  }
+
+  /// Mengubah error jaringan / Dio teknis menjadi pesan bahasa Indonesia yang jelas dan ramah.
+  static String formatFriendlyDownloadError(Object error) {
+    if (error is DioException) {
+      final code = error.response?.statusCode;
+      if (code == 401) {
+        return 'Sesi akun perlu diperbarui. Silakan login ulang atau coba unduh kembali.';
+      }
+      if (code == 403) {
+        return 'E-Book ini memerlukan akses paket Pro/Business.';
+      }
+      if (code == 404) {
+        return 'Berkas E-Book belum tersedia di server Cloud Storage. Silakan tarik untuk menyegarkan katalog.';
+      }
+      if (error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout ||
+          error.type == DioExceptionType.sendTimeout) {
+        return 'Koneksi melambat (timeout) saat mengunduh E-Book. Pastikan jaringan stabil lalu coba lagi.';
+      }
+      if (error.type == DioExceptionType.connectionError) {
+        return 'Tidak dapat terhubung ke server Cloud Storage. Periksa koneksi internet Anda.';
+      }
+      return 'Gagal mengunduh E-Book dari Cloud Storage (HTTP ${code ?? '-'}). Silakan coba lagi.';
+    }
+    final raw = error.toString().replaceFirst('Exception: ', '').replaceFirst('Bad state: ', '');
+    if (raw.length > 160) {
+      return '${raw.substring(0, 157)}...';
+    }
+    return raw;
+  }
+
+  /// Mengunduh paket E-Book lengkap (PDF Asli + EPUB3 Reflowable + Bab AST) dari Cloud Object Storage
+  /// ke penyimpanan permanen perangkat pengguna dengan multi-source failover & validasi integritas.
   Future<void> downloadBookPackageFromObjectStorage({
     required EbookCatalogItem book,
     required void Function(double progress, String statusLabel) onProgress,
   }) async {
     final vault = EncryptedEbookVaultService.instance;
+    final code = book.bookCode;
     final (deviceId, deviceSecret) = await vault.ensureDeviceCredentials();
 
-    onProgress(0.08, 'Meminta lisensi Object Storage...');
-    String clbkUrl = '/api/v1/toolkit/ebooks/${book.id}/asset?format=clbook';
-    String epubUrl = '/api/v1/toolkit/ebooks/${book.id}/asset?format=epub';
+    onProgress(0.05, 'Menghubungkan Cloud Object Storage...');
+    String? signedPdfUrl;
+    String? signedEpubUrl;
+    String? signedClbkUrl;
 
+    // 1. Coba minta lisensi (opsional — jika 401/offline pada buku Trial, langsung lanjut Object Storage)
     try {
       final license = await requestEbookLicense(
         ebookId: book.id,
         deviceInstallationId: deviceId,
         deviceWrappingSecretB64: base64Encode(deviceSecret),
       );
-      final sAsset = license['signed_asset_url']?.toString() ?? '';
+      final sPdf = license['signed_pdf_url']?.toString() ?? '';
       final sEpub = license['signed_epub_url']?.toString() ?? '';
-      if (sAsset.isNotEmpty) clbkUrl = sAsset;
-      if (sEpub.isNotEmpty) epubUrl = sEpub;
-    } catch (_) {
-      // Fallback ke endpoint asset terotentikasi saat tanpa wrap secret
-    }
-
-    onProgress(0.20, 'Mengunduh PDF Terenkripsi (.clbook)...');
-    Uint8List clbookBytes;
-    try {
-      clbookBytes = await _downloadBinaryUrl(
-        clbkUrl,
-        onChunk: (p) => onProgress(0.20 + p * 0.38, 'Mengunduh PDF Terenkripsi...'),
-      );
+      final sAsset = license['signed_asset_url']?.toString() ?? '';
+      if (sPdf.isNotEmpty) signedPdfUrl = sPdf;
+      if (sEpub.isNotEmpty) signedEpubUrl = sEpub;
+      if (sAsset.isNotEmpty) signedClbkUrl = sAsset;
     } on DioException catch (e) {
-      // Jika JWT masih memuat tier lama (403), paksa sinkronisasi profil/rotasi JWT lalu coba ulang sekali
       if (e.response?.statusCode == 403 && !_isTestEnv) {
         await AuthService.syncProfile(force: true);
-        clbookBytes = await _downloadBinaryUrl(
-          clbkUrl,
-          onChunk: (p) => onProgress(0.20 + p * 0.38, 'Menyelaraskan lisensi Pro & mengunduh...'),
+      }
+    } catch (_) {}
+
+    final isTrialOrOpen = book.requiredTier.trim().toLowerCase() == 'trial' ||
+        book.requiredTier.trim().toLowerCase() == 'free';
+
+    // 2. Unduh PDF Asli (prioritas utama) dengan failover otomatis:
+    //    Public Object Storage (anti-401) <-> Endpoint Backend Terotentikasi <-> Signed URL
+    final pdfCandidates = <String>[
+      if (signedPdfUrl != null && signedPdfUrl.startsWith('https://')) signedPdfUrl,
+      if (isTrialOrOpen || book.isUnlocked)
+        '/api/v1/toolkit/object-storage/coffeelabs/ebooks/$code/${code}_id.pdf',
+      '/api/v1/toolkit/ebooks/${book.id}/asset?format=pdf',
+    ];
+
+    Uint8List? pdfBytes;
+    Uint8List? clbookBytes;
+    Object? lastErr;
+
+    onProgress(0.12, 'Mengunduh E-Book PDF Asli...');
+    for (final candidate in pdfCandidates) {
+      try {
+        final bytes = await _downloadBinaryWithRetry(
+          candidate,
+          useCleanClient: candidate.contains('/object-storage/') ||
+              candidate.startsWith('https://'),
+          onChunk: (p, rec, tot) => onProgress(
+            0.12 + p * 0.48,
+            'Mengunduh PDF (${_formatDownloadProgressMb(rec, tot)})...',
+          ),
         );
-      } else {
-        rethrow;
+        if (EncryptedEbookVaultService.isValidPdfBytes(bytes)) {
+          pdfBytes = bytes;
+          break;
+        }
+      } catch (e) {
+        lastErr = e;
       }
     }
 
-    onProgress(0.60, 'Mengunduh EPUB3 Reflowable...');
+    // Cadangan: bila PDF langsung gagal, unduh `.clbook` terenkripsi
+    if (pdfBytes == null) {
+      final clbkCandidates = <String>[
+        if (signedClbkUrl != null && signedClbkUrl.startsWith('https://')) signedClbkUrl,
+        if (isTrialOrOpen || book.isUnlocked)
+          '/api/v1/toolkit/object-storage/coffeelabs/ebooks/$code/${code}_ast.clbook',
+        '/api/v1/toolkit/ebooks/${book.id}/asset?format=clbook',
+      ];
+      for (final candidate in clbkCandidates) {
+        try {
+          final bytes = await _downloadBinaryWithRetry(
+            candidate,
+            useCleanClient: candidate.contains('/object-storage/') ||
+                candidate.startsWith('https://'),
+            onChunk: (p, rec, tot) => onProgress(
+              0.18 + p * 0.42,
+              'Mengunduh Paket Terenkripsi (${_formatDownloadProgressMb(rec, tot)})...',
+            ),
+          );
+          if (EncryptedEbookVaultService.isValidClbookBytes(bytes)) {
+            clbookBytes = bytes;
+            break;
+          }
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+    }
+
+    // 3. Unduh EPUB3 Reflowable untuk pengalaman baca layaknya Kindle / Apple Books
+    onProgress(0.64, 'Mengunduh EPUB3 Reflowable...');
+    final epubCandidates = <String>[
+      if (signedEpubUrl != null && signedEpubUrl.startsWith('https://')) signedEpubUrl,
+      if (isTrialOrOpen || book.isUnlocked)
+        '/api/v1/toolkit/object-storage/coffeelabs/ebooks/$code/${code}_id.epub',
+      '/api/v1/toolkit/ebooks/${book.id}/asset?format=epub',
+    ];
     Uint8List? epubBytes;
-    try {
-      epubBytes = await _downloadBinaryUrl(
-        epubUrl,
-        onChunk: (p) => onProgress(0.60 + p * 0.25, 'Mengunduh EPUB3...'),
-      );
-    } catch (_) {}
+    for (final candidate in epubCandidates) {
+      try {
+        final bytes = await _downloadBinaryWithRetry(
+          candidate,
+          useCleanClient: candidate.contains('/object-storage/') ||
+              candidate.startsWith('https://'),
+          onChunk: (p, rec, tot) => onProgress(
+            0.64 + p * 0.22,
+            'Mengunduh EPUB3 (${_formatDownloadProgressMb(rec, tot)})...',
+          ),
+        );
+        if (EncryptedEbookVaultService.isValidEpubBytes(bytes)) {
+          epubBytes = bytes;
+          break;
+        }
+      } catch (e) {
+        lastErr ??= e;
+      }
+    }
 
-    onProgress(0.88, 'Menyimpan Editorial AST untuk baca offline...');
-    final chapters = await fetchEbookChaptersAst(book.id);
+    // 4. Ambil ringkasan Bab & Lab Interaktif (Editorial AST)
+    onProgress(0.88, 'Menyiapkan Daftar Isi & Catatan Bab...');
+    final chapters = await fetchEbookChaptersAst(book.id, bookCode: code);
 
+    if (pdfBytes == null && clbookBytes == null && epubBytes == null) {
+      throw lastErr ??
+          StateError('Gagal mengunduh berkas E-Book dari Cloud Storage.');
+    }
+
+    onProgress(0.95, 'Menyimpan ke Penyimpanan Offline Perangkat...');
     await vault.saveDownloadedBookPackage(
-      bookCode: book.bookCode,
+      bookCode: code,
+      pdfBytes: pdfBytes,
       clbookBytes: clbookBytes,
       epubBytes: epubBytes,
       chaptersAst: chapters,
     );
-    onProgress(1.0, 'Tersedia untuk baca offline!');
+    onProgress(1.0, 'Tersimpan di perangkat & siap dibaca offline!');
+  }
+
+  Future<Uint8List> _downloadBinaryWithRetry(
+    String rawUrl, {
+    required bool useCleanClient,
+    required void Function(double fraction, int received, int total) onChunk,
+    int maxAttempts = 2,
+  }) async {
+    Object? lastErr;
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await _downloadBinaryUrl(
+          rawUrl,
+          useCleanClient: useCleanClient,
+          onChunk: onChunk,
+        );
+      } catch (e) {
+        lastErr = e;
+        if (e is DioException) {
+          final code = e.response?.statusCode;
+          // Jangan retry bila 401/403/404 agar failover langsung pindah ke kandidat berikutnya
+          if (code == 401 || code == 403 || code == 404) {
+            rethrow;
+          }
+        }
+        if (attempt < maxAttempts) {
+          await Future<void>.delayed(Duration(milliseconds: 600 * attempt));
+        }
+      }
+    }
+    throw lastErr ?? StateError('Unduhan gagal setelah $maxAttempts percobaan.');
   }
 
   Future<Uint8List> _downloadBinaryUrl(
     String rawUrl, {
-    required void Function(double fraction) onChunk,
+    bool useCleanClient = false,
+    required void Function(double fraction, int received, int total) onChunk,
   }) async {
-    final isExternalSigned = rawUrl.startsWith('https://res.cloudinary.com/');
-    final client = isExternalSigned ? Dio() : _dio;
+    final isExternal =
+        rawUrl.startsWith('http://') || rawUrl.startsWith('https://');
+    final targetUrl =
+        useCleanClient && !isExternal ? await resolveMediaUrlAsync(rawUrl) : rawUrl;
+    final client = (isExternal || useCleanClient) ? _createCleanDownloadDio() : _dio;
     final res = await client.get<List<int>>(
-      rawUrl,
-      options: Options(responseType: ResponseType.bytes),
+      targetUrl,
+      options: Options(
+        responseType: ResponseType.bytes,
+        receiveTimeout: const Duration(seconds: 120),
+      ),
       onReceiveProgress: (received, total) {
-        if (total > 0) {
-          onChunk((received / total).clamp(0.0, 1.0));
-        }
+        final fraction = total > 0 ? (received / total).clamp(0.0, 1.0) : 0.35;
+        onChunk(fraction, received, total);
       },
     );
     final data = res.data;
     if (data == null || data.isEmpty) {
-      throw StateError('Payload unduhan Object Storage kosong.');
+      throw StateError('Payload unduhan Cloud Storage kosong.');
     }
     return Uint8List.fromList(data);
   }
