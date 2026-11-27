@@ -156,11 +156,11 @@ class CompactInfoButton extends StatelessWidget {
   }
 }
 
-/// Section 1: Ultra-compact Catalog & Custom Bean selector with hidden `ⓘ` Barista Notes.
+/// Section 1: Friendly Roastery-First Catalog & Custom Bean selector (never auto-selects without user choice).
 class CompactBeanSelectorSection extends StatelessWidget {
   final bool isCatalogMode;
   final List<CuratedRoasteryBean> allBeans;
-  final CuratedRoasteryBean selectedBean;
+  final CuratedRoasteryBean? selectedBean;
   final ValueChanged<CuratedRoasteryBean> onBeanSelected;
   final TextEditingController customBeanCtrl;
   final BeanRoastLevel customRoast;
@@ -185,8 +185,36 @@ class CompactBeanSelectorSection extends StatelessWidget {
     required this.onRecalculate,
   });
 
+  List<({String name, String logoUrl, int count})> _topRoasteries() {
+    final map = <String, List<CuratedRoasteryBean>>{};
+    for (final b in allBeans) {
+      final k = b.roasteryName.trim();
+      if (k.isEmpty) continue;
+      map.putIfAbsent(k, () => []).add(b);
+    }
+    final list = map.entries
+        .map((e) => (
+              name: e.key,
+              logoUrl: e.value.first.roasteryLogoUrl,
+              count: e.value.length,
+            ))
+        .toList()
+      ..sort((a, b) => b.count.compareTo(a.count));
+    return list.take(10).toList();
+  }
+
+  void _openPicker(BuildContext context, {String? initialRoasteryName}) {
+    RoasteryBeanPickerModal.show(
+      context: context,
+      allBeans: allBeans,
+      selectedBean: selectedBean,
+      initialRoasteryName: initialRoasteryName,
+      onBeanSelected: onBeanSelected,
+    );
+  }
+
   void _openBeanInfo(BuildContext context) {
-    if (!isCatalogMode) {
+    if (!isCatalogMode || selectedBean == null) {
       showDialInInfoSheet(
         context: context,
         title: 'Karakter Roast & Proses',
@@ -208,34 +236,35 @@ class CompactBeanSelectorSection extends StatelessWidget {
       return;
     }
 
+    final bean = selectedBean!;
     showDialInInfoSheet(
       context: context,
-      title: selectedBean.name,
+      title: bean.name,
       items: [
         (
           icon: CupertinoIcons.lightbulb_fill,
           color: const Color(0xFFB45309),
           heading:
-              'Opini Barista • Alat Ideal: ${selectedBean.recommendedDripper.label.split('(').first.trim()}',
-          body: selectedBean.baristaOpinion,
+              'Opini Barista • Alat Ideal: ${bean.recommendedDripper.label.split('(').first.trim()}',
+          body: bean.baristaOpinion,
         ),
         (
           icon: CupertinoIcons.flame_fill,
           color: Colors.red.shade700,
           heading: 'Suhu Panas (>65°C)',
-          body: selectedBean.tempNotesHot,
+          body: bean.tempNotesHot,
         ),
         (
           icon: CupertinoIcons.sparkles,
           color: Colors.amber.shade800,
           heading: 'Suhu Hangat (50–60°C • Puncak Manis)',
-          body: selectedBean.tempNotesWarm,
+          body: bean.tempNotesWarm,
         ),
         (
           icon: CupertinoIcons.snow,
           color: Colors.blue.shade700,
           heading: 'Suhu Sejuk (<40°C • Aftertaste)',
-          body: selectedBean.tempNotesCool,
+          body: bean.tempNotesCool,
         ),
       ],
     );
@@ -243,7 +272,7 @@ class CompactBeanSelectorSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final featuredBeans = allBeans.take(12).toList();
+    final topRoasteries = _topRoasteries();
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -257,32 +286,32 @@ class CompactBeanSelectorSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(CupertinoIcons.checkmark_seal_fill, size: 15, color: AppTheme.accentGold),
+              const Icon(CupertinoIcons.checkmark_seal_fill,
+                  size: 15, color: AppTheme.accentGold),
               const SizedBox(width: 6),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Biji Kopi',
-                  style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: AppTheme.textDark),
+                  isCatalogMode ? 'Roastery & Biji Kopi' : 'Biji Kopi Kustom',
+                  style: const TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.textDark,
+                  ),
                 ),
               ),
-              CompactInfoButton(
-                tooltip: 'Info karakter rasa & opini barista',
-                onTap: () => _openBeanInfo(context),
-              ),
-              if (isCatalogMode) ...[
+              if (!isCatalogMode || selectedBean != null)
+                CompactInfoButton(
+                  tooltip: 'Info karakter rasa & opini barista',
+                  onTap: () => _openBeanInfo(context),
+                ),
+              if (isCatalogMode && selectedBean != null) ...[
                 const SizedBox(width: 8),
                 InkWell(
                   borderRadius: BorderRadius.circular(10),
-                  onTap: () {
-                    RoasteryBeanPickerModal.show(
-                      context: context,
-                      allBeans: allBeans,
-                      selectedBean: selectedBean,
-                      onBeanSelected: onBeanSelected,
-                    );
-                  },
+                  onTap: () => _openPicker(context),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
                       color: AppTheme.bgCream,
                       borderRadius: BorderRadius.circular(10),
@@ -292,7 +321,7 @@ class CompactBeanSelectorSection extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Katalog',
+                          'Ganti Biji',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
@@ -300,7 +329,8 @@ class CompactBeanSelectorSection extends StatelessWidget {
                           ),
                         ),
                         SizedBox(width: 2),
-                        Icon(CupertinoIcons.chevron_right, size: 11, color: AppTheme.primaryBrown),
+                        Icon(CupertinoIcons.chevron_right,
+                            size: 11, color: AppTheme.primaryBrown),
                       ],
                     ),
                   ),
@@ -310,82 +340,59 @@ class CompactBeanSelectorSection extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           if (isCatalogMode) ...[
-            _buildCompactSelectedRow(),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 76,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: featuredBeans.length,
-                itemBuilder: (_, idx) {
-                  final b = featuredBeans[idx];
-                  final sel = b.id == selectedBean.id;
-                  return GestureDetector(
-                    onTap: () => onBeanSelected(b),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 160),
-                      width: 118,
-                      margin: const EdgeInsets.only(right: 8),
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: sel ? const Color(0xFFFAF3EC) : const Color(0xFFFDFBF8),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: sel ? AppTheme.accentGold : AppTheme.borderWarm,
-                          width: sel ? 1.6 : 1.0,
+            if (selectedBean == null)
+              _buildEmptyRoasteryPrompt(context, topRoasteries)
+            else ...[
+              _buildCompactSelectedRow(selectedBean!),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _openPicker(
+                        context,
+                        initialRoasteryName: selectedBean!.roasteryName,
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.primaryBrown,
+                        side: const BorderSide(color: AppTheme.borderWarm),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: Row(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: SizedBox(
-                              width: 40,
-                              height: 62,
-                              child: CloudAssetImage(
-                                b.packageImageUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) => Container(
-                                  color: AppTheme.bgCream,
-                                  child: const Icon(CupertinoIcons.drop_fill, size: 14, color: AppTheme.primaryBrown),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  b.name,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppTheme.textDark,
-                                    height: 1.15,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  b.roastProfileRaw,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 9, color: AppTheme.textMuted),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                      icon: const Icon(CupertinoIcons.bag, size: 14),
+                      label: const Text(
+                        'Biji Lain di Roastery Ini',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
                       ),
                     ),
-                  );
-                },
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: () => _openPicker(context),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.textDark,
+                      side: const BorderSide(color: AppTheme.borderWarm),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    icon: const Icon(CupertinoIcons.building_2_fill, size: 13),
+                    label: const Text(
+                      'Roastery',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ],
               ),
-            ),
+            ],
           ] else
             _buildCompactCustomForm(),
         ],
@@ -393,8 +400,166 @@ class CompactBeanSelectorSection extends StatelessWidget {
     );
   }
 
-  Widget _buildCompactSelectedRow() {
-    final notes = selectedBean.tastingNotesList.take(3).toList();
+  Widget _buildEmptyRoasteryPrompt(
+    BuildContext context,
+    List<({String name, String logoUrl, int count})> topRoasteries,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFFAF4EC), Color(0xFFF3E8DA)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppTheme.borderWarm),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryBrown.withValues(alpha: 0.10),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  CupertinoIcons.building_2_fill,
+                  color: AppTheme.primaryBrown,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Belum Ada Biji Kopi Dipilih',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.textDark,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Pilih Roastery terlebih dahulu lalu pilih biji kopi Anda. Smart Brew akan otomatis meracik suhu, gilingan, rasio, & jadwal tuang standar internasional (SCA).',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  color: AppTheme.textMuted,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _openPicker(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryBrown,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 11),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(CupertinoIcons.search, size: 15),
+                  label: const Text(
+                    'Pilih Roastery & Biji Kopi',
+                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (topRoasteries.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          const Text(
+            'Akses Cepat Roastery Populer',
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.textMuted,
+            ),
+          ),
+          const SizedBox(height: 7),
+          SizedBox(
+            height: 44,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: topRoasteries.length,
+              itemBuilder: (_, idx) {
+                final r = topRoasteries[idx];
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => _openPicker(context, initialRoasteryName: r.name),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.bgCream,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppTheme.borderWarm),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ClipOval(
+                            child: SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CloudAssetImage(
+                                r.logoUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) => const Icon(
+                                  CupertinoIcons.flame_fill,
+                                  size: 13,
+                                  color: AppTheme.primaryBrown,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 7),
+                          Text(
+                            r.name,
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.textDark,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            '(${r.count})',
+                            style: const TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildCompactSelectedRow(CuratedRoasteryBean bean) {
+    final notes = bean.tastingNotesList.take(3).toList();
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -409,7 +574,7 @@ class CompactBeanSelectorSection extends StatelessWidget {
               width: 50,
               height: 58,
               child: CloudAssetImage(
-                selectedBean.packageImageUrl,
+                bean.packageImageUrl,
                 fit: BoxFit.cover,
                 errorBuilder: (_, _, _) => Container(
                   color: Colors.white,
@@ -424,7 +589,7 @@ class CompactBeanSelectorSection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  selectedBean.roasteryName,
+                  bean.roasteryName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -434,7 +599,7 @@ class CompactBeanSelectorSection extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  selectedBean.name,
+                  bean.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -445,7 +610,7 @@ class CompactBeanSelectorSection extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${selectedBean.origin} • ${selectedBean.roastProfileRaw} • ${selectedBean.processRaw}',
+                  '${bean.origin} • ${bean.roastProfileRaw} • ${bean.processRaw}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 10.5, color: AppTheme.textMuted),
@@ -1024,10 +1189,16 @@ class _CompactDialInResultSectionState extends State<CompactDialInResultSection>
           ),
           const SizedBox(height: 10),
 
-          // 4 Compact KPI Tiles
+          // 4 Compact KPI Tiles (adapts cleanly for Japanese Iced!)
           Row(
             children: [
-              _kpi('Air', '${recipe.totalWater.round()}g', Colors.blue.shade700),
+              _kpi(
+                recipe.iceWeightGrams > 0 ? 'Panas+Es' : 'Air',
+                recipe.iceWeightGrams > 0
+                    ? '${recipe.hotWaterGrams}+${recipe.iceWeightGrams}g'
+                    : '${recipe.totalWater.round()}g',
+                Colors.blue.shade700,
+              ),
               _kpi('Suhu', '${recipe.waterTemp}°C', Colors.deepOrange),
               _kpi('Giling', '${recipe.grindMicrons}µm', Colors.purple.shade700),
               _kpi('Waktu', '$mins:${secs}s', AppTheme.primaryBrown),
@@ -1044,11 +1215,53 @@ class _CompactDialInResultSectionState extends State<CompactDialInResultSection>
             ),
             child: Text(
               recipe.grindClickLabel,
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.textDark),
+              style: const TextStyle(
+                fontSize: 10.8,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textDark,
+              ),
             ),
           ),
+          if (recipe.roastGuidanceSummary.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFBF2),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: AppTheme.accentAmber.withValues(alpha: 0.4),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(top: 1),
+                    child: Icon(
+                      CupertinoIcons.sparkles,
+                      size: 13.5,
+                      color: Color(0xFFB45309),
+                    ),
+                  ),
+                  const SizedBox(width: 7),
+                  Expanded(
+                    child: Text(
+                      recipe.roastGuidanceSummary,
+                      style: const TextStyle(
+                        fontSize: 11.2,
+                        color: AppTheme.textDark,
+                        height: 1.38,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
 
           // Compact 3-Tab Switcher
@@ -1061,7 +1274,7 @@ class _CompactDialInResultSectionState extends State<CompactDialInResultSection>
             child: Row(
               children: [
                 _tabPill(0, 'Jadwal (${recipe.steps.length})'),
-                _tabPill(1, 'Sains EY/TDS'),
+                _tabPill(1, 'Standar SCA'),
                 _tabPill(2, 'Radar Rasa'),
               ],
             ),
@@ -1069,7 +1282,7 @@ class _CompactDialInResultSectionState extends State<CompactDialInResultSection>
           const SizedBox(height: 12),
 
           if (_detailTab == 0) _buildScheduleView(recipe),
-          if (_detailTab == 1) _buildScienceView(science),
+          if (_detailTab == 1) _buildScienceView(recipe, science),
           if (_detailTab == 2) _buildRadarView(recipe),
         ],
       ),
@@ -1172,14 +1385,18 @@ class _CompactDialInResultSectionState extends State<CompactDialInResultSection>
     );
   }
 
-  Widget _buildScienceView(AiExtractionScience science) {
+  Widget _buildScienceView(
+    RecommendedBrewRecipe recipe,
+    AiExtractionScience science,
+  ) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             _kpi('TDS', '${science.estimatedTds}%', Colors.teal.shade800),
             _kpi('EY', '${science.estimatedExtractionYield}%', const Color(0xFF007A87)),
-            _kpi('Flow', '${science.targetFlowRate}ml/s', Colors.indigo.shade700),
+            _kpi('Drawdown', recipe.estimatedDrawdownRange, Colors.indigo.shade700),
           ],
         ),
         const SizedBox(height: 8),
@@ -1193,10 +1410,112 @@ class _CompactDialInResultSectionState extends State<CompactDialInResultSection>
           child: Text(
             'Status: ${science.goldenCupStatus}',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Colors.green.shade800),
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+              color: Colors.green.shade800,
+            ),
           ),
         ),
+        const SizedBox(height: 10),
+        _scienceSpecRow(
+          CupertinoIcons.drop_fill,
+          'Kimia Air Ideal',
+          recipe.recommendedWaterChemistry,
+        ),
+        _scienceSpecRow(
+          CupertinoIcons.waveform_path_ecg,
+          'Agitasi & Aliran',
+          recipe.agitationGuidance,
+        ),
+        _scienceSpecRow(
+          CupertinoIcons.calendar,
+          'Jendela Resting',
+          recipe.recommendedRestWindow,
+        ),
+        _scienceSpecRow(
+          CupertinoIcons.star_fill,
+          'Metode Ideal',
+          recipe.recommendedParadigm.label,
+        ),
+        if (recipe.internationalBrewTips.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          const Text(
+            'Tips Barista Standar Internasional',
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.textDark,
+            ),
+          ),
+          const SizedBox(height: 5),
+          ...recipe.internationalBrewTips.map(
+            (tip) => Padding(
+              padding: const EdgeInsets.only(bottom: 5),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '• ',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: AppTheme.primaryBrown,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      tip,
+                      style: const TextStyle(
+                        fontSize: 11.2,
+                        color: AppTheme.textDark,
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ],
+    );
+  }
+
+  Widget _scienceSpecRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 1.5),
+            child: Icon(icon, size: 13.5, color: AppTheme.primaryBrown),
+          ),
+          const SizedBox(width: 7),
+          SizedBox(
+            width: 96,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textMuted,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 11.2,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textDark,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

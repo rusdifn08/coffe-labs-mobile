@@ -9,33 +9,40 @@ class RoasteryBeanCatalogCard extends StatelessWidget {
   final CuratedRoasteryBean bean;
   final bool isSelected;
   final ValueChanged<CuratedRoasteryBean> onSelect;
+  final VoidCallback? onPreview;
 
   const RoasteryBeanCatalogCard({
     super.key,
     required this.bean,
     required this.isSelected,
     required this.onSelect,
+    this.onPreview,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceWhite,
+    return Material(
+      color: AppTheme.surfaceWhite,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isSelected ? AppTheme.accentAmber : AppTheme.borderWarm,
-          width: isSelected ? 2 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryBrown.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+        onTap: onPreview ?? () => onSelect(bean),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isSelected ? AppTheme.accentAmber : AppTheme.borderWarm,
+              width: isSelected ? 2 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryBrown.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
+          child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Product Package Image
@@ -236,6 +243,8 @@ class RoasteryBeanCatalogCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+      ),
       ),
     );
   }

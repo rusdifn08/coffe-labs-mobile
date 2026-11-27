@@ -87,8 +87,8 @@ class HomeBeanRecommenderBanner extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         isEn
-                            ? '230+ Roastery beans with custom dial-in & taste notes'
-                            : 'Pilih 230+ biji roastery & resep presisi otomatis',
+                            ? 'Select roastery beans & precision brew dial-in'
+                            : 'Pilih biji roastery & resep presisi otomatis',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -114,7 +114,7 @@ class HomeBeanRecommenderBanner extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        isEn ? 'Dial-In' : 'Mulai',
+                        isEn ? 'Pick Bean' : 'Pilih Biji',
                         style: const TextStyle(
                           color: Color(0xFFF3E7D8),
                           fontSize: 11,

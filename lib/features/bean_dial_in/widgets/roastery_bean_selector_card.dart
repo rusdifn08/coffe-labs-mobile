@@ -62,7 +62,7 @@ class RoasteryBeanSelectorCard extends StatelessWidget {
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.textDark),
                     ),
                     Text(
-                      'Foto kemasan & logo resmi dari 50 micro-roastery',
+                      'Pilih roastery favorit, lalu jelajahi koleksi bijinya',
                       style: TextStyle(fontSize: 11, color: Colors.grey),
                     ),
                   ],
@@ -214,7 +214,7 @@ class RoasteryBeanSelectorCard extends StatelessWidget {
                     children: [
                       Icon(CupertinoIcons.square_grid_2x2, size: 13, color: AppTheme.primaryBrown),
                       SizedBox(width: 4),
-                      Text('Buka Katalog 230+ Biji Kopi', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.primaryBrown)),
+                      Text('Buka Katalog Roastery & Biji Kopi', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.primaryBrown)),
                     ],
                   ),
                 ),

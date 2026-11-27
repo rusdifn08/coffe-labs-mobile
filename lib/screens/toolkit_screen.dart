@@ -264,8 +264,8 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
         featureKey: 'CAFE_RADAR',
         title: isEn ? 'Cafe Radar' : 'Cafe Radar',
         subtitle: isEn
-            ? '10.000+ cafes, coffee shops & restos'
-            : '10.000+ cafe, resto & tempat ngopi',
+            ? 'Explore cafes, coffee shops & slow bars'
+            : 'Jelajahi cafe, resto & tempat ngopi',
         iconType: 'cafe_radar',
         fallbackIcon: Icons.local_cafe_rounded,
         primaryColor: const Color(0xFF0F766E),

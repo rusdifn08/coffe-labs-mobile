@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/world_indonesia_beans_service.dart';
 import '../features/bean_dial_in/widgets/compact_dial_in_sections.dart';
+import '../features/bean_dial_in/widgets/roastery_bean_picker_modal.dart';
 import '../features/beans/controllers/bean_inventory_controller.dart';
 import '../models/bean_ai_customization_models.dart';
 import '../models/bean_recommendation_models.dart';
@@ -26,7 +27,8 @@ class _BeanRecipeRecommenderScreenState
   bool _isCatalogMode = true;
 
   late List<CuratedRoasteryBean> _catalogBeans;
-  late CuratedRoasteryBean _selectedCatalogBean;
+  // Tidak langsung dipilih saat masuk: user memilih Roastery -> Biji Kopi dengan sadar!
+  CuratedRoasteryBean? _selectedCatalogBean;
 
   final TextEditingController _customBeanCtrl =
       TextEditingController(text: 'Aceh Gayo Pantan Musara');
@@ -68,7 +70,9 @@ class _BeanRecipeRecommenderScreenState
     'Guatemala Huehuetenango',
   ];
 
-  late RecommendedBrewRecipe _recipe;
+  RecommendedBrewRecipe? _recipe;
+
+  bool get _hasActiveSelection => !_isCatalogMode || _selectedCatalogBean != null;
 
   @override
   void initState() {
@@ -76,12 +80,6 @@ class _BeanRecipeRecommenderScreenState
     _catalogBeans = WorldIndonesiaBeansService.instance.mergeWithCuratedBeans(
       CuratedRoasteryBean.getAllCatalogBeans(),
     );
-    _selectedCatalogBean = _catalogBeans.firstWhere(
-      (b) => b.roasteryName.contains('Space') || b.badge != null,
-      orElse: () => _catalogBeans.first,
-    );
-    _dripper = _selectedCatalogBean.recommendedDripper;
-    _recalculate();
     WorldIndonesiaBeansService.instance.ensureLoaded().then((_) {
       if (!mounted) return;
       final merged = WorldIndonesiaBeansService.instance.mergeWithCuratedBeans(
@@ -100,9 +98,20 @@ class _BeanRecipeRecommenderScreenState
   }
 
   void _onCatalogBeanSelected(CuratedRoasteryBean bean) {
+    final autoParadigm = BeanRecommenderEngine.recommendParadigm(
+      roast: bean.roastLevel,
+      process: bean.process,
+      descriptors: '${bean.name} ${bean.origin} ${bean.variety} ${bean.processRaw}',
+    );
+    final autoWater = BeanRecommenderEngine.recommendWaterProfile(
+      roast: bean.roastLevel,
+      process: bean.process,
+    );
     setState(() {
       _selectedCatalogBean = bean;
       _dripper = bean.recommendedDripper;
+      _pouringParadigm = autoParadigm;
+      _waterProfile = autoWater;
       _customTempAdjust = 0;
       _customMicronAdjust = 0;
       _customRatioAdjust = 0.0;
@@ -111,14 +120,22 @@ class _BeanRecipeRecommenderScreenState
   }
 
   void _recalculate() {
-    final String beanTitle = _isCatalogMode
-        ? '${_selectedCatalogBean.roasteryName} • ${_selectedCatalogBean.name}'
+    if (_isCatalogMode && _selectedCatalogBean == null) {
+      setState(() => _recipe = null);
+      return;
+    }
+
+    final bean = _selectedCatalogBean;
+    final String beanTitle = _isCatalogMode && bean != null
+        ? '${bean.roasteryName} • ${bean.name}'
         : _customBeanCtrl.text;
-    final roast = _isCatalogMode ? _selectedCatalogBean.roastLevel : _customRoast;
-    final process = _isCatalogMode ? _selectedCatalogBean.process : _customProcess;
-    final origin = _isCatalogMode ? _selectedCatalogBean.origin : '';
-    final variety = _isCatalogMode ? _selectedCatalogBean.variety : '';
-    final notes = _isCatalogMode ? _selectedCatalogBean.tastingNotesList : const <String>[];
+    final roast = _isCatalogMode && bean != null ? bean.roastLevel : _customRoast;
+    final process = _isCatalogMode && bean != null ? bean.process : _customProcess;
+    final origin = _isCatalogMode && bean != null ? bean.origin : '';
+    final variety = _isCatalogMode && bean != null ? bean.variety : '';
+    final notes = _isCatalogMode && bean != null
+        ? bean.tastingNotesList
+        : const <String>[];
 
     setState(() {
       _recipe = BeanRecommenderEngine.calculate(
@@ -152,23 +169,31 @@ class _BeanRecipeRecommenderScreenState
     });
     _recalculate();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('AI Dial-In: ${tweak.suggestion}', style: const TextStyle(fontSize: 12)),
-        backgroundColor: const Color(0xFF1E293B),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            'AI Dial-In: ${tweak.suggestion}',
+            style: const TextStyle(fontSize: 12),
+          ),
+          backgroundColor: const Color(0xFF1E293B),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
   }
 
   void _startTimer() {
-    final recipeMap = _recipe.toRecipeMap();
-    if (_isCatalogMode) {
-      recipeMap['roastery'] = _selectedCatalogBean.roasteryName;
-      recipeMap['location'] = _selectedCatalogBean.roasteryLocation;
-      recipeMap['officialNotes'] = _selectedCatalogBean.tastingNotes;
-      recipeMap['opinion'] = _selectedCatalogBean.baristaOpinion;
+    final recipe = _recipe;
+    if (recipe == null) return;
+    final recipeMap = recipe.toRecipeMap();
+    final bean = _selectedCatalogBean;
+    if (_isCatalogMode && bean != null) {
+      recipeMap['roastery'] = bean.roasteryName;
+      recipeMap['location'] = bean.roasteryLocation;
+      recipeMap['officialNotes'] = bean.tastingNotes;
+      recipeMap['opinion'] = bean.baristaOpinion;
       recipeMap['roastAge'] = _roastAge.label;
       recipeMap['waterProfile'] = _waterProfile.label;
       recipeMap['pouringParadigm'] = _pouringParadigm.label;
@@ -185,22 +210,22 @@ class _BeanRecipeRecommenderScreenState
       title: 'Cara Pakai Smart Brew Dial-In',
       items: const [
         (
-          icon: CupertinoIcons.checkmark_seal_fill,
+          icon: CupertinoIcons.building_2_fill,
           color: AppTheme.primaryBrown,
-          heading: '1. Pilih Kopi',
-          body: 'Pilih biji dari Katalog Roastery resmi atau masukkan karakter biji kustom Anda.',
+          heading: '1. Pilih Roastery → Biji Kopi',
+          body: 'Pilih Roastery terlebih dahulu lalu pilih biji kopi dari katalog, atau beralih ke Biji Kustom.',
         ),
         (
           icon: Icons.tune_rounded,
           color: Color(0xFF007A87),
-          heading: '2. Atur Target & Dosis',
-          body: 'Tentukan karakter rasa, alat dripper, serta dosis kopi. Tekan Koreksi jika cangkir terlalu asam/pahit.',
+          heading: '2. Kalibrasi Standar SCA Otomatis',
+          body: 'Smart Brew menyesuaikan suhu, gilingan, rasio, kimia air, dan teknik tuang sesuai karakter sangrai, proses, dan varietas biji.',
         ),
         (
           icon: CupertinoIcons.play_circle_fill,
           color: Color(0xFFD97706),
           heading: '3. Mulai Seduh Presisi',
-          body: 'Tinjau resep & jadwal tuangan, lalu tekan tombol Mulai Seduh di bagian bawah.',
+          body: 'Tinjau resep, jadwal tuang, dan klik grinder lalu tekan tombol Mulai Seduh.',
         ),
       ],
     );
@@ -211,13 +236,14 @@ class _BeanRecipeRecommenderScreenState
     final beansAsync = ref.watch(beanInventoryControllerProvider);
     final catalogBeans = beansAsync.value ?? _catalogBeans;
     final isEn = LanguageService.isEnglish;
+    final activeRecipe = _recipe;
 
     return Scaffold(
       backgroundColor: AppTheme.bgCream,
       appBar: AppBar(
-        title: Text(
-          isEn ? 'Smart Brew Dial-In' : 'Smart Brew Dial-In',
-          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+        title: const Text(
+          'Smart Brew Dial-In',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
         ),
         centerTitle: true,
         actions: [
@@ -239,7 +265,7 @@ class _BeanRecipeRecommenderScreenState
       body: ListView(
         padding: const EdgeInsets.fromLTRB(14, 6, 14, 24),
         children: [
-          _buildModeSwitcher(catalogBeans.length),
+          _buildModeSwitcher(),
           const SizedBox(height: 10),
 
           CompactBeanSelectorSection(
@@ -263,48 +289,51 @@ class _BeanRecipeRecommenderScreenState
           ),
           const SizedBox(height: 10),
 
-          CompactBrewConfigSection(
-            selectedGoal: _flavorGoal,
-            selectedDripper: _dripper,
-            dose: _coffeeDose,
-            totalWater: _recipe.totalWater,
-            brewRatio: _recipe.brewRatio,
-            roastAge: _roastAge,
-            waterProfile: _waterProfile,
-            pouringParadigm: _pouringParadigm,
-            onGoalChanged: (goal) {
-              setState(() => _flavorGoal = goal);
-              _recalculate();
-            },
-            onDripperChanged: (dripper) {
-              setState(() => _dripper = dripper);
-              _recalculate();
-            },
-            onDoseChanged: (v) {
-              setState(() => _coffeeDose = v);
-              _recalculate();
-            },
-            onRoastAgeChanged: (age) {
-              setState(() => _roastAge = age);
-              _recalculate();
-            },
-            onWaterProfileChanged: (w) {
-              setState(() => _waterProfile = w);
-              _recalculate();
-            },
-            onParadigmChanged: (p) {
-              setState(() => _pouringParadigm = p);
-              _recalculate();
-            },
-            onApplyTweak: _onApplyAiTweak,
-          ),
-          const SizedBox(height: 10),
-
-          CompactDialInResultSection(
-            recipe: _recipe,
-            roastAge: _roastAge,
-            waterProfile: _waterProfile,
-          ),
+          if (!_hasActiveSelection || activeRecipe == null)
+            _buildInternationalRoastCheatSheet()
+          else ...[
+            CompactBrewConfigSection(
+              selectedGoal: _flavorGoal,
+              selectedDripper: _dripper,
+              dose: _coffeeDose,
+              totalWater: activeRecipe.totalWater,
+              brewRatio: activeRecipe.brewRatio,
+              roastAge: _roastAge,
+              waterProfile: _waterProfile,
+              pouringParadigm: _pouringParadigm,
+              onGoalChanged: (goal) {
+                setState(() => _flavorGoal = goal);
+                _recalculate();
+              },
+              onDripperChanged: (dripper) {
+                setState(() => _dripper = dripper);
+                _recalculate();
+              },
+              onDoseChanged: (v) {
+                setState(() => _coffeeDose = v);
+                _recalculate();
+              },
+              onRoastAgeChanged: (age) {
+                setState(() => _roastAge = age);
+                _recalculate();
+              },
+              onWaterProfileChanged: (w) {
+                setState(() => _waterProfile = w);
+                _recalculate();
+              },
+              onParadigmChanged: (p) {
+                setState(() => _pouringParadigm = p);
+                _recalculate();
+              },
+              onApplyTweak: _onApplyAiTweak,
+            ),
+            const SizedBox(height: 10),
+            CompactDialInResultSection(
+              recipe: activeRecipe,
+              roastAge: _roastAge,
+              waterProfile: _waterProfile,
+            ),
+          ],
         ],
       ),
       bottomNavigationBar: SafeArea(
@@ -314,57 +343,203 @@ class _BeanRecipeRecommenderScreenState
             color: Colors.white,
             border: Border(top: BorderSide(color: AppTheme.borderWarm)),
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _dripper.label.split('(').first.trim(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.textDark,
+          child: !_hasActiveSelection || activeRecipe == null
+              ? SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      RoasteryBeanPickerModal.show(
+                        context: context,
+                        allBeans: catalogBeans,
+                        selectedBean: _selectedCatalogBean,
+                        onBeanSelected: _onCatalogBeanSelected,
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryBrown,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    Text(
-                      '${_coffeeDose.round()}g → ${_recipe.totalWater.round()}ml • ${_recipe.waterTemp}°C',
+                    icon: const Icon(CupertinoIcons.building_2_fill, size: 16),
+                    label: Text(
+                      isEn ? 'Choose Roastery & Bean' : 'Pilih Roastery & Biji Kopi',
                       style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.primaryBrown,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                )
+              : Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _dripper.label.split('(').first.trim(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.textDark,
+                            ),
+                          ),
+                          Text(
+                            activeRecipe.iceWeightGrams > 0
+                                ? '${_coffeeDose.round()}g → ${activeRecipe.hotWaterGrams}ml + ${activeRecipe.iceWeightGrams}g Es • ${activeRecipe.waterTemp}°C'
+                                : '${_coffeeDose.round()}g → ${activeRecipe.totalWater.round()}ml • ${activeRecipe.waterTemp}°C',
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.primaryBrown,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
+                      onPressed: _startTimer,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryBrown,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      icon: const Icon(CupertinoIcons.play_fill, size: 16),
+                      label: Text(
+                        isEn ? 'Start Brew' : 'Mulai Seduh',
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(width: 12),
-              ElevatedButton.icon(
-                onPressed: _startTimer,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryBrown,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                icon: const Icon(CupertinoIcons.play_fill, size: 16),
-                label: Text(
-                  isEn ? 'Start Brew' : 'Mulai Seduh',
-                  style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
   }
 
-  Widget _buildModeSwitcher(int beanCount) {
+  /// Friendly international SCA quick reference shown before user picks a bean
+  Widget _buildInternationalRoastCheatSheet() {
+    const cards = [
+      (
+        title: 'Light Roast (Filter / Nordic)',
+        spec: '93–95°C • 550–600 µm • 1:16 • V60 / Origami',
+        tip: 'Suhu tinggi & blooming 45s membuka aroma bunga, citrus, & buah segar.',
+        color: Color(0xFFB45309),
+      ),
+      (
+        title: 'Medium Roast (Sweet Balance)',
+        spec: '90–91°C • 640–680 µm • 1:15 • Kalita / V60',
+        tip: 'Keseimbangan manis gula karamel, cokelat susu, dan body lembut.',
+        color: Color(0xFF8D4925),
+      ),
+      (
+        title: 'Anaerobic / Fermentasi Intens',
+        spec: '88–90°C • 680–730 µm • 1:15.5 • Minim Agitasi',
+        tip: 'Sangat mudah larut: turunkan suhu & perkasar gilingan agar buah bersih.',
+        color: Color(0xFF0F766E),
+      ),
+      (
+        title: 'Medium-Dark / Dark Roast',
+        spec: '84–88°C • 740–820 µm • 1:13.5–14 • Osmotic',
+        tip: 'Suhu rendah & tuangan lembut di tengah mengunci rasa cokelat anti-pahit.',
+        color: Color(0xFF3E2723),
+      ),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.borderWarm),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(CupertinoIcons.sparkles, size: 15, color: AppTheme.accentAmber),
+              SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Panduan Cepat Standar SCA Internasional',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.textDark,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ...cards.map(
+            (c) => Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: c.color.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: c.color.withValues(alpha: 0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    c.title,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: c.color,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    c.spec,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textDark,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    c.tip,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.textMuted,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModeSwitcher() {
     return Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
@@ -376,8 +551,8 @@ class _BeanRecipeRecommenderScreenState
         children: [
           _modeTab(
             active: _isCatalogMode,
-            icon: CupertinoIcons.checkmark_seal_fill,
-            label: 'Katalog ($beanCount+)',
+            icon: CupertinoIcons.building_2_fill,
+            label: 'Katalog Roastery',
             onTap: () {
               if (!_isCatalogMode) {
                 setState(() => _isCatalogMode = true);
@@ -414,7 +589,7 @@ class _BeanRecipeRecommenderScreenState
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.symmetric(vertical: 7),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
           decoration: BoxDecoration(
             color: active ? AppTheme.primaryBrown : Colors.transparent,
             borderRadius: BorderRadius.circular(9),
@@ -425,12 +600,16 @@ class _BeanRecipeRecommenderScreenState
             children: [
               Icon(icon, size: 13, color: active ? AppTheme.accentGold : AppTheme.textMuted),
               const SizedBox(width: 5),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w700,
-                  color: active ? Colors.white : AppTheme.textDark,
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: active ? Colors.white : AppTheme.textDark,
+                  ),
                 ),
               ),
             ],

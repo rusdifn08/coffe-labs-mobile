@@ -258,13 +258,20 @@ class BeanStepGenerator {
     required int bloomSec,
     required double remainingWater,
     required double totalWater,
+    int iceWeightGrams = 0,
   }) {
+    final String icePrefix = iceWeightGrams > 0
+        ? 'Siapkan ${iceWeightGrams}g es batu di dalam server. '
+        : '';
     steps.add({
       'stepOrder': 1,
-      'title': 'Fase 1: Blooming & Degassing Gas CO2',
+      'title': iceWeightGrams > 0
+          ? 'Fase 1: Blooming (${iceWeightGrams}g Es di Server)'
+          : 'Fase 1: Blooming & Degassing Gas CO2',
       'durationSeconds': bloomSec,
       'waterAddedGrams': bloomWater,
-      'instruction': 'Tuang memutar konsentris perlahan dari tengah. Basahi merata untuk melepaskan gas CO2 yang terperangkap.',
+      'instruction':
+          '${icePrefix}Tuang memutar konsentris perlahan dari tengah. Basahi merata untuk melepaskan gas CO2 yang terperangkap.',
     });
 
     if (paradigm == PouringParadigm.tetsu46) {
