@@ -540,8 +540,8 @@ class _UnifiedCoffeeBookReaderScreenState
                     tooltip: _justified ? 'Rata Kanan-Kiri' : 'Rata Kiri',
                     icon: Icon(
                       _justified
-                          ? Icons.format_align_justify_rounded
-                          : Icons.format_align_left_rounded,
+                          ? Icons.article_rounded
+                          : Icons.notes_rounded,
                       color: _theme.text,
                     ),
                     onPressed: () {
@@ -827,7 +827,7 @@ class _UnifiedCoffeeBookReaderScreenState
                         child: ListTile(
                           dense: true,
                           contentPadding: EdgeInsets.zero,
-                          leading: Icon(Icons.fullscreen_rounded, size: 20),
+                          leading: Icon(Icons.visibility_off_rounded, size: 20),
                           title: Text('Mode Fokus Layar Penuh'),
                         ),
                       ),
@@ -836,7 +836,7 @@ class _UnifiedCoffeeBookReaderScreenState
                         child: ListTile(
                           dense: true,
                           contentPadding: EdgeInsets.zero,
-                          leading: Icon(Icons.ios_share_rounded, size: 20),
+                          leading: Icon(Icons.share_rounded, size: 20),
                           title: Text('Simpan / Bagikan PDF'),
                         ),
                       ),
@@ -891,7 +891,7 @@ class _UnifiedCoffeeBookReaderScreenState
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.fullscreen_exit_rounded,
+                          Icon(Icons.visibility_rounded,
                               color: Colors.white, size: 16),
                           SizedBox(width: 4),
                           Text('Tampilkan Menu',
@@ -1820,7 +1820,7 @@ class _UnifiedCoffeeBookReaderScreenState
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.fullscreen_rounded,
+                            Icon(Icons.visibility_off_rounded,
                                 size: 15, color: _theme.muted),
                             const SizedBox(width: 3),
                             Text('Fokus',
