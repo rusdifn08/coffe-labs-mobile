@@ -8,6 +8,7 @@ import '../../data/game_brew_progress_service.dart';
 import '../../domain/game_brew_studio_models.dart';
 import '../../engine/manual_brew_3d_physics_engine.dart';
 import '../../engine/natural_gyro_sensor_fusion.dart';
+import '../../widgets/barista_precision_joystick.dart';
 import '../../widgets/manual_brew_full_3d_scene_painter.dart';
 
 /// Full-Screen (Portrait & Landscape) 3D Manual Brew Simulator v2.5:
@@ -31,6 +32,12 @@ class _ManualBrew3DStageScreenState extends State<ManualBrew3DStageScreen> {
   late final ManualBrew3DPhysicsEngine _engine;
   final NaturalGyroSensorFusionEngine _sensors =
       NaturalGyroSensorFusionEngine();
+  final BaristaJoystickController _joystick = BaristaJoystickController(
+    deadzone: 0.08,
+    responseGamma: 1.85,
+    maxSpeedNormPerSec: 1.55,
+    workspaceMaxRadius: 0.86,
+  );
   final ValueNotifier<int> _frameTick = ValueNotifier<int>(0);
   Timer? _loopTimer;
 
@@ -44,7 +51,7 @@ class _ManualBrew3DStageScreenState extends State<ManualBrew3DStageScreen> {
   bool _showWetnessHeatmap = true;
   bool _showPatternGuide = true;
 
-  // Ergonomic manual pour lever (0..1 -> 0..52 deg)
+  // Ergonomic manual pour lever fallback (0..1 -> 0..50 deg)
   double _pourLever = 0.0;
   NaturalSensorSnapshot _sensorSnap = const NaturalSensorSnapshot();
 
@@ -58,43 +65,34 @@ class _ManualBrew3DStageScreenState extends State<ManualBrew3DStageScreen> {
       _animTimeSec += 0.016;
       _sensorSnap = _sensors.sample(0.016);
 
+      // SEPARATED PRO ARCHITECTURE:
+      // 1) Gyroscope ONLY controls Pour Flow Rate (sedikit / banyaknya air tergantung kemiringan HP!)
       final bool gyroActive = _useGyroControl && _sensorSnap.hardwareActive;
-      final double leverPitch = _pourLever * 50.0;
+      final double leverPitch = _pourLever * 48.0;
       final double effectivePitch = gyroActive
           ? math.max(_sensorSnap.pitchDeg, leverPitch)
           : leverPitch;
-      final double effectiveRoll = gyroActive ? _sensorSnap.rollDeg : 0.0;
 
-      // Full 2-Axis Natural Gyroscope Steering:
-      // Roll tilts aim left/right; gentle forward/back wrist surge & pitch assist circular/zigzag patterns!
-      if (gyroActive) {
-        final double rollStep =
-            _sensorSnap.rollDeg.abs() > 2.2 ? (_sensorSnap.rollDeg / 38.0) * 0.018 : 0.0;
-        final double surgeStep = _sensorSnap.linearAccelZ.abs() > 0.35
-            ? (-_sensorSnap.linearAccelZ * 0.012)
-            : 0.0;
-        if (rollStep != 0.0 || surgeStep != 0.0) {
-          _engine.aimPos = Offset(
-            (_engine.aimPos.dx + rollStep).clamp(-0.90, 0.90),
-            (_engine.aimPos.dy + surgeStep).clamp(-0.90, 0.90),
-          );
-        }
+      // 2) Precision Analog Joystick ONLY controls XY Pour Position & Variable Speed!
+      if (_engine.phase == ManualBrewPhase.wetFilter ||
+          _engine.phase == ManualBrewPhase.precisionPour) {
+        _engine.aimPos = _joystick.stepPosition(_engine.aimPos, 0.016);
       }
 
-      // Automatic physical Gentle Rao Swirl via circular hand motion!
+      // Automatic physical Gentle Rao Swirl via circular hand motion when NOT pouring
       if (gyroActive &&
-          _sensorSnap.swirlIntensity > 0.45 &&
+          _sensorSnap.swirlIntensity > 0.55 &&
           _engine.phase == ManualBrewPhase.precisionPour &&
-          _engine.kettleSlosh.currentFlowMlS < 0.8) {
+          _engine.kettleSlosh.currentFlowMlS < 0.6) {
         _engine.applyGentleRaoSwirl(intensity: 0.12);
       }
 
       _engine.step(
         dt: 0.016,
         pitchDeg: effectivePitch,
-        rollDeg: effectiveRoll,
-        lateralAccelX: _sensorSnap.linearAccelX,
-        lateralAccelZ: _sensorSnap.linearAccelZ,
+        rollDeg: 0.0, // Keep kettle upright & steady — zero sideways tilt distortion!
+        lateralAccelX: _joystick.state.velocityNormPerSec.dx * 1.4,
+        lateralAccelZ: _joystick.state.velocityNormPerSec.dy * 1.4,
       );
       _frameTick.value++;
     });
@@ -122,6 +120,7 @@ class _ManualBrew3DStageScreenState extends State<ManualBrew3DStageScreen> {
 
   void _resetSession() {
     HapticFeedback.selectionClick();
+    _joystick.reset();
     setState(() {
       _pourLever = 0.0;
       _engine.reset();
@@ -290,7 +289,7 @@ class _ManualBrew3DStageScreenState extends State<ManualBrew3DStageScreen> {
                             orbitYawRad: _orbitYawRad,
                             orbitPitchRad: _orbitPitchRad,
                             activePitchDeg: activePitch,
-                            activeRollDeg: gyroOn ? _sensorSnap.rollDeg : 0.0,
+                            activeRollDeg: 0.0,
                             showWetnessHeatmap: _showWetnessHeatmap,
                             showPatternGuide: _showPatternGuide,
                             blindScaleMode: widget.spec.blindScaleMode,
@@ -330,7 +329,7 @@ class _ManualBrew3DStageScreenState extends State<ManualBrew3DStageScreen> {
                       left: _controlsOnLeft ? 10 : 0,
                       right: _controlsOnLeft ? 0 : 10,
                       top: isLandscape ? 50 : 88,
-                      bottom: isLandscape ? 54 : 108,
+                      bottom: isLandscape ? 128 : 196,
                     ),
                     child: ValueListenableBuilder<int>(
                       valueListenable: _frameTick,
@@ -422,8 +421,8 @@ class _ManualBrew3DStageScreenState extends State<ManualBrew3DStageScreen> {
                     ),
                     Text(
                       gyroLive
-                          ? 'GYRO 9-AXIS • ${_sensorSnap.pitchDeg.toStringAsFixed(0)}° • Stabil ${_sensorSnap.handSteadinessPct.toStringAsFixed(0)}%'
-                          : pattern.label,
+                          ? 'GYRO TUANG • ${_sensorSnap.pitchDeg.toStringAsFixed(0)}° • ${_engine.flowRegimeLabel}'
+                          : 'JOYSTICK + TUAS • ${pattern.shortLabel}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -659,50 +658,136 @@ class _ManualBrew3DStageScreenState extends State<ManualBrew3DStageScreen> {
 
   Widget _buildBottomFloatingDock(ManualPourPattern pattern) {
     final bool blind = widget.spec.blindScaleMode;
+    final bool isWetPhase = _engine.phase == ManualBrewPhase.wetFilter;
+    final bool showJoystick =
+        isWetPhase || _engine.phase == ManualBrewPhase.precisionPour;
+    final double flow = _engine.kettleSlosh.currentFlowMlS;
+    final Color flowColor = flow <= 0.15
+        ? Colors.white70
+        : (_engine.isRayleighBreakup || flow > 6.8
+            ? const Color(0xFFF87171)
+            : ((flow - widget.spec.idealFlowMlS).abs() <= 1.5
+                ? const Color(0xFF34D399)
+                : const Color(0xFFFBBF24)));
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 9, 12, 10),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.56),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Compact 5-Phase Indicator + Live Telemetry
-          Row(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 1. Compact Guided Direction Coaching Pill (Super helpful for non-baristas!)
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.56),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFFFBBF24).withValues(alpha: 0.42),
+            ),
+          ),
+          child: Row(
             children: [
-              _hudMetric(
-                'Air',
-                blind
-                    ? 'BLIND'
-                    : '${_engine.pouredCoffeeWaterMl.toStringAsFixed(0)}/${widget.spec.targetWaterMl.toInt()}ml',
-                const Color(0xFFFDE68A),
+              const Icon(
+                CupertinoIcons.compass_fill,
+                size: 14,
+                color: Color(0xFFFBBF24),
               ),
-              _hudMetric(
-                'Debit',
-                '${_engine.kettleSlosh.currentFlowMlS.toStringAsFixed(1)}/s',
-                const Color(0xFF34D399),
-              ),
-              _hudMetric(
-                'Basah',
-                '${_engine.wettingCoveragePct.toStringAsFixed(0)}%',
-                const Color(0xFF7DD3FC),
-              ),
-              _hudMetric(
-                'Pola',
-                '${_engine.patternAccuracyPct.toStringAsFixed(0)}%',
-                const Color(0xFFFBBF24),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  _engine.coachingHint,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 10.6,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFFEF3C7),
+                    height: 1.25,
+                  ),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+        ),
 
-          // Contextual Phase Action Row
-          _buildPhaseActionRow(),
-        ],
-      ),
+        // 2. Main Bottom Telemetry + Precision Analog Joystick Deck
+        Container(
+          padding: const EdgeInsets.fromLTRB(10, 8, 10, 9),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.62),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (showJoystick && _controlsOnLeft) ...[
+                BaristaPrecisionJoystick(
+                  controller: _joystick,
+                  size: 104,
+                  label: 'ARAH KETEL',
+                  onRecenter: () => setState(() {
+                    _engine.aimPos = isWetPhase
+                        ? const Offset(0.0, -0.68)
+                        : Offset.zero;
+                  }),
+                ),
+                const SizedBox(width: 10),
+              ],
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        _hudMetric(
+                          isWetPhase ? 'Bilas' : 'Air',
+                          blind
+                              ? 'BLIND'
+                              : (isWetPhase
+                                  ? '${_engine.rinseWaterInServerMl.toStringAsFixed(0)}ml'
+                                  : '${_engine.pouredCoffeeWaterMl.toStringAsFixed(0)}/${widget.spec.targetWaterMl.toInt()}'),
+                          const Color(0xFFFDE68A),
+                        ),
+                        _hudMetric(
+                          'Debit',
+                          '${flow.toStringAsFixed(1)}/s',
+                          flowColor,
+                        ),
+                        _hudMetric(
+                          isWetPhase ? 'Filter' : 'Basah',
+                          '${_engine.activeWetnessPct.toStringAsFixed(0)}%',
+                          const Color(0xFF7DD3FC),
+                        ),
+                        _hudMetric(
+                          'Ketel',
+                          '${_engine.kettleSlosh.volumeMl.toStringAsFixed(0)}ml',
+                          const Color(0xFFE2E8F0),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    _buildPhaseActionRow(),
+                  ],
+                ),
+              ),
+              if (showJoystick && !_controlsOnLeft) ...[
+                const SizedBox(width: 10),
+                BaristaPrecisionJoystick(
+                  controller: _joystick,
+                  size: 104,
+                  label: 'ARAH KETEL',
+                  onRecenter: () => setState(() {
+                    _engine.aimPos = isWetPhase
+                        ? const Offset(0.0, -0.68)
+                        : Offset.zero;
+                  }),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -739,17 +824,17 @@ class _ManualBrew3DStageScreenState extends State<ManualBrew3DStageScreen> {
           children: [
             Expanded(
               child: Text(
-                '1. Basahi Filter: ${_engine.paperWetnessPct.toStringAsFixed(0)}% / 95% (${_engine.serverTempC.toStringAsFixed(0)}°C)',
+                'Bilas ${_engine.paperWetnessPct.toStringAsFixed(0)}%/95% • ${_engine.serverTempC.toStringAsFixed(0)}°C',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.6,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             ElevatedButton(
               onPressed: _engine.isFilterReadyToDiscard
                   ? () {
@@ -764,12 +849,12 @@ class _ManualBrew3DStageScreenState extends State<ManualBrew3DStageScreen> {
                 backgroundColor: const Color(0xFF0F766E),
                 foregroundColor: Colors.white,
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                minimumSize: const Size(0, 34),
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                minimumSize: const Size(0, 32),
               ),
               child: const Text(
-                'Buang Bilasan →',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                'Buang →',
+                style: TextStyle(fontSize: 10.6, fontWeight: FontWeight.w800),
               ),
             ),
           ],

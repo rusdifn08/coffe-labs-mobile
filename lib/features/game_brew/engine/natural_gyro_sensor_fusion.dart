@@ -105,9 +105,12 @@ class NaturalGyroSensorFusionEngine {
   final Vector3 _prevLinearAccel = Vector3.zero();
   final Vector3 _magField = Vector3.zero();
   bool _hasUserAccelStream = false;
+  bool _hasGravityInit = false;
   bool _magValid = false;
   bool _hardwareActive = false;
   bool _isLandscape = false;
+  double _baseGravityPitchRad = 0.0;
+  double _currentGravityPitchRad = 0.0;
 
   DateTime? _lastGyroTime;
 
@@ -206,9 +209,10 @@ class NaturalGyroSensorFusionEngine {
     _magSub = null;
   }
 
-  /// Sets current comfortable hand grip as neutral 0° pitch/roll/yaw.
+  /// Sets current comfortable hand grip as neutral 0° pour baseline (signed forward tilt = pour!).
   void calibrateZeroTare() {
     _qTareInv = _qAttitude.conjugated();
+    _baseGravityPitchRad = _currentGravityPitchRad;
     _hasTare = true;
     _pitchFilter.reset(0.0);
     _rollFilter.reset(0.0);
@@ -227,6 +231,34 @@ class NaturalGyroSensorFusionEngine {
   void ingestAccelerometer(double x, double y, double z) {
     final v = _remapAxes(x, y, z);
     _rawAccel.setFrom(v);
+
+    // Compute rock-solid gravity-aligned forward pitch angle (rad) around device +X axis:
+    // Vertical (0, 9.8, 0) -> 0 rad; 45 deg grip (0, 6.9, 6.9) -> +45 deg;
+    // Tilting top forward/down to pour -> monotonically increases toward +90..+135 deg!
+    final double gNorm = v.length;
+    if (gNorm > 2.0) {
+      final double gravPitch = math.atan2(v.z, v.y);
+      if (!_hasGravityInit) {
+        _hasGravityInit = true;
+        _currentGravityPitchRad = gravPitch;
+        _baseGravityPitchRad = gravPitch;
+        // vector_math_64's `Quaternion.rotated` applies inverse (world -> body),
+        // so initializing body -> world via fromTwoVectors(gMeasBody, +Y) gives exact 0.0° at rest!
+        _qAttitude = Quaternion.fromTwoVectors(
+          v / gNorm,
+          Vector3(0.0, 1.0, 0.0),
+        )..normalize();
+        _qTareInv = _qAttitude.conjugated();
+        _hasTare = true;
+      } else {
+        // Shortest angular delta prevents wraparound glitches
+        double delta = gravPitch - _currentGravityPitchRad;
+        if (delta > math.pi) delta -= 2.0 * math.pi;
+        if (delta < -math.pi) delta += 2.0 * math.pi;
+        _currentGravityPitchRad += delta * 0.22;
+      }
+    }
+
     if (!_hasUserAccelStream) {
       // High-pass fallback if device lacks hardware linear-accel sensor
       final Vector3 gravEst = _qAttitude.rotated(Vector3(0.0, 9.80665, 0.0));
@@ -369,11 +401,23 @@ class NaturalGyroSensorFusionEngine {
 
     final Quaternion qRel = _qTareInv * _qAttitude;
 
-    // Extract ergonomic Euler angles relative to calibrated barista grip
+    // Signed ergonomic pour tilt (ONLY forward/downward tilt pours; upright or backward = 0° STOP!).
+    // Blends instantaneous SO(3) quaternion pitch with drift-free gravity inclination baseline so
+    // the kettle NEVER starts stuck at 61° on launch!
     final double sinP =
         (2.0 * (qRel.w * qRel.x - qRel.z * qRel.y)).clamp(-1.0, 1.0);
-    final double rawPitchDeg =
-        (math.asin(sinP).abs() * 180.0 / math.pi).clamp(0.0, 65.0);
+    // Body->world quaternion rotates -X on forward pour tilt, so -asin(sinP) is positive!
+    final double quatPitchDeg = -(math.asin(sinP) * 180.0 / math.pi);
+    final double gravDeltaDeg =
+        ((_currentGravityPitchRad - _baseGravityPitchRad) * 180.0 / math.pi);
+    // Complementary blend: gravity prevents startup offset/drift, gyro gives instant 200Hz feel!
+    final double signedPourDeg = _hasGravityInit
+        ? (gravDeltaDeg * 0.72 + quatPitchDeg * 0.28)
+        : quatPitchDeg;
+    // Apply 3.5° ergonomic neutral deadband so holding the phone naturally stays at exact 0.0 ml/s!
+    final double rawPitchDeg = signedPourDeg <= 3.5
+        ? 0.0
+        : (signedPourDeg - 3.5).clamp(0.0, 58.0);
 
     final double rawRollDeg = (math.atan2(
               2.0 * (qRel.w * qRel.z + qRel.x * qRel.y),

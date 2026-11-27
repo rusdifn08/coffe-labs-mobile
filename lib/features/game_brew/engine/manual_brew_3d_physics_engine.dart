@@ -133,6 +133,8 @@ class ManualBrew3DPhysicsEngine {
     // Direct technique drills skip straight to precision pouring unless ritual drill!
     if (spec.requirePreBrewRitual) {
       phase = ManualBrewPhase.wetFilter;
+      aimPos = const Offset(0.0, -0.68);
+      _prevAimPos = aimPos;
     } else {
       filterWetness.fillRange(0, filterSegments, 1.0);
       serverTempC = 64.0;
@@ -143,6 +145,8 @@ class ManualBrew3DPhysicsEngine {
       centerDivotDepthMm = 6.5;
       _initBedHeightfield(withDivot: true);
       phase = ManualBrewPhase.precisionPour;
+      aimPos = Offset.zero;
+      _prevAimPos = Offset.zero;
     }
   }
 
@@ -178,6 +182,41 @@ class ManualBrew3DPhysicsEngine {
       sum += filterWetness[i];
     }
     return (sum / filterSegments) * 100.0;
+  }
+
+  /// Normalized target point on the filter wall where the paper is currently driest.
+  /// Powers the glowing guidance arrow so beginners know exactly where to aim!
+  Offset get driestFilterTargetPos {
+    int driestIdx = 0;
+    double minWet = filterWetness[0];
+    for (int i = 1; i < filterSegments; i++) {
+      if (filterWetness[i] < minWet) {
+        minWet = filterWetness[i];
+        driestIdx = i;
+      }
+    }
+    final double angle =
+        ((driestIdx + 0.5) / filterSegments) * math.pi * 2.0 - math.pi;
+    return Offset(math.cos(angle) * 0.72, math.sin(angle) * 0.72);
+  }
+
+  /// Contextual water weight currently on the smart scale (rinse water in Phase 1, brewed water in Phase 4).
+  double get activeScaleWaterMl =>
+      phase == ManualBrewPhase.wetFilter ? rinseWaterInServerMl : pouredCoffeeWaterMl;
+
+  /// Contextual wetness percentage (paper filter in Phase 1, coffee bed in Phase 4).
+  double get activeWetnessPct =>
+      phase == ManualBrewPhase.wetFilter ? paperWetnessPct : wettingCoveragePct;
+
+  /// Realistic flow regime description based on kettle Reynolds number & pour height.
+  String get flowRegimeLabel {
+    final double flow = kettleSlosh.currentFlowMlS;
+    if (flow <= 0.15) return 'Siaga';
+    if (isRayleighBreakup) return 'Pecah (Terlalu Tinggi!)';
+    if (!kettleSlosh.isFlowLaminar || flow > 6.8) return 'Turbulen';
+    final double diff = (flow - spec.idealFlowMlS).abs();
+    if (diff <= 1.4) return 'Laminar Ideal';
+    return flow < spec.idealFlowMlS ? 'Laminar Halus' : 'Laminar Kuat';
   }
 
   bool get isFilterReadyToDiscard => paperWetnessPct >= 95.0;
@@ -250,7 +289,44 @@ class ManualBrew3DPhysicsEngine {
     kettleSlosh.reset(
       newVolumeMl: math.max(350.0, spec.targetWaterMl + 90.0),
     );
+    aimPos = Offset.zero;
+    _prevAimPos = Offset.zero;
     phase = ManualBrewPhase.precisionPour;
+  }
+
+  /// Clear 1-line movement & tilt coaching hint for non-baristas!
+  String get coachingHint {
+    switch (phase) {
+      case ManualBrewPhase.wetFilter:
+        if (isFilterReadyToDiscard) {
+          return 'Filter basah 100%! Tegakkan HP lalu ketuk "Buang Bilasan →"';
+        }
+        return 'Geser joystick memutar searah jarum jam (↻) ikuti panah emas • Miringkan HP untuk menuang';
+      case ManualBrewPhase.rdtSpritz:
+        return 'Semprot 1–2× RDT ke biji kopi untuk mencegah fines menempel lalu lanjutkan';
+      case ManualBrewPhase.doseAndDivot:
+        return 'Tuang bubuk kopi lalu tekan bagian tengah V60 untuk membuat cekungan (divot)';
+      case ManualBrewPhase.precisionPour:
+        final p = spec.manualPattern ?? ManualPourPattern.circularCw;
+        final String targetDebit =
+            '${(spec.idealFlowMlS - 1.0).clamp(1.5, 8.0).toStringAsFixed(1)}–${(spec.idealFlowMlS + 1.0).toStringAsFixed(1)} ml/s';
+        return switch (p) {
+          ManualPourPattern.circularCw =>
+            'Putar joystick searah jarum jam (↻) ikuti panah • Miringkan HP ($targetDebit)',
+          ManualPourPattern.reverseCircularCcw =>
+            'Putar joystick berlawanan jarum jam (↺) ikuti panah • Debit ideal $targetDebit',
+          ManualPourPattern.zigzag =>
+            'Geser joystick zig-zag kiri-kanan (↔) ikuti panah • Debit ideal $targetDebit',
+          ManualPourPattern.centerOsmotic =>
+            'Tahan joystick halus di titik pusat (◎) • Miringkan HP pelan ($targetDebit)',
+          ManualPourPattern.pulse46 =>
+            'Tuang bertahap 5 fase memutar (↻) lalu tegakkan HP sejenak di tiap jeda',
+          ManualPourPattern.spiralSwirl =>
+            'Putar joystick spiral (↻) ikuti panah • Tutup dengan Rao Swirl di akhir',
+        };
+      case ManualBrewPhase.swirlAndResult:
+        return 'Seduhan selesai! Putar kamera 360° untuk inspeksi flat coffee bed.';
+    }
   }
 
   // ---- PHASE 4 & 1 REAL-TIME TICK ----
@@ -283,17 +359,26 @@ class ManualBrew3DPhysicsEngine {
       if (flow > 0.25) {
         rinseWaterInServerMl += flow * safeDt;
         serverTempC = (serverTempC + flow * safeDt * 0.95).clamp(25.0, 68.0);
-        final double angle = math.atan2(aimPos.dy, aimPos.dx);
-        final double normA = (angle + math.pi) / (2.0 * math.pi);
-        final int centerSeg =
-            (normA * filterSegments).floor().clamp(0, filterSegments - 1);
-        for (int offset = -5; offset <= 5; offset++) {
-          final int s = (centerSeg + offset) % filterSegments;
-          final int wrapped = s < 0 ? s + filterSegments : s;
-          final double falloff = math.exp(-(offset * offset) / 10.5);
-          filterWetness[wrapped] =
-              (filterWetness[wrapped] + flow * safeDt * 0.19 * falloff)
-                  .clamp(0.0, 1.0);
+        final double aimR = aimPos.distance;
+        if (aimR < 0.22) {
+          // Pouring in center saturates lower paper cone slowly & uniformly
+          for (int i = 0; i < filterSegments; i++) {
+            filterWetness[i] =
+                (filterWetness[i] + flow * safeDt * 0.032).clamp(0.0, 1.0);
+          }
+        } else {
+          final double angle = math.atan2(aimPos.dy, aimPos.dx);
+          final double normA = (angle + math.pi) / (2.0 * math.pi);
+          final int centerSeg =
+              (normA * filterSegments).floor().clamp(0, filterSegments - 1);
+          for (int offset = -5; offset <= 5; offset++) {
+            final int s = (centerSeg + offset) % filterSegments;
+            final int wrapped = s < 0 ? s + filterSegments : s;
+            final double falloff = math.exp(-(offset * offset) / 10.5);
+            filterWetness[wrapped] =
+                (filterWetness[wrapped] + flow * safeDt * 0.22 * falloff)
+                    .clamp(0.0, 1.0);
+          }
         }
       }
       // Natural capillary wicking across adjacent Japanese paper fibers!

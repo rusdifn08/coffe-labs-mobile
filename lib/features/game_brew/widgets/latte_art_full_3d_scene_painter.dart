@@ -901,6 +901,46 @@ class LatteArtFull3DScenePainter extends CustomPainter {
     canvas.restore();
   }
 
+  void _drawLatteArrow(
+    Canvas canvas,
+    Offset tip,
+    Offset dir, {
+    double arrowSize = 9.5,
+    Color color = const Color(0xFFFBBF24),
+  }) {
+    final double len = dir.distance;
+    if (len < 1e-4) return;
+    final Offset u = dir / len;
+    final Offset perp = Offset(-u.dy, u.dx);
+    final Offset back = tip - u * arrowSize;
+    final Offset leftWing = back + perp * (arrowSize * 0.58);
+    final Offset rightWing = back - perp * (arrowSize * 0.58);
+
+    final Path arrowPath = Path()
+      ..moveTo(leftWing.dx, leftWing.dy)
+      ..lineTo(tip.dx, tip.dy)
+      ..lineTo(rightWing.dx, rightWing.dy);
+
+    canvas.drawPath(
+      arrowPath,
+      Paint()
+        ..color = Colors.black.withValues(alpha: 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4.4
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+    canvas.drawPath(
+      arrowPath,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.4
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+  }
+
   void _drawGhostGuide(
     Canvas canvas,
     Offset c,
@@ -908,11 +948,14 @@ class LatteArtFull3DScenePainter extends CustomPainter {
     double ySquash,
   ) {
     final p = Paint()
-      ..color = Colors.white.withValues(alpha: 0.34)
+      ..color = Colors.white.withValues(alpha: 0.36)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.6;
     final double ry = r * ySquash;
+    final double t = cfd.elapsedSec;
+    final int stage = cfd.currentLatteStage;
 
+    // 1. Pattern Silhouette Ghost
     switch (targetPattern) {
       case LatteArtPattern.canvasBase:
         canvas.drawOval(
@@ -994,6 +1037,112 @@ class LatteArtFull3DScenePainter extends CustomPainter {
           );
         canvas.drawPath(neck, p);
         canvas.drawCircle(c + Offset(-r * 0.14, -ry * 0.52), r * 0.10, p);
+        break;
+    }
+
+    // 2. Animated Phase-Aware Directional Movement Arrows (super clear for beginners!)
+    final double pulse = 0.5 + 0.5 * math.sin(t * 4.5);
+    if (stage == 0 || targetPattern == LatteArtPattern.canvasBase) {
+      // Stage 0 (Dive / Canvas): Gentle circular orbit arrows around center
+      final double orbitR = r * 0.34;
+      for (int k = 0; k < 3; k++) {
+        final double a = (k / 3.0) * math.pi * 2.0 + t * 1.4;
+        final double a2 = a + 0.22;
+        final Offset p0 = c + Offset(math.cos(a) * orbitR, math.sin(a) * orbitR * ySquash);
+        final Offset p1 = c + Offset(math.cos(a2) * orbitR, math.sin(a2) * orbitR * ySquash);
+        _drawLatteArrow(canvas, p1, p1 - p0, arrowSize: 8.5, color: const Color(0xFFFDE68A));
+      }
+      return;
+    }
+
+    if (stage == 2 && targetPattern != LatteArtPattern.monksHead) {
+      // Stage 2 (Pull-Through Cut): Bold animated upward arrow straight through the center!
+      final double cutFrac = (t * 1.1) % 1.0;
+      final Offset bot = c + Offset(0, ry * 0.45);
+      final Offset top = c - Offset(0, ry * 0.56);
+      canvas.drawLine(
+        bot,
+        top,
+        Paint()
+          ..color = const Color(0xFF34D399).withValues(alpha: 0.72)
+          ..strokeWidth = 2.6
+          ..strokeCap = StrokeCap.round,
+      );
+      final Offset movingTip = Offset.lerp(bot, top, cutFrac)!;
+      _drawLatteArrow(
+        canvas,
+        movingTip,
+        top - bot,
+        arrowSize: 11.5,
+        color: const Color(0xFF34D399),
+      );
+      return;
+    }
+
+    // Stage 1 (Float / Draw Pattern)
+    switch (targetPattern) {
+      case LatteArtPattern.heart:
+      case LatteArtPattern.monksHead:
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: c,
+            width: r * (0.28 + pulse * 0.14),
+            height: ry * (0.28 + pulse * 0.14),
+          ),
+          Paint()
+            ..color = const Color(0xFFFBBF24).withValues(alpha: 0.75)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.2,
+        );
+        break;
+      case LatteArtPattern.twoStackTulip:
+      case LatteArtPattern.threeStackTulip:
+      case LatteArtPattern.wingedFiveTulip:
+        // Animated forward push arrows (↑)
+        final double pushT = (t * 1.3) % 1.0;
+        final Offset start = c + Offset(0, ry * 0.28);
+        final Offset end = c - Offset(0, ry * 0.34);
+        canvas.drawLine(
+          start,
+          end,
+          Paint()
+            ..color = const Color(0xFFFBBF24).withValues(alpha: 0.65)
+            ..strokeWidth = 2.2
+            ..strokeCap = StrokeCap.round,
+        );
+        _drawLatteArrow(
+          canvas,
+          Offset.lerp(start, end, pushT)!,
+          end - start,
+          arrowSize: 10.5,
+          color: const Color(0xFFFBBF24),
+        );
+        break;
+      case LatteArtPattern.wingedBase:
+      case LatteArtPattern.rosetta:
+      case LatteArtPattern.slowsetta:
+      case LatteArtPattern.swan:
+        // Animated left-right wiggle arrows (⇄) + gentle pull-back arrow (↓)
+        final double wig = math.sin(t * 7.5) * r * 0.24;
+        final Offset leftPt = c + Offset(-r * 0.34, 0);
+        final Offset rightPt = c + Offset(r * 0.34, 0);
+        canvas.drawLine(
+          leftPt,
+          rightPt,
+          Paint()
+            ..color = const Color(0xFFFBBF24).withValues(alpha: 0.65)
+            ..strokeWidth = 2.2
+            ..strokeCap = StrokeCap.round,
+        );
+        _drawLatteArrow(canvas, leftPt, const Offset(-1, 0), arrowSize: 9.0);
+        _drawLatteArrow(canvas, rightPt, const Offset(1, 0), arrowSize: 9.0);
+        canvas.drawCircle(
+          c + Offset(wig, 0),
+          5.0,
+          Paint()..color = const Color(0xFFFBBF24),
+        );
+        break;
+      case LatteArtPattern.canvasBase:
         break;
     }
   }

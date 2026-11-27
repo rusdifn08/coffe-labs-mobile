@@ -87,12 +87,57 @@ class LatteArtCfdEngine {
       capacityMl: 300.0,
       initialVolumeMl: 250.0,
       dampingRatio: 0.24,
+      spoutDiameterMm: 13.5,
+      kinematicViscosityM2S: 1.4e-6,
     );
     reset();
   }
 
   double get cupFillPct =>
       ((cupVolumeMl / cupCapacityMl) * 100.0).clamp(0.0, 125.0);
+
+  /// Current contextual barista coaching phase for Latte Art beginners:
+  /// 0 = Dive / Canvas (< 50%), 1 = Float / Draw Pattern (50%..84%), 2 = Pull-Through Cut (> 84%).
+  int get currentLatteStage {
+    if (cupFillPct < 50.0) return 0;
+    if (cupFillPct < 84.0) return 1;
+    return 2;
+  }
+
+  /// Clear 1-line real-time coaching hint tailored to the target pattern and cup fill level.
+  String coachingHintFor(LatteArtPattern target) {
+    if (spilled) return 'Cangkir penuh! Tegakkan HP untuk stop tuang.';
+    if (target == LatteArtPattern.canvasBase) {
+      return cupFillPct < 60.0
+          ? 'Tahan TINGGI (Dive) • Miringkan HP untuk isi kanvas emas ke 65%'
+          : 'Kanvas siap! Ketuk Nilai Karya untuk evaluasi.';
+    }
+    final int stage = currentLatteStage;
+    if (stage == 0) {
+      return '1/3 DIVE (Tinggi): Miringkan HP halus & putar joystick di tengah sampai 50%';
+    }
+    if (stage == 1) {
+      switch (target) {
+        case LatteArtPattern.monksHead:
+          return '2/3 FLOAT (Rendah): Tahan joystick di pusat & tuang konstan hingga 85%';
+        case LatteArtPattern.heart:
+          return '2/3 FLOAT (Rendah): Tahan joystick di tengah membentuk bola putih';
+        case LatteArtPattern.twoStackTulip:
+        case LatteArtPattern.threeStackTulip:
+        case LatteArtPattern.wingedFiveTulip:
+          return '2/3 FLOAT (Rendah): Dorong joystick maju (↑) bertahap untuk tumpuk kelopak';
+        case LatteArtPattern.wingedBase:
+        case LatteArtPattern.rosetta:
+        case LatteArtPattern.slowsetta:
+          return '2/3 FLOAT (Rendah): Goyangkan joystick kiri-kanan (⇄) sambil mundur (↓)';
+        case LatteArtPattern.swan:
+          return '2/3 FLOAT (Rendah): Wiggle sayap kanan lalu tarik leher S ke atas (↑)';
+        case LatteArtPattern.canvasBase:
+          return 'Pertahankan tinggi pitcher (Dive)';
+      }
+    }
+    return '3/3 CUT (Tinggi): Angkat pitcher TINGGI & geser joystick lurus ke atas (↑)!';
+  }
 
   double computeFloatFactor(double heightCm, double flowMlS) {
     const double hCrit = 2.25;

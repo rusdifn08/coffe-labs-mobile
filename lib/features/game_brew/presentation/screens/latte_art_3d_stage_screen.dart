@@ -9,6 +9,7 @@ import '../../data/game_brew_progress_service.dart';
 import '../../domain/game_brew_studio_models.dart';
 import '../../engine/latte_art_cfd_engine.dart';
 import '../../engine/natural_gyro_sensor_fusion.dart';
+import '../../widgets/barista_precision_joystick.dart';
 import '../../widgets/latte_art_full_3d_scene_painter.dart';
 
 /// Full-Screen (Portrait & Landscape) 3D Latte Art Simulator v2.5:
@@ -31,6 +32,12 @@ class _LatteArt3DStageScreenState extends State<LatteArt3DStageScreen> {
   late final LatteArtCfdEngine _cfd;
   final NaturalGyroSensorFusionEngine _sensors =
       NaturalGyroSensorFusionEngine();
+  final BaristaJoystickController _joystick = BaristaJoystickController(
+    deadzone: 0.08,
+    responseGamma: 1.85,
+    maxSpeedNormPerSec: 1.48,
+    workspaceMaxRadius: 0.76,
+  );
   final ValueNotifier<int> _frameTick = ValueNotifier<int>(0);
   Timer? _simTimer;
 
@@ -41,9 +48,10 @@ class _LatteArt3DStageScreenState extends State<LatteArt3DStageScreen> {
   bool _controlsOnLeft = true; // Ergonomic Left/Right swap
   bool _transparentGlassPitcher = false; // Default to photorealistic Brushed Stainless-Steel Pitcher
   bool _showGhostGuide = true;
+  bool _isLowFloatHeight = false; // Deliberate Dive (4.8cm) vs Float (1.1cm) toggle!
   LatteCupColorTheme _cupTheme = LatteCupColorTheme.cobaltBlue;
 
-  // Manual / Hybrid Pour Lever: 0.0 = Stop, 0.35 = High Dive, 1.0 = Low Float Full Pour
+  // Manual / Hybrid Pour Lever fallback (0..1 -> 0..46 deg)
   double _pourLever = 0.0;
   double _touchWiggleVel = 0.0;
   NaturalSensorSnapshot _sensorSnap = const NaturalSensorSnapshot();
@@ -72,49 +80,30 @@ class _LatteArt3DStageScreenState extends State<LatteArt3DStageScreen> {
       _sensorSnap = _sensors.sample(0.020);
       final bool gyroActive = _useGyroControl && _sensorSnap.hardwareActive;
 
-      // Combine Gyroscope natural tilt with ergonomic thumb lever!
-      final double leverPitch = _pourLever * 44.0;
+      // SEPARATED PRO ARCHITECTURE:
+      // 1) Gyroscope ONLY controls Milk Pour Flow Rate (sedikit / banyaknya susu tergantung kemiringan HP!)
+      final double leverPitch = _pourLever * 46.0;
       final double effectivePitch = gyroActive
           ? (_sensorSnap.pitchDeg > leverPitch
               ? _sensorSnap.pitchDeg
               : leverPitch)
           : leverPitch;
 
-      // Natural spout height coupling: deeper tilt / higher lever brings spout closer to crema!
-      final double controlNorm = (effectivePitch / 44.0).clamp(0.0, 1.0);
-      if (controlNorm > 0.02) {
-        // 0.05..0.48 => High Dive (5.6..2.6 cm); 0.50..1.0 => Low Float (2.2..0.75 cm)
-        _cfd.pourHeightCm = (5.8 - controlNorm * 5.05).clamp(0.7, 6.2);
-      } else {
-        _cfd.pourHeightCm = 4.8;
-      }
+      // 2) Deliberate Pour Height (Dive 4.85 cm vs Float 1.15 cm) — NEVER hijacked by tilt!
+      _cfd.pourHeightCm = _isLowFloatHeight ? 1.15 : 4.85;
 
-      // Full 2-Axis Gyroscope Steering + Rosetta Wiggle Vorticity + Forward Push!
-      final double effectiveRoll = gyroActive ? _sensorSnap.rollDeg : 0.0;
-      final double wiggleVel = gyroActive
-          ? ((_sensorSnap.rollRateDegS / 34.0) + _touchWiggleVel).clamp(-6.8, 6.8)
-          : _touchWiggleVel;
-
-      if (gyroActive) {
-        final double rollStep =
-            _sensorSnap.rollDeg.abs() > 2.2 ? (_sensorSnap.rollDeg / 38.0) * 0.018 : 0.0;
-        final double surgeStep = _sensorSnap.linearAccelZ.abs() > 0.35
-            ? (-_sensorSnap.linearAccelZ * 0.014)
-            : 0.0;
-        if (rollStep != 0.0 || surgeStep != 0.0) {
-          _cfd.pourPos = Offset(
-            (_cfd.pourPos.dx + rollStep).clamp(-0.76, 0.76),
-            (_cfd.pourPos.dy + surgeStep).clamp(-0.76, 0.76),
-          );
-        }
-      }
+      // 3) Precision Analog Joystick ONLY controls XY Pitcher Position + Wiggle Velocity!
+      _cfd.pourPos = _joystick.stepPosition(_cfd.pourPos, 0.020);
+      final double joyWiggle =
+          (_joystick.state.velocityNormPerSec.dx * 3.8).clamp(-6.5, 6.5);
+      final double wiggleVel = (joyWiggle + _touchWiggleVel).clamp(-6.8, 6.8);
 
       _cfd.step(
         dt: 0.020,
         pitchDeg: effectivePitch,
-        rollDeg: effectiveRoll,
+        rollDeg: 0.0,
         wiggleAngularVel: wiggleVel,
-        lateralAccelX: _sensorSnap.linearAccelX,
+        lateralAccelX: _joystick.state.velocityNormPerSec.dx * 1.2,
       );
       _touchWiggleVel *= 0.82;
       _decodeFluidFrame();
@@ -165,8 +154,10 @@ class _LatteArt3DStageScreenState extends State<LatteArt3DStageScreen> {
 
   void _resetSession() {
     HapticFeedback.selectionClick();
+    _joystick.reset();
     setState(() {
       _pourLever = 0.0;
+      _isLowFloatHeight = false;
       _isInspectingResult = false;
       _finalGrade = null;
       _cfd.reset();
@@ -277,7 +268,7 @@ class _LatteArt3DStageScreenState extends State<LatteArt3DStageScreen> {
                             targetPattern: _targetPattern,
                             activePitchDeg: activePitch,
                             activeRollDeg:
-                                gyroOn ? _sensorSnap.rollDeg : _touchWiggleVel * 4,
+                                _joystick.state.velocityNormPerSec.dx * 10.0,
                             pitcherOnRight: _controlsOnLeft,
                           ),
                         ),
@@ -350,7 +341,7 @@ class _LatteArt3DStageScreenState extends State<LatteArt3DStageScreen> {
                         left: _controlsOnLeft ? 12 : 0,
                         right: _controlsOnLeft ? 0 : 12,
                         top: isLandscape ? 42 : 76,
-                        bottom: isLandscape ? 10 : 62,
+                        bottom: isLandscape ? 124 : 196,
                       ),
                       child: _buildVerticalPourCapsule(isLandscape),
                     ),
@@ -445,7 +436,7 @@ class _LatteArt3DStageScreenState extends State<LatteArt3DStageScreen> {
                     ),
                     Text(
                       gyroLive
-                          ? 'GYRO 9-AXIS • ${_sensorSnap.pitchDeg.toStringAsFixed(0)}° • Wiggle ${_sensorSnap.wiggleFrequencyHz.toStringAsFixed(1)}Hz'
+                          ? 'GYRO TUANG • ${_sensorSnap.pitchDeg.toStringAsFixed(0)}° • ${_cfd.pitcherSlosh.currentFlowMlS.toStringAsFixed(1)} ml/s'
                           : '${_targetPattern.label} • ${_cfd.cupVolumeMl.toStringAsFixed(0)}/${_cfd.cupCapacityMl.toInt()} ml',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -716,120 +707,281 @@ class _LatteArt3DStageScreenState extends State<LatteArt3DStageScreen> {
   }
 
   Widget _buildBottomFloatingBar() {
-    return Row(
+    final double flow = _cfd.pitcherSlosh.currentFlowMlS;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        // Cup Color Quick Dot Selector
+        // 1. Live Step-by-Step Barista Movement Coaching Banner
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.44),
-            borderRadius: BorderRadius.circular(20),
+            color: Colors.black.withValues(alpha: 0.56),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFFFBBF24).withValues(alpha: 0.42),
+            ),
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: LatteCupColorTheme.values.map((theme) {
-              final sel = _cupTheme == theme;
-              return GestureDetector(
-                onTap: () => setState(() => _cupTheme = theme),
-                child: Container(
-                  width: 17,
-                  height: 17,
-                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                  decoration: BoxDecoration(
-                    color: theme.outerLight,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: sel ? Colors.white : Colors.white38,
-                      width: sel ? 2.0 : 1.0,
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Flexible(
-                child: InkWell(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    setState(() {
-                      _cfd.pourHeightCm = 5.4;
-                      _pourLever = 0.35;
-                      _cfd.pourPos = Offset(
-                        _cfd.pourPos.dx * 0.25,
-                        (_cfd.pourPos.dy - 0.36).clamp(-0.75, 0.75),
-                      );
-                    });
-                  },
-                  borderRadius: BorderRadius.circular(13),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.90),
-                      borderRadius: BorderRadius.circular(13),
-                    ),
-                    child: const Text(
-                      'Cut',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                        color: AppTheme.primaryBrown,
-                      ),
-                    ),
-                  ),
-                ),
+              const Icon(
+                CupertinoIcons.compass_fill,
+                size: 14,
+                color: Color(0xFFFBBF24),
               ),
-              const SizedBox(width: 6),
-              Flexible(
-                flex: 2,
-                child: InkWell(
-                  onTap: _finishAndGrade,
-                  borderRadius: BorderRadius.circular(13),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryBrown,
-                      borderRadius: BorderRadius.circular(13),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          CupertinoIcons.checkmark_seal_fill,
-                          size: 14,
-                          color: Colors.white,
-                        ),
-                        SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            'Nilai WLAC',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  _cfd.coachingHintFor(_targetPattern),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 10.6,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFFEF3C7),
+                    height: 1.25,
                   ),
                 ),
               ),
             ],
           ),
         ),
+
+        // 2. Precision Analog Joystick + Milk Physics Telemetry + Dive/Float/Cut Controls
+        Container(
+          padding: const EdgeInsets.fromLTRB(10, 8, 10, 9),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.62),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (_controlsOnLeft) ...[
+                BaristaPrecisionJoystick(
+                  controller: _joystick,
+                  size: 104,
+                  label: 'ARAH PITCHER',
+                  onRecenter: () => setState(() {
+                    _cfd.pourPos = const Offset(0.0, 0.04);
+                  }),
+                ),
+                const SizedBox(width: 10),
+              ],
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Live Milk Debit, Cup Fill & Pitcher Volume Telemetry
+                    Row(
+                      children: [
+                        _latteHudMetric(
+                          'Debit',
+                          '${flow.toStringAsFixed(1)}/s',
+                          const Color(0xFF34D399),
+                        ),
+                        _latteHudMetric(
+                          'Cangkir',
+                          '${_cfd.cupVolumeMl.toStringAsFixed(0)}/${_cfd.cupCapacityMl.toInt()}',
+                          const Color(0xFFFDE68A),
+                        ),
+                        _latteHudMetric(
+                          'Pitcher',
+                          '${_cfd.pitcherSlosh.volumeMl.toStringAsFixed(0)}ml',
+                          const Color(0xFF7DD3FC),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 7),
+
+                    // Deliberate Height Toggle (Dive vs Float) + Cut
+                    Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              setState(() => _isLowFloatHeight = !_isLowFloatHeight);
+                            },
+                            borderRadius: BorderRadius.circular(11),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 7,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _isLowFloatHeight
+                                    ? const Color(0xFF0F766E)
+                                    : const Color(0xFFC2410C),
+                                borderRadius: BorderRadius.circular(11),
+                              ),
+                              child: Text(
+                                _isLowFloatHeight
+                                    ? '↓ Rendah (Float)'
+                                    : '↑ Tinggi (Dive)',
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 10.4,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        InkWell(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            setState(() {
+                              _isLowFloatHeight = false;
+                              _cfd.pourHeightCm = 5.4;
+                              _cfd.pourPos = Offset(
+                                _cfd.pourPos.dx * 0.25,
+                                (_cfd.pourPos.dy - 0.36).clamp(-0.75, 0.75),
+                              );
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(11),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 7,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.90),
+                              borderRadius: BorderRadius.circular(11),
+                            ),
+                            child: const Text(
+                              'Cut ↑',
+                              style: TextStyle(
+                                fontSize: 10.4,
+                                fontWeight: FontWeight.w900,
+                                color: AppTheme.primaryBrown,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+
+                    // Cup Color Swatches + Nilai WLAC CTA
+                    Row(
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: LatteCupColorTheme.values.map((theme) {
+                            final sel = _cupTheme == theme;
+                            return GestureDetector(
+                              onTap: () => setState(() => _cupTheme = theme),
+                              child: Container(
+                                width: 15,
+                                height: 15,
+                                margin: const EdgeInsets.only(right: 4),
+                                decoration: BoxDecoration(
+                                  color: theme.outerLight,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: sel ? Colors.white : Colors.white38,
+                                    width: sel ? 2.0 : 1.0,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: InkWell(
+                            onTap: _finishAndGrade,
+                            borderRadius: BorderRadius.circular(11),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 9,
+                                vertical: 7,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.accentAmber,
+                                borderRadius: BorderRadius.circular(11),
+                              ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    CupertinoIcons.checkmark_seal_fill,
+                                    size: 13,
+                                    color: AppTheme.textDark,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      'Nilai WLAC',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w900,
+                                        color: AppTheme.textDark,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              if (!_controlsOnLeft) ...[
+                const SizedBox(width: 10),
+                BaristaPrecisionJoystick(
+                  controller: _joystick,
+                  size: 104,
+                  label: 'ARAH PITCHER',
+                  onRecenter: () => setState(() {
+                    _cfd.pourPos = const Offset(0.0, 0.04);
+                  }),
+                ),
+              ],
+            ],
+          ),
+        ),
       ],
+    );
+  }
+
+  Widget _latteHudMetric(String label, String value, Color color) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 8.8, color: Colors.white70),
+          ),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              color: color,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

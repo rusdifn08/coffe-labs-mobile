@@ -334,7 +334,7 @@ class ManualBrewFull3DScenePainter extends CustomPainter {
         _project(Vector3(0.0, topY + 0.008, sz * 0.85), vp, size);
     final String oledText = blindScaleMode
         ? '---- g  •  BLIND'
-        : '${engine.pouredCoffeeWaterMl.toStringAsFixed(1)} g  •  ${engine.kettleSlosh.currentFlowMlS.toStringAsFixed(1)} ml/s';
+        : '${engine.activeScaleWaterMl.toStringAsFixed(1)} g  •  ${engine.kettleSlosh.currentFlowMlS.toStringAsFixed(1)} ml/s';
     final tp = TextPainter(
       text: TextSpan(
         text: oledText,
@@ -1143,6 +1143,75 @@ class ManualBrewFull3DScenePainter extends CustomPainter {
     return baseY + 0.16;
   }
 
+  void _drawChevronArrow(
+    Canvas canvas,
+    Offset tip,
+    Offset dir, {
+    double arrowSize = 10.5,
+    Color color = const Color(0xFFFBBF24),
+  }) {
+    final double len = dir.distance;
+    if (len < 1e-4) return;
+    final Offset u = dir / len;
+    final Offset perp = Offset(-u.dy, u.dx);
+    final Offset back = tip - u * arrowSize;
+    final Offset leftWing = back + perp * (arrowSize * 0.58);
+    final Offset rightWing = back - perp * (arrowSize * 0.58);
+
+    final Path arrowPath = Path()
+      ..moveTo(leftWing.dx, leftWing.dy)
+      ..lineTo(tip.dx, tip.dy)
+      ..lineTo(rightWing.dx, rightWing.dy);
+
+    // Dark contrast halo so arrow is razor-sharp on both light filter paper and dark coffee
+    canvas.drawPath(
+      arrowPath,
+      Paint()
+        ..color = Colors.black.withValues(alpha: 0.42)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4.6
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+    canvas.drawPath(
+      arrowPath,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.6
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+  }
+
+  void _drawAnimatedOrbitArrows(
+    Canvas canvas,
+    Matrix4 vp,
+    Size size, {
+    required double radius,
+    required double yWorld,
+    required double direction, // +1 CW, -1 CCW
+    int count = 6,
+    Color color = const Color(0xFFFBBF24),
+  }) {
+    final double phase = animTimeSec * 1.15 * direction;
+    for (int k = 0; k < count; k++) {
+      final double a = (k / count) * math.pi * 2.0 + phase;
+      final double aAhead = a + 0.14 * direction;
+      final Offset p0 = _project(
+        Vector3(math.cos(a) * radius, yWorld, math.sin(a) * radius),
+        vp,
+        size,
+      );
+      final Offset p1 = _project(
+        Vector3(math.cos(aAhead) * radius, yWorld, math.sin(aAhead) * radius),
+        vp,
+        size,
+      );
+      _drawChevronArrow(canvas, p1, p1 - p0, arrowSize: 9.5, color: color);
+    }
+  }
+
   void _draw3DPatternGuideOnBed(
     Canvas canvas,
     Matrix4 vp,
@@ -1152,14 +1221,19 @@ class ManualBrewFull3DScenePainter extends CustomPainter {
     final guidePaint = Paint()
       ..color = const Color(0xFFFBBF24).withValues(alpha: 0.72)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8;
+      ..strokeWidth = 2.0;
 
     if (engine.phase == ManualBrewPhase.wetFilter) {
+      const double ringR = 0.76;
+      const double ringY = 0.26;
       final ring = Path();
-      for (int i = 0; i <= 36; i++) {
-        final double a = (i / 36) * math.pi * 2;
+      for (int i = 0; i <= 40; i++) {
+        final double a = (i / 40) * math.pi * 2;
         final pt = _project(
-            Vector3(math.cos(a) * 0.80, 0.26, math.sin(a) * 0.80), vp, size);
+          Vector3(math.cos(a) * ringR, ringY, math.sin(a) * ringR),
+          vp,
+          size,
+        );
         if (i == 0) {
           ring.moveTo(pt.dx, pt.dy);
         } else {
@@ -1167,6 +1241,68 @@ class ManualBrewFull3DScenePainter extends CustomPainter {
         }
       }
       canvas.drawPath(ring, guidePaint);
+
+      // Animated clockwise arrows showing exact circular rinse motion!
+      _drawAnimatedOrbitArrows(
+        canvas,
+        vp,
+        size,
+        radius: ringR,
+        yWorld: ringY + 0.01,
+        direction: 1.0,
+        count: 6,
+      );
+
+      // Pulsing target marker on the driest filter segment + connecting steering arrow
+      if (!engine.isFilterReadyToDiscard) {
+        final Offset dryNorm = engine.driestFilterTargetPos;
+        final Offset dryPt = _project(
+          Vector3(dryNorm.dx * 0.96, ringY + 0.01, dryNorm.dy * 0.96),
+          vp,
+          size,
+        );
+        final double pulse = 0.5 + 0.5 * math.sin(animTimeSec * 5.2);
+        canvas.drawCircle(
+          dryPt,
+          9.0 + pulse * 5.0,
+          Paint()
+            ..color = const Color(0xFF34D399).withValues(alpha: 0.28 + pulse * 0.35)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.4,
+        );
+        canvas.drawCircle(
+          dryPt,
+          4.2,
+          Paint()..color = const Color(0xFF34D399),
+        );
+
+        final Offset aimPt = _project(
+          Vector3(engine.aimPos.dx * 0.66, ringY + 0.01, engine.aimPos.dy * 0.66),
+          vp,
+          size,
+        );
+        final Offset diff = dryPt - aimPt;
+        if (diff.distance > 28.0) {
+          final Offset dir = diff / diff.distance;
+          final Offset pStart = aimPt + dir * 12.0;
+          final Offset pEnd = dryPt - dir * 14.0;
+          canvas.drawLine(
+            pStart,
+            pEnd,
+            Paint()
+              ..color = const Color(0xFF34D399).withValues(alpha: 0.72)
+              ..strokeWidth = 2.0
+              ..strokeCap = StrokeCap.round,
+          );
+          _drawChevronArrow(
+            canvas,
+            pEnd,
+            dir,
+            arrowSize: 9.0,
+            color: const Color(0xFF34D399),
+          );
+        }
+      }
       return;
     }
 
@@ -1180,7 +1316,10 @@ class ManualBrewFull3DScenePainter extends CustomPainter {
           for (int i = 0; i <= 32; i++) {
             final double a = (i / 32) * math.pi * 2;
             final pt = _project(
-                Vector3(math.cos(a) * r, bedY + 0.02, math.sin(a) * r), vp, size);
+              Vector3(math.cos(a) * r, bedY + 0.02, math.sin(a) * r),
+              vp,
+              size,
+            );
             if (i == 0) {
               p.moveTo(pt.dx, pt.dy);
             } else {
@@ -1191,27 +1330,53 @@ class ManualBrewFull3DScenePainter extends CustomPainter {
         }
         final double dir =
             pattern == ManualPourPattern.reverseCircularCcw ? -1.0 : 1.0;
-        final double beadAngle = animTimeSec * 2.2 * dir;
+        _drawAnimatedOrbitArrows(
+          canvas,
+          vp,
+          size,
+          radius: 0.50,
+          yWorld: bedY + 0.03,
+          direction: dir,
+          count: 5,
+        );
+
+        // Moving golden pace-maker reticle so beginner knows exact speed & direction
+        final double beadAngle = animTimeSec * 1.85 * dir;
+        final double spiralR = 0.34 + 0.14 * math.sin(animTimeSec * 0.9);
         final Offset beadPt = _project(
           Vector3(
-              math.cos(beadAngle) * 0.44, bedY + 0.03, math.sin(beadAngle) * 0.44),
+            math.cos(beadAngle) * spiralR,
+            bedY + 0.03,
+            math.sin(beadAngle) * spiralR,
+          ),
           vp,
           size,
         );
-        canvas.drawCircle(beadPt, 4.8, Paint()..color = const Color(0xFFFBBF24));
+        canvas.drawCircle(
+          beadPt,
+          9.5,
+          Paint()
+            ..color = const Color(0xFFFBBF24).withValues(alpha: 0.35)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.0,
+        );
+        canvas.drawCircle(beadPt, 4.6, Paint()..color = const Color(0xFFFBBF24));
         break;
+
       case ManualPourPattern.zigzag:
         final zz = Path();
         const pts = [
-          [-0.44, -0.38],
-          [0.44, -0.19],
+          [-0.44, -0.36],
+          [0.44, -0.18],
           [-0.44, 0.0],
-          [0.44, 0.19],
-          [-0.44, 0.38],
+          [0.44, 0.18],
+          [-0.44, 0.36],
         ];
+        final projected = <Offset>[];
         for (int i = 0; i < pts.length; i++) {
           final p =
               _project(Vector3(pts[i][0], bedY + 0.02, pts[i][1]), vp, size);
+          projected.add(p);
           if (i == 0) {
             zz.moveTo(p.dx, p.dy);
           } else {
@@ -1219,15 +1384,36 @@ class ManualBrewFull3DScenePainter extends CustomPainter {
           }
         }
         canvas.drawPath(zz, guidePaint);
+        for (int i = 0; i < projected.length - 1; i++) {
+          final Offset mid = Offset.lerp(projected[i], projected[i + 1], 0.55)!;
+          _drawChevronArrow(
+            canvas,
+            mid,
+            projected[i + 1] - projected[i],
+            arrowSize: 9.0,
+          );
+        }
+        // Moving pace dot along zigzag segments
+        final double segT = (animTimeSec * 1.1) % (projected.length - 1);
+        final int segIdx = segT.floor().clamp(0, projected.length - 2);
+        final Offset mover = Offset.lerp(
+          projected[segIdx],
+          projected[segIdx + 1],
+          segT - segIdx,
+        )!;
+        canvas.drawCircle(mover, 5.2, Paint()..color = const Color(0xFFFBBF24));
         break;
+
       case ManualPourPattern.centerOsmotic:
+        final double pulse = 0.5 + 0.5 * math.sin(animTimeSec * 4.2);
         final p = Path();
         for (int i = 0; i <= 24; i++) {
           final double a = (i / 24) * math.pi * 2;
           final pt = _project(
-              Vector3(math.cos(a) * 0.18, bedY + 0.02, math.sin(a) * 0.18),
-              vp,
-              size);
+            Vector3(math.cos(a) * 0.18, bedY + 0.02, math.sin(a) * 0.18),
+            vp,
+            size,
+          );
           if (i == 0) {
             p.moveTo(pt.dx, pt.dy);
           } else {
@@ -1235,6 +1421,23 @@ class ManualBrewFull3DScenePainter extends CustomPainter {
           }
         }
         canvas.drawPath(p, guidePaint);
+        // 4 inward convergence arrows pointing straight to center bullseye!
+        final Offset centerPt = _project(Vector3(0, bedY + 0.02, 0), vp, size);
+        for (int k = 0; k < 4; k++) {
+          final double a = (k / 4.0) * math.pi * 2.0 + math.pi * 0.25;
+          final double rOut = 0.44 - pulse * 0.08;
+          final Offset outerPt = _project(
+            Vector3(math.cos(a) * rOut, bedY + 0.02, math.sin(a) * rOut),
+            vp,
+            size,
+          );
+          _drawChevronArrow(
+            canvas,
+            Offset.lerp(outerPt, centerPt, 0.45)!,
+            centerPt - outerPt,
+            arrowSize: 9.0,
+          );
+        }
         break;
     }
   }
@@ -1540,11 +1743,12 @@ class ManualBrewFull3DScenePainter extends CustomPainter {
         ..strokeCap = StrokeCap.round,
     );
 
-    // 3. Foreground 3D Matte-Black Precision Barista Kettle Body (Tilting Forward with Gyro!)
+    // 3. Foreground 3D Matte-Black Precision Barista Kettle Body (Natural upright poise -> smooth pour tilt!)
     canvas.save();
     canvas.translate(kettleCenter.dx, kettleCenter.dy);
-    // Forward pour tilt toward the V60 dripper
-    canvas.rotate(-side * (0.14 + tiltRad * 0.56) + rollRad * 0.16);
+    // Natural ergonomic kettle tilt: upright at 0°, smoothly leans forward up to ~28° at full pour
+    final double tiltNorm = (activePitchDeg / 48.0).clamp(0.0, 1.0);
+    canvas.rotate(-side * (0.06 + tiltNorm * 0.42));
 
     final Rect bodyRect = Rect.fromCenter(
       center: Offset.zero,
