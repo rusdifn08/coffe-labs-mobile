@@ -342,8 +342,8 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
       ),
       ToolkitItem(
         featureKey: 'EBOOK_DRM_LIBRARY',
-        title: isEn ? 'DRM E-Book Library' : 'Pustaka E-Book DRM',
-        subtitle: isEn ? '5 encrypted coffee books' : '5 buku kopi terenkripsi AES-256',
+        title: isEn ? 'Coffee E-Book Library' : 'Pustaka E-Book Kopi',
+        subtitle: isEn ? '12 full-length PDF & EPUB3 books' : '12 buku kopi asli PDF & EPUB3',
         iconType: 'ebook_drm',
         fallbackIcon: CupertinoIcons.book_circle_fill,
         primaryColor: const Color(0xFF4E342E),
@@ -355,7 +355,7 @@ class _ToolkitScreenState extends State<ToolkitScreen> {
       ToolkitItem(
         featureKey: 'LMS_EBOOK_ACADEMY',
         title: isEn ? 'Barista LMS Academy' : 'Akademi Barista LMS',
-        subtitle: isEn ? 'HLS courses & 100-bit quizzes' : 'Kursus video HLS & kuis 100-bit',
+        subtitle: isEn ? 'HD video courses, labs & quizzes' : 'Kursus video HD, lab & kuis',
         iconType: 'lms_academy',
         fallbackIcon: Icons.school_rounded,
         primaryColor: const Color(0xFF0369A1),

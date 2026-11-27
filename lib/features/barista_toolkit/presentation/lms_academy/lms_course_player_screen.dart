@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/network/dio_client.dart';
 import '../../../../theme/app_theme.dart';
@@ -103,11 +104,62 @@ class _LmsCoursePlayerScreenState
   bool _isFullscreen = false;
   bool _showInteractiveLab = false;
   bool _didFallbackToMp4 = false;
+  bool _isScrubbing = false;
+  bool _quizSubmitted = false;
   double _playbackSpeed = 1.0;
   String? _streamStatusText;
   String? _posterUrl;
   String? _fallbackMp4Source;
   bool _submitting = false;
+  ScaffoldMessengerState? _messenger;
+
+  String get _localResumeKey => 'cl_lms_resume_sec_${widget.lesson.id}';
+
+  void _showSingleSnackBar(
+    String message, {
+    Color? backgroundColor,
+    Duration duration = const Duration(seconds: 2),
+  }) {
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    messenger
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          duration: duration,
+          backgroundColor: backgroundColor,
+          content: Text(message),
+        ),
+      );
+  }
+
+  Future<void> _saveLocalResumePosition(int sec) async {
+    if (_isHeadlessTest || sec <= 1) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_localResumeKey, sec);
+    } catch (_) {}
+  }
+
+  Future<int> _loadLocalResumePosition() async {
+    if (_isHeadlessTest) return 0;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getInt(_localResumeKey) ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  int? _parseTimestampSec(String rawTs) {
+    final m = RegExp(r'(\d{1,2}):(\d{2})').firstMatch(rawTs);
+    if (m == null) return null;
+    final min = int.tryParse(m.group(1) ?? '') ?? 0;
+    final sec = int.tryParse(m.group(2) ?? '') ?? 0;
+    return min * 60 + sec;
+  }
 
   bool get _isHeadlessTest =>
       kIsWeb || Platform.environment.containsKey('FLUTTER_TEST');
@@ -196,9 +248,15 @@ class _LmsCoursePlayerScreenState
   void _skipRelativeSeconds(int deltaSec) {
     final target = (_positionSecNotifier.value + deltaSec)
         .clamp(0.0, _durationSec.toDouble());
-    _attemptSeek(target);
+    _seekFreely(target);
     _controlsVisibleNotifier.value = true;
     _scheduleControlsAutoHide();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _messenger = ScaffoldMessenger.maybeOf(context);
   }
 
   @override
@@ -475,7 +533,7 @@ class _LmsCoursePlayerScreenState
             }
           }),
           player.stream.position.listen((pos) {
-            if (_isDisposed) return;
+            if (_isDisposed || _isScrubbing) return;
             final wholeSec = pos.inSeconds;
             // Throttle 1 Hz agar slider & jam hanya update saat detik berubah (bukan 60x/detik)
             if (wholeSec == _lastTickedSecond) return;
@@ -511,6 +569,14 @@ class _LmsCoursePlayerScreenState
 
         if (_playbackSpeed != 1.0) {
           unawaited(player.setRate(_playbackSpeed).catchError((_) {}));
+        }
+
+        // Pulihkan posisi tonton terakhir bila pengguna pernah menonton sebagian video ini
+        final savedResumeSec = await _loadLocalResumePosition();
+        if (savedResumeSec > 3 && savedResumeSec < _durationSec - 5) {
+          _lastTickedSecond = savedResumeSec;
+          _positionSecNotifier.value = savedResumeSec.toDouble();
+          unawaited(player.seek(Duration(seconds: savedResumeSec)).catchError((_) {}));
         }
 
         final shouldAutoPlayNow = _pendingPlayOnReady;
@@ -600,36 +666,58 @@ class _LmsCoursePlayerScreenState
     }
   }
 
-  void _attemptSeek(double requestedSec) {
-    final highestAllowed = (_tracker.completedSegments / 100.0) * _durationSec;
-    if (requestedSec > highestAllowed + 3.0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Anti-Skip aktif: tonton segmen video secara berurutan atau jalankan Lab Simulasi.',
-          ),
-        ),
-      );
-      return;
-    }
-    final targetSec = requestedSec.round();
+  /// Lompat bebas ke detik mana pun tanpa penguncian anti-skip dan tanpa spam SnackBar.
+  void _seekFreely(double requestedSec) {
+    final safeMax = _durationSec > 0 ? _durationSec.toDouble() : 1.0;
+    final clamped = requestedSec.clamp(0.0, safeMax);
+    final targetSec = clamped.round();
     _lastTickedSecond = targetSec;
-    _positionSecNotifier.value = requestedSec;
+    _onPlaybackTick(clamped);
+    unawaited(_saveLocalResumePosition(targetSec));
     if (_usingNativeVideo && _player != null) {
       unawaited(_player!.seek(Duration(seconds: targetSec)).catchError((_) {}));
     }
   }
 
+  void _onSliderScrubStart(double value) {
+    _controlsAutoHideTimer?.cancel();
+    _isScrubbing = true;
+    _positionSecNotifier.value = value;
+  }
+
+  void _onSliderScrubUpdate(double value) {
+    _positionSecNotifier.value = value;
+  }
+
+  void _onSliderScrubEnd(double value) {
+    _isScrubbing = false;
+    _seekFreely(value);
+    _scheduleControlsAutoHide();
+  }
+
   Future<void> _submitProgressAndQuiz() async {
-    // Izinkan penyelesaian bila simulasi interaktif & kuis telah dikerjakan jika video HLS tidak di-stream
-    if (!_tracker.isAntiSkipThresholdMet &&
-        widget.lesson.simulationConfig['lab_kind'] != null) {
-      for (int i = 0; i < 86; i++) {
-        _tracker.markSegment(i);
-      }
+    if (widget.lesson.quizQuestions.isNotEmpty &&
+        _selectedAnswers.length < widget.lesson.quizQuestions.length) {
+      _showSingleSnackBar(
+        'Pilih jawaban untuk semua ${widget.lesson.quizQuestions.length} soal terlebih dahulu.',
+        backgroundColor: const Color(0xFF8D4E00),
+      );
+      return;
     }
 
-    setState(() => _submitting = true);
+    final score = _localQuizScore();
+    // Tandai segmen selesai saat pengguna menuntaskan materi & evaluasi (belajar fleksibel tanpa blokir anti-skip)
+    if (score >= 80 || widget.lesson.quizQuestions.isEmpty) {
+      for (int i = 0; i < 100; i++) {
+        _tracker.markSegment(i);
+      }
+      _completionPctNotifier.value = _tracker.completionPct;
+    }
+
+    setState(() {
+      _submitting = true;
+      _quizSubmitted = true;
+    });
     try {
       final answers = List<int>.generate(
         widget.lesson.quizQuestions.length,
@@ -642,21 +730,21 @@ class _LmsCoursePlayerScreenState
             quizAnswers: answers,
           );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: Color(0xFF2E7D32),
-          content: Text('Progres 100-bit & Kuis Sub-Bab tersimpan!'),
-        ),
+      _showSingleSnackBar(
+        score >= 80
+            ? 'Sub-Bab selesai! Skor evaluasi $score% (+${widget.lesson.xpReward} XP).'
+            : 'Skor evaluasi $score%. Periksa jawaban hijau lalu coba lagi untuk 100%!',
+        backgroundColor:
+            score >= 80 ? const Color(0xFF16A34A) : const Color(0xFFB45309),
+        duration: const Duration(seconds: 3),
       );
     } catch (_) {
-      final score = _localQuizScore();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Tersimpan lokal (skor kuis $score%, segmen ${_tracker.completionPct}%).',
-          ),
-        ),
+      _showSingleSnackBar(
+        'Tersimpan lokal (skor evaluasi $score%, progres ${_tracker.completionPct}%).',
+        backgroundColor:
+            score >= 80 ? const Color(0xFF16A34A) : AppTheme.primaryBrown,
+        duration: const Duration(seconds: 3),
       );
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -700,12 +788,8 @@ class _LmsCoursePlayerScreenState
         ),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Silakan unduh ${matched.bookCode} dari Object Storage di Pustaka E-Book untuk membukanya offline.',
-          ),
-        ),
+      _showSingleSnackBar(
+        'Silakan unduh ${matched.bookCode} di Pustaka E-Book untuk membukanya offline.',
       );
       Navigator.of(context).push(
         MaterialPageRoute<void>(builder: (_) => const EbookLibraryScreen()),
@@ -716,6 +800,8 @@ class _LmsCoursePlayerScreenState
   @override
   void dispose() {
     _isDisposed = true;
+    unawaited(_saveLocalResumePosition(_positionSecNotifier.value.round()));
+    _messenger?.clearSnackBars();
     _fallbackPlaybackTimer?.cancel();
     _controlsAutoHideTimer?.cancel();
     _cancelPlayerSubscriptions();
@@ -825,7 +911,7 @@ class _LmsCoursePlayerScreenState
                     },
                   ),
                   _stageTab(
-                    label: 'Video HLS 100-Bit',
+                    label: 'Video Materi HD',
                     icon: Icons.play_circle_outline_rounded,
                     selected: !_showInteractiveLab,
                     onTap: () => setState(() => _showInteractiveLab = false),
@@ -929,65 +1015,88 @@ class _LmsCoursePlayerScreenState
               child: Column(
                 children: lesson.storyboardScenes
                     .map(
-                      (sc) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: AppTheme.primaryBrown.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                (sc['ts'] ?? '').isNotEmpty
-                                    ? sc['ts']!
-                                    : 'Scene',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 11,
-                                  color: AppTheme.primaryBrown,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    (sc['visual'] ?? '').isNotEmpty
-                                        ? sc['visual']!
-                                        : (sc['scene'] ?? ''),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 12.5,
-                                      color: AppTheme.textDark,
-                                    ),
+                      (sc) {
+                        final tsStr = (sc['ts'] ?? '').trim();
+                        final tsSec = _parseTimestampSec(tsStr);
+                        return InkWell(
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: tsSec == null
+                              ? null
+                              : () {
+                                  if (_showInteractiveLab) {
+                                    setState(() => _showInteractiveLab = false);
+                                  }
+                                  _seekFreely(tsSec.toDouble());
+                                },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 5),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3.5),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryBrown.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
-                                  if (((sc['narration'] ?? '').isNotEmpty
-                                          ? sc['narration']!
-                                          : (sc['detail'] ?? ''))
-                                      .isNotEmpty)
-                                    Text(
-                                      (sc['narration'] ?? '').isNotEmpty
-                                          ? sc['narration']!
-                                          : (sc['detail'] ?? ''),
-                                      maxLines: 3,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 11.5,
-                                        color: AppTheme.textMuted,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (tsSec != null) ...[
+                                        const Icon(Icons.play_arrow_rounded,
+                                            size: 12, color: AppTheme.primaryBrown),
+                                        const SizedBox(width: 2),
+                                      ],
+                                      Text(
+                                        tsStr.isNotEmpty ? tsStr : 'Scene',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 11,
+                                          color: AppTheme.primaryBrown,
+                                        ),
                                       ),
-                                    ),
-                                ],
-                              ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        (sc['visual'] ?? '').isNotEmpty
+                                            ? sc['visual']!
+                                            : (sc['scene'] ?? ''),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 12.5,
+                                          color: AppTheme.textDark,
+                                        ),
+                                      ),
+                                      if (((sc['narration'] ?? '').isNotEmpty
+                                              ? sc['narration']!
+                                              : (sc['detail'] ?? ''))
+                                          .isNotEmpty)
+                                        Text(
+                                          (sc['narration'] ?? '').isNotEmpty
+                                              ? sc['narration']!
+                                              : (sc['detail'] ?? ''),
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 11.5,
+                                            color: AppTheme.textMuted,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      },
                     )
                     .toList(),
               ),
@@ -1020,42 +1129,70 @@ class _LmsCoursePlayerScreenState
                           const SizedBox(height: 6),
                           ...List.generate(q.options.length, (optIdx) {
                             final selected = chosen == optIdx;
+                            final isCorrectOpt = optIdx == q.answerIdx;
+                            final showCorrect = _quizSubmitted && isCorrectOpt;
+                            final showWrong =
+                                _quizSubmitted && selected && !isCorrectOpt;
+
+                            final bgColor = showCorrect
+                                ? const Color(0xFFDCFCE7)
+                                : showWrong
+                                    ? const Color(0xFFFEE2E2)
+                                    : selected
+                                        ? AppTheme.primaryBrown
+                                            .withValues(alpha: 0.1)
+                                        : const Color(0xFFFAF6F0);
+                            final borderColor = showCorrect
+                                ? const Color(0xFF16A34A)
+                                : showWrong
+                                    ? const Color(0xFFDC2626)
+                                    : selected
+                                        ? AppTheme.primaryBrown
+                                        : AppTheme.borderWarm;
+                            final iconData = showCorrect
+                                ? Icons.check_circle_rounded
+                                : showWrong
+                                    ? Icons.cancel_rounded
+                                    : selected
+                                        ? Icons.radio_button_checked_rounded
+                                        : Icons.radio_button_unchecked_rounded;
+                            final iconColor = showCorrect
+                                ? const Color(0xFF16A34A)
+                                : showWrong
+                                    ? const Color(0xFFDC2626)
+                                    : selected
+                                        ? AppTheme.primaryBrown
+                                        : AppTheme.textMuted;
+
                             return Container(
                               margin: const EdgeInsets.only(bottom: 6),
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(10),
-                                onTap: () => setState(
-                                    () => _selectedAnswers[qIdx] = optIdx),
+                                onTap: () => setState(() {
+                                  _selectedAnswers[qIdx] = optIdx;
+                                  if (_quizSubmitted) _quizSubmitted = false;
+                                }),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 9),
                                   decoration: BoxDecoration(
-                                    color: selected
-                                        ? AppTheme.primaryBrown.withValues(alpha: 0.1)
-                                        : const Color(0xFFFAF6F0),
+                                    color: bgColor,
                                     borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: selected
-                                          ? AppTheme.primaryBrown
-                                          : AppTheme.borderWarm,
-                                    ),
+                                    border: Border.all(color: borderColor),
                                   ),
                                   child: Row(
                                     children: [
-                                      Icon(
-                                        selected
-                                            ? Icons.radio_button_checked_rounded
-                                            : Icons.radio_button_unchecked_rounded,
-                                        size: 18,
-                                        color: selected
-                                            ? AppTheme.primaryBrown
-                                            : AppTheme.textMuted,
-                                      ),
+                                      Icon(iconData, size: 18, color: iconColor),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           q.options[optIdx],
-                                          style: const TextStyle(fontSize: 12.5),
+                                          style: TextStyle(
+                                            fontSize: 12.5,
+                                            fontWeight: showCorrect
+                                                ? FontWeight.w700
+                                                : FontWeight.w500,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -1401,7 +1538,7 @@ class _LmsCoursePlayerScreenState
                                         valueListenable: _completionPctNotifier,
                                         builder: (_, pct, _) {
                                           return Text(
-                                            '100-Bit: $pct%',
+                                            'Progres: $pct%',
                                             style: const TextStyle(
                                               color: AppTheme.accentGold,
                                               fontSize: 10,
@@ -1416,47 +1553,84 @@ class _LmsCoursePlayerScreenState
                                       Expanded(
                                         child: SizedBox(
                                           height: 24,
-                                          child: ListView.separated(
-                                            scrollDirection: Axis.horizontal,
-                                            itemCount: lesson.chapterMarkers.length,
-                                            separatorBuilder: (_, _) =>
-                                                const SizedBox(width: 5),
-                                            itemBuilder: (context, idx) {
-                                              final mk = lesson.chapterMarkers[idx];
-                                              final sec =
-                                                  (mk['sec'] as num?)?.toInt() ?? 0;
-                                              final label =
-                                                  mk['label']?.toString() ??
-                                                      'Bab ${idx + 1}';
-                                              return GestureDetector(
-                                                onTap: () {
-                                                  _attemptSeek(sec.toDouble());
-                                                  _scheduleControlsAutoHide();
+                                          child: ValueListenableBuilder<double>(
+                                            valueListenable: _positionSecNotifier,
+                                            builder: (_, posSec, _) {
+                                              int activeMarkerIdx = 0;
+                                              for (int i = 0;
+                                                  i < lesson.chapterMarkers.length;
+                                                  i++) {
+                                                final s = (lesson.chapterMarkers[i]['sec']
+                                                            as num?)
+                                                        ?.toInt() ??
+                                                    0;
+                                                if (posSec >= s) {
+                                                  activeMarkerIdx = i;
+                                                }
+                                              }
+                                              return ListView.separated(
+                                                scrollDirection: Axis.horizontal,
+                                                itemCount:
+                                                    lesson.chapterMarkers.length,
+                                                separatorBuilder: (_, _) =>
+                                                    const SizedBox(width: 5),
+                                                itemBuilder: (context, idx) {
+                                                  final mk =
+                                                      lesson.chapterMarkers[idx];
+                                                  final sec = (mk['sec'] as num?)
+                                                          ?.toInt() ??
+                                                      0;
+                                                  final label =
+                                                      mk['label']?.toString() ??
+                                                          'Bab ${idx + 1}';
+                                                  final isActive =
+                                                      idx == activeMarkerIdx;
+                                                  return GestureDetector(
+                                                    onTap: () {
+                                                      _seekFreely(sec.toDouble());
+                                                      _controlsVisibleNotifier
+                                                          .value = true;
+                                                      _scheduleControlsAutoHide();
+                                                    },
+                                                    child: Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                        horizontal: 7,
+                                                        vertical: 3,
+                                                      ),
+                                                      decoration: BoxDecoration(
+                                                        color: isActive
+                                                            ? AppTheme.accentGold
+                                                                .withValues(
+                                                                    alpha: 0.28)
+                                                            : Colors.black
+                                                                .withValues(
+                                                                    alpha: 0.55),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                                6),
+                                                        border: Border.all(
+                                                          color: isActive
+                                                              ? AppTheme
+                                                                  .accentGold
+                                                              : Colors.white24,
+                                                        ),
+                                                      ),
+                                                      child: Text(
+                                                        '${_formatClock(sec)} $label',
+                                                        style: TextStyle(
+                                                          color: isActive
+                                                              ? AppTheme
+                                                                  .accentGold
+                                                              : Colors.white,
+                                                          fontSize: 9.5,
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  );
                                                 },
-                                                child: Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                    horizontal: 7,
-                                                    vertical: 3,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.black
-                                                        .withValues(alpha: 0.55),
-                                                    borderRadius:
-                                                        BorderRadius.circular(6),
-                                                    border: Border.all(
-                                                      color: Colors.white24,
-                                                    ),
-                                                  ),
-                                                  child: Text(
-                                                    '${_formatClock(sec)} $label',
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 9.5,
-                                                      fontWeight: FontWeight.w700,
-                                                    ),
-                                                  ),
-                                                ),
                                               );
                                             },
                                           ),
@@ -1643,12 +1817,10 @@ class _LmsCoursePlayerScreenState
                                                 value: posSec.clamp(
                                                     0.0, safeDur),
                                                 max: safeDur,
-                                                onChangeStart: (_) =>
-                                                    _controlsAutoHideTimer
-                                                        ?.cancel(),
-                                                onChanged: _attemptSeek,
-                                                onChangeEnd: (_) =>
-                                                    _scheduleControlsAutoHide(),
+                                                onChangeStart:
+                                                    _onSliderScrubStart,
+                                                onChanged: _onSliderScrubUpdate,
+                                                onChangeEnd: _onSliderScrubEnd,
                                               );
                                             },
                                           );
@@ -1980,18 +2152,59 @@ class _LmsMarkdownRenderer extends StatelessWidget {
 
   Widget _richText(String input) {
     final spans = <InlineSpan>[];
-    final regex = RegExp(r'\*\*(.+?)\*\*');
+    final regex = RegExp(r'\*\*(.+?)\*\*|`([^`]+)`|\*([^*]+)\*');
     int lastEnd = 0;
     for (final m in regex.allMatches(input)) {
       if (m.start > lastEnd) {
         spans.add(TextSpan(text: input.substring(lastEnd, m.start)));
       }
-      spans.add(
-        TextSpan(
-          text: m.group(1),
-          style: const TextStyle(fontWeight: FontWeight.w800),
-        ),
-      );
+      final boldText = m.group(1);
+      final codeText = m.group(2);
+      final italicText = m.group(3);
+      if (boldText != null) {
+        spans.add(
+          TextSpan(
+            text: boldText,
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+        );
+      } else if (codeText != null) {
+        spans.add(
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 1.5),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF3EAE0),
+                borderRadius: BorderRadius.circular(5),
+                border: Border.all(
+                  color: AppTheme.primaryBrown.withValues(alpha: 0.22),
+                ),
+              ),
+              child: Text(
+                codeText,
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  fontFamily: 'monospace',
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.primaryBrown,
+                ),
+              ),
+            ),
+          ),
+        );
+      } else if (italicText != null) {
+        spans.add(
+          TextSpan(
+            text: italicText,
+            style: const TextStyle(
+              fontStyle: FontStyle.italic,
+              color: Color(0xFF5D4037),
+            ),
+          ),
+        );
+      }
       lastEnd = m.end;
     }
     if (lastEnd < input.length) {
@@ -2001,7 +2214,7 @@ class _LmsMarkdownRenderer extends StatelessWidget {
       text: TextSpan(
         style: const TextStyle(
           fontSize: 13,
-          height: 1.45,
+          height: 1.5,
           color: AppTheme.textDark,
         ),
         children: spans,
@@ -2049,7 +2262,7 @@ class _LmsMarkdownRenderer extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 10, vertical: 7),
                   child: Text(
-                    text.replaceAll('**', ''),
+                    text.replaceAll('**', '').replaceAll('`', '').replaceAll('*', ''),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight:

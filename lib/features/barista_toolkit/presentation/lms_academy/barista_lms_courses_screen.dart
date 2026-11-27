@@ -51,7 +51,7 @@ class LmsProgramTrack {
       isComingSoon: false,
       levelRange: 'Novice → Master',
       modulesMeta: '9 Bab • 30 Sub-Bab',
-      featurePills: ['Video Animasi HD', 'Lab Interaktif', 'Kuis 100-Bit'],
+      featurePills: ['Video Animasi HD', 'Lab Interaktif', 'Kuis & Evaluasi'],
       previewTopics: [
         'Sains Fundamental Ekstraksi, Kimia Air & Termodinamika',
         'Fisika Perkolasi V60, Hukum Darcy & Dinamika Flow Rate',

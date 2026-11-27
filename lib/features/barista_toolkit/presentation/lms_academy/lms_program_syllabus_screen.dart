@@ -316,7 +316,7 @@ class _LmsProgramSyllabusScreenState
                 style: const TextStyle(color: Colors.white70, fontSize: 11.5),
               ),
               Text(
-                '$totalXp XP Terkumpul • 100-Bit Anti-Skip',
+                '$totalXp XP Terkumpul • Belajar Fleksibel',
                 style: const TextStyle(
                   color: AppTheme.accentGold,
                   fontSize: 11.5,
